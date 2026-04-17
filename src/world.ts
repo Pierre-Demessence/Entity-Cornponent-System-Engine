@@ -41,6 +41,50 @@ export class EcsWorld {
 
   protected set _nextId(value: number) { this.nextId = value; }
 
+  private _spawnCore(template: EntityTemplate, overrides?: Record<string, unknown>): EntityId {
+    const id = this.createEntity();
+
+    const allComponentNames = new Set<string>();
+    if (template.components) {
+      for (const name of Object.keys(template.components)) allComponentNames.add(name);
+    }
+    if (overrides) {
+      for (const name of Object.keys(overrides)) allComponentNames.add(name);
+    }
+
+    for (const name of allComponentNames) {
+      const templateData = template.components?.[name];
+      const overrideData = overrides?.[name];
+      const merged = templateData && overrideData
+        ? { ...(templateData as object), ...(overrideData as object) }
+        : structuredClone(overrideData ?? templateData);
+      const store = this.storeByName.get(name);
+      if (!store)
+        throw new Error(`Component "${name}" not registered`);
+      store.set(id, merged);
+    }
+
+    if (template.tags) {
+      for (const tagName of template.tags) {
+        const store = this.tagByName.get(tagName);
+        if (!store)
+          throw new Error(`Tag "${tagName}" not registered`);
+        store.add(id);
+      }
+    }
+    return id;
+  }
+
+  private _validateEntity(id: EntityId): void {
+    if (!import.meta.env.DEV)
+      return;
+    for (const { def, store } of this.componentRegistry) {
+      if (def.requires?.length && store.has(id)) {
+        store.validate(id);
+      }
+    }
+  }
+
   clearAllDirty(): void {
     for (const { store } of this.componentRegistry) store.clearDirty();
     for (const { store } of this.tagRegistry) store.clearDirty();
@@ -221,47 +265,41 @@ export class EcsWorld {
 
   /** Create an entity from a template, merging per-component overrides (shallow merge per component). */
   spawn(template: EntityTemplate, overrides?: Record<string, unknown>): EntityId {
-    const id = this.createEntity();
-
-    const allComponentNames = new Set<string>();
-    if (template.components) {
-      for (const name of Object.keys(template.components)) allComponentNames.add(name);
-    }
-    if (overrides) {
-      for (const name of Object.keys(overrides)) allComponentNames.add(name);
-    }
-
     this.spawning = true;
-    for (const name of allComponentNames) {
-      const templateData = template.components?.[name];
-      const overrideData = overrides?.[name];
-      const merged = templateData && overrideData
-        ? { ...(templateData as object), ...(overrideData as object) }
-        : structuredClone(overrideData ?? templateData);
-      const store = this.storeByName.get(name);
-      if (!store)
-        throw new Error(`Component "${name}" not registered`);
-      store.set(id, merged);
+    let id: EntityId;
+    try {
+      id = this._spawnCore(template, overrides);
     }
-    this.spawning = false;
-
-    if (import.meta.env.DEV) {
-      for (const { def, store } of this.componentRegistry) {
-        if (def.requires?.length && store.has(id)) {
-          store.validate(id);
-        }
-      }
+    finally {
+      this.spawning = false;
     }
-
-    if (template.tags) {
-      for (const tagName of template.tags) {
-        const store = this.tagByName.get(tagName);
-        if (!store)
-          throw new Error(`Tag "${tagName}" not registered`);
-        store.add(id);
-      }
-    }
+    this._validateEntity(id);
     return id;
+  }
+
+  /**
+   * Spawn many entities at once, suppressing per-entity DEV validation until
+   * the whole batch is attached. All entities validate together after all
+   * template components have been set, which means cross-entity requirements
+   * (if ever introduced) see a consistent world, and validation overhead is
+   * paid once instead of per call. Behaviour matches calling `spawn` in a loop
+   * apart from the deferred validation.
+   */
+  spawnBatch(
+    entries: readonly { template: EntityTemplate; overrides?: Record<string, unknown> }[],
+  ): EntityId[] {
+    const ids: EntityId[] = [];
+    this.spawning = true;
+    try {
+      for (const { overrides, template } of entries) {
+        ids.push(this._spawnCore(template, overrides));
+      }
+    }
+    finally {
+      this.spawning = false;
+    }
+    for (const id of ids) this._validateEntity(id);
+    return ids;
   }
 
   toJSON(): Record<string, unknown> {

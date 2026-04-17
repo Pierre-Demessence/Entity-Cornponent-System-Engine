@@ -39,6 +39,7 @@ player transfer) lives in the `World` subclass in `src/game/world.ts`.
 | `move(id, x, y)` | Atomically update the spatial component and the index. Requires `enableSpatial` to have been called. |
 | `query(...defs)` | Build a typed `QueryBuilder` over the given component defs. |
 | `spawn(template, overrides?)` | Create an entity from a template, shallow-merging per-component overrides. |
+| `spawnBatch(entries)` | Spawn many entities at once. Validates all at the end instead of per call. |
 | `clearAllDirty()` | Clear dirty flags on every component and tag store. |
 | `toJSON()` | Serialize the registry to `{ nextId, [storeName]: serialized }`. |
 | `loadJSON(data)` | In-place load — clears existing stores then repopulates. |

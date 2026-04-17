@@ -226,6 +226,61 @@ describe('ecsWorld', () => {
     });
   });
 
+  describe('spawnBatch', () => {
+    const t1: EntityTemplate = {
+      name: 'a',
+      components: { pos: { x: 1, y: 1 } },
+      tags: ['flag'],
+    };
+    const t2: EntityTemplate = {
+      name: 'b',
+      components: { health: { hp: 3 } },
+    };
+
+    it('spawns multiple entities and returns their ids in order', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      w.registerComponent(HealthDef);
+      w.registerTag(FlagTag);
+
+      const ids = w.spawnBatch([{ template: t1 }, { template: t2 }]);
+
+      expect(ids).toHaveLength(2);
+      expect(ids[0]).toBe(0);
+      expect(ids[1]).toBe(1);
+    });
+
+    it('applies per-entry overrides', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      w.registerComponent(HealthDef);
+      w.registerTag(FlagTag);
+
+      const [a] = w.spawnBatch([
+        { overrides: { pos: { x: 99, y: 1 } }, template: t1 },
+      ]);
+
+      expect(pos.get(a)).toEqual({ x: 99, y: 1 });
+    });
+
+    it('attaches tags from each entry', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      w.registerComponent(HealthDef);
+      const tag = w.registerTag(FlagTag);
+
+      const [a, b] = w.spawnBatch([{ template: t1 }, { template: t2 }]);
+
+      expect(tag.has(a)).toBe(true);
+      expect(tag.has(b)).toBe(false);
+    });
+
+    it('returns an empty array for an empty batch', () => {
+      const w = new EcsWorld();
+      expect(w.spawnBatch([])).toEqual([]);
+    });
+  });
+
   describe('query', () => {
     it('iterates entities with all required components', () => {
       const w = new EcsWorld();
