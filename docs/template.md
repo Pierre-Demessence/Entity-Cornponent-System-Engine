@@ -65,4 +65,31 @@ so partial overrides work.
 - **Template names** — Must be unique within each template array.
   Duplicate names cause `find()` to return the first match silently.
 
+## composeTemplates()
+
+```ts
+composeTemplates(...templates: readonly EntityTemplate[]): EntityTemplate
+```
+
+Combines multiple templates into one so content layers (race + class +
+archetype + variant) can be expressed as plain data without ad-hoc
+builders.
+
+- **`name`** — taken from the **last** template.
+- **`components`** — shallow-merged by component name; later inputs win
+  for any component they redeclare. Nested values are replaced
+  wholesale (no deep merge).
+- **`tags`** — unioned across all inputs, de-duplicated, preserving
+  first-seen order.
+- Throws if called with zero templates; never mutates its inputs.
+
+```ts
+const orc = composeTemplates(baseCreature, orcRace, meleeArchetype, {
+  name: 'orcChieftain',
+  components: { fighter: { hp: 30, attack: 6 } },
+  tags: ['elite'],
+});
+world.spawn(orc, { positions: { x: 5, y: 10 } });
+```
+
 ```

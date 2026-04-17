@@ -14,7 +14,7 @@ export { type LifecycleEvent } from './lifecycle';
 export { QueryBuilder } from './query';
 export { type SchedulableSystem, Scheduler } from './scheduler';
 export { SpatialIndex } from './spatial';
-export { type EntityTemplate } from './template';
+export { composeTemplates, type EntityTemplate } from './template';
 export {
   asArray,
   asBoolean,
