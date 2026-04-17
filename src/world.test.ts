@@ -51,6 +51,62 @@ describe('ecsWorld', () => {
       expect(pos.has(id)).toBe(false);
       expect(tag.has(id)).toBe(false);
     });
+
+    it('queueDestroy defers until flushDestroys', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const id = w.createEntity();
+      pos.set(id, { x: 1, y: 2 });
+
+      w.queueDestroy(id);
+      expect(pos.has(id)).toBe(true);
+
+      w.flushDestroys();
+      expect(pos.has(id)).toBe(false);
+    });
+
+    it('queueDestroy dedupes repeated ids', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const deletes: number[] = [];
+      pos.subscribe('delete', id => deletes.push(id));
+      const id = w.createEntity();
+      pos.set(id, { x: 0, y: 0 });
+
+      w.queueDestroy(id);
+      w.queueDestroy(id);
+      w.queueDestroy(id);
+      w.flushDestroys();
+
+      expect(deletes).toEqual([id]);
+    });
+
+    it('flushDestroys is a no-op when queue is empty', () => {
+      const w = new EcsWorld();
+      expect(() => w.flushDestroys()).not.toThrow();
+    });
+
+    it('flushDestroys allows safe iteration-then-destroy', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const a = w.createEntity();
+      pos.set(a, { x: 0, y: 0 });
+      const b = w.createEntity();
+      pos.set(b, { x: 1, y: 1 });
+      const c = w.createEntity();
+      pos.set(c, { x: 2, y: 2 });
+
+      // Simulate a system iterating then queuing destruction.
+      for (const [id, p] of pos) {
+        if (p.x >= 1)
+          w.queueDestroy(id);
+      }
+      w.flushDestroys();
+
+      expect(pos.has(a)).toBe(true);
+      expect(pos.has(b)).toBe(false);
+      expect(pos.has(c)).toBe(false);
+    });
   });
 
   describe('registration', () => {

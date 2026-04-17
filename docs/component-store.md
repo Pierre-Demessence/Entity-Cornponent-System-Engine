@@ -1,4 +1,4 @@
-# Component Store (`src/ecs/component-store.ts`)
+# Component Store (`packages/ecs/src/component-store.ts`)
 
 ## Interfaces
 
@@ -13,16 +13,32 @@
 - **`TagStore`** — typed wrapper over `Set<EntityId>` with
   add/delete/has/iterator + serialization helpers.
 
-## Callbacks
+## Lifecycle Events (`subscribe`)
 
-| Callback | Timing | Purpose |
-|----------|--------|---------|
-| `onSet` | After map insertion | Side effects (e.g., spatial index update) |
-| `onDelete` | After map removal | Cleanup (e.g., spatial index removal) |
-| `onValidate` | Before map insertion | Dev-mode dependency checks |
+`ComponentStore` exposes a multi-observer event API. Each call to
+`subscribe(event, handler)` returns an unsubscribe function.
 
-`set()` calls `onValidate` first, then `onDelete` for the old value
-(if replacing), then inserts, then `onSet`.
+| Event | Signature | Timing | Typical use |
+|-------|-----------|--------|-------------|
+| `'set'` | `(id, value) => void` | After map insertion | Spatial index update, dev inspectors |
+| `'delete'` | `(id, oldValue) => void` | After map removal (including during `set()` replace) | Cleanup (e.g., spatial index removal) |
+| `'validate'` | `(id) => void` | Before map insertion | Dev-mode dependency checks |
+
+`set()` emits `validate` first, then `delete` for the old value (if
+replacing), inserts, then emits `set`. Handlers run in registration order.
+Multiple handlers per event are supported and independent.
+
+```ts
+const off = store.subscribe('set', (id, value) => {
+  console.log('entity', id, 'got', value);
+});
+// later:
+off();
+```
+
+`store.validate(id)` manually fires the `validate` handlers for an id — used
+by `EcsWorld.spawn` to run post-spawn dependency checks once all components
+are attached.
 
 ## Dirty Flags (Change Detection)
 
@@ -61,8 +77,11 @@ Code that mutates component data in place should call
 
 `ComponentDef<T>` supports an optional `requires` array listing the names of
 prerequisite component stores. In development builds (`import.meta.env.DEV`),
-`World.registerComponent()` wires an `onValidate` callback that warns to
+`World.registerComponent()` subscribes a `'validate'` handler that warns to
 console if a prerequisite is missing when `store.set(id, value)` is called.
+`EcsWorld.spawn()` additionally calls `store.validate(id)` once per spawned
+component so dependency checks still fire when a template populates multiple
+components in one go.
 
 In production builds, Vite eliminates the validation wiring entirely.
 

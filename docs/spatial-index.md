@@ -1,4 +1,4 @@
-# Spatial Index (`src/ecs/spatial.ts`)
+# Spatial Index (`packages/ecs/src/spatial.ts`)
 
 A hash grid that enables O(1) position lookups instead of O(n) full scans.
 
@@ -6,8 +6,8 @@ A hash grid that enables O(1) position lookups instead of O(n) full scans.
 
 - `Map<"x,y", Set<EntityId>>` — each cell key maps to the set of entities
   at that position.
-- Auto-maintained via `ComponentStore.onSet` / `onDelete` callbacks on the
-  position store.
+- Auto-maintained via `ComponentStore.subscribe('set' | 'delete', ...)`
+  handlers installed by `EcsWorld.enableSpatial` on the position store.
 - Supports atomic `move(id, oldX, oldY, newX, newY)` with same-cell no-op
   optimization.
 

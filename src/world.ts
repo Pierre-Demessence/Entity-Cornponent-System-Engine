@@ -18,6 +18,7 @@ interface TagEntry { def: TagDef; store: TagStore }
 export class EcsWorld {
   private _spatial = new SpatialIndex();
   private componentRegistry: ComponentEntry[] = [];
+  private destroyQueue = new Set<EntityId>();
   private nextId = 0;
   private spatialDef: ComponentDef<unknown> | undefined;
   private spawning = false;
@@ -46,7 +47,7 @@ export class EcsWorld {
 
   /**
    * Opt in to spatial indexing for a component that carries `{x, y}`. May only
-   * be called once per world — installs `onSet`/`onDelete` hooks on the store.
+   * be called once per world — installs `set`/`delete` subscribers on the store.
    */
   enableSpatial<T extends { x: number; y: number }>(def: ComponentDef<T>): void {
     if (this.spatialDef) {
@@ -57,12 +58,25 @@ export class EcsWorld {
       throw new Error(`Component "${def.name}" must be registered before enabling spatial.`);
     this.spatialDef = def as ComponentDef<unknown>;
     const typedStore = store as ComponentStore<T>;
-    typedStore.onSet = (id, pos) => {
+    typedStore.subscribe('set', (id, pos) => {
       this._spatial.add(id, pos.x, pos.y);
-    };
-    typedStore.onDelete = (id, pos) => {
+    });
+    typedStore.subscribe('delete', (id, pos) => {
       this._spatial.remove(id, pos.x, pos.y);
-    };
+    });
+  }
+
+  /**
+   * Destroy all entities enqueued via `queueDestroy`. Safe to call after a
+   * system iteration loop — removes entities in one batch without mutating
+   * stores during iteration.
+   */
+  flushDestroys(): void {
+    if (this.destroyQueue.size === 0)
+      return;
+    const ids = [...this.destroyQueue];
+    this.destroyQueue.clear();
+    for (const id of ids) this.destroyEntity(id);
   }
 
   getStore<T>(def: ComponentDef<T>): ComponentStore<T> {
@@ -142,6 +156,15 @@ export class EcsWorld {
     return new QueryBuilder(stores);
   }
 
+  /**
+   * Enqueue an entity for destruction on the next `flushDestroys()` call.
+   * Safe to call during system iteration — `destroyEntity` is not invoked
+   * until the queue is drained, so in-flight queries aren't mutated.
+   */
+  queueDestroy(id: EntityId): void {
+    this.destroyQueue.add(id);
+  }
+
   registerComponent<T>(def: ComponentDef<T>): ComponentStore<T> {
     if (this.storeByName.has(def.name))
       throw new Error(`Component "${def.name}" already registered`);
@@ -150,7 +173,7 @@ export class EcsWorld {
     this.storeByName.set(def.name, store as ComponentStore<unknown>);
 
     if (import.meta.env.DEV && def.requires?.length) {
-      store.onValidate = (id) => {
+      store.subscribe('validate', (id) => {
         if (this.spawning)
           return;
         for (const reqName of def.requires!) {
@@ -159,7 +182,7 @@ export class EcsWorld {
             console.warn(`[ECS] Setting "${def.name}" on entity ${id}, but required component "${reqName}" is missing.`);
           }
         }
-      };
+      });
     }
 
     return store;
@@ -205,7 +228,7 @@ export class EcsWorld {
     if (import.meta.env.DEV) {
       for (const { def, store } of this.componentRegistry) {
         if (def.requires?.length && store.has(id)) {
-          store.onValidate?.(id);
+          store.validate(id);
         }
       }
     }

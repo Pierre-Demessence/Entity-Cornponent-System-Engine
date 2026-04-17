@@ -27,13 +27,15 @@ player transfer) lives in the `World` subclass in `src/game/world.ts`.
 | Method | Description |
 |--------|-------------|
 | `createEntity()` | Allocate a new `EntityId`. |
-| `destroyEntity(id)` | Remove `id` from every registered store and tag. |
+| `destroyEntity(id)` | Immediately remove `id` from every registered store and tag. **Not safe** to call while iterating a store — use `queueDestroy` instead. |
+| `queueDestroy(id)` | Enqueue `id` for destruction on the next `flushDestroys()` call. Deduped; safe to call repeatedly. |
+| `flushDestroys()` | Drain the destroy queue, calling `destroyEntity` on each id. Call this once per tick, after systems finish iterating. |
 | `registerComponent(def)` | Register a `ComponentDef<T>`; returns the store. Throws on duplicate name. |
 | `registerTag(def)` | Register a `TagDef`; returns the store. Throws on duplicate name. |
 | `getStore(def)` | Typed store lookup by def (throws if unregistered). |
 | `getStoreByName(name)` | Untyped store lookup by string name. |
 | `getTag(def)` / `getTagByName(name)` | Tag-store equivalents. |
-| `enableSpatial(def)` | Install `onSet` / `onDelete` hooks on the given component so the `SpatialIndex` stays in sync. May be called at most once. |
+| `enableSpatial(def)` | Subscribe `set` / `delete` handlers on the given component so the `SpatialIndex` stays in sync. May be called at most once. |
 | `move(id, x, y)` | Atomically update the spatial component and the index. Requires `enableSpatial` to have been called. |
 | `query(...defs)` | Build a typed `QueryBuilder` over the given component defs. |
 | `spawn(template, overrides?)` | Create an entity from a template, shallow-merging per-component overrides. |

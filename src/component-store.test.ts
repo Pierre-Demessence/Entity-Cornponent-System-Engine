@@ -37,51 +37,81 @@ describe('componentStore', () => {
     expect(s.size).toBe(1);
   });
 
-  describe('callbacks', () => {
-    it('fires onSet after inserting', () => {
+  describe('subscribe', () => {
+    it('fires set handler after inserting', () => {
       const s = new ComponentStore<number>();
       const calls: Array<[number, number]> = [];
-      s.onSet = (id, val) => calls.push([id, val]);
+      s.subscribe('set', (id, val) => calls.push([id, val]));
       s.set(1, 42);
       expect(calls).toEqual([[1, 42]]);
     });
 
-    it('fires onDelete then onSet when replacing', () => {
+    it('fires delete then set when replacing', () => {
       const s = new ComponentStore<number>();
       const log: string[] = [];
-      s.onDelete = (id, old) => log.push(`del:${id}:${old}`);
-      s.onSet = (id, val) => log.push(`set:${id}:${val}`);
+      s.subscribe('delete', (id, old) => log.push(`del:${id}:${old}`));
+      s.subscribe('set', (id, val) => log.push(`set:${id}:${val}`));
       s.set(1, 10);
       s.set(1, 20);
       expect(log).toEqual(['set:1:10', 'del:1:10', 'set:1:20']);
     });
 
-    it('fires onValidate before set commits', () => {
+    it('fires validate before set commits', () => {
       const s = new ComponentStore<number>();
       const validated: number[] = [];
-      s.onValidate = id => validated.push(id);
+      s.subscribe('validate', id => validated.push(id));
       s.set(5, 100);
       expect(validated).toEqual([5]);
     });
 
-    it('fires onDelete on delete()', () => {
+    it('fires delete on delete()', () => {
       const s = new ComponentStore<number>();
       const deleted: Array<[number, number]> = [];
-      s.onDelete = (id, old) => deleted.push([id, old]);
+      s.subscribe('delete', (id, old) => deleted.push([id, old]));
       s.set(1, 42);
       s.delete(1);
       expect(deleted).toEqual([[1, 42]]);
     });
 
-    it('fires onDelete for each entry on clear()', () => {
+    it('fires delete for each entry on clear()', () => {
       const s = new ComponentStore<number>();
       const deleted: number[] = [];
-      s.onDelete = id => deleted.push(id);
+      s.subscribe('delete', id => deleted.push(id));
       s.set(1, 10);
       s.set(2, 20);
       s.clear();
       expect(deleted.sort()).toEqual([1, 2]);
       expect(s.size).toBe(0);
+    });
+
+    it('supports multiple handlers per event', () => {
+      const s = new ComponentStore<number>();
+      const a: number[] = [];
+      const b: number[] = [];
+      s.subscribe('set', id => a.push(id));
+      s.subscribe('set', id => b.push(id));
+      s.set(1, 10);
+      s.set(2, 20);
+      expect(a).toEqual([1, 2]);
+      expect(b).toEqual([1, 2]);
+    });
+
+    it('returns an unsubscribe function', () => {
+      const s = new ComponentStore<number>();
+      const calls: number[] = [];
+      const off = s.subscribe('set', id => calls.push(id));
+      s.set(1, 10);
+      off();
+      s.set(2, 20);
+      expect(calls).toEqual([1]);
+    });
+
+    it('validate() method fires validate handlers', () => {
+      const s = new ComponentStore<number>();
+      const ids: number[] = [];
+      s.subscribe('validate', id => ids.push(id));
+      s.validate(42);
+      expect(ids).toEqual([42]);
     });
   });
 
@@ -159,7 +189,7 @@ describe('componentStore', () => {
     });
   });
 
-  describe('clear without onDelete', () => {
+  describe('clear without delete handler', () => {
     it('clears all entries and dirty flags', () => {
       const s = new ComponentStore<number>();
       s.set(1, 10);

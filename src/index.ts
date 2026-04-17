@@ -3,6 +3,9 @@ export type { EntityId } from './entity-id';
 export {
   type ComponentDef,
   ComponentStore,
+  type StoreDeleteHandler,
+  type StoreSetHandler,
+  type StoreValidateHandler,
   type TagDef,
   TagStore,
 } from './component-store';
