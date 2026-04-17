@@ -197,4 +197,80 @@ describe('scheduler', () => {
     s.run(42);
     expect(received).toEqual([42]);
   });
+
+  describe('phases', () => {
+    it('runs phases in declared order regardless of insertion order', () => {
+      const s = new Scheduler<void>({ phases: ['input', 'logic', 'render'] });
+      const log: string[] = [];
+      s.add({ name: 'r', phase: 'render', run: () => log.push('r') });
+      s.add({ name: 'l', phase: 'logic', run: () => log.push('l') });
+      s.add({ name: 'i', phase: 'input', run: () => log.push('i') });
+      s.run();
+      expect(log).toEqual(['i', 'l', 'r']);
+    });
+
+    it('dAG-sorts within a phase, preserving phase boundaries', () => {
+      const s = new Scheduler<void>({ phases: ['a', 'b'] });
+      const log: string[] = [];
+      s.add({ name: 'b1', phase: 'b', run: () => log.push('b1') });
+      s.add({ name: 'a2', phase: 'a', runAfter: ['a1'], run: () => log.push('a2') });
+      s.add({ name: 'a1', phase: 'a', run: () => log.push('a1') });
+      s.add({ name: 'b2', phase: 'b', runAfter: ['b1'], run: () => log.push('b2') });
+      s.run();
+      expect(log).toEqual(['a1', 'a2', 'b1', 'b2']);
+    });
+
+    it('throws when a system declares phase but scheduler has none', () => {
+      const s = new Scheduler<void>();
+      expect(() =>
+        s.add({ name: 'x', phase: 'logic', run: () => {} }),
+      ).toThrow(/without phases/);
+    });
+
+    it('throws when a system has no phase but scheduler has phases', () => {
+      const s = new Scheduler<void>({ phases: ['input'] });
+      expect(() =>
+        s.add({ name: 'x', run: () => {} }),
+      ).toThrow(/must declare a phase/);
+    });
+
+    it('throws on a phase name not in the declared list', () => {
+      const s = new Scheduler<void>({ phases: ['input', 'render'] });
+      expect(() =>
+        s.add({ name: 'x', phase: 'logic', run: () => {} }),
+      ).toThrow(/unknown phase "logic"/);
+    });
+
+    it('throws on cross-phase runAfter', () => {
+      const s = new Scheduler<void>({ phases: ['a', 'b'] });
+      s.add({ name: 'ax', phase: 'a', run: () => {} });
+      s.add({ name: 'bx', phase: 'b', runAfter: ['ax'], run: () => {} });
+      expect(() => s.build()).toThrow(/cross-phase dependencies/);
+    });
+
+    it('throws on cross-phase runBefore', () => {
+      const s = new Scheduler<void>({ phases: ['a', 'b'] });
+      s.add({ name: 'ax', phase: 'a', runBefore: ['bx'], run: () => {} });
+      s.add({ name: 'bx', phase: 'b', run: () => {} });
+      expect(() => s.build()).toThrow(/cross-phase dependencies/);
+    });
+
+    it('rejects duplicate phase names at construction', () => {
+      expect(() => new Scheduler<void>({ phases: ['a', 'a'] })).toThrow(/Duplicate phase/);
+    });
+
+    it('detects cycles within a phase', () => {
+      const s = new Scheduler<void>({ phases: ['logic'] });
+      s.add({ name: 'a', phase: 'logic', runAfter: ['b'], run: () => {} });
+      s.add({ name: 'b', phase: 'logic', runAfter: ['a'], run: () => {} });
+      expect(() => s.build()).toThrow(/Circular dependency/);
+    });
+
+    it('exposes the phase-ordered execution order via `order`', () => {
+      const s = new Scheduler<void>({ phases: ['first', 'second'] });
+      s.add({ name: 's', phase: 'second', run: () => {} });
+      s.add({ name: 'f', phase: 'first', run: () => {} });
+      expect(s.order).toEqual(['f', 's']);
+    });
+  });
 });

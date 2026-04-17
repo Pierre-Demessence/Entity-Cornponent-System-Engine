@@ -8,6 +8,7 @@ declared dependencies.
 ```typescript
 interface SchedulableSystem<TCtx> {
   readonly name: string;
+  readonly phase?: string;    // required when scheduler has phases
   readonly runAfter?: readonly string[];
   readonly runBefore?: readonly string[];
   init?(ctx: TCtx): void;     // one-time setup before first run
@@ -15,6 +16,25 @@ interface SchedulableSystem<TCtx> {
   run(ctx: TCtx): void;
 }
 ```
+
+## Constructor
+
+```typescript
+new Scheduler<TCtx>({ phases?: readonly string[] } = {})
+```
+
+- **No options** — legacy mode. Systems must NOT declare a `phase`;
+  ordering is pure `runAfter` / `runBefore` DAG sort.
+- **`phases: [...]`** — phase mode. Every system must declare a `phase`
+  from the list, and `runAfter` / `runBefore` must stay within the same
+  phase. Systems run phase-by-phase in the declared order;
+  within a phase, they DAG-sort normally.
+
+Phase names are opaque strings — the scheduler attaches no meaning to
+them. The core ships no defaults. Apps pick the vocabulary that suits
+them. A turn-based game might pick `['input','logic','render']`, a
+real-time one might pick `['input','physics','post-physics','render']`,
+Snake might pick `['tick','render']`.
 
 ## API
 
