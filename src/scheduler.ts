@@ -5,15 +5,25 @@ export interface SchedulableSystem<TCtx> {
   readonly runAfter?: readonly string[];
   /** Names of systems that must run after this one. */
   readonly runBefore?: readonly string[];
+  /** Optional teardown called by the scheduler after the system is removed. */
+  dispose?: (ctx: TCtx) => void;
+  /** Optional one-time setup called by the scheduler before the system's first `run`. */
+  init?: (ctx: TCtx) => void;
   run: (ctx: TCtx) => void;
 }
 
 /**
  * Topologically sorts systems by their declared dependencies and runs them in order.
- * Uses Kahn’s algorithm with stable insertion-order tiebreaking.
+ * Uses Kahn's algorithm with stable insertion-order tiebreaking.
+ *
+ * Lifecycle: systems added via `add()` receive `init(ctx)` on the next `run(ctx)` before
+ * their first tick. Systems removed via `remove()` receive `dispose(ctx)` on the following
+ * `run(ctx)`, or immediately via `disposeAll(ctx)`.
  */
 export class Scheduler<TCtx> {
   private entries: SchedulableSystem<TCtx>[] = [];
+  private initialized = new Set<string>();
+  private pendingDispose: SchedulableSystem<TCtx>[] = [];
 
   private sorted: SchedulableSystem<TCtx>[] | null = null;
 
@@ -96,6 +106,21 @@ export class Scheduler<TCtx> {
     return result;
   }
 
+  /** Immediately call `dispose(ctx)` on every registered system (and drain any pending disposes). Use at shutdown. */
+  disposeAll(ctx: TCtx): void {
+    if (this.pendingDispose.length > 0) {
+      const toDispose = this.pendingDispose;
+      this.pendingDispose = [];
+      for (const sys of toDispose) sys.dispose!(ctx);
+    }
+    for (const sys of this.entries) {
+      if (this.initialized.has(sys.name)) {
+        this.initialized.delete(sys.name);
+        sys.dispose?.(ctx);
+      }
+    }
+  }
+
   /** Sorted system names in execution order. Builds if needed. */
   get order(): readonly string[] {
     if (!this.sorted)
@@ -103,16 +128,33 @@ export class Scheduler<TCtx> {
     return this.sorted!.map(s => s.name);
   }
 
-  /** Unregister a system by name. Invalidates any previously computed sort order. */
+  /** Unregister a system by name. Invalidates any previously computed sort order. Queues `dispose` for the next `run` if the system had been initialized. */
   remove(name: string): this {
-    this.entries = this.entries.filter(s => s.name !== name);
+    const idx = this.entries.findIndex(s => s.name === name);
+    if (idx === -1)
+      return this;
+    const [removed] = this.entries.splice(idx, 1);
+    if (this.initialized.has(name)) {
+      this.initialized.delete(name);
+      if (removed.dispose)
+        this.pendingDispose.push(removed);
+    }
     this.sorted = null;
     return this;
   }
 
-  /** Execute all systems in dependency order, building if needed. */
+  /** Execute all systems in dependency order, building if needed. Drains deferred `dispose`s and lazy-inits new systems with the given ctx. */
   run(ctx: TCtx): void {
+    if (this.pendingDispose.length > 0) {
+      const toDispose = this.pendingDispose;
+      this.pendingDispose = [];
+      for (const sys of toDispose) sys.dispose!(ctx);
+    }
     for (const sys of this) {
+      if (!this.initialized.has(sys.name)) {
+        this.initialized.add(sys.name);
+        sys.init?.(ctx);
+      }
       sys.run(ctx);
     }
   }

@@ -110,6 +110,78 @@ describe('scheduler', () => {
     expect(names).toEqual(['a', 'b']);
   });
 
+  describe('lifecycle hooks', () => {
+    it('calls init once before first run', () => {
+      const s = new Scheduler<{ tick: number }>();
+      const init = vi.fn();
+      const run = vi.fn();
+      s.add({ name: 'a', init, run });
+
+      const ctx = { tick: 1 };
+      s.run(ctx);
+      s.run(ctx);
+
+      expect(init).toHaveBeenCalledOnce();
+      expect(init).toHaveBeenCalledWith(ctx);
+      expect(run).toHaveBeenCalledTimes(2);
+    });
+
+    it('init fires before run in the same tick', () => {
+      const s = new Scheduler<void>();
+      const log: string[] = [];
+      s.add({
+        name: 'a',
+        init: () => log.push('init'),
+        run: () => log.push('run'),
+      });
+      s.run(undefined);
+      expect(log).toEqual(['init', 'run']);
+    });
+
+    it('calls dispose on the next run after remove, with that run\'s ctx', () => {
+      const s = new Scheduler<{ tick: number }>();
+      const dispose = vi.fn();
+      s.add({ name: 'a', dispose, run: () => {} });
+      s.run({ tick: 1 });
+
+      s.remove('a');
+      const disposeCtx = { tick: 2 };
+      s.run(disposeCtx);
+
+      expect(dispose).toHaveBeenCalledOnce();
+      expect(dispose).toHaveBeenCalledWith(disposeCtx);
+    });
+
+    it('skips dispose for a system removed before it was ever initialized', () => {
+      const s = new Scheduler<void>();
+      const dispose = vi.fn();
+      s.add({ name: 'a', dispose, run: () => {} });
+      s.remove('a');
+      s.run(undefined);
+      expect(dispose).not.toHaveBeenCalled();
+    });
+
+    it('disposeAll tears down every initialized system synchronously', () => {
+      const s = new Scheduler<void>();
+      const disposeA = vi.fn();
+      const disposeB = vi.fn();
+      s.add({ name: 'a', dispose: disposeA, run: () => {} });
+      s.add({ name: 'b', dispose: disposeB, run: () => {} });
+      s.run(undefined);
+
+      s.disposeAll(undefined);
+
+      expect(disposeA).toHaveBeenCalledOnce();
+      expect(disposeB).toHaveBeenCalledOnce();
+
+      // After disposeAll, re-running should call init again (systems treated as fresh).
+      const init = vi.fn();
+      s.add({ name: 'c', init, run: () => {} });
+      s.run(undefined);
+      expect(init).toHaveBeenCalledOnce();
+    });
+  });
+
   it('add() invalidates cached sort', () => {
     const s = new Scheduler<void>();
     s.add(sys('a'));
