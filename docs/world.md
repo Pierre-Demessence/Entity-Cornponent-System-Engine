@@ -42,6 +42,7 @@ player transfer) lives in the `World` subclass in `src/game/world.ts`.
 | `clearAllDirty()` | Clear dirty flags on every component and tag store. |
 | `toJSON()` | Serialize the registry to `{ nextId, [storeName]: serialized }`. |
 | `loadJSON(data)` | In-place load — clears existing stores then repopulates. |
+| `lifecycle` | `EventBus<LifecycleEvent>` — emits `EntityCreated`, `EntityDestroyed`, `ComponentAdded`, `ComponentRemoved`. Queue-based; call `lifecycle.flush()` to dispatch (typically once per tick). Subscribers are **not** preserved across world swaps. |
 
 ## Using the engine
 

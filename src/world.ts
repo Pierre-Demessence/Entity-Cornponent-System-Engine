@@ -1,8 +1,10 @@
 import type { ComponentDef, TagDef } from './component-store';
 import type { EntityId } from './entity-id';
+import type { LifecycleEvent } from './lifecycle';
 import type { EntityTemplate } from './template';
 
 import { ComponentStore, TagStore } from './component-store';
+import { EventBus } from './event-bus';
 import { QueryBuilder } from './query';
 import { SpatialIndex } from './spatial';
 import { asNumber, asObject } from './validation';
@@ -17,8 +19,16 @@ interface TagEntry { def: TagDef; store: TagStore }
  */
 export class EcsWorld {
   private _spatial = new SpatialIndex();
+
   private componentRegistry: ComponentEntry[] = [];
   private destroyQueue = new Set<EntityId>();
+  /**
+   * Engine-internal lifecycle bus. Emits `EntityCreated`, `EntityDestroyed`,
+   * `ComponentAdded`, `ComponentRemoved`. Queue-based like any `EventBus` —
+   * call `lifecycle.flush()` (typically once per tick) to dispatch. Subscribers
+   * are not preserved across world swaps.
+   */
+  readonly lifecycle = new EventBus<LifecycleEvent>();
   private nextId = 0;
   private spatialDef: ComponentDef<unknown> | undefined;
   private spawning = false;
@@ -37,12 +47,15 @@ export class EcsWorld {
   }
 
   createEntity(): EntityId {
-    return this.nextId++;
+    const id = this.nextId++;
+    this.lifecycle.emit({ id, type: 'EntityCreated' });
+    return id;
   }
 
   destroyEntity(id: EntityId): void {
     for (const { store } of this.componentRegistry) store.delete(id);
     for (const { store } of this.tagRegistry) store.delete(id);
+    this.lifecycle.emit({ id, type: 'EntityDestroyed' });
   }
 
   /**
@@ -171,6 +184,13 @@ export class EcsWorld {
     const store = new ComponentStore<T>();
     this.componentRegistry.push({ def: def as ComponentDef<unknown>, store: store as ComponentStore<unknown> });
     this.storeByName.set(def.name, store as ComponentStore<unknown>);
+
+    store.subscribe('set', (id, value) => {
+      this.lifecycle.emit({ id, component: def.name, type: 'ComponentAdded', value });
+    });
+    store.subscribe('delete', (id) => {
+      this.lifecycle.emit({ id, component: def.name, type: 'ComponentRemoved' });
+    });
 
     if (import.meta.env.DEV && def.requires?.length) {
       store.subscribe('validate', (id) => {

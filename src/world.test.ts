@@ -328,4 +328,77 @@ describe('ecsWorld', () => {
       }
     });
   });
+
+  describe('lifecycle events', () => {
+    it('emits EntityCreated on createEntity', () => {
+      const w = new EcsWorld();
+      const events: unknown[] = [];
+      w.lifecycle.on('EntityCreated', e => events.push(e));
+
+      const a = w.createEntity();
+      const b = w.createEntity();
+      w.lifecycle.flush();
+
+      expect(events).toEqual([
+        { id: a, type: 'EntityCreated' },
+        { id: b, type: 'EntityCreated' },
+      ]);
+    });
+
+    it('emits EntityDestroyed and per-component ComponentRemoved on destroyEntity', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const events: { type: string; id: number; component?: string }[] = [];
+      w.lifecycle.on('EntityDestroyed', e => events.push(e));
+      w.lifecycle.on('ComponentRemoved', e => events.push(e));
+
+      const id = w.createEntity();
+      pos.set(id, { x: 1, y: 2 });
+      w.lifecycle.flush();
+      events.length = 0;
+
+      w.destroyEntity(id);
+      w.lifecycle.flush();
+
+      expect(events).toEqual([
+        { id, component: 'pos', type: 'ComponentRemoved' },
+        { id, type: 'EntityDestroyed' },
+      ]);
+    });
+
+    it('emits ComponentAdded on set and ComponentRemoved on delete', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const events: { type: string; component?: string }[] = [];
+      w.lifecycle.on('ComponentAdded', e => events.push(e));
+      w.lifecycle.on('ComponentRemoved', e => events.push(e));
+
+      const id = w.createEntity();
+      pos.set(id, { x: 1, y: 2 });
+      pos.delete(id);
+      w.lifecycle.flush();
+
+      expect(events).toEqual([
+        { id, component: 'pos', type: 'ComponentAdded', value: { x: 1, y: 2 } },
+        { id, component: 'pos', type: 'ComponentRemoved' },
+      ]);
+    });
+
+    it('emits ComponentRemoved then ComponentAdded when set replaces an existing value', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const id = w.createEntity();
+      pos.set(id, { x: 1, y: 2 });
+      w.lifecycle.flush();
+
+      const events: { type: string }[] = [];
+      w.lifecycle.on('ComponentAdded', e => events.push(e));
+      w.lifecycle.on('ComponentRemoved', e => events.push(e));
+
+      pos.set(id, { x: 9, y: 9 });
+      w.lifecycle.flush();
+
+      expect(events.map(e => e.type)).toEqual(['ComponentRemoved', 'ComponentAdded']);
+    });
+  });
 });
