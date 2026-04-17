@@ -1,12 +1,11 @@
 {
   "name": "@pierre/ecs",
+  "type": "module",
   "version": "0.0.0",
   "private": true,
   "description": "Project-agnostic Entity-Component-System primitives (stores, queries, spatial index, templates, scheduler, event bus).",
-  "type": "module",
   "license": "MIT",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
     "./world": "./src/world.ts",
@@ -19,5 +18,6 @@
     "./entity-id": "./src/entity-id.ts",
     "./validation": "./src/validation.ts"
   },
-  "sideEffects": false
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
 }
