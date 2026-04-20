@@ -20,8 +20,13 @@ bug and the example is on hold until the bug is fixed.
 
 ## Status
 
-**Empty.** No examples exist yet. The plan — which examples to build, in
-what order, and what each one proves — lives in
+**Rung 1 landed.** One example exists: [`snake/`](snake/) (Rung 1 of the
+ladder — arcade grid, 4-way keyboard, real-time tick). See
+[snake/POSTMORTEM.md](snake/POSTMORTEM.md) for what worked, what was
+awkward, and which engine gaps it surfaced.
+
+The rest of the plan — which examples to build next, in what order, and
+what each one proves — lives in
 [docs/roadmap/prototype-games-roadmap.md](../../../docs/roadmap/prototype-games-roadmap.md).
 
 ## Rules for examples
@@ -69,15 +74,10 @@ packages/ecs/examples/
     └── ...
 ```
 
-## Running an example (once one exists)
+## Running an example
 
-The repository does not yet have npm workspaces configured. Setting up
-workspaces (adding `"workspaces": ["packages/*", "packages/ecs/examples/*"]`
-to the root `package.json`) is a prerequisite for landing the first
-example. Until then, examples would have to use a relative
-`"file:../.."` dependency, which defeats rule #4.
-
-Once workspaces are set up:
+Workspaces are configured (root `package.json` has
+`"workspaces": ["packages/*", "packages/ecs/examples/*"]`).
 
 ```sh
 # Install workspace dependencies (first time only)
@@ -85,6 +85,9 @@ npm install
 
 # Run a specific example's dev server
 npm run dev -w @pierre/ecs-example-<name>
+
+# Build-check a specific example
+npm run build -w @pierre/ecs-example-<name>
 ```
 
 ## Related documents
