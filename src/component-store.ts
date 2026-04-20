@@ -1,6 +1,6 @@
-import type { EntityId } from './entity-id';
+import type { EntityId } from '#entity-id';
 
-import { asArray, asNumber, asObject } from './validation';
+import { asArray, asNumber, asObject } from '#validation';
 
 /** Migrates a serialized value from its stored version to the next. */
 export type ComponentMigration = (raw: unknown, label: string) => unknown;

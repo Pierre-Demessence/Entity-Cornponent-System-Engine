@@ -1,6 +1,5 @@
+import { asArray, asBoolean, asNumber, asObject, asString } from '#validation';
 import { describe, expect, it } from 'vitest';
-
-import { asArray, asBoolean, asNumber, asObject, asString } from './validation';
 
 describe('validation', () => {
   describe('asObject', () => {

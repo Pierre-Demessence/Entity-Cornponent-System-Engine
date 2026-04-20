@@ -1,13 +1,13 @@
-import type { ComponentDef, TagDef } from './component-store';
-import type { EntityId } from './entity-id';
-import type { LifecycleEvent } from './lifecycle';
-import type { EntityTemplate } from './template';
+import type { ComponentDef, TagDef } from '#component-store';
+import type { EntityId } from '#entity-id';
+import type { LifecycleEvent } from '#lifecycle';
+import type { EntityTemplate } from '#template';
 
-import { ComponentStore, TagStore } from './component-store';
-import { EventBus } from './event-bus';
-import { QueryBuilder } from './query';
-import { SpatialIndex } from './spatial';
-import { asNumber, asObject } from './validation';
+import { ComponentStore, TagStore } from '#component-store';
+import { EventBus } from '#event-bus';
+import { QueryBuilder } from '#query';
+import { SpatialIndex } from '#spatial';
+import { asNumber, asObject } from '#validation';
 
 interface ComponentEntry { def: ComponentDef<unknown>; store: ComponentStore<unknown> }
 interface TagEntry { def: TagDef; store: TagStore }

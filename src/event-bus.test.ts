@@ -1,8 +1,7 @@
-import type { EventContext } from './event-bus';
+import type { EventContext } from '#event-bus';
 
+import { EventBus } from '#event-bus';
 import { describe, expect, it, vi } from 'vitest';
-
-import { EventBus } from './event-bus';
 
 interface PingEvent { type: 'Ping'; value: number }
 interface PongEvent { type: 'Pong'; value: string }

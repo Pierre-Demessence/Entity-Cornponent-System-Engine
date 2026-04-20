@@ -1,4 +1,4 @@
-import type { EntityId } from './entity-id';
+import type { EntityId } from '#entity-id';
 
 function key(x: number, y: number): string {
   return `${x},${y}`;

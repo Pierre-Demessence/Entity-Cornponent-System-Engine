@@ -1,7 +1,7 @@
-import type { ComponentDef, TagDef } from './component-store';
-import type { EntityId } from './entity-id';
+import type { ComponentDef, TagDef } from '#component-store';
+import type { EntityId } from '#entity-id';
 
-import { EcsWorld } from './world';
+import { EcsWorld } from '#world';
 
 /**
  * Convenience subclass of `EcsWorld` intended for unit tests. Provides no

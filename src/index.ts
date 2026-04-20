@@ -1,4 +1,4 @@
-export type { EntityId } from './entity-id';
+export type { EntityId } from '#entity-id';
 
 export {
   type ComponentDef,
@@ -9,18 +9,18 @@ export {
   type StoreValidateHandler,
   type TagDef,
   TagStore,
-} from './component-store';
-export { EventBus, type EventContext } from './event-bus';
-export { type LifecycleEvent } from './lifecycle';
-export { QueryBuilder } from './query';
-export { type ComponentRef, type SchedulableSystem, Scheduler } from './scheduler';
-export { SpatialIndex } from './spatial';
-export { composeTemplates, type EntityTemplate } from './template';
+} from '#component-store';
+export { EventBus, type EventContext } from '#event-bus';
+export { type LifecycleEvent } from '#lifecycle';
+export { QueryBuilder } from '#query';
+export { type ComponentRef, type SchedulableSystem, Scheduler } from '#scheduler';
+export { SpatialIndex } from '#spatial';
+export { composeTemplates, type EntityTemplate } from '#template';
 export {
   asArray,
   asBoolean,
   asNumber,
   asObject,
   asString,
-} from './validation';
-export { EcsWorld } from './world';
+} from '#validation';
+export { EcsWorld } from '#world';

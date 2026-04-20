@@ -1,8 +1,7 @@
-import type { ComponentDef } from './component-store';
+import type { ComponentDef } from '#component-store';
 
+import { ComponentStore, TagStore } from '#component-store';
 import { describe, expect, it } from 'vitest';
-
-import { ComponentStore, TagStore } from './component-store';
 
 const NumDef: ComponentDef<number> = {
   name: 'nums',

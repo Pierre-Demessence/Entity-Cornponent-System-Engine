@@ -1,7 +1,6 @@
+import { ComponentStore, TagStore } from '#component-store';
+import { QueryBuilder } from '#query';
 import { describe, expect, it } from 'vitest';
-
-import { ComponentStore, TagStore } from './component-store';
-import { QueryBuilder } from './query';
 
 function numStore(entries: Array<[number, number]>): ComponentStore<number> {
   const s = new ComponentStore<number>();

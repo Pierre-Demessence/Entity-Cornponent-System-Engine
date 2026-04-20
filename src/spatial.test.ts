@@ -1,6 +1,5 @@
+import { SpatialIndex } from '#spatial';
 import { describe, expect, it } from 'vitest';
-
-import { SpatialIndex } from './spatial';
 
 describe('spatialIndex', () => {
   it('add and getAt', () => {

@@ -1,5 +1,5 @@
-import type { ComponentStore, TagStore } from './component-store';
-import type { EntityId } from './entity-id';
+import type { ComponentStore, TagStore } from '#component-store';
+import type { EntityId } from '#entity-id';
 
 /**
  * Fluent, iterable query over component stores with tag filtering.

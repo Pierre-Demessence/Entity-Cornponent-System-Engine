@@ -1,8 +1,7 @@
-import type { EntityTemplate } from './template';
+import type { EntityTemplate } from '#template';
 
+import { composeTemplates } from '#template';
 import { describe, expect, it } from 'vitest';
-
-import { composeTemplates } from './template';
 
 describe('composeTemplates', () => {
   it('throws on zero templates', () => {

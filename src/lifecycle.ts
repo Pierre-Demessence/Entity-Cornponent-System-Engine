@@ -1,4 +1,4 @@
-import type { EntityId } from './entity-id';
+import type { EntityId } from '#entity-id';
 
 /**
  * Engine-internal lifecycle events emitted by `EcsWorld`. These are distinct
