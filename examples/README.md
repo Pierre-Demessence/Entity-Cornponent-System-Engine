@@ -49,7 +49,7 @@ non-negotiable:
 5. **Postmortem required.** After each example, write a one-page note in
    the example's own `POSTMORTEM.md` covering: what engine API was
    missing, what felt awkward, what was surprising. Findings feed back
-   into [docs/plans/ecs-engine-audit.md](../../../docs/plans/ecs-engine-audit.md).
+   into [docs/plans/done/ecs-engine-audit.md](../../../docs/plans/done/ecs-engine-audit.md).
 
 ## Layout (once examples start landing)
 
@@ -94,7 +94,7 @@ npm run dev -w @pierre/ecs-example-<name>
   order.
 - [General-Purpose ECS Roadmap](../../../docs/roadmap/general-purpose-ecs-roadmap.md)
   — the target engine layering these examples validate.
-- [ECS Engine Audit](../../../docs/plans/ecs-engine-audit.md) — the
+- [ECS Engine Audit](../../../docs/plans/done/ecs-engine-audit.md) — the
   concrete audit items postmortems feed back into.
 - [ECS Engine Public Release Strategy](../../../docs/roadmap/ecs-engine-public-release-strategy.md)
   — if the engine ever goes public, these examples ship with it.
