@@ -102,4 +102,45 @@ describe('spatialIndex', () => {
       expect(result).toContain(2);
     });
   });
+
+  describe('findAt / findFirstAt', () => {
+    it('findAt returns every entity matching the predicate', () => {
+      const s = new SpatialIndex();
+      s.add(1, 5, 5);
+      s.add(2, 5, 5);
+      s.add(3, 5, 5);
+      const result = s.findAt(5, 5, id => id % 2 === 1);
+      expect(result.sort()).toEqual([1, 3]);
+    });
+
+    it('findAt returns an empty array when the cell is empty', () => {
+      const s = new SpatialIndex();
+      expect(s.findAt(0, 0, () => true)).toEqual([]);
+    });
+
+    it('findAt returns an empty array when nothing matches', () => {
+      const s = new SpatialIndex();
+      s.add(1, 5, 5);
+      expect(s.findAt(5, 5, () => false)).toEqual([]);
+    });
+
+    it('findFirstAt returns the first matching entity', () => {
+      const s = new SpatialIndex();
+      s.add(1, 5, 5);
+      s.add(2, 5, 5);
+      const result = s.findFirstAt(5, 5, id => id === 2);
+      expect(result).toBe(2);
+    });
+
+    it('findFirstAt returns undefined when nothing matches', () => {
+      const s = new SpatialIndex();
+      s.add(1, 5, 5);
+      expect(s.findFirstAt(5, 5, () => false)).toBeUndefined();
+    });
+
+    it('findFirstAt returns undefined for an empty cell', () => {
+      const s = new SpatialIndex();
+      expect(s.findFirstAt(0, 0, () => true)).toBeUndefined();
+    });
+  });
 });

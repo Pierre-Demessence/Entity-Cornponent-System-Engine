@@ -22,6 +22,42 @@ export class SpatialIndex {
     this.cells.clear();
   }
 
+  /**
+   * Collect every entity at `(x, y)` for which `predicate(id)` returns true.
+   * Returns an empty array when the cell is empty or no entity matches. The
+   * predicate is application-defined — typical uses are "is a blocker", "is
+   * an item", "is pickable up" — and carries the game-specific semantics,
+   * keeping the spatial index itself domain-neutral.
+   */
+  findAt(x: number, y: number, predicate: (id: EntityId) => boolean): EntityId[] {
+    const cell = this.cells.get(key(x, y));
+    if (!cell)
+      return [];
+    const result: EntityId[] = [];
+    for (const id of cell) {
+      if (predicate(id))
+        result.push(id);
+    }
+    return result;
+  }
+
+  /**
+   * Return the first entity at `(x, y)` for which `predicate(id)` returns
+   * true, or `undefined` if none match. Iteration order follows the
+   * underlying `Set` insertion order; callers needing a deterministic
+   * preference should use `findAt` and sort the result.
+   */
+  findFirstAt(x: number, y: number, predicate: (id: EntityId) => boolean): EntityId | undefined {
+    const cell = this.cells.get(key(x, y));
+    if (!cell)
+      return undefined;
+    for (const id of cell) {
+      if (predicate(id))
+        return id;
+    }
+    return undefined;
+  }
+
   /** Return all entity IDs at a given cell, or `undefined` if no entities are present. */
   getAt(x: number, y: number): ReadonlySet<EntityId> | undefined {
     return this.cells.get(key(x, y));
