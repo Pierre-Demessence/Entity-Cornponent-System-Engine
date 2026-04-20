@@ -25,6 +25,15 @@ export interface TickRunnerOptions<TCtx> {
    */
   getWorld: () => EcsWorld;
   /**
+   * Optional tick-boundary hook. Fires inside the post-tick `finally`,
+   * **before** `events.flush()` / `lifecycle.flush()` / `flushDestroys()`
+   * / `clearAllDirty()`. Use this to emit tick-boundary events (e.g.
+   * `TurnCompleted`, `FrameCompleted`) so they drain in the same flush
+   * as events produced by systems during the tick, rather than sitting
+   * queued until the next tick.
+   */
+  onBeforeFlush?: (ctx: TCtx, info: TickInfo) => void;
+  /**
    * Optional post-tick hook. Fires after the full ceremony. Receives the
    * final context so the consumer can read back per-tick state mutated
    * by a system (e.g. `pendingAction` cleared by input handling).
@@ -38,11 +47,12 @@ export interface TickRunnerOptions<TCtx> {
  *
  * 1. `ctx = contextFactory(info)`
  * 2. `scheduler.run(ctx)`
- * 3. `ctx.events.flush()`
- * 4. `world.lifecycle.flush()`
- * 5. `world.flushDestroys()`
- * 6. `world.clearAllDirty()`
- * 7. `onTickComplete?.(ctx, info)`
+ * 3. `onBeforeFlush?.(ctx, info)` — emit tick-boundary events here
+ * 4. `ctx.events.flush()`
+ * 5. `world.lifecycle.flush()`
+ * 6. `world.flushDestroys()`
+ * 7. `world.clearAllDirty()`
+ * 8. `onTickComplete?.(ctx, info)`
  *
  * A tick is an atomic simulation step: one world from build-to-flush.
  * Consumers that need a world swap (level transition, scene change,
@@ -51,7 +61,8 @@ export interface TickRunnerOptions<TCtx> {
  *
  * The runner is deliberately narrow \u2014 it knows nothing about turn
  * numbers, input actions, rendering, or game state. Those are consumer
- * concerns and live in `contextFactory` and `onTickComplete`.
+ * concerns and live in `contextFactory`, `onBeforeFlush`, and
+ * `onTickComplete`.
  */
 export class TickRunner<TCtx> {
   private readonly opts: TickRunnerOptions<TCtx>;
@@ -62,12 +73,13 @@ export class TickRunner<TCtx> {
   }
 
   private handleTick(info: TickInfo): void {
-    const { contextFactory, getEvents, getWorld, onTickComplete, scheduler } = this.opts;
+    const { contextFactory, getEvents, getWorld, onBeforeFlush, onTickComplete, scheduler } = this.opts;
     const ctx = contextFactory(info);
     try {
       scheduler.run(ctx);
     }
     finally {
+      onBeforeFlush?.(ctx, info);
       getEvents(ctx).flush();
       const world = getWorld();
       world.lifecycle.flush();

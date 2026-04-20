@@ -142,6 +142,57 @@ describe('tickRunner', () => {
     expect(factory).toHaveBeenCalledTimes(1);
   });
 
+  it('fires onBeforeFlush after systems, before flush + cleanup', () => {
+    const f = makeFixture();
+    f.scheduler.add({
+      name: 'sys',
+      run: ctx => ctx.trace.push('system'),
+    });
+
+    const runner = new TickRunner<Ctx>({
+      scheduler: f.scheduler,
+      source: f.source,
+      contextFactory: () => ({ events: f.events, trace: f.trace }),
+      getEvents: ctx => ctx.events,
+      getWorld: () => f.world,
+      onBeforeFlush: ctx => ctx.trace.push('onBeforeFlush'),
+    });
+    runner.start();
+    f.source.emit();
+
+    expect(f.trace).toEqual([
+      'system',
+      'onBeforeFlush',
+      'events.flush',
+      'lifecycle.flush',
+      'flushDestroys',
+      'clearAllDirty',
+    ]);
+  });
+
+  it('fires onBeforeFlush even if the scheduler throws', () => {
+    const f = makeFixture();
+    f.scheduler.add({
+      name: 'boom',
+      run: () => {
+        throw new Error('boom');
+      },
+    });
+    const onBefore = vi.fn();
+
+    const runner = new TickRunner<Ctx>({
+      onBeforeFlush: onBefore,
+      scheduler: f.scheduler,
+      source: f.source,
+      contextFactory: () => ({ events: f.events, trace: f.trace }),
+      getEvents: ctx => ctx.events,
+      getWorld: () => f.world,
+    });
+    runner.start();
+    expect(() => f.source.emit()).toThrow('boom');
+    expect(onBefore).toHaveBeenCalledTimes(1);
+  });
+
   it('resolves the world lazily on each tick (supports between-tick world swap)', () => {
     const f = makeFixture();
     const world2 = createTestWorld();

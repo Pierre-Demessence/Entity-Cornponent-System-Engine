@@ -13,7 +13,7 @@ Project-agnostic ECS primitives in `src/ecs/`. These modules have
 - [Entity Templates](template.md) — declarative entity blueprints & `World.spawn()`
 - [EcsWorld](world.md) — generic registry tying the primitives together
 - `tick-source.ts` — `TickInfo` + `TickSource` interfaces describing the source of ticks (discrete or continuous). Concrete implementations live in `modules/tick/`.
-- `tick-runner.ts` — `TickRunner` drives the universal per-tick ceremony: build ctx → run scheduler → flush events/lifecycle/destroys/dirty → post-tick hook. A tick is atomic; consumers queue world swaps between ticks via `onTickComplete`.
+- `tick-runner.ts` — `TickRunner` drives the universal per-tick ceremony: build ctx → run scheduler → `onBeforeFlush` hook → flush events/lifecycle/destroys/dirty → `onTickComplete` hook. A tick is atomic; consumers queue world swaps between ticks via `onTickComplete`, and emit tick-boundary events (e.g. `TurnCompleted`) via `onBeforeFlush` so they drain in the same flush.
 
 ## Supporting Files
 
