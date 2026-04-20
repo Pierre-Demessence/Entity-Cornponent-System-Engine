@@ -17,3 +17,4 @@ Project-agnostic ECS primitives in `src/ecs/`. These modules have
 
 - `entity-id.ts` — `EntityId` type definition
 - `validation.ts` — pure data validation helpers (asObject, asArray, asNumber, asString, asBoolean)
+- `test-utils.ts` — `createTestWorld()`, `GenericEntityBuilder`, `entity()` — domain-neutral fluent helpers for ECS unit tests. Import via `@pierre/ecs/test-utils`.

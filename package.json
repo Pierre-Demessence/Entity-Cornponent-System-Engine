@@ -17,7 +17,8 @@
     "./lifecycle": "./src/lifecycle.ts",
     "./scheduler": "./src/scheduler.ts",
     "./entity-id": "./src/entity-id.ts",
-    "./validation": "./src/validation.ts"
+    "./validation": "./src/validation.ts",
+    "./test-utils": "./src/test-utils.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts"
