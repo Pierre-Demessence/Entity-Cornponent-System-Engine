@@ -40,6 +40,7 @@ player transfer) lives in the `World` subclass in `src/game/world.ts`.
 | `query(...defs)` | Build a typed `QueryBuilder` over the given component defs. |
 | `spawn(template, overrides?)` | Create an entity from a template, shallow-merging per-component overrides. |
 | `spawnBatch(entries)` | Spawn many entities at once. Validates all at the end instead of per call. |
+| `transferEntity(id, from, componentNames?)` | Copy an entity's components from another world, preserving its id. Tags are not transferred (application-semantic). Optionally filter to a subset of components. |
 | `clearAllDirty()` | Clear dirty flags on every component and tag store. |
 | `toJSON()` | Serialize the registry to `{ nextId, [storeName]: serialized }`. |
 | `loadJSON(data)` | In-place load — clears existing stores then repopulates. |

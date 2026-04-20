@@ -281,6 +281,93 @@ describe('ecsWorld', () => {
     });
   });
 
+  describe('transferEntity', () => {
+    it('copies present components from another world, preserving the id', () => {
+      const src = new EcsWorld();
+      const pos1 = src.registerComponent(PosDef);
+      const health1 = src.registerComponent(HealthDef);
+      src.registerTag(FlagTag);
+      const id = src.spawn({
+        name: 't',
+        components: { health: { hp: 8 }, pos: { x: 3, y: 4 } },
+      });
+
+      const dst = new EcsWorld();
+      const pos2 = dst.registerComponent(PosDef);
+      const health2 = dst.registerComponent(HealthDef);
+      dst.registerTag(FlagTag);
+
+      dst.transferEntity(id, src);
+
+      expect(pos2.get(id)).toEqual({ x: 3, y: 4 });
+      expect(health2.get(id)).toEqual({ hp: 8 });
+      // Deep copy: mutating the source must not leak into the destination.
+      pos1.get(id)!.x = 999;
+      expect(pos2.get(id)!.x).toBe(3);
+      // Tags are NOT transferred — that's a game-semantic choice.
+      void health1;
+    });
+
+    it('does not transfer tags', () => {
+      const src = new EcsWorld();
+      src.registerComponent(PosDef);
+      const srcTag = src.registerTag(FlagTag);
+      const id = src.spawn({ name: 't', components: { pos: { x: 0, y: 0 } }, tags: ['flag'] });
+      expect(srcTag.has(id)).toBe(true);
+
+      const dst = new EcsWorld();
+      dst.registerComponent(PosDef);
+      const dstTag = dst.registerTag(FlagTag);
+      dst.transferEntity(id, src);
+
+      expect(dstTag.has(id)).toBe(false);
+    });
+
+    it('filters to a subset of component names', () => {
+      const src = new EcsWorld();
+      src.registerComponent(PosDef);
+      src.registerComponent(HealthDef);
+      const id = src.spawn({
+        name: 't',
+        components: { health: { hp: 2 }, pos: { x: 1, y: 2 } },
+      });
+
+      const dst = new EcsWorld();
+      const pos = dst.registerComponent(PosDef);
+      const health = dst.registerComponent(HealthDef);
+      dst.transferEntity(id, src, ['pos']);
+
+      expect(pos.get(id)).toEqual({ x: 1, y: 2 });
+      expect(health.get(id)).toBeUndefined();
+    });
+
+    it('throws on unknown component name in the filter', () => {
+      const src = new EcsWorld();
+      src.registerComponent(PosDef);
+      const id = src.createEntity();
+
+      const dst = new EcsWorld();
+      dst.registerComponent(PosDef);
+
+      expect(() => dst.transferEntity(id, src, ['missing'])).toThrow(/not registered/);
+    });
+
+    it('bumps nextId so later createEntity() avoids collisions', () => {
+      const src = new EcsWorld();
+      src.registerComponent(PosDef);
+      // Burn ids up to 5 in the source.
+      for (let i = 0; i < 6; i++) src.createEntity();
+      const id = 3;
+
+      const dst = new EcsWorld();
+      dst.registerComponent(PosDef);
+      dst.transferEntity(id, src);
+
+      expect(dst.createEntity()).toBeGreaterThan(id);
+      expect(dst.createEntity()).toBeGreaterThan(id);
+    });
+  });
+
   describe('query', () => {
     it('iterates entities with all required components', () => {
       const w = new EcsWorld();

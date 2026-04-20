@@ -312,4 +312,46 @@ export class EcsWorld {
     }
     return result;
   }
+
+  /**
+   * Copy an entity's components from another world into this one, preserving
+   * its `EntityId`. Used during level transitions and any scenario where an
+   * entity must survive a world swap.
+   *
+   * - Components are iterated in registration order. Each value is
+   *   `structuredClone`-d on copy so the two worlds never share references.
+   * - **Tags are not transferred** — tags are application-semantic (which
+   *   tags follow the entity depends on the game). Callers own tag handling.
+   * - `nextId` is bumped to `max(this.nextId, from.nextId, id + 1)` so later
+   *   `createEntity()` calls on this world won't collide with the source.
+   * - If `componentNames` is given, only those components are transferred.
+   *   Names must be registered on this world; unknown names throw.
+   * - Values already present on this world for `id` are overwritten.
+   */
+  transferEntity(
+    id: EntityId,
+    from: EcsWorld,
+    componentNames?: readonly string[],
+  ): void {
+    this.nextId = Math.max(this.nextId, from.nextId, id + 1);
+
+    const toCopy = componentNames
+      ? componentNames.map((name) => {
+          const store = this.storeByName.get(name);
+          if (!store)
+            throw new Error(`Component "${name}" not registered on target world`);
+          return { name, store };
+        })
+      : this.componentRegistry.map(({ def, store }) => ({ name: def.name, store }));
+
+    for (const { name, store } of toCopy) {
+      const fromStore = from.storeByName.get(name);
+      if (!fromStore)
+        continue;
+      const value = fromStore.get(id);
+      if (value === undefined)
+        continue;
+      store.set(id, structuredClone(value));
+    }
+  }
 }
