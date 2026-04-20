@@ -2,6 +2,7 @@ export type { EntityId } from './entity-id';
 
 export {
   type ComponentDef,
+  type ComponentMigration,
   ComponentStore,
   type StoreDeleteHandler,
   type StoreSetHandler,

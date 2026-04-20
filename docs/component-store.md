@@ -3,7 +3,8 @@
 ## Interfaces
 
 - **`ComponentDef<T>`** — defines a component type: `name` (JSON key),
-  optional `requires` (names of prerequisite components), `serialize`, `deserialize`.
+  optional `requires` (names of prerequisite components), `serialize`,
+  `deserialize`, optional `version` + `migrations` (see below).
 - **`TagDef`** — defines a tag type: `name` (JSON key).
 
 ## Stores
@@ -12,6 +13,24 @@
   get/set/delete/has/entries/keys/iterator + serialization helpers.
 - **`TagStore`** — typed wrapper over `Set<EntityId>` with
   add/delete/has/iterator + serialization helpers.
+
+## Schema Evolution
+
+A `ComponentDef<T>` may declare a `version: number` (default `0`) and a
+`migrations: Record<fromVersion, (raw, label) => raw>` map. When a
+versioned def serializes, its payload is wrapped as
+`{ version, entries: [[id, value], ...] }`. On load, the store reads
+the saved version and applies `migrations[saved]`, `migrations[saved+1]`,
+... up to `def.version` before `def.deserialize`.
+
+Unversioned defs (no `version`, or `version === 0`) keep the legacy
+`[[id, value], ...]` array shape for backward compatibility. Legacy
+saves can be migrated by bumping the def to `version: 1` and supplying
+a `migrations[0]`.
+
+A missing migration step throws at load time with a clear error. A
+saved version newer than `def.version` also throws — downgrades are
+not supported.
 
 ## Lifecycle Events (`subscribe`)
 

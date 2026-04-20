@@ -1,12 +1,31 @@
 import type { EntityId } from './entity-id';
 
-import { asArray, asNumber } from './validation';
+import { asArray, asNumber, asObject } from './validation';
 
-/** Schema definition for a component type — handles serialization and optional dependency declarations. */
+/** Migrates a serialized value from its stored version to the next. */
+export type ComponentMigration = (raw: unknown, label: string) => unknown;
+
+/** Schema definition for a component type — handles serialization, optional dependency declarations, and optional schema evolution. */
 export interface ComponentDef<T> {
   readonly name: string;
+  /**
+   * Per-version upgrade functions. `migrations[n]` transforms a raw value
+   * serialized at version `n` into the shape expected at version `n + 1`.
+   * The chain runs from the saved version up to `def.version` before the
+   * final `deserialize`.
+   *
+   * A save written with no version info (legacy array shape) is treated as
+   * version `0`, so `migrations[0]`, `migrations[1]`, ... are applied in order.
+   */
+  readonly migrations?: Readonly<Record<number, ComponentMigration>>;
   /** Other component names that must be present on the same entity. */
   readonly requires?: readonly string[];
+  /**
+   * Current schema version of this component. Defaults to `0` (unversioned).
+   * When `> 0`, {@link ComponentStore.toSerialized} wraps the payload with
+   * `{ version, entries }` so loaders know which migrations to apply.
+   */
+  readonly version?: number;
   deserialize: (raw: unknown, label: string) => T;
   serialize: (value: T) => unknown;
 }
@@ -74,22 +93,57 @@ export class ComponentStore<T> implements Iterable<[EntityId, T]> {
 
   entries(): MapIterator<[EntityId, T]> { return this.map.entries(); }
 
-  /** Reconstruct a store from serialized `[id, value]` tuples. */
+  /**
+   * Reconstruct a store from serialized data. Accepts both the legacy
+   * tuple array and the versioned `{ version, entries }` wrapper; when
+   * the saved version is lower than `def.version`, the relevant entries
+   * in `def.migrations` are applied in order before `def.deserialize`.
+   */
   static fromSerialized<T>(
     raw: unknown,
     label: string,
     def: ComponentDef<T>,
   ): ComponentStore<T> {
     const store = new ComponentStore<T>();
-    const entries = asArray(raw, label);
+    const targetVersion = def.version ?? 0;
+
+    let savedVersion = 0;
+    let rawEntries: unknown;
+    if (Array.isArray(raw)) {
+      // Legacy / unversioned shape: treat as version 0.
+      rawEntries = raw;
+    }
+    else {
+      const wrapper = asObject(raw, label);
+      savedVersion = asNumber(wrapper.version, `${label}.version`);
+      rawEntries = wrapper.entries;
+    }
+
+    if (savedVersion > targetVersion) {
+      throw new Error(
+        `${label}: saved version ${savedVersion} is newer than current version ${targetVersion} — downgrade migrations are not supported`,
+      );
+    }
+
+    const entries = asArray(rawEntries, `${label}.entries`);
 
     entries.forEach((entry, index) => {
-      const tuple = asArray(entry, `${label}[${index}]`);
+      const tuple = asArray(entry, `${label}.entries[${index}]`);
       if (tuple.length !== 2) {
-        throw new Error(`${label}[${index}] must contain an id and value.`);
+        throw new Error(`${label}.entries[${index}] must contain an id and value.`);
       }
-      const id = asNumber(tuple[0], `${label}[${index}].id`);
-      store.set(id, def.deserialize(tuple[1], `${label}[${index}].value`));
+      const id = asNumber(tuple[0], `${label}.entries[${index}].id`);
+      let value = tuple[1];
+      for (let v = savedVersion; v < targetVersion; v++) {
+        const step = def.migrations?.[v];
+        if (!step) {
+          throw new Error(
+            `${label}: no migration from version ${v} to ${v + 1} (target ${targetVersion})`,
+          );
+        }
+        value = step(value, `${label}.entries[${index}].value@v${v}`);
+      }
+      store.set(id, def.deserialize(value, `${label}.entries[${index}].value`));
     });
 
     return store;
@@ -144,9 +198,22 @@ export class ComponentStore<T> implements Iterable<[EntityId, T]> {
 
   [Symbol.iterator](): MapIterator<[EntityId, T]> { return this.map[Symbol.iterator](); }
 
-  /** Serialize all entries as `[id, serializedValue]` tuples for persistence. */
-  toSerialized(def: ComponentDef<T>): Array<[EntityId, unknown]> {
-    return Array.from(this.map.entries(), ([id, value]) => [id, def.serialize(value)]);
+  /**
+   * Serialize all entries for persistence. Returns a plain `[id, value]`
+   * tuple array when the component is unversioned (`def.version` is
+   * unset or `0`), for backward compatibility. Versioned components
+   * emit `{ version, entries: [[id, value], ...] }` so loaders can pick
+   * the right migration chain.
+   */
+  toSerialized(def: ComponentDef<T>): unknown {
+    const entries = Array.from(
+      this.map.entries(),
+      ([id, value]): [EntityId, unknown] => [id, def.serialize(value)],
+    );
+    const v = def.version ?? 0;
+    if (v === 0)
+      return entries;
+    return { entries, version: v };
   }
 
   /** Fire all `validate` handlers for a given id. Used by World for post-spawn dependency checks. */

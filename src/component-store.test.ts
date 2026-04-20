@@ -221,12 +221,12 @@ describe('componentStore', () => {
     it('fromSerialized throws on invalid tuple length', () => {
       const raw = [[1]];
       expect(() => ComponentStore.fromSerialized(raw, 'test', NumDef))
-        .toThrow('test[0] must contain an id and value.');
+        .toThrow('test.entries[0] must contain an id and value.');
     });
 
-    it('fromSerialized throws on non-array input', () => {
+    it('fromSerialized throws on non-array, non-object input', () => {
       expect(() => ComponentStore.fromSerialized('bad', 'test', NumDef))
-        .toThrow('test must be an array.');
+        .toThrow(/test must be an object/);
     });
 
     it('round-trips through serialize/deserialize', () => {
@@ -235,6 +235,93 @@ describe('componentStore', () => {
       const serialized = s.toSerialized(NumDef);
       const restored = ComponentStore.fromSerialized(serialized, 'test', NumDef);
       expect(restored.get(5)).toBe(77);
+    });
+  });
+
+  describe('versioned migrations', () => {
+    interface Fighter { hp: number; maxHp: number }
+
+    const FighterV2Def: ComponentDef<Fighter> = {
+      name: 'FighterV2',
+      version: 2,
+      migrations: {
+        // v0 had { health }. v1 rename to hp.
+        0: (raw) => {
+          const o = raw as { health: number };
+          return { hp: o.health };
+        },
+        // v1 had { hp } only. v2 adds maxHp defaulting to hp.
+        1: (raw) => {
+          const o = raw as { hp: number };
+          return { hp: o.hp, maxHp: o.hp };
+        },
+      },
+      serialize: v => ({ hp: v.hp, maxHp: v.maxHp }),
+      deserialize: (raw) => {
+        const o = raw as { hp: number; maxHp: number };
+        return { hp: o.hp, maxHp: o.maxHp };
+      },
+    };
+
+    it('toSerialized emits { version, entries } for versioned defs', () => {
+      const s = new ComponentStore<Fighter>();
+      s.set(1, { hp: 10, maxHp: 15 });
+      const out = s.toSerialized(FighterV2Def) as { version: number; entries: unknown[] };
+      expect(out.version).toBe(2);
+      expect(out.entries).toEqual([[1, { hp: 10, maxHp: 15 }]]);
+    });
+
+    it('toSerialized keeps legacy array shape for unversioned defs', () => {
+      const s = new ComponentStore<Fighter>();
+      s.set(1, { hp: 10, maxHp: 15 });
+      const unversioned: ComponentDef<Fighter> = {
+        name: 'F',
+        deserialize: r => r as Fighter,
+        serialize: v => v,
+      };
+      expect(Array.isArray(s.toSerialized(unversioned))).toBe(true);
+    });
+
+    it('migrates from v0 (legacy array shape) to v2', () => {
+      const legacy = [[1, { health: 7 }]];
+      const store = ComponentStore.fromSerialized(legacy, 'F', FighterV2Def);
+      expect(store.get(1)).toEqual({ hp: 7, maxHp: 7 });
+    });
+
+    it('migrates from v1 wrapped shape to v2', () => {
+      const raw = { entries: [[1, { hp: 12 }]], version: 1 };
+      const store = ComponentStore.fromSerialized(raw, 'F', FighterV2Def);
+      expect(store.get(1)).toEqual({ hp: 12, maxHp: 12 });
+    });
+
+    it('passes through when saved version matches target', () => {
+      const raw = { entries: [[1, { hp: 9, maxHp: 20 }]], version: 2 };
+      const store = ComponentStore.fromSerialized(raw, 'F', FighterV2Def);
+      expect(store.get(1)).toEqual({ hp: 9, maxHp: 20 });
+    });
+
+    it('throws when a migration step is missing', () => {
+      const Partial: ComponentDef<Fighter> = {
+        ...FighterV2Def,
+        migrations: { 1: FighterV2Def.migrations![1] }, // missing 0->1
+      };
+      const legacy = [[1, { health: 7 }]];
+      expect(() => ComponentStore.fromSerialized(legacy, 'F', Partial))
+        .toThrow(/no migration from version 0 to 1/);
+    });
+
+    it('throws when saved version is newer than target', () => {
+      const raw = { entries: [], version: 5 };
+      expect(() => ComponentStore.fromSerialized(raw, 'F', FighterV2Def))
+        .toThrow(/saved version 5 is newer than current version 2/);
+    });
+
+    it('round-trips a versioned store', () => {
+      const s = new ComponentStore<Fighter>();
+      s.set(1, { hp: 10, maxHp: 15 });
+      const out = s.toSerialized(FighterV2Def);
+      const restored = ComponentStore.fromSerialized(out, 'F', FighterV2Def);
+      expect(restored.get(1)).toEqual({ hp: 10, maxHp: 15 });
     });
   });
 });
