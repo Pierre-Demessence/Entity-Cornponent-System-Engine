@@ -23,6 +23,15 @@ export class EventBus<TEvent extends { type: string }, TMap extends { [E in TEve
   private listeners = new Map<keyof TMap, HandlerEntry<TMap>[]>();
   private queue: TEvent[] = [];
 
+  /**
+   * Drop every queued event without dispatching. Useful in reset/teardown
+   * paths that want to discard stale events accumulated before a world
+   * swap or world reset. Registered handlers are **not** removed.
+   */
+  clear(): void {
+    this.queue.length = 0;
+  }
+
   /** Queue an event for dispatch on the next `flush()`. */
   emit(event: TEvent): void {
     this.queue.push(event);

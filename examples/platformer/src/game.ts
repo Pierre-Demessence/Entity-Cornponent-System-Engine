@@ -155,10 +155,8 @@ export function despawn(state: GameState, id: EntityId): void {
 }
 
 export function resetGame(state: GameState): void {
-  const posStore = state.world.getStore(PositionDef);
-  for (const id of [...posStore.keys()]) state.world.queueDestroy(id);
-  state.world.flushDestroys();
-  state.world.lifecycle.flush();
+  state.world.clearAll();
+  state.events.clear();
   state.grid.clear();
   state.score = 0;
   state.playerId = spawnPlayer(state, PLAYER_SPAWN_X, PLAYER_SPAWN_Y);

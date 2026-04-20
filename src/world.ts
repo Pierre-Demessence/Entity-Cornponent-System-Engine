@@ -86,6 +86,29 @@ export class EcsWorld {
     }
   }
 
+  /**
+   * Reset the world to an empty state — clears every registered component
+   * store, tag store, the destroy queue, and the spatial index (if enabled),
+   * then rewinds `nextId` to 0. Component and tag *registrations* are
+   * preserved; only their contents are wiped.
+   *
+   * Intended for "restart the game" / "respawn" paths in prototypes that
+   * tear down and rebuild mid-session. Silent by design — does **not**
+   * emit `EntityDestroyed` lifecycle events for the cleared entities, to
+   * avoid a reset-time event storm. Callers that need per-entity cleanup
+   * observation should destroy entities individually before calling this.
+   *
+   * Pending lifecycle events are dropped with the queue clear.
+   */
+  clearAll(): void {
+    for (const { store } of this.componentRegistry) store.clear();
+    for (const { store } of this.tagRegistry) store.clear();
+    this.destroyQueue.clear();
+    this._spatial?.clear();
+    this.lifecycle.clear();
+    this.nextId = 0;
+  }
+
   clearAllDirty(): void {
     for (const { store } of this.componentRegistry) store.clearDirty();
     for (const { store } of this.tagRegistry) store.clearDirty();

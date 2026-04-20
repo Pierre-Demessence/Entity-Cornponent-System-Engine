@@ -141,12 +141,8 @@ export function despawn(state: GameState, id: EntityId): void {
 }
 
 export function resetGame(state: GameState): void {
-  // Despawn everything
-  const posStore = state.world.getStore(PositionDef);
-  const allIds = [...posStore.keys()];
-  for (const id of allIds) state.world.queueDestroy(id);
-  state.world.flushDestroys();
-  state.world.lifecycle.flush();
+  state.world.clearAll();
+  state.events.clear();
   state.grid.clear();
 
   state.score = 0;

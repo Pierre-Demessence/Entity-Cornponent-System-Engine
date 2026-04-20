@@ -439,6 +439,81 @@ describe('ecsWorld', () => {
     });
   });
 
+  describe('clearAll', () => {
+    it('empties every component and tag store, resets nextId', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const tag = w.registerTag(FlagTag);
+
+      const a = w.createEntity();
+      const b = w.createEntity();
+      pos.set(a, { x: 1, y: 2 });
+      pos.set(b, { x: 3, y: 4 });
+      tag.add(a);
+
+      w.clearAll();
+
+      expect(pos.has(a)).toBe(false);
+      expect(pos.has(b)).toBe(false);
+      expect(tag.has(a)).toBe(false);
+      expect([...pos]).toEqual([]);
+      expect(w.createEntity()).toBe(0);
+    });
+
+    it('clears the spatial index when spatial is enabled', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      w.enableSpatial(PosDef);
+
+      const id = w.createEntity();
+      pos.set(id, { x: 5, y: 7 });
+      expect(w.spatial.getAt(5, 7)?.has(id)).toBe(true);
+
+      w.clearAll();
+
+      expect(w.spatial.getAt(5, 7)).toBeUndefined();
+    });
+
+    it('drops pending destroys and queued lifecycle events silently', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const events: string[] = [];
+      w.lifecycle.on('EntityDestroyed', () => events.push('EntityDestroyed'));
+      w.lifecycle.on('ComponentRemoved', () => events.push('ComponentRemoved'));
+
+      const id = w.createEntity();
+      pos.set(id, { x: 0, y: 0 });
+      w.queueDestroy(id);
+
+      w.clearAll();
+      w.lifecycle.flush();
+
+      expect(events).toEqual([]);
+    });
+
+    it('is idempotent on an already-empty world', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      expect(() => {
+        w.clearAll();
+        w.clearAll();
+      }).not.toThrow();
+      expect(w.createEntity()).toBe(0);
+    });
+
+    it('preserves component and tag registrations', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      w.registerTag(FlagTag);
+
+      w.clearAll();
+
+      const id = w.createEntity();
+      expect(() => w.getStore(PosDef).set(id, { x: 1, y: 1 })).not.toThrow();
+      expect(() => w.getTag(FlagTag).add(id)).not.toThrow();
+    });
+  });
+
   describe('requires validation (DEV only)', () => {
     it('warns when a required component is missing outside spawn', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

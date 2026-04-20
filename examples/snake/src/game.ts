@@ -77,12 +77,8 @@ export function spawnFood(state: GameState): void {
 
 export function resetGame(state: GameState): void {
   const { world } = state;
-  world.getStore(PositionDef).clear();
-  world.getStore(DirectionDef).clear();
-  world.getTag(SnakeHeadTag).clear();
-  world.getTag(SnakeSegmentTag).clear();
-  world.getTag(FoodTag).clear();
-  world.spatial.clear();
+  world.clearAll();
+  state.events.clear();
 
   state.segments = [];
   state.foodId = null;

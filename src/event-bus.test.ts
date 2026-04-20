@@ -275,5 +275,23 @@ describe('eventBus', () => {
       // Ping(2) still gets processed by the outer flush loop
       expect(order).toEqual([1, 2]);
     });
+
+    it('clear() drops queued events without dispatching and preserves handlers', () => {
+      const bus = createBus();
+      const received: number[] = [];
+      bus.on('Ping', e => received.push(e.value));
+
+      bus.emit({ type: 'Ping', value: 1 });
+      bus.emit({ type: 'Ping', value: 2 });
+      bus.clear();
+      bus.flush();
+
+      expect(received).toEqual([]);
+
+      // Handlers still registered: new emit + flush dispatches.
+      bus.emit({ type: 'Ping', value: 3 });
+      bus.flush();
+      expect(received).toEqual([3]);
+    });
   });
 });
