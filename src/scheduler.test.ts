@@ -273,4 +273,72 @@ describe('scheduler', () => {
       expect(s.order).toEqual(['f', 's']);
     });
   });
+
+  describe('access ordering (reads/writes)', () => {
+    const pos = { name: 'Position' };
+    const vel = { name: 'Velocity' };
+
+    it('does not warn when a reader declares runAfter the writer', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const s = new Scheduler<void>();
+      s.add({ name: 'write', writes: [pos], run: () => {} });
+      s.add({ name: 'read', reads: [pos], runAfter: ['write'], run: () => {} });
+      s.build();
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it('warns when a reader follows a writer without declaring the dependency', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const s = new Scheduler<void>();
+      s.add({ name: 'write', writes: [pos], run: () => {} });
+      s.add({ name: 'read', reads: [pos], run: () => {} });
+      s.build();
+      expect(warn).toHaveBeenCalledOnce();
+      expect(warn.mock.calls[0][0]).toContain('"read"');
+      expect(warn.mock.calls[0][0]).toContain('"Position"');
+      expect(warn.mock.calls[0][0]).toContain('"write"');
+      warn.mockRestore();
+    });
+
+    it('accepts a transitive runAfter chain', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const s = new Scheduler<void>();
+      s.add({ name: 'a', writes: [pos], run: () => {} });
+      s.add({ name: 'b', runAfter: ['a'], run: () => {} });
+      s.add({ name: 'c', reads: [pos], runAfter: ['b'], run: () => {} });
+      s.build();
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it('accepts runBefore edges from the writer side', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const s = new Scheduler<void>();
+      s.add({ name: 'write', runBefore: ['read'], writes: [pos], run: () => {} });
+      s.add({ name: 'read', reads: [pos], run: () => {} });
+      s.build();
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it('ignores unrelated components', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const s = new Scheduler<void>();
+      s.add({ name: 'write', writes: [pos], run: () => {} });
+      s.add({ name: 'read', reads: [vel], run: () => {} });
+      s.build();
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it('does not warn when the reader writes the same component itself (self is skipped)', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const s = new Scheduler<void>();
+      s.add({ name: 'rw', reads: [pos], writes: [pos], run: () => {} });
+      s.build();
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+  });
 });

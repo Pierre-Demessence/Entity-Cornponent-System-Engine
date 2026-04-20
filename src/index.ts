@@ -12,7 +12,7 @@ export {
 export { EventBus, type EventContext } from './event-bus';
 export { type LifecycleEvent } from './lifecycle';
 export { QueryBuilder } from './query';
-export { type SchedulableSystem, Scheduler } from './scheduler';
+export { type ComponentRef, type SchedulableSystem, Scheduler } from './scheduler';
 export { SpatialIndex } from './spatial';
 export { composeTemplates, type EntityTemplate } from './template';
 export {

@@ -1,3 +1,8 @@
+/** A component-like reference for declaring data access on a system. Only `name` is read. */
+export interface ComponentRef {
+  readonly name: string;
+}
+
 /** Contract for a system that can be scheduled with dependency ordering. */
 export interface SchedulableSystem<TCtx> {
   readonly name: string;
@@ -10,10 +15,19 @@ export interface SchedulableSystem<TCtx> {
    * real-time one might pick `['input','physics','post-physics','render']`.
    */
   readonly phase?: string;
+  /**
+   * Components this system reads from. Informational in DEV mode: the
+   * scheduler warns if a reader's last writer in the sorted order is not
+   * transitively reachable via `runAfter`/`runBefore`. No runtime effect
+   * in production. Foundation for future parallel execution.
+   */
+  readonly reads?: readonly ComponentRef[];
   /** Names of systems that must run before this one. */
   readonly runAfter?: readonly string[];
   /** Names of systems that must run after this one. */
   readonly runBefore?: readonly string[];
+  /** Components this system writes to. See `reads` for semantics. */
+  readonly writes?: readonly ComponentRef[];
   /** Optional teardown called by the scheduler after the system is removed. */
   dispose?: (ctx: TCtx) => void;
   /** Optional one-time setup called by the scheduler before the system's first `run`. */
@@ -100,6 +114,8 @@ export class Scheduler<TCtx> {
 
     if (this.declaredPhases.length === 0) {
       this.sorted = this.sortSubset(this.entries, byName);
+      if (import.meta.env.DEV)
+        this.checkAccessOrdering(this.sorted, byName);
       return this.sorted;
     }
 
@@ -114,7 +130,69 @@ export class Scheduler<TCtx> {
       result.push(...this.sortSubset(buckets.get(p)!, byName));
     }
     this.sorted = result;
+    if (import.meta.env.DEV)
+      this.checkAccessOrdering(result, byName);
     return result;
+  }
+
+  /**
+   * DEV-only: for each system that reads a component, verify that every prior
+   * writer of that component in the sorted order is reachable from this
+   * system through declared `runAfter`/`runBefore` edges. If not, emit a
+   * `console.warn` — the ordering happens to work today but the dependency
+   * is implicit, so any reorder could silently break it.
+   */
+  private checkAccessOrdering(
+    sorted: readonly SchedulableSystem<TCtx>[],
+    byName: ReadonlyMap<string, SchedulableSystem<TCtx>>,
+  ): void {
+    // Build reverse-reachability: for each system name, the set of system
+    // names it transitively runs after (including via runBefore from others).
+    const predecessors = new Map<string, Set<string>>();
+    for (const sys of sorted) predecessors.set(sys.name, new Set());
+    // Direct edges: A runAfter B  =>  B ∈ preds(A); C runBefore D  =>  C ∈ preds(D).
+    for (const sys of sorted) {
+      if (sys.runAfter) {
+        for (const dep of sys.runAfter) {
+          if (byName.has(dep))
+            predecessors.get(sys.name)!.add(dep);
+        }
+      }
+      if (sys.runBefore) {
+        for (const target of sys.runBefore) {
+          if (byName.has(target))
+            predecessors.get(target)?.add(sys.name);
+        }
+      }
+    }
+    // Transitive closure in sorted order: preds(X) ⊇ preds(Y) for each Y ∈ preds(X).
+    for (const sys of sorted) {
+      const preds = predecessors.get(sys.name)!;
+      for (const p of [...preds]) {
+        const ppreds = predecessors.get(p);
+        if (ppreds) {
+          for (const pp of ppreds) preds.add(pp);
+        }
+      }
+    }
+
+    // Walk sorted order, tracking the last writer per component name.
+    const lastWriter = new Map<string, string>();
+    for (const sys of sorted) {
+      if (sys.reads) {
+        for (const c of sys.reads) {
+          const writer = lastWriter.get(c.name);
+          if (writer && writer !== sys.name && !predecessors.get(sys.name)!.has(writer)) {
+            console.warn(
+              `[ecs/scheduler] System "${sys.name}" reads component "${c.name}" written by "${writer}" earlier in the sort order, but "${sys.name}" does not declare runAfter "${writer}" (directly or transitively). The ordering is implicit; declare the dependency to make it explicit.`,
+            );
+          }
+        }
+      }
+      if (sys.writes) {
+        for (const c of sys.writes) lastWriter.set(c.name, sys.name);
+      }
+    }
   }
 
   /** Immediately call `dispose(ctx)` on every registered system (and drain any pending disposes). Use at shutdown. */

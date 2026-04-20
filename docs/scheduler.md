@@ -11,11 +11,17 @@ interface SchedulableSystem<TCtx> {
   readonly phase?: string;    // required when scheduler has phases
   readonly runAfter?: readonly string[];
   readonly runBefore?: readonly string[];
+  readonly reads?: readonly ComponentRef[];  // DEV-mode ordering check
+  readonly writes?: readonly ComponentRef[]; // DEV-mode ordering check
   init?(ctx: TCtx): void;     // one-time setup before first run
   dispose?(ctx: TCtx): void;  // teardown after remove / disposeAll
   run(ctx: TCtx): void;
 }
 ```
+
+`ComponentRef` is any object with a `name: string` — a `ComponentDef<T>`
+satisfies it, so systems typically just pass the same definitions they
+register with the world.
 
 ## Constructor
 
@@ -74,3 +80,33 @@ down symmetrically.
 Systems declare dependencies via `runAfter` (run after named systems)
 and `runBefore` (run before named systems). Both reference system names.
 Unknown system names in dependencies cause build-time errors.
+
+## Declared Component Access (DEV-mode check)
+
+Systems may optionally declare the components they `reads` / `writes`.
+This is metadata only — there is no runtime access check and no
+production overhead. In DEV mode, `build()` scans the sorted order and
+emits a `console.warn` whenever a system reads a component written by
+an earlier system it does NOT declare (directly or transitively via
+`runAfter`/`runBefore`) a dependency on.
+
+The intent is to catch implicit "works by accident" ordering before it
+breaks on a future reorder. Example:
+
+```typescript
+const Position = { name: 'Position', /* ... */ };
+
+scheduler.add({ name: 'movement', writes: [Position], run: ... });
+scheduler.add({ name: 'render',   reads:  [Position], runAfter: ['movement'], run: ... });
+```
+
+Forgetting `runAfter: ['movement']` on the reader would trigger:
+
+```
+[ecs/scheduler] System "render" reads component "Position" written by
+"movement" earlier in the sort order, but "render" does not declare
+runAfter "movement" (directly or transitively).
+```
+
+This is a foundation for future parallel-execution scheduling, but it's
+useful on its own for documenting and policing data flow between systems.
