@@ -184,3 +184,34 @@ edits. The engine's "assembly kit" thesis is holding.
 Next rung (tower-defense? puzzle? stealth grid?) should test whether
 any of these promotions unlock non-obvious wins and whether a fourth
 genre surfaces a spatial gap the utilities sub-module doesn't cover.
+
+
+---
+
+## M2 promotions status (2026-10-30)
+
+The gaps flagged in this postmortem have been addressed by the engine M2
+promotions (five gaps promoted together after the platformer postmortem):
+
+- FixedIntervalTickSource — commit 139bb8c
+- EcsWorld.clearAll — commit b3c369c
+- Spatial projection utilities (cellOfPoint, cellsForAabb, cellsForCircle) — commit 93a3907
+- simpleComponent<T> helper — commit ceebeec
+- EcsWorld.endOfTick — this file's final M2 commit
+
+See `docs/plans/done/engine-m2-promotions.md` for the full plan and migration details.
+
+---
+
+## M2 promotions status (2026-10-30)
+
+The gaps flagged in this postmortem have been addressed by the engine M2
+promotions (five gaps promoted together after the platformer postmortem):
+
+- FixedIntervalTickSource — commit 139bb8c
+- EcsWorld.clearAll — commit b3c369c
+- Spatial projection utilities (cellOfPoint, cellsForAabb, cellsForCircle) — commit 93a3907
+- simpleComponent<T> helper — commit ceebeec
+- EcsWorld.endOfTick — this file's final M2 commit
+
+See `docs/plans/done/engine-m2-promotions.md` for the full plan and migration details.

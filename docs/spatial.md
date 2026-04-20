@@ -58,6 +58,22 @@ Backend-agnostic code should use `queryAt` and filter via the engine-level
 
 Import via `@pierre/ecs/modules/spatial`.
 
+### Projection helpers
+
+For games that work in continuous coordinates and index into an integer
+cell grid, `@pierre/ecs/modules/spatial` also exports three pure
+projection functions:
+
+| Function | Description |
+|----------|-------------|
+| `cellOfPoint(x, y, cellSize)` | `Math.floor` projection of a point to its cell key. Negative coordinates project to negative cells (e.g. `cellSize=10`, `x=-1` → cell `-1`). |
+| `cellsForAabb(x, y, w, h, cellSize)` | Generator yielding every cell a bounding box overlaps (inclusive of both corner cells). `w` and `h` should be non-negative. |
+| `cellsForCircle(cx, cy, r, cellSize)` | Generator yielding the cells of the circle's bounding box — a coarse over-estimate suitable for broad-phase; callers narrow-phase themselves. |
+
+These are independent of `HashGrid2D`: use them to compute cell keys for
+any grid backend, and use the returned `CellKey` `{ x, y }` as an input
+to `HashGrid2D.add` / `.remove` / `.cellFor`.
+
 ### Future implementations
 
 Per the [general-purpose-ecs-roadmap](../../../docs/roadmap/general-purpose-ecs-roadmap.md):

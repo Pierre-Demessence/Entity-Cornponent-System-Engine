@@ -514,6 +514,29 @@ describe('ecsWorld', () => {
     });
   });
 
+  describe('endOfTick', () => {
+    it('runs flushDestroys before lifecycle.flush', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      const events: string[] = [];
+      w.lifecycle.on('EntityCreated', () => events.push('Created'));
+      w.lifecycle.on('EntityDestroyed', () => events.push('Destroyed'));
+
+      const id = w.createEntity();
+      w.queueDestroy(id);
+      w.endOfTick();
+
+      // Both the queued destroy and the lifecycle events dispatch in one call,
+      // with Destroyed arriving because flushDestroys ran first.
+      expect(events).toEqual(['Created', 'Destroyed']);
+    });
+
+    it('is safe to call with no pending work', () => {
+      const w = new EcsWorld();
+      expect(() => w.endOfTick()).not.toThrow();
+    });
+  });
+
   describe('requires validation (DEV only)', () => {
     it('warns when a required component is missing outside spawn', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

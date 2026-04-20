@@ -14,6 +14,40 @@
 - **`TagStore`** — typed wrapper over `Set<EntityId>` with
   add/delete/has/iterator + serialization helpers.
 
+## `simpleComponent<T>` — declarative factory for flat primitive schemas
+
+For components whose every field is a `number`, `boolean`, or `string`,
+use `simpleComponent` instead of hand-writing `serialize` / `deserialize`:
+
+```ts
+import { simpleComponent } from '@pierre/ecs';
+
+interface Position { x: number; y: number }
+export const PositionDef = simpleComponent<Position>(
+  'position',
+  { x: 'number', y: 'number' },
+);
+```
+
+The helper auto-generates a `serialize` that shallow-copies the declared
+fields and a `deserialize` that validates each field via the matching
+`asNumber` / `asBoolean` / `asString` helper with labeled error paths.
+Extra fields are ignored on both sides (strict to the schema).
+
+`requires`, `version`, and `migrations` pass through via an optional third
+argument:
+
+```ts
+simpleComponent<Hp>('hp', { cur: 'number', max: 'number' }, {
+  requires: ['position'],
+  version: 2,
+  migrations: { 0: legacyV0toV1, 1: legacyV1toV2 },
+});
+```
+
+Components with nested objects, arrays, enum narrowing, or any custom
+validation logic continue to be written by hand.
+
 ## Schema Evolution
 
 A `ComponentDef<T>` may declare a `version: number` (default `0`) and a

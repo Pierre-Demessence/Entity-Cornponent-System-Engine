@@ -26,7 +26,7 @@ Where a piece of code lives depends on who uses it and what it assumes.
 | Layer | Path | Criteria |
 |---|---|---|
 | **Core** | `packages/ecs/src/` | Domain-neutral + ≥2 real consumers + zero game imports. `EventBus`, `Scheduler`, `ComponentStore`, `SpatialStructure` interface. |
-| **Modules** | `packages/ecs/src/modules/<domain>/` | Domain-scoped but **genre-reusable** (turn-based, spatial-2D, physics-2D, real-time tick). Opt-in import. `modules/turn-based/turn-cycler`, `modules/spatial/HashGrid2D`, `modules/tick/ManualTickSource`. |
+| **Modules** | `packages/ecs/src/modules/<domain>/` | Domain-scoped but **genre-reusable** (turn-based, spatial-2D, physics-2D, real-time tick). Opt-in import. `modules/turn-based/turn-cycler`, `modules/spatial/HashGrid2D`, `modules/spatial/projections`, `modules/tick/ManualTickSource`, `modules/tick/FixedIntervalTickSource`. |
 | **Consumer** | Game source tree (`src/…`) or prototype | One-consumer-specific, references concrete game components/tags, encodes genre rules, or not-yet-proven. Everything else. |
 
 Core = interfaces + universal machinery. Modules = concrete implementations

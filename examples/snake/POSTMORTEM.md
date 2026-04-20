@@ -149,3 +149,34 @@ stress things this one didn't:
 If Asteroids still needs zero engine edits, the engine is probably
 ready for a third consumer (maybe public). If it needs one or two small
 additions, that's where Rule of Three kicks in and we promote.
+
+
+---
+
+## M2 promotions status (2026-10-30)
+
+The gaps flagged in this postmortem have been addressed by the engine M2
+promotions (five gaps promoted together after the platformer postmortem):
+
+- FixedIntervalTickSource — commit 139bb8c
+- EcsWorld.clearAll — commit b3c369c
+- Spatial projection utilities (cellOfPoint, cellsForAabb, cellsForCircle) — commit 93a3907
+- simpleComponent<T> helper — commit ceebeec
+- EcsWorld.endOfTick — this file's final M2 commit
+
+See `docs/plans/done/engine-m2-promotions.md` for the full plan and migration details.
+
+---
+
+## M2 promotions status (2026-10-30)
+
+The gaps flagged in this postmortem have been addressed by the engine M2
+promotions (five gaps promoted together after the platformer postmortem):
+
+- FixedIntervalTickSource — commit 139bb8c
+- EcsWorld.clearAll — commit b3c369c
+- Spatial projection utilities (cellOfPoint, cellsForAabb, cellsForCircle) — commit 93a3907
+- simpleComponent<T> helper — commit ceebeec
+- EcsWorld.endOfTick — this file's final M2 commit
+
+See `docs/plans/done/engine-m2-promotions.md` for the full plan and migration details.

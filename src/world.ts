@@ -155,6 +155,21 @@ export class EcsWorld {
   }
 
   /**
+   * End-of-tick convenience: `flushDestroys()` then `lifecycle.flush()`.
+   *
+   * Ordering invariant: destroys run first so lifecycle subscribers see
+   * the final entity set — any `EntityDestroyed` / `ComponentRemoved`
+   * events emitted by destruction are dispatched in the same flush pass.
+   *
+   * Prefer this over calling both manually in game loops that do not use
+   * {@link TickRunner} (which already sequences these internally).
+   */
+  endOfTick(): void {
+    this.flushDestroys();
+    this.lifecycle.flush();
+  }
+
+  /**
    * Destroy all entities enqueued via `queueDestroy`. Safe to call after a
    * system iteration loop — removes entities in one batch without mutating
    * stores during iteration.

@@ -30,6 +30,7 @@ player transfer) lives in the `World` subclass in `src/game/world.ts`.
 | `destroyEntity(id)` | Immediately remove `id` from every registered store and tag. **Not safe** to call while iterating a store — use `queueDestroy` instead. |
 | `queueDestroy(id)` | Enqueue `id` for destruction on the next `flushDestroys()` call. Deduped; safe to call repeatedly. |
 | `flushDestroys()` | Drain the destroy queue, calling `destroyEntity` on each id. Call this once per tick, after systems finish iterating. |
+| `endOfTick()` | End-of-tick convenience: runs `flushDestroys()` then `lifecycle.flush()` so subscribers see the final entity set in one pass. Prefer over calling both manually. (`TickRunner` already does this internally.) |
 | `registerComponent(def)` | Register a `ComponentDef<T>`; returns the store. Throws on duplicate name. |
 | `registerTag(def)` | Register a `TagDef`; returns the store. Throws on duplicate name. |
 | `getStore(def)` | Typed store lookup by def (throws if unregistered). |
@@ -42,6 +43,7 @@ player transfer) lives in the `World` subclass in `src/game/world.ts`.
 | `spawnBatch(entries)` | Spawn many entities at once. Validates all at the end instead of per call. |
 | `transferEntity(id, from, componentNames?)` | Copy an entity's components from another world, preserving its id. Tags are not transferred (application-semantic). Optionally filter to a subset of components. |
 | `clearAllDirty()` | Clear dirty flags on every component and tag store. |
+| `clearAll()` | Empty every component/tag store, the destroy queue, the spatial index (if enabled), and the lifecycle event queue; reset `nextId = 0`. Registrations are preserved. Silent by design — no `EntityDestroyed` storm. Useful for full world resets (level restart, new game). |
 | `toJSON()` | Serialize the registry to `{ nextId, [storeName]: serialized }`. |
 | `loadJSON(data)` | In-place load — clears existing stores then repopulates. |
 | `lifecycle` | `EventBus<LifecycleEvent>` — emits `EntityCreated`, `EntityDestroyed`, `ComponentAdded`, `ComponentRemoved`. Queue-based; call `lifecycle.flush()` to dispatch (typically once per tick). Subscribers are **not** preserved across world swaps. |

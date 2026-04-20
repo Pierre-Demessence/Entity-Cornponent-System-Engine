@@ -60,8 +60,7 @@ export function start(container: HTMLElement): () => void {
 
   const unsubscribeTick = tickSource.subscribe(() => {
     scheduler.run(state);
-    world.flushDestroys();
-    world.lifecycle.flush();
+    world.endOfTick();
     events.flush();
   });
   tickSource.start();

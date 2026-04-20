@@ -145,3 +145,34 @@ most important candidate for M2, ahead of tick/reset/serialize helpers.
 Next rung (whatever it is — a physics sim, a tower-defense, a
 platformer) should test whether gap #5 holds under a third consumer and
 whether gap #1 or #3 finally justifies engine-side helpers.
+
+
+---
+
+## M2 promotions status (2026-10-30)
+
+The gaps flagged in this postmortem have been addressed by the engine M2
+promotions (five gaps promoted together after the platformer postmortem):
+
+- FixedIntervalTickSource — commit 139bb8c
+- EcsWorld.clearAll — commit b3c369c
+- Spatial projection utilities (cellOfPoint, cellsForAabb, cellsForCircle) — commit 93a3907
+- simpleComponent<T> helper — commit ceebeec
+- EcsWorld.endOfTick — this file's final M2 commit
+
+See `docs/plans/done/engine-m2-promotions.md` for the full plan and migration details.
+
+---
+
+## M2 promotions status (2026-10-30)
+
+The gaps flagged in this postmortem have been addressed by the engine M2
+promotions (five gaps promoted together after the platformer postmortem):
+
+- FixedIntervalTickSource — commit 139bb8c
+- EcsWorld.clearAll — commit b3c369c
+- Spatial projection utilities (cellOfPoint, cellsForAabb, cellsForCircle) — commit 93a3907
+- simpleComponent<T> helper — commit ceebeec
+- EcsWorld.endOfTick — this file's final M2 commit
+
+See `docs/plans/done/engine-m2-promotions.md` for the full plan and migration details.

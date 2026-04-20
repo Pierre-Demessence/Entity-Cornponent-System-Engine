@@ -67,8 +67,7 @@ export function start(container: HTMLElement): () => void {
         resetGame(state);
       }
     }
-    world.flushDestroys();
-    world.lifecycle.flush();
+    world.endOfTick();
     events.flush();
   });
   tickSource.start();

@@ -28,7 +28,7 @@ Genre-specific helpers that layer on top of the primitives. Each ships as a sepa
 Modules live under `src/modules/<name>/` and are exported via the wildcard `@pierre/ecs/modules/*` subpath (one folder per module, each with its own `index.ts` barrel).
 
 - `turn-based/` — `TurnCycler` for round-robin active-turn rotation across tagged entities. Import via `@pierre/ecs/modules/turn-based`. See the [general-purpose-ecs-roadmap](../../../docs/roadmap/general-purpose-ecs-roadmap.md) Module Catalog for the broader module layering plan.
-- `tick/` — concrete `TickSource` implementations (today: `ManualTickSource` for caller-driven ticks; future: fixed-step, variable-step, hybrid). Import via `@pierre/ecs/modules/tick`. The `TickSource` interface and `TickRunner` themselves live in core (see Primitives above).
+- `tick/` — concrete `TickSource` implementations: `ManualTickSource` (caller-driven ticks, useful for tests and turn-based games) and `FixedIntervalTickSource` (owns an internal `setInterval`, emits `{ kind: 'fixed', deltaMs }` ticks at a fixed cadence — the default pick for real-time action prototypes). Future: variable-step, hybrid. Import via `@pierre/ecs/modules/tick`. The `TickSource` interface and `TickRunner` themselves live in core (see Primitives above).
 - `spatial/` — concrete `SpatialStructure` implementations (today: `HashGrid2D` for integer grid lookups; future: continuous-space quadtree, octree, R-tree, BVH/sweep-and-prune). Import via `@pierre/ecs/modules/spatial`. The `SpatialStructure` interface itself lives in core (see Primitives above). `EcsWorld.enableSpatial(def, structure?)` defaults to `new HashGrid2D()`.
 
 ## Contributing
