@@ -1,7 +1,7 @@
 import type { GameState, SnakeEvent } from './game';
 
 import { EventBus, Scheduler } from '@pierre/ecs';
-import { ManualTickSource } from '@pierre/ecs/modules/tick';
+import { FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
   CANVAS_PX,
@@ -31,7 +31,7 @@ export function start(container: HTMLElement): () => void {
   const world = makeWorld();
   const events = new EventBus<SnakeEvent>();
   const scheduler = new Scheduler<GameState>().add(inputSystem).add(movementSystem);
-  const tickSource = new ManualTickSource();
+  const tickSource = new FixedIntervalTickSource(TICK_MS);
 
   const state: GameState = {
     dead: false,
@@ -61,8 +61,6 @@ export function start(container: HTMLElement): () => void {
     events.flush();
   });
   tickSource.start();
-
-  const interval = window.setInterval(() => tickSource.tick(), TICK_MS);
 
   let rafId = 0;
   const loop = (): void => {
@@ -108,7 +106,6 @@ export function start(container: HTMLElement): () => void {
 
   return (): void => {
     window.removeEventListener('keydown', onKey);
-    window.clearInterval(interval);
     window.cancelAnimationFrame(rafId);
     unsubscribeTick();
     tickSource.stop();

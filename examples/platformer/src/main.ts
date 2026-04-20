@@ -2,7 +2,7 @@ import type { GameState, PlatformerEvent } from './game';
 
 import { EventBus, Scheduler } from '@pierre/ecs';
 import { HashGrid2D } from '@pierre/ecs/modules/spatial';
-import { ManualTickSource } from '@pierre/ecs/modules/tick';
+import { FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import { PositionDef } from './components';
 import {
@@ -43,7 +43,7 @@ export function start(container: HTMLElement): () => void {
     .add(inputSystem)
     .add(physicsSystem)
     .add(pickupSystem);
-  const tickSource = new ManualTickSource();
+  const tickSource = new FixedIntervalTickSource(LOGIC_TICK_MS);
 
   const state: GameState = {
     dtMs: LOGIC_TICK_MS,
@@ -72,8 +72,6 @@ export function start(container: HTMLElement): () => void {
     events.flush();
   });
   tickSource.start();
-
-  const interval = window.setInterval(() => tickSource.tick(), LOGIC_TICK_MS);
 
   let rafId = 0;
   const loop = (): void => {
@@ -115,7 +113,6 @@ export function start(container: HTMLElement): () => void {
   return (): void => {
     window.removeEventListener('keydown', onDown);
     window.removeEventListener('keyup', onUp);
-    window.clearInterval(interval);
     window.cancelAnimationFrame(rafId);
     unsubscribeTick();
     tickSource.stop();

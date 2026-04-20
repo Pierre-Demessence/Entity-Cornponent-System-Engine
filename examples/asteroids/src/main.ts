@@ -2,7 +2,7 @@ import type { AsteroidsEvent, GameState } from './game';
 
 import { EventBus, Scheduler } from '@pierre/ecs';
 import { HashGrid2D } from '@pierre/ecs/modules/spatial';
-import { ManualTickSource } from '@pierre/ecs/modules/tick';
+import { FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
 
@@ -42,7 +42,7 @@ export function start(container: HTMLElement): () => void {
     .add(movementSystem)
     .add(lifetimeSystem)
     .add(collisionSystem);
-  const tickSource = new ManualTickSource();
+  const tickSource = new FixedIntervalTickSource(LOGIC_TICK_MS);
 
   const state: GameState = {
     dead: false,
@@ -65,8 +65,6 @@ export function start(container: HTMLElement): () => void {
     events.flush();
   });
   tickSource.start();
-
-  const interval = window.setInterval(() => tickSource.tick(), LOGIC_TICK_MS);
 
   let rafId = 0;
   const loop = (): void => {
@@ -113,7 +111,6 @@ export function start(container: HTMLElement): () => void {
   return (): void => {
     window.removeEventListener('keydown', onDown);
     window.removeEventListener('keyup', onUp);
-    window.clearInterval(interval);
     window.cancelAnimationFrame(rafId);
     unsubscribeTick();
     tickSource.stop();
