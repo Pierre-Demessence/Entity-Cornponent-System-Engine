@@ -2,6 +2,7 @@ import type { EntityId, EventBus } from '@pierre/ecs';
 import type { HashGrid2D } from '@pierre/ecs/modules/spatial';
 
 import { EcsWorld } from '@pierre/ecs';
+import { cellOfPoint } from '@pierre/ecs/modules/spatial';
 
 import {
   BulletTag,
@@ -62,7 +63,7 @@ export interface GameState {
 }
 
 export function cellOf(x: number, y: number): { x: number; y: number } {
-  return { x: Math.floor(x / CELL_SIZE), y: Math.floor(y / CELL_SIZE) };
+  return cellOfPoint(x, y, CELL_SIZE);
 }
 
 export function wrap(x: number, max: number): number {

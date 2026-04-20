@@ -8,6 +8,7 @@ import {
   EcsWorld,
 
 } from '@pierre/ecs';
+import { cellOfPoint, cellsForAabb as cellsForAabbEngine } from '@pierre/ecs/modules/spatial';
 
 import {
   AabbDef,
@@ -69,23 +70,17 @@ export interface GameState {
 
 /** Integer cell key for a world-space coordinate. */
 export function cellOf(x: number, y: number): { x: number; y: number } {
-  return { x: Math.floor(x / CELL_SIZE), y: Math.floor(y / CELL_SIZE) };
+  return cellOfPoint(x, y, CELL_SIZE);
 }
 
 /** Iterate every cell key an AABB overlaps. */
-export function* cellsForAabb(
+export function cellsForAabb(
   x: number,
   y: number,
   w: number,
   h: number,
 ): Generator<{ x: number; y: number }> {
-  const c0 = cellOf(x, y);
-  const c1 = cellOf(x + w, y + h);
-  for (let cy = c0.y; cy <= c1.y; cy++) {
-    for (let cx = c0.x; cx <= c1.x; cx++) {
-      yield { x: cx, y: cy };
-    }
-  }
+  return cellsForAabbEngine(x, y, w, h, CELL_SIZE);
 }
 
 export function makeWorld(): EcsWorld {
