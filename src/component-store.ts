@@ -1,6 +1,6 @@
 import type { EntityId } from '#entity-id';
 
-import { asArray, asNumber, asObject } from '#validation';
+import { asArray, asBoolean, asNumber, asObject, asString } from '#validation';
 
 /** Migrates a serialized value from its stored version to the next. */
 export type ComponentMigration = (raw: unknown, label: string) => unknown;
@@ -270,4 +270,70 @@ export class TagStore implements Iterable<EntityId> {
   toSerialized(): EntityId[] {
     return [...this.set];
   }
+}
+
+/**
+ * Schema token for {@link simpleComponent}. Maps each field of a component
+ * type to one of the three primitive validators this helper understands.
+ */
+export type SimpleFieldKind = 'boolean' | 'number' | 'string';
+
+/**
+ * Schema map: for every field `K` of `T`, specify its primitive kind.
+ * The helper uses this to auto-generate `serialize` and `deserialize`.
+ */
+export type SimpleSchema<T> = { readonly [K in keyof T]: SimpleFieldKind };
+
+/** Optional extras carried onto the generated {@link ComponentDef}. */
+export interface SimpleComponentOptions {
+  readonly migrations?: ComponentDef<unknown>['migrations'];
+  readonly requires?: readonly string[];
+  readonly version?: number;
+}
+
+/**
+ * Build a {@link ComponentDef} from a flat schema of primitives.
+ *
+ * For a component type `T` whose every field is a `number`, `boolean`, or
+ * `string`, this helper generates `serialize` (shallow copy of the declared
+ * fields) and `deserialize` (per-field `as*` validation). Extra fields
+ * present on runtime values are ignored by the generated `serialize`;
+ * extra fields present on raw saves are ignored by `deserialize`.
+ *
+ * For components with nested objects, arrays, enum narrowing, or other
+ * shaped data, write the {@link ComponentDef} by hand instead.
+ *
+ * @example
+ * interface Position { x: number; y: number }
+ * const PositionDef = simpleComponent<Position>('position', { x: 'number', y: 'number' });
+ */
+export function simpleComponent<T extends { [K in keyof T]: boolean | number | string }>(
+  name: string,
+  schema: SimpleSchema<T>,
+  options: SimpleComponentOptions = {},
+): ComponentDef<T> {
+  const keys = Object.keys(schema) as (keyof T & string)[];
+  return {
+    name,
+    ...options,
+    deserialize: (raw, label) => {
+      const obj = asObject(raw, label);
+      const out: Record<string, unknown> = {};
+      for (const k of keys) {
+        const kind = schema[k];
+        const fieldLabel = `${label}.${k}`;
+        if (kind === 'number')
+          out[k] = asNumber(obj[k], fieldLabel);
+        else if (kind === 'boolean')
+          out[k] = asBoolean(obj[k], fieldLabel);
+        else out[k] = asString(obj[k], fieldLabel);
+      }
+      return out as T;
+    },
+    serialize: (value) => {
+      const out: Record<string, unknown> = {};
+      for (const k of keys) out[k] = value[k];
+      return out;
+    },
+  };
 }
