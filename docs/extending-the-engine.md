@@ -11,13 +11,62 @@ it back.
 always over-fits the shape. The second consumer is what reveals which
 parameters are real.
 
-Practical form (Rule of Three, Fowler variant):
+There are **two promotion paths**, and it matters which one you're on:
+
+### Path A — Shape-validated promotion (Rule of Three, Fowler variant)
+
+Use when the abstraction is **opinionated or non-obvious** — where the
+*right shape* of the API is what you're trying to discover.
 
 > Implement in the consumer. When duplication appears between two real
 > consumers — or a second consumer would genuinely use the identical
 > primitive if it existed — *then* lift.
 
-Default for uncertainty: **stays in the consumer**.
+Default for uncertainty: **stays in the consumer**. Most engine
+additions land on this path.
+
+### Path B — Canon promotion
+
+Use when the primitive is **well-established in game-engine literature**
+with a stable, obvious API: spatial hash, quad-tree / BVH, fixed-step
+tick source, AABB sweep, ring buffer, dirty-flag change detection,
+event bus, command buffer. These are domain-standard; their shape is
+not what you're discovering.
+
+> Ship it when **one** real consumer can exercise it. You still need
+> proof the code works, but you do **not** need three internal
+> prototypes to justify its existence — the external literature
+> already does.
+
+Guardrails for Path B — bias against over-building:
+
+- **Minimal surface.** Start with the 2–3 operations the consumer
+  actually calls. Resist optional parameters and configuration knobs
+  until a second consumer asks.
+- **One real user before you ship.** Canon ≠ theoretical. A primitive
+  that has never touched a running game belongs in a spike branch, not
+  the engine.
+- **Document the canon reference.** Promotion rationale should name the
+  literature / engines the shape comes from (Box2D, Rapier, Bevy,
+  Flecs, etc.). If you can't, it's actually Path A and you need more
+  consumers.
+- **Demotable by default.** Write Path-B primitives so they can be
+  removed if they turn out to be the wrong fit for downstream consumers.
+  No deep coupling to core internals.
+
+### Choosing the path
+
+| Situation | Path |
+|---|---|
+| Two internal consumers independently grew the same helper | A |
+| Turn cycler, combat log bridge, class/race registry, save-slot manager | A (opinionated game-shape) |
+| Spatial hash, quad-tree, fixed tick source, ring buffer, event bus | B (canon) |
+| "We might want this someday" — no consumer and no canon pedigree | Neither. Keep it out. |
+| One consumer, novel API shape, uncertain design | Neither yet — keep in the consumer. |
+
+When in doubt: **A**. Under-promotion costs a bit of duplication;
+over-promotion via mislabeled Path B costs an engine surface you
+regret.
 
 ## Three-Layer Triage
 
@@ -81,9 +130,14 @@ but one consumer uses."
 
 When you identify a primitive worth promoting:
 
-1. **Confirm ≥2 real consumers.** A hypothetical future consumer doesn't
-   count. The second consumer can be a planned, scoped prototype — but
-   not a vague "someone might want this someday".
+1. **Confirm the promotion path:**
+   - **Path A:** ≥2 real consumers. A hypothetical future consumer
+     doesn't count. The second consumer can be a planned, scoped
+     prototype — but not a vague "someone might want this someday".
+   - **Path B:** 1 real consumer exercising the primitive + a citable
+     canon reference (named engine, library, or standard textbook
+     treatment with a stable API shape). Paste the reference into the
+     plan file and the commit body.
 2. **Identify what parameterizes the difference.** Component defs? Tag
    names? A strategy interface? If you can't name the parameter, you
    don't yet have the abstraction.
