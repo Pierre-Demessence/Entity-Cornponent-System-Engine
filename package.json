@@ -13,7 +13,7 @@
     ".": "./src/index.ts",
     "./world": "./src/world.ts",
     "./component-store": "./src/component-store.ts",
-    "./spatial": "./src/spatial.ts",
+    "./spatial-structure": "./src/spatial-structure.ts",
     "./query": "./src/query.ts",
     "./template": "./src/template.ts",
     "./event-bus": "./src/event-bus.ts",

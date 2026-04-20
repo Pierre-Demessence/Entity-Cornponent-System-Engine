@@ -51,7 +51,7 @@ See [`docs/`](./docs/) for per-primitive deep dives:
 
 - [World](./docs/world.md)
 - [ComponentStore](./docs/component-store.md)
-- [SpatialIndex](./docs/spatial-index.md)
+- [SpatialIndex](./docs/spatial.md)
 - [QueryBuilder](./docs/query.md)
 - [EntityTemplate](./docs/template.md)
 - [EventBus](./docs/event-bus.md)

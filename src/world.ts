@@ -1,12 +1,13 @@
 import type { ComponentDef, TagDef } from '#component-store';
 import type { EntityId } from '#entity-id';
 import type { LifecycleEvent } from '#lifecycle';
+import type { SpatialStructure } from '#spatial-structure';
 import type { EntityTemplate } from '#template';
 
 import { ComponentStore, TagStore } from '#component-store';
 import { EventBus } from '#event-bus';
+import { HashGrid2D } from '#modules/spatial/hash-grid-2d';
 import { QueryBuilder } from '#query';
-import { SpatialIndex } from '#spatial';
 import { asNumber, asObject } from '#validation';
 
 interface ComponentEntry { def: ComponentDef<unknown>; store: ComponentStore<unknown> }
@@ -18,7 +19,7 @@ interface TagEntry { def: TagDef; store: TagStore }
  * No imports from game-specific code.
  */
 export class EcsWorld {
-  private _spatial = new SpatialIndex();
+  private _spatial: SpatialStructure<{ x: number; y: number }> | undefined;
 
   private componentRegistry: ComponentEntry[] = [];
   private destroyQueue = new Set<EntityId>();
@@ -105,8 +106,14 @@ export class EcsWorld {
   /**
    * Opt in to spatial indexing for a component that carries `{x, y}`. May only
    * be called once per world — installs `set`/`delete` subscribers on the store.
+   *
+   * `structure` defaults to a fresh {@link HashGrid2D}. Pass any other
+   * {@link SpatialStructure} to swap in a different backend (QuadTree, etc.).
    */
-  enableSpatial<T extends { x: number; y: number }>(def: ComponentDef<T>): void {
+  enableSpatial<T extends { x: number; y: number }>(
+    def: ComponentDef<T>,
+    structure: SpatialStructure<{ x: number; y: number }> = new HashGrid2D(),
+  ): void {
     if (this.spatialDef) {
       throw new Error(`Spatial already enabled for "${this.spatialDef.name}"; cannot re-enable for "${def.name}".`);
     }
@@ -114,12 +121,13 @@ export class EcsWorld {
     if (!store)
       throw new Error(`Component "${def.name}" must be registered before enabling spatial.`);
     this.spatialDef = def as ComponentDef<unknown>;
+    this._spatial = structure;
     const typedStore = store as ComponentStore<T>;
     typedStore.subscribe('set', (id, pos) => {
-      this._spatial.add(id, pos.x, pos.y);
+      this._spatial!.add(id, pos);
     });
     typedStore.subscribe('delete', (id, pos) => {
-      this._spatial.remove(id, pos.x, pos.y);
+      this._spatial!.remove(id, pos);
     });
   }
 
@@ -187,13 +195,13 @@ export class EcsWorld {
 
   /** Move an entity — updates the spatial index. Requires `enableSpatial` to have been called. */
   move(id: EntityId, x: number, y: number): void {
-    if (!this.spatialDef)
+    if (!this.spatialDef || !this._spatial)
       throw new Error('move() requires enableSpatial() to have been called.');
     const store = this.storeByName.get(this.spatialDef.name) as ComponentStore<{ x: number; y: number }>;
     const pos = store.get(id);
     if (!pos)
       return;
-    this._spatial.move(id, pos.x, pos.y, x, y);
+    this._spatial.move(id, pos, { x, y });
     pos.x = x;
     pos.y = y;
     store.markDirty(id);
@@ -261,7 +269,17 @@ export class EcsWorld {
     return store;
   }
 
-  get spatial(): SpatialIndex { return this._spatial; }
+  /**
+   * The spatial index. Typed as {@link HashGrid2D} (the default backend) so
+   * game callers can use grid-specific extras (`getAt`, `findAt`, `getInRect`).
+   * If you've passed a non-grid structure to `enableSpatial`, cast or expose
+   * it via a subclass getter.
+   */
+  get spatial(): HashGrid2D {
+    if (!this._spatial)
+      throw new Error('spatial requires enableSpatial() to have been called.');
+    return this._spatial as HashGrid2D;
+  }
 
   /** Create an entity from a template, merging per-component overrides (shallow merge per component). */
   spawn(template: EntityTemplate, overrides?: Record<string, unknown>): EntityId {

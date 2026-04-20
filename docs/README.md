@@ -8,7 +8,7 @@ Project-agnostic ECS primitives in `src/ecs/`. These modules have
 - [Component Store](component-store.md) — `ComponentDef<T>`, `TagDef`, `ComponentStore<T>`, `TagStore`, dev-mode validation
 - [Query Builder](query.md) — fluent typed entity queries with tag filters
 - [Scheduler](scheduler.md) — DAG-based system ordering with topological sort
-- [Spatial Index](spatial-index.md) — hash grid for O(1) position lookups
+- `spatial-structure.ts` — `SpatialStructure<TPos>` interface describing the minimum spatial-backend contract (`add`/`remove`/`move`/`queryAt`/`queryRect`/`queryNear`/`clear`). Query methods return `Iterable<EntityId>` so lazy backends can yield without materializing. Concrete implementations live in `modules/spatial/`.
 - [Event Bus](event-bus.md) — generic queue-and-flush pub/sub system
 - [Entity Templates](template.md) — declarative entity blueprints & `World.spawn()`
 - [EcsWorld](world.md) — generic registry tying the primitives together
@@ -29,3 +29,4 @@ Modules live under `src/modules/<name>/` and are exported via the wildcard `@pie
 
 - `turn-based/` — `TurnCycler` for round-robin active-turn rotation across tagged entities. Import via `@pierre/ecs/modules/turn-based`. See the [general-purpose-ecs-roadmap](../../../docs/roadmap/general-purpose-ecs-roadmap.md) Module Catalog for the broader module layering plan.
 - `tick/` — concrete `TickSource` implementations (today: `ManualTickSource` for caller-driven ticks; future: fixed-step, variable-step, hybrid). Import via `@pierre/ecs/modules/tick`. The `TickSource` interface and `TickRunner` themselves live in core (see Primitives above).
+- `spatial/` — concrete `SpatialStructure` implementations (today: `HashGrid2D` for integer grid lookups; future: continuous-space quadtree, octree, R-tree, BVH/sweep-and-prune). Import via `@pierre/ecs/modules/spatial`. The `SpatialStructure` interface itself lives in core (see Primitives above). `EcsWorld.enableSpatial(def, structure?)` defaults to `new HashGrid2D()`.

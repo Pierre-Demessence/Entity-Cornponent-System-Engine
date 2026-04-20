@@ -14,7 +14,7 @@ export { EventBus, type EventContext } from '#event-bus';
 export { type LifecycleEvent } from '#lifecycle';
 export { QueryBuilder } from '#query';
 export { type ComponentRef, type SchedulableSystem, Scheduler } from '#scheduler';
-export { SpatialIndex } from '#spatial';
+export { type SpatialStructure } from '#spatial-structure';
 export { composeTemplates, type EntityTemplate } from '#template';
 export { type TickFlushableEvents, TickRunner, type TickRunnerOptions } from '#tick-runner';
 export { type TickInfo, type TickSource } from '#tick-source';
