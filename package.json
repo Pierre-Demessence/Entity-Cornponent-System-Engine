@@ -6,6 +6,9 @@
   "description": "Project-agnostic Entity-Component-System primitives (stores, queries, spatial index, templates, scheduler, event bus).",
   "license": "MIT",
   "sideEffects": false,
+  "imports": {
+    "#*": "./src/*.ts"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./world": "./src/world.ts",
@@ -18,7 +21,8 @@
     "./scheduler": "./src/scheduler.ts",
     "./entity-id": "./src/entity-id.ts",
     "./validation": "./src/validation.ts",
-    "./test-utils": "./src/test-utils.ts"
+    "./test-utils": "./src/test-utils.ts",
+    "./modules/*": "./src/modules/*/index.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts"

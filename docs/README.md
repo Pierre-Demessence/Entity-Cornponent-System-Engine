@@ -18,3 +18,11 @@ Project-agnostic ECS primitives in `src/ecs/`. These modules have
 - `entity-id.ts` — `EntityId` type definition
 - `validation.ts` — pure data validation helpers (asObject, asArray, asNumber, asString, asBoolean)
 - `test-utils.ts` — `createTestWorld()`, `GenericEntityBuilder`, `entity()` — domain-neutral fluent helpers for ECS unit tests. Import via `@pierre/ecs/test-utils`.
+
+## Opt-in Modules
+
+Genre-specific helpers that layer on top of the primitives. Each ships as a separate subpath export so consumers only pay for what they import.
+
+Modules live under `src/modules/<name>/` and are exported via the wildcard `@pierre/ecs/modules/*` subpath (one folder per module, each with its own `index.ts` barrel).
+
+- `turn-based/` — `TurnCycler` for round-robin active-turn rotation across tagged entities. Import via `@pierre/ecs/modules/turn-based`. See the [general-purpose-ecs-roadmap](../../../docs/roadmap/general-purpose-ecs-roadmap.md) Module Catalog for the broader module layering plan.
