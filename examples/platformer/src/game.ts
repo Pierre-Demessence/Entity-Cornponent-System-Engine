@@ -1,0 +1,186 @@
+import type {
+  EntityId,
+  EventBus,
+} from '@pierre/ecs';
+import type { HashGrid2D } from '@pierre/ecs/modules/spatial';
+
+import {
+  EcsWorld,
+
+} from '@pierre/ecs';
+
+import {
+  AabbDef,
+  CoinTag,
+  CoinValueDef,
+  DynamicBodyTag,
+  GroundedDef,
+  PlayerTag,
+  PositionDef,
+  StaticBodyTag,
+  VelocityDef,
+} from './components';
+
+// Screen and world
+export const SCREEN_W = 800;
+export const SCREEN_H = 600;
+export const CELL_SIZE = 64;
+
+// Physics
+export const GRAVITY = 1200;
+export const MOVE_SPEED = 240;
+export const JUMP_IMPULSE = 520;
+export const MAX_FALL_SPEED = 900;
+
+// Player
+export const PLAYER_W = 24;
+export const PLAYER_H = 32;
+export const PLAYER_SPAWN_X = 80;
+export const PLAYER_SPAWN_Y = 100;
+
+// Coin
+export const COIN_W = 14;
+export const COIN_H = 14;
+export const COIN_SCORE = 10;
+
+// World out-of-bounds
+export const RESPAWN_Y = 700;
+
+export type PlatformerEvent
+  = | { type: 'CoinCollected'; coinId: EntityId; score: number }
+    | { type: 'PlayerFell' };
+
+export interface InputState {
+  jump: boolean;
+  jumpPressed: boolean; // edge-triggered for one-shot jump
+  left: boolean;
+  right: boolean;
+}
+
+export interface GameState {
+  dtMs: number;
+  events: EventBus<PlatformerEvent>;
+  grid: HashGrid2D;
+  input: InputState;
+  playerId: EntityId | null;
+  score: number;
+  world: EcsWorld;
+}
+
+/** Integer cell key for a world-space coordinate. */
+export function cellOf(x: number, y: number): { x: number; y: number } {
+  return { x: Math.floor(x / CELL_SIZE), y: Math.floor(y / CELL_SIZE) };
+}
+
+/** Iterate every cell key an AABB overlaps. */
+export function* cellsForAabb(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): Generator<{ x: number; y: number }> {
+  const c0 = cellOf(x, y);
+  const c1 = cellOf(x + w, y + h);
+  for (let cy = c0.y; cy <= c1.y; cy++) {
+    for (let cx = c0.x; cx <= c1.x; cx++) {
+      yield { x: cx, y: cy };
+    }
+  }
+}
+
+export function makeWorld(): EcsWorld {
+  const world = new EcsWorld();
+  world.registerComponent(PositionDef);
+  world.registerComponent(VelocityDef);
+  world.registerComponent(AabbDef);
+  world.registerComponent(GroundedDef);
+  world.registerComponent(CoinValueDef);
+  world.registerTag(PlayerTag);
+  world.registerTag(StaticBodyTag);
+  world.registerTag(DynamicBodyTag);
+  world.registerTag(CoinTag);
+  return world;
+}
+
+/** Index a static body into every cell its AABB overlaps. */
+export function indexStatic(state: GameState, id: EntityId, x: number, y: number, w: number, h: number): void {
+  for (const c of cellsForAabb(x, y, w, h)) state.grid.add(id, c.x, c.y);
+}
+
+/** Reverse of indexStatic. Must be called BEFORE the aabb/position is lost. */
+export function unindexStatic(state: GameState, id: EntityId, x: number, y: number, w: number, h: number): void {
+  for (const c of cellsForAabb(x, y, w, h)) state.grid.remove(id, c.x, c.y);
+}
+
+export function spawnPlayer(state: GameState, x: number, y: number): EntityId {
+  const id = state.world.createEntity();
+  state.world.getStore(PositionDef).set(id, { x, y });
+  state.world.getStore(VelocityDef).set(id, { vx: 0, vy: 0 });
+  state.world.getStore(AabbDef).set(id, { h: PLAYER_H, w: PLAYER_W });
+  state.world.getStore(GroundedDef).set(id, { onGround: false });
+  state.world.getTag(PlayerTag).add(id);
+  state.world.getTag(DynamicBodyTag).add(id);
+  // Dynamic bodies are NOT indexed into the grid; they query against statics.
+  return id;
+}
+
+export function spawnPlatform(state: GameState, x: number, y: number, w: number, h: number): EntityId {
+  const id = state.world.createEntity();
+  state.world.getStore(PositionDef).set(id, { x, y });
+  state.world.getStore(AabbDef).set(id, { h, w });
+  state.world.getTag(StaticBodyTag).add(id);
+  indexStatic(state, id, x, y, w, h);
+  return id;
+}
+
+export function spawnCoin(state: GameState, x: number, y: number): EntityId {
+  const id = state.world.createEntity();
+  state.world.getStore(PositionDef).set(id, { x, y });
+  state.world.getStore(AabbDef).set(id, { h: COIN_H, w: COIN_W });
+  state.world.getStore(CoinValueDef).set(id, { score: COIN_SCORE });
+  state.world.getTag(CoinTag).add(id);
+  // Coins are not solid bodies and not indexed: pickup iterates CoinTag directly.
+  return id;
+}
+
+export function despawn(state: GameState, id: EntityId): void {
+  // Only StaticBodyTag entities are indexed in the grid; dynamics and coins are not.
+  if (state.world.getTag(StaticBodyTag).has(id)) {
+    const pos = state.world.getStore(PositionDef).get(id);
+    const aabb = state.world.getStore(AabbDef).get(id);
+    if (pos && aabb)
+      unindexStatic(state, id, pos.x, pos.y, aabb.w, aabb.h);
+  }
+  state.world.queueDestroy(id);
+}
+
+export function resetGame(state: GameState): void {
+  const posStore = state.world.getStore(PositionDef);
+  for (const id of [...posStore.keys()]) state.world.queueDestroy(id);
+  state.world.flushDestroys();
+  state.world.lifecycle.flush();
+  state.grid.clear();
+  state.score = 0;
+  state.playerId = spawnPlayer(state, PLAYER_SPAWN_X, PLAYER_SPAWN_Y);
+  buildLevel(state);
+}
+
+/** Build a single hand-crafted level: ground + 4 floating platforms + 5 coins. */
+function buildLevel(state: GameState): void {
+  // Ground with a pit in the middle so the player can fall off.
+  spawnPlatform(state, 0, 560, 500, 40);
+  spawnPlatform(state, 620, 560, 180, 40);
+
+  // Floating platforms
+  spawnPlatform(state, 160, 460, 120, 16);
+  spawnPlatform(state, 360, 380, 120, 16);
+  spawnPlatform(state, 560, 300, 120, 16);
+  spawnPlatform(state, 300, 200, 120, 16);
+
+  // Coins (positioned above platforms / at jumps)
+  spawnCoin(state, 210, 430);
+  spawnCoin(state, 410, 350);
+  spawnCoin(state, 610, 270);
+  spawnCoin(state, 350, 170);
+  spawnCoin(state, 680, 520);
+}

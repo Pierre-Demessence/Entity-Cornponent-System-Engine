@@ -20,13 +20,17 @@ bug and the example is on hold until the bug is fixed.
 
 ## Status
 
-**Rungs 1 and 2 landed.** Two examples exist:
+**Rungs 1, 2, and 3 landed.** Three examples exist:
 
 - [`snake/`](snake/) — Rung 1 (arcade grid, 4-way keyboard, real-time
   tick). See [snake/POSTMORTEM.md](snake/POSTMORTEM.md).
 - [`asteroids/`](asteroids/) — Rung 2 (continuous 2D, momentum physics,
   rotating ship, bullet lifetimes, 3-tier rock splitting, BYO spatial
   via `HashGrid2D`). See [asteroids/POSTMORTEM.md](asteroids/POSTMORTEM.md).
+- [`platformer/`](platformer/) — Rung 3 (side-scrolling sandbox,
+  gravity + AABB collision resolution, static vs dynamic bodies via
+  tags, edge-triggered jump, coin pickup, fall-out respawn). See
+  [platformer/POSTMORTEM.md](platformer/POSTMORTEM.md).
 
 The rest of the plan — which examples to build next, in what order, and
 what each one proves — lives in
