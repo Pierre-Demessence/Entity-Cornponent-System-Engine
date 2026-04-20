@@ -12,6 +12,8 @@ Project-agnostic ECS primitives in `src/ecs/`. These modules have
 - [Event Bus](event-bus.md) — generic queue-and-flush pub/sub system
 - [Entity Templates](template.md) — declarative entity blueprints & `World.spawn()`
 - [EcsWorld](world.md) — generic registry tying the primitives together
+- `tick-source.ts` — `TickInfo` + `TickSource` interfaces describing the source of ticks (discrete or continuous). Concrete implementations live in `modules/tick/`.
+- `tick-runner.ts` — `TickRunner` drives the universal per-tick ceremony: build ctx → run scheduler → flush events/lifecycle/destroys/dirty → post-tick hook. A tick is atomic; consumers queue world swaps between ticks via `onTickComplete`.
 
 ## Supporting Files
 
@@ -26,3 +28,4 @@ Genre-specific helpers that layer on top of the primitives. Each ships as a sepa
 Modules live under `src/modules/<name>/` and are exported via the wildcard `@pierre/ecs/modules/*` subpath (one folder per module, each with its own `index.ts` barrel).
 
 - `turn-based/` — `TurnCycler` for round-robin active-turn rotation across tagged entities. Import via `@pierre/ecs/modules/turn-based`. See the [general-purpose-ecs-roadmap](../../../docs/roadmap/general-purpose-ecs-roadmap.md) Module Catalog for the broader module layering plan.
+- `tick/` — concrete `TickSource` implementations (today: `ManualTickSource` for caller-driven ticks; future: fixed-step, variable-step, hybrid). Import via `@pierre/ecs/modules/tick`. The `TickSource` interface and `TickRunner` themselves live in core (see Primitives above).

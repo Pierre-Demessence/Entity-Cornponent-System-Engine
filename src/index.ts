@@ -16,6 +16,8 @@ export { QueryBuilder } from '#query';
 export { type ComponentRef, type SchedulableSystem, Scheduler } from '#scheduler';
 export { SpatialIndex } from '#spatial';
 export { composeTemplates, type EntityTemplate } from '#template';
+export { type TickFlushableEvents, TickRunner, type TickRunnerOptions } from '#tick-runner';
+export { type TickInfo, type TickSource } from '#tick-source';
 export {
   asArray,
   asBoolean,

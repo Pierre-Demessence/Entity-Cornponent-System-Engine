@@ -19,6 +19,8 @@
     "./event-bus": "./src/event-bus.ts",
     "./lifecycle": "./src/lifecycle.ts",
     "./scheduler": "./src/scheduler.ts",
+    "./tick-source": "./src/tick-source.ts",
+    "./tick-runner": "./src/tick-runner.ts",
     "./entity-id": "./src/entity-id.ts",
     "./validation": "./src/validation.ts",
     "./test-utils": "./src/test-utils.ts",
