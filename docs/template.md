@@ -1,19 +1,8 @@
----
-post_title: "EntityTemplate & World.spawn()"
-author1: pierre
-post_slug: ecs-template
-microsoft_alias: n/a
-featured_image: n/a
-categories: []
-tags: [ecs, architecture]
-ai_note: AI-assisted
-summary: Declarative entity templates and the spawn() method for data-driven entity creation.
-post_date: 2025-07-14
----
+# Entity Templates
 
 ## EntityTemplate
 
-Defined in `src/ecs/template.ts`. Engine-agnostic — no knowledge of
+Defined in `packages/ecs/src/template.ts`. Engine-agnostic — no knowledge of
 specific component types.
 
 ```ts

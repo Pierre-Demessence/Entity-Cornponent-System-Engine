@@ -1,4 +1,4 @@
-# Event Bus (`src/ecs/event-bus.ts`)
+# Event Bus
 
 A generic queue-and-flush pub/sub system that decouples event producers
 from consumers. Supports handler priorities, event consumption, and

@@ -1,4 +1,4 @@
-# Query Builder (`src/ecs/query.ts`)
+# Query Builder
 
 A fluent query builder for typed component iteration with tag filters.
 

@@ -1,4 +1,4 @@
-# Component Store (`packages/ecs/src/component-store.ts`)
+# Component Store
 
 ## Interfaces
 

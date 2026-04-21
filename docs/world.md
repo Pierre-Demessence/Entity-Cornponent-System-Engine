@@ -1,4 +1,4 @@
-# EcsWorld (`src/ecs/world.ts`)
+# EcsWorld
 
 Generic, project-agnostic ECS registry. Owns entity id allocation, component/tag
 stores, the query engine entry point, template-based spawning, serialization,

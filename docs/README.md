@@ -1,6 +1,6 @@
 # ECS Engine Documentation
 
-Project-agnostic ECS primitives in `src/ecs/`. These modules have
+Project-agnostic ECS primitives in `packages/ecs/src/`. These modules have
 **zero imports from game-specific code** and can be reused in any project.
 
 ## Primitives

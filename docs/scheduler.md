@@ -1,4 +1,4 @@
-# Scheduler (`src/ecs/scheduler.ts`)
+# Scheduler
 
 A DAG-based system scheduler that topologically sorts systems based on
 declared dependencies.
