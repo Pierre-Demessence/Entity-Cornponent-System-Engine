@@ -1,15 +1,20 @@
+import type { EntityId } from '@pierre/ecs';
+
 import type { GameState, PlatformerAction, PlatformerEvent } from './game';
 
 import { EventBus, Scheduler } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { makeKinematicsSystem } from '@pierre/ecs/modules/kinematics';
 import { HashGrid2D } from '@pierre/ecs/modules/spatial';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
-import { PositionDef } from './components';
+import { PositionDef, StaticBodyTag } from './components';
 import {
 
+  cellsForAabb,
+  GRAVITY,
   makeWorld,
-
+  MAX_FALL_SPEED,
   resetGame,
   RESPAWN_Y,
   SCREEN_H,
@@ -18,7 +23,6 @@ import {
 import { render } from './render';
 import {
   inputSystem,
-  physicsSystem,
   pickupSystem,
 } from './systems';
 
@@ -40,9 +44,26 @@ export function start(container: HTMLElement): () => void {
   const world = makeWorld();
   const grid = new HashGrid2D();
   const events = new EventBus<PlatformerEvent>();
+  const kinematicsSystem = makeKinematicsSystem<GameState>({
+    gravity: GRAVITY,
+    runAfter: ['input'],
+    staticTag: StaticBodyTag,
+    terminalVelocity: MAX_FALL_SPEED,
+    broadphase: (ctx, x, y, w, h) => {
+      const out = new Set<EntityId>();
+      for (const c of cellsForAabb(x, y, w, h)) {
+        const ids = ctx.grid.getAt(c.x, c.y);
+        if (!ids)
+          continue;
+        for (const id of ids) out.add(id);
+      }
+      return out;
+    },
+  });
+
   const scheduler = new Scheduler<GameState>()
     .add(inputSystem)
-    .add(physicsSystem)
+    .add(kinematicsSystem)
     .add(pickupSystem);
   const tickSource = new FixedIntervalTickSource(LOGIC_TICK_MS);
 

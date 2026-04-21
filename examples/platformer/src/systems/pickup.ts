@@ -19,7 +19,7 @@ import { despawn } from '../game';
  */
 export const pickupSystem: SchedulableSystem<GameState> = makeTriggerSystem<GameState>({
   name: 'pickup',
-  runAfter: ['physics'],
+  runAfter: ['kinematics'],
   broadphase(ctx) {
     if (ctx.playerId == null)
       return [];
