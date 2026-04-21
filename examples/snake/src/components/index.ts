@@ -1,3 +1,3 @@
 export * from './direction';
-export * from './position';
 export * from './tags';
+export { type Position, PositionDef } from '@pierre/ecs/modules/transform';

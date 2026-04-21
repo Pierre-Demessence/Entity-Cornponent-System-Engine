@@ -1,6 +1,6 @@
-import type { ComponentDef } from '@pierre/ecs';
+import type { ComponentDef } from '#index';
 
-import { simpleComponent } from '@pierre/ecs';
+import { simpleComponent } from '#index';
 
 export interface Position { x: number; y: number }
 
