@@ -5,9 +5,9 @@ import type { GameState } from './game';
 import { Canvas2DRenderer } from '@pierre/ecs/modules/render-canvas2d';
 
 import {
-  AabbDef,
   CoinTag,
   PositionDef,
+  ShapeAabbDef,
 } from './components';
 import { SCREEN_H, SCREEN_W } from './game';
 
@@ -22,7 +22,7 @@ const canvas2d = new Canvas2DRenderer();
  */
 function drawCoins(ctx2d: CanvasRenderingContext2D, state: GameState): void {
   const posStore = state.world.getStore(PositionDef);
-  const aabbStore = state.world.getStore(AabbDef);
+  const aabbStore = state.world.getStore(ShapeAabbDef);
   ctx2d.fillStyle = '#f4c542';
   for (const id of state.world.getTag(CoinTag)) {
     const p = posStore.get(id)!;

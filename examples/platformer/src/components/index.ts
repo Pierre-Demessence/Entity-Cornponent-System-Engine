@@ -1,7 +1,10 @@
-export * from './aabb';
 export * from './coin-value';
 export * from './grounded';
 export * from './tags';
+export {
+  type ShapeAabb,
+  ShapeAabbDef,
+} from '@pierre/ecs/modules/collision';
 export {
   type Position,
   PositionDef,

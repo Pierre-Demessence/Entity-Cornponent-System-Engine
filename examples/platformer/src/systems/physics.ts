@@ -2,10 +2,12 @@ import type { EntityId, SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
+import { aabbVsAabb } from '@pierre/ecs/modules/collision';
+
 import {
-  AabbDef,
   GroundedDef,
   PositionDef,
+  ShapeAabbDef,
   StaticBodyTag,
   VelocityDef,
 } from '../components';
@@ -15,7 +17,6 @@ import {
   GRAVITY,
   MAX_FALL_SPEED,
 } from '../game';
-import { aabbOverlap } from '../math';
 
 /** Collect unique static-body IDs overlapping the cells of an AABB. */
 function queryStatics(
@@ -44,11 +45,11 @@ export const physicsSystem: SchedulableSystem<GameState> = {
     const dt = ctx.dtMs / 1000;
     const pos = ctx.world.getStore(PositionDef).get(ctx.playerId)!;
     const vel = ctx.world.getStore(VelocityDef).get(ctx.playerId)!;
-    const aabb = ctx.world.getStore(AabbDef).get(ctx.playerId)!;
+    const aabb = ctx.world.getStore(ShapeAabbDef).get(ctx.playerId)!;
     const grounded = ctx.world.getStore(GroundedDef).get(ctx.playerId)!;
     const staticTag = ctx.world.getTag(StaticBodyTag);
     const posStore = ctx.world.getStore(PositionDef);
-    const aabbStore = ctx.world.getStore(AabbDef);
+    const aabbStore = ctx.world.getStore(ShapeAabbDef);
 
     // Gravity
     vel.vy = Math.min(vel.vy + GRAVITY * dt, MAX_FALL_SPEED);
@@ -64,8 +65,12 @@ export const physicsSystem: SchedulableSystem<GameState> = {
           continue;
         const sp = posStore.get(sid)!;
         const sa = aabbStore.get(sid)!;
-        if (!aabbOverlap(origX, pos.y, aabb.w, aabb.h, sp.x, sp.y, sa.w, sa.h))
+        if (!aabbVsAabb(
+          { h: aabb.h, w: aabb.w, x: origX, y: pos.y },
+          { h: sa.h, w: sa.w, x: sp.x, y: sp.y },
+        )) {
           continue;
+        }
         if (dx > 0)
           targetX = Math.min(targetX, sp.x - aabb.w);
         else targetX = Math.max(targetX, sp.x + sa.w);
@@ -87,8 +92,12 @@ export const physicsSystem: SchedulableSystem<GameState> = {
           continue;
         const sp = posStore.get(sid)!;
         const sa = aabbStore.get(sid)!;
-        if (!aabbOverlap(pos.x, origY, aabb.w, aabb.h, sp.x, sp.y, sa.w, sa.h))
+        if (!aabbVsAabb(
+          { h: aabb.h, w: aabb.w, x: pos.x, y: origY },
+          { h: sa.h, w: sa.w, x: sp.x, y: sp.y },
+        )) {
           continue;
+        }
         if (dy > 0) {
           targetY = Math.min(targetY, sp.y - aabb.h);
           grounded.onGround = true;

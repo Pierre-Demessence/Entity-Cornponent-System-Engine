@@ -13,13 +13,13 @@ import { RenderableDef } from '@pierre/ecs/modules/render-canvas2d';
 import { cellOfPoint, cellsForAabb as cellsForAabbEngine } from '@pierre/ecs/modules/spatial';
 
 import {
-  AabbDef,
   CoinTag,
   CoinValueDef,
   DynamicBodyTag,
   GroundedDef,
   PlayerTag,
   PositionDef,
+  ShapeAabbDef,
   StaticBodyTag,
   VelocityDef,
 } from './components';
@@ -84,7 +84,7 @@ export function makeWorld(): EcsWorld {
   const world = new EcsWorld();
   world.registerComponent(PositionDef);
   world.registerComponent(VelocityDef);
-  world.registerComponent(AabbDef);
+  world.registerComponent(ShapeAabbDef);
   world.registerComponent(GroundedDef);
   world.registerComponent(CoinValueDef);
   world.registerComponent(RenderableDef);
@@ -109,7 +109,7 @@ export function spawnPlayer(state: GameState, x: number, y: number): EntityId {
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x, y });
   state.world.getStore(VelocityDef).set(id, { vx: 0, vy: 0 });
-  state.world.getStore(AabbDef).set(id, { h: PLAYER_H, w: PLAYER_W });
+  state.world.getStore(ShapeAabbDef).set(id, { h: PLAYER_H, w: PLAYER_W });
   state.world.getStore(GroundedDef).set(id, { onGround: false });
   state.world.getStore(RenderableDef).set(id, {
     fill: '#58c4ff',
@@ -126,7 +126,7 @@ export function spawnPlayer(state: GameState, x: number, y: number): EntityId {
 export function spawnPlatform(state: GameState, x: number, y: number, w: number, h: number): EntityId {
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x, y });
-  state.world.getStore(AabbDef).set(id, { h, w });
+  state.world.getStore(ShapeAabbDef).set(id, { h, w });
   state.world.getStore(RenderableDef).set(id, {
     fill: '#5a6577',
     h,
@@ -143,7 +143,7 @@ export function spawnPlatform(state: GameState, x: number, y: number, w: number,
 export function spawnCoin(state: GameState, x: number, y: number): EntityId {
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x, y });
-  state.world.getStore(AabbDef).set(id, { h: COIN_H, w: COIN_W });
+  state.world.getStore(ShapeAabbDef).set(id, { h: COIN_H, w: COIN_W });
   state.world.getStore(CoinValueDef).set(id, { score: COIN_SCORE });
   state.world.getTag(CoinTag).add(id);
   // Coins are not solid bodies and not indexed: pickup iterates CoinTag directly.
@@ -154,7 +154,7 @@ export function despawn(state: GameState, id: EntityId): void {
   // Only StaticBodyTag entities are indexed in the grid; dynamics and coins are not.
   if (state.world.getTag(StaticBodyTag).has(id)) {
     const pos = state.world.getStore(PositionDef).get(id);
-    const aabb = state.world.getStore(AabbDef).get(id);
+    const aabb = state.world.getStore(ShapeAabbDef).get(id);
     if (pos && aabb)
       unindexStatic(state, id, pos.x, pos.y, aabb.w, aabb.h);
   }

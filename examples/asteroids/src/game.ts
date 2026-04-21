@@ -10,10 +10,10 @@ import {
   BulletTag,
   LifetimeDef,
   PositionDef,
-  RadiusDef,
   RockTag,
   RockTierDef,
   RotationDef,
+  ShapeCircleDef,
   ShipTag,
   VelocityDef,
 } from './components';
@@ -68,7 +68,7 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(PositionDef);
   w.registerComponent(VelocityDef);
   w.registerComponent(RotationDef);
-  w.registerComponent(RadiusDef);
+  w.registerComponent(ShapeCircleDef);
   w.registerComponent(LifetimeDef);
   w.registerComponent(RockTierDef);
   w.registerComponent(RenderableDef);
@@ -83,7 +83,7 @@ export function spawnShip(state: GameState): EntityId {
   state.world.getStore(PositionDef).set(id, { x: SCREEN_W / 2, y: SCREEN_H / 2 });
   state.world.getStore(VelocityDef).set(id, { vx: 0, vy: 0 });
   state.world.getStore(RotationDef).set(id, { angle: -Math.PI / 2 });
-  state.world.getStore(RadiusDef).set(id, { r: SHIP_RADIUS });
+  state.world.getStore(ShapeCircleDef).set(id, { radius: SHIP_RADIUS });
   state.world.getTag(ShipTag).add(id);
   const c = cellOf(SCREEN_W / 2, SCREEN_H / 2);
   state.grid.add(id, c.x, c.y);
@@ -99,7 +99,7 @@ export function spawnRock(state: GameState, x: number, y: number, tier: number):
     vx: Math.cos(angle) * spec.speed,
     vy: Math.sin(angle) * spec.speed,
   });
-  state.world.getStore(RadiusDef).set(id, { r: spec.r });
+  state.world.getStore(ShapeCircleDef).set(id, { radius: spec.r });
   state.world.getStore(RockTierDef).set(id, { tier });
   state.world.getStore(RenderableDef).set(id, {
     kind: 'circle',
@@ -120,7 +120,7 @@ export function spawnBullet(state: GameState, x: number, y: number, angle: numbe
     vx: Math.cos(angle) * BULLET_SPEED,
     vy: Math.sin(angle) * BULLET_SPEED,
   });
-  state.world.getStore(RadiusDef).set(id, { r: BULLET_RADIUS });
+  state.world.getStore(ShapeCircleDef).set(id, { radius: BULLET_RADIUS });
   state.world.getStore(LifetimeDef).set(id, { remainingMs: BULLET_LIFE_MS });
   state.world.getStore(RenderableDef).set(id, {
     fill: '#fe6',

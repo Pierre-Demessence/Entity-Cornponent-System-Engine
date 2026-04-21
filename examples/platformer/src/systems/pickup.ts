@@ -1,39 +1,50 @@
-import type { SchedulableSystem } from '@pierre/ecs';
+import type { EntityId, SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
+import { aabbVsAabb, makeTriggerSystem } from '@pierre/ecs/modules/collision';
+
 import {
-  AabbDef,
   CoinTag,
   CoinValueDef,
   PositionDef,
+  ShapeAabbDef,
 } from '../components';
 import { despawn } from '../game';
-import { aabbOverlap } from '../math';
 
-export const pickupSystem: SchedulableSystem<GameState> = {
+/**
+ * Player↔coin pickup. Broadphase snapshots `(player, coin)` pairs so
+ * that `onOverlap` can despawn coins without invalidating the tag
+ * iterator; the narrowphase is the shared AABB overlap helper.
+ */
+export const pickupSystem: SchedulableSystem<GameState> = makeTriggerSystem<GameState>({
   name: 'pickup',
   runAfter: ['physics'],
-  run(ctx) {
+  broadphase(ctx) {
     if (ctx.playerId == null)
-      return;
-    const pPos = ctx.world.getStore(PositionDef).get(ctx.playerId)!;
-    const pAabb = ctx.world.getStore(AabbDef).get(ctx.playerId)!;
-    const posStore = ctx.world.getStore(PositionDef);
-    const aabbStore = ctx.world.getStore(AabbDef);
-    const valueStore = ctx.world.getStore(CoinValueDef);
-
-    const collected: number[] = [];
-    for (const coinId of ctx.world.getTag(CoinTag)) {
-      const cp = posStore.get(coinId)!;
-      const ca = aabbStore.get(coinId)!;
-      if (!aabbOverlap(pPos.x, pPos.y, pAabb.w, pAabb.h, cp.x, cp.y, ca.w, ca.h))
-        continue;
-      const value = valueStore.get(coinId)!.score;
-      ctx.score += value;
-      collected.push(coinId);
-      ctx.events.emit({ coinId, score: value, type: 'CoinCollected' });
-    }
-    for (const id of collected) despawn(ctx, id);
+      return [];
+    const playerId = ctx.playerId;
+    const pairs: Array<readonly [EntityId, EntityId]> = [];
+    for (const coinId of ctx.world.getTag(CoinTag))
+      pairs.push([playerId, coinId] as const);
+    return pairs;
   },
-};
+  onOverlap(ctx, _player, coinId) {
+    const value = ctx.world.getStore(CoinValueDef).get(coinId)!.score;
+    ctx.score += value;
+    ctx.events.emit({ coinId, score: value, type: 'CoinCollected' });
+    despawn(ctx, coinId);
+  },
+  overlaps(ctx, player, coinId) {
+    const posStore = ctx.world.getStore(PositionDef);
+    const aabbStore = ctx.world.getStore(ShapeAabbDef);
+    const pp = posStore.get(player)!;
+    const pa = aabbStore.get(player)!;
+    const cp = posStore.get(coinId)!;
+    const ca = aabbStore.get(coinId)!;
+    return aabbVsAabb(
+      { h: pa.h, w: pa.w, x: pp.x, y: pp.y },
+      { h: ca.h, w: ca.w, x: cp.x, y: cp.y },
+    );
+  },
+});

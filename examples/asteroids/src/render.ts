@@ -6,8 +6,8 @@ import { Canvas2DRenderer } from '@pierre/ecs/modules/render-canvas2d';
 
 import {
   PositionDef,
-  RadiusDef,
   RotationDef,
+  ShapeCircleDef,
   ShipTag,
 } from './components';
 import { SCREEN_H, SCREEN_W } from './game';
@@ -16,11 +16,11 @@ const canvas2d = new Canvas2DRenderer();
 
 function drawShip(ctx2d: CanvasRenderingContext2D, state: GameState): void {
   const posStore = state.world.getStore(PositionDef);
-  const radStore = state.world.getStore(RadiusDef);
+  const radStore = state.world.getStore(ShapeCircleDef);
   for (const id of state.world.getTag(ShipTag)) {
     const p = posStore.get(id)!;
     const rot = state.world.getStore(RotationDef).get(id)!;
-    const r = radStore.get(id)!.r;
+    const r = radStore.get(id)!.radius;
     ctx2d.save();
     ctx2d.translate(p.x, p.y);
     ctx2d.rotate(rot.angle);

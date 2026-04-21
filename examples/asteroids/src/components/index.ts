@@ -1,6 +1,9 @@
-export * from './radius';
 export * from './rock-tier';
 export * from './tags';
+export {
+  type ShapeCircle,
+  ShapeCircleDef,
+} from '@pierre/ecs/modules/collision';
 export { LifetimeDef } from '@pierre/ecs/modules/lifetime';
 export {
   type Position,
