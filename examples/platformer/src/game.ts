@@ -9,6 +9,7 @@ import {
   EcsWorld,
 
 } from '@pierre/ecs';
+import { RenderableDef } from '@pierre/ecs/modules/render-canvas2d';
 import { cellOfPoint, cellsForAabb as cellsForAabbEngine } from '@pierre/ecs/modules/spatial';
 
 import {
@@ -86,6 +87,7 @@ export function makeWorld(): EcsWorld {
   world.registerComponent(AabbDef);
   world.registerComponent(GroundedDef);
   world.registerComponent(CoinValueDef);
+  world.registerComponent(RenderableDef);
   world.registerTag(PlayerTag);
   world.registerTag(StaticBodyTag);
   world.registerTag(DynamicBodyTag);
@@ -109,6 +111,12 @@ export function spawnPlayer(state: GameState, x: number, y: number): EntityId {
   state.world.getStore(VelocityDef).set(id, { vx: 0, vy: 0 });
   state.world.getStore(AabbDef).set(id, { h: PLAYER_H, w: PLAYER_W });
   state.world.getStore(GroundedDef).set(id, { onGround: false });
+  state.world.getStore(RenderableDef).set(id, {
+    fill: '#58c4ff',
+    h: PLAYER_H,
+    kind: 'rect',
+    w: PLAYER_W,
+  });
   state.world.getTag(PlayerTag).add(id);
   state.world.getTag(DynamicBodyTag).add(id);
   // Dynamic bodies are NOT indexed into the grid; they query against statics.
@@ -119,6 +127,14 @@ export function spawnPlatform(state: GameState, x: number, y: number, w: number,
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x, y });
   state.world.getStore(AabbDef).set(id, { h, w });
+  state.world.getStore(RenderableDef).set(id, {
+    fill: '#5a6577',
+    h,
+    kind: 'rect',
+    lineWidth: 1,
+    stroke: '#8aa0bd',
+    w,
+  });
   state.world.getTag(StaticBodyTag).add(id);
   indexStatic(state, id, x, y, w, h);
   return id;

@@ -1,48 +1,22 @@
+import type { Canvas2DRenderContext } from '@pierre/ecs/modules/render-canvas2d';
+
 import type { GameState } from './game';
 
+import { Canvas2DRenderer } from '@pierre/ecs/modules/render-canvas2d';
+
 import {
-  BulletTag,
   PositionDef,
   RadiusDef,
-  RockTag,
   RotationDef,
   ShipTag,
 } from './components';
 import { SCREEN_H, SCREEN_W } from './game';
 
-export function render(ctx2d: CanvasRenderingContext2D, state: GameState): void {
-  ctx2d.fillStyle = '#000';
-  ctx2d.fillRect(0, 0, SCREEN_W, SCREEN_H);
+const canvas2d = new Canvas2DRenderer();
 
-  // Play-area border
-  ctx2d.strokeStyle = '#223';
-  ctx2d.lineWidth = 2;
-  ctx2d.strokeRect(1, 1, SCREEN_W - 2, SCREEN_H - 2);
-
+function drawShip(ctx2d: CanvasRenderingContext2D, state: GameState): void {
   const posStore = state.world.getStore(PositionDef);
   const radStore = state.world.getStore(RadiusDef);
-
-  // Rocks
-  ctx2d.strokeStyle = '#9a9';
-  ctx2d.lineWidth = 1.5;
-  for (const id of state.world.getTag(RockTag)) {
-    const p = posStore.get(id)!;
-    const r = radStore.get(id)!.r;
-    ctx2d.beginPath();
-    ctx2d.arc(p.x, p.y, r, 0, Math.PI * 2);
-    ctx2d.stroke();
-  }
-
-  // Bullets
-  ctx2d.fillStyle = '#fe6';
-  for (const id of state.world.getTag(BulletTag)) {
-    const p = posStore.get(id)!;
-    ctx2d.beginPath();
-    ctx2d.arc(p.x, p.y, 2, 0, Math.PI * 2);
-    ctx2d.fill();
-  }
-
-  // Ship
   for (const id of state.world.getTag(ShipTag)) {
     const p = posStore.get(id)!;
     const rot = state.world.getStore(RotationDef).get(id)!;
@@ -69,8 +43,9 @@ export function render(ctx2d: CanvasRenderingContext2D, state: GameState): void 
     }
     ctx2d.restore();
   }
+}
 
-  // HUD
+function drawHud(ctx2d: CanvasRenderingContext2D, state: GameState): void {
   ctx2d.fillStyle = '#ccc';
   ctx2d.font = '16px system-ui, sans-serif';
   ctx2d.textAlign = 'left';
@@ -86,4 +61,19 @@ export function render(ctx2d: CanvasRenderingContext2D, state: GameState): void 
     ctx2d.font = '14px system-ui, sans-serif';
     ctx2d.fillText('Press R to restart', SCREEN_W / 2, SCREEN_H / 2 + 18);
   }
+}
+
+export function render(ctx2d: CanvasRenderingContext2D, state: GameState): void {
+  ctx2d.fillStyle = '#000';
+  ctx2d.fillRect(0, 0, SCREEN_W, SCREEN_H);
+
+  ctx2d.strokeStyle = '#223';
+  ctx2d.lineWidth = 2;
+  ctx2d.strokeRect(1, 1, SCREEN_W - 2, SCREEN_H - 2);
+
+  const renderCtx: Canvas2DRenderContext = { ctx2d, world: state.world };
+  canvas2d.render(renderCtx);
+  drawShip(ctx2d, state);
+
+  drawHud(ctx2d, state);
 }

@@ -3,6 +3,7 @@ import type { InputState } from '@pierre/ecs/modules/input';
 import type { HashGrid2D } from '@pierre/ecs/modules/spatial';
 
 import { EcsWorld } from '@pierre/ecs';
+import { RenderableDef } from '@pierre/ecs/modules/render-canvas2d';
 import { cellOfPoint } from '@pierre/ecs/modules/spatial';
 
 import {
@@ -70,6 +71,7 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(RadiusDef);
   w.registerComponent(LifetimeDef);
   w.registerComponent(RockTierDef);
+  w.registerComponent(RenderableDef);
   w.registerTag(ShipTag);
   w.registerTag(RockTag);
   w.registerTag(BulletTag);
@@ -99,6 +101,12 @@ export function spawnRock(state: GameState, x: number, y: number, tier: number):
   });
   state.world.getStore(RadiusDef).set(id, { r: spec.r });
   state.world.getStore(RockTierDef).set(id, { tier });
+  state.world.getStore(RenderableDef).set(id, {
+    kind: 'circle',
+    lineWidth: 1.5,
+    radius: spec.r,
+    stroke: '#9a9',
+  });
   state.world.getTag(RockTag).add(id);
   const c = cellOf(x, y);
   state.grid.add(id, c.x, c.y);
@@ -114,6 +122,11 @@ export function spawnBullet(state: GameState, x: number, y: number, angle: numbe
   });
   state.world.getStore(RadiusDef).set(id, { r: BULLET_RADIUS });
   state.world.getStore(LifetimeDef).set(id, { remainingMs: BULLET_LIFE_MS });
+  state.world.getStore(RenderableDef).set(id, {
+    fill: '#fe6',
+    kind: 'circle',
+    radius: BULLET_RADIUS,
+  });
   state.world.getTag(BulletTag).add(id);
   const c = cellOf(x, y);
   state.grid.add(id, c.x, c.y);
