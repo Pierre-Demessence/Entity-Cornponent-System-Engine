@@ -2,11 +2,12 @@ import type { AsteroidsEvent, GameState } from './game';
 
 import { EventBus, Scheduler } from '@pierre/ecs';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
+import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 import { HashGrid2D } from '@pierre/ecs/modules/spatial';
 import { FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
-
+  cellOf,
   despawn,
   makeWorld,
   resetGame,
@@ -17,7 +18,6 @@ import { render } from './render';
 import {
   collisionSystem,
   inputSystem,
-  movementSystem,
 } from './systems';
 
 const LOGIC_TICK_MS = 1000 / 60;
@@ -38,13 +38,23 @@ export function start(container: HTMLElement): () => void {
   const world = makeWorld();
   const grid = new HashGrid2D();
   const events = new EventBus<AsteroidsEvent>();
+  const motionSystem = makeVelocityIntegrationSystem<GameState>({
+    name: 'movement',
+    boundary: { bounds: { height: SCREEN_H, width: SCREEN_W }, mode: 'wrap' },
+    onMove(ctx, id, prev, next) {
+      const p = cellOf(prev.x, prev.y);
+      const n = cellOf(next.x, next.y);
+      if (p.x !== n.x || p.y !== n.y)
+        ctx.grid.move(id, p, n);
+    },
+  });
   const lifetimeSystem = makeLifetimeSystem<GameState>({
     onExpire: despawn,
     runAfter: ['movement'],
   });
   const scheduler = new Scheduler<GameState>()
     .add(inputSystem)
-    .add(movementSystem)
+    .add(motionSystem)
     .add(lifetimeSystem)
     .add(collisionSystem);
   const tickSource = new FixedIntervalTickSource(LOGIC_TICK_MS);

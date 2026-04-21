@@ -66,14 +66,6 @@ export function cellOf(x: number, y: number): { x: number; y: number } {
   return cellOfPoint(x, y, CELL_SIZE);
 }
 
-export function wrap(x: number, max: number): number {
-  if (x < 0)
-    return x + max;
-  if (x >= max)
-    return x - max;
-  return x;
-}
-
 export function makeWorld(): EcsWorld {
   const w = new EcsWorld();
   w.registerComponent(PositionDef);
