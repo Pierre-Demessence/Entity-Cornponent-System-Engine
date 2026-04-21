@@ -10,7 +10,7 @@ import {
 
 } from '@pierre/ecs';
 import { RenderableDef } from '@pierre/ecs/modules/render-canvas2d';
-import { cellOfPoint, cellsForAabb as cellsForAabbEngine } from '@pierre/ecs/modules/spatial';
+import { cellsForAabb as cellsForAabbEngine } from '@pierre/ecs/modules/spatial';
 
 import {
   CoinTag,
@@ -65,11 +65,6 @@ export interface GameState {
   world: EcsWorld;
 }
 
-/** Integer cell key for a world-space coordinate. */
-export function cellOf(x: number, y: number): { x: number; y: number } {
-  return cellOfPoint(x, y, CELL_SIZE);
-}
-
 /** Iterate every cell key an AABB overlaps. */
 export function cellsForAabb(
   x: number,
@@ -96,12 +91,12 @@ export function makeWorld(): EcsWorld {
 }
 
 /** Index a static body into every cell its AABB overlaps. */
-export function indexStatic(state: GameState, id: EntityId, x: number, y: number, w: number, h: number): void {
+function indexStatic(state: GameState, id: EntityId, x: number, y: number, w: number, h: number): void {
   for (const c of cellsForAabb(x, y, w, h)) state.grid.add(id, c.x, c.y);
 }
 
 /** Reverse of indexStatic. Must be called BEFORE the aabb/position is lost. */
-export function unindexStatic(state: GameState, id: EntityId, x: number, y: number, w: number, h: number): void {
+function unindexStatic(state: GameState, id: EntityId, x: number, y: number, w: number, h: number): void {
   for (const c of cellsForAabb(x, y, w, h)) state.grid.remove(id, c.x, c.y);
 }
 

@@ -2,7 +2,7 @@ import type { ComponentDef } from '@pierre/ecs';
 
 import { simpleComponent } from '@pierre/ecs';
 
-export interface Direction { dx: number; dy: number }
+interface Direction { dx: number; dy: number }
 
 export const DirectionDef: ComponentDef<Direction> = simpleComponent<Direction>(
   'direction',

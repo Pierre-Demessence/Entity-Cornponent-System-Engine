@@ -20,7 +20,7 @@ import {
 
 export const SCREEN_W = 800;
 export const SCREEN_H = 600;
-export const CELL_SIZE = 64;
+const CELL_SIZE = 64;
 
 export const SHIP_ROT_RAD_PER_S = 3.5;
 export const SHIP_THRUST = 220;
@@ -32,7 +32,7 @@ export const BULLET_LIFE_MS = 900;
 export const BULLET_RADIUS = 2;
 export const FIRE_COOLDOWN_MS = 180;
 
-export interface RockTierSpec { childTier: number; r: number; score: number; spawnChildren: number; speed: number }
+interface RockTierSpec { childTier: number; r: number; score: number; spawnChildren: number; speed: number }
 export const ROCK_TIERS: RockTierSpec[] = [
   { childTier: 1, r: 40, score: 20, spawnChildren: 2, speed: 40 },
   { childTier: 2, r: 22, score: 50, spawnChildren: 2, speed: 70 },

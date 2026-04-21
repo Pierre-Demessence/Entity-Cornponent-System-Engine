@@ -14,7 +14,7 @@ export const GRID = 20;
 export const CELL = 20;
 export const CANVAS_PX = GRID * CELL;
 export const TICK_MS = 125;
-export const START_LEN = 3;
+const START_LEN = 3;
 
 export type SnakeEvent = { type: 'AppleEaten' } | { type: 'GameOver' };
 
