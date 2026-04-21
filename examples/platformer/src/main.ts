@@ -1,6 +1,7 @@
-import type { GameState, PlatformerEvent } from './game';
+import type { GameState, PlatformerAction, PlatformerEvent } from './game';
 
 import { EventBus, Scheduler } from '@pierre/ecs';
+import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { HashGrid2D } from '@pierre/ecs/modules/spatial';
 import { FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
@@ -45,11 +46,31 @@ export function start(container: HTMLElement): () => void {
     .add(pickupSystem);
   const tickSource = new FixedIntervalTickSource(LOGIC_TICK_MS);
 
+  const keyboard = new KeyboardProvider({
+    preventDefaultCodes: [
+      Key.ArrowLeft,
+      Key.ArrowRight,
+      Key.ArrowUp,
+      Key.KeyA,
+      Key.KeyD,
+      Key.KeyW,
+      Key.Space,
+    ],
+  });
+  const input = createInput<PlatformerAction>(
+    {
+      jump: [Key.Space, Key.ArrowUp, Key.KeyW],
+      left: [Key.ArrowLeft, Key.KeyA],
+      right: [Key.ArrowRight, Key.KeyD],
+    },
+    [keyboard],
+  );
+
   const state: GameState = {
     dtMs: LOGIC_TICK_MS,
     events,
     grid,
-    input: { jump: false, jumpPressed: false, left: false, right: false },
+    input,
     playerId: null,
     score: 0,
     world,
@@ -69,6 +90,7 @@ export function start(container: HTMLElement): () => void {
     }
     world.endOfTick();
     events.flush();
+    input.clearEdges();
   });
   tickSource.start();
 
@@ -79,39 +101,8 @@ export function start(container: HTMLElement): () => void {
   };
   rafId = window.requestAnimationFrame(loop);
 
-  const setKey = (e: KeyboardEvent, down: boolean): void => {
-    switch (e.key) {
-      case 'ArrowLeft':
-      case 'a':
-      case 'A':
-        state.input.left = down;
-        break;
-      case 'ArrowRight':
-      case 'd':
-      case 'D':
-        state.input.right = down;
-        break;
-      case 'ArrowUp':
-      case 'w':
-      case 'W':
-      case ' ':
-        if (down && !state.input.jump)
-          state.input.jumpPressed = true;
-        state.input.jump = down;
-        break;
-      default:
-        return;
-    }
-    e.preventDefault();
-  };
-  const onDown = (e: KeyboardEvent): void => setKey(e, true);
-  const onUp = (e: KeyboardEvent): void => setKey(e, false);
-  window.addEventListener('keydown', onDown);
-  window.addEventListener('keyup', onUp);
-
   return (): void => {
-    window.removeEventListener('keydown', onDown);
-    window.removeEventListener('keyup', onUp);
+    input.dispose();
     window.cancelAnimationFrame(rafId);
     unsubscribeTick();
     tickSource.stop();

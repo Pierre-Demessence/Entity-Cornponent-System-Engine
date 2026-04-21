@@ -21,6 +21,7 @@
     "./scheduler": "./src/scheduler.ts",
     "./tick-source": "./src/tick-source.ts",
     "./tick-runner": "./src/tick-runner.ts",
+    "./input-source": "./src/input-source.ts",
     "./entity-id": "./src/entity-id.ts",
     "./validation": "./src/validation.ts",
     "./test-utils": "./src/test-utils.ts",

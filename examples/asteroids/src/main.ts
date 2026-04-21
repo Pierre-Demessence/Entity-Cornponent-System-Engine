@@ -1,6 +1,7 @@
-import type { AsteroidsEvent, GameState } from './game';
+import type { AsteroidsAction, AsteroidsEvent, GameState } from './game';
 
 import { EventBus, Scheduler } from '@pierre/ecs';
+import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 import { HashGrid2D } from '@pierre/ecs/modules/spatial';
@@ -59,13 +60,36 @@ export function start(container: HTMLElement): () => void {
     .add(collisionSystem);
   const tickSource = new FixedIntervalTickSource(LOGIC_TICK_MS);
 
+  const keyboard = new KeyboardProvider({
+    preventDefaultCodes: [
+      Key.ArrowLeft,
+      Key.ArrowRight,
+      Key.ArrowUp,
+      Key.KeyA,
+      Key.KeyD,
+      Key.KeyW,
+      Key.Space,
+      Key.KeyR,
+    ],
+  });
+  const input = createInput<AsteroidsAction>(
+    {
+      fire: [Key.Space],
+      reset: [Key.KeyR],
+      rotateLeft: [Key.ArrowLeft, Key.KeyA],
+      rotateRight: [Key.ArrowRight, Key.KeyD],
+      thrust: [Key.ArrowUp, Key.KeyW],
+    },
+    [keyboard],
+  );
+
   const state: GameState = {
     dead: false,
     dtMs: LOGIC_TICK_MS,
     events,
     fireCooldownMs: 0,
     grid,
-    input: { fire: false, rotateLeft: false, rotateRight: false, thrust: false },
+    input,
     score: 0,
     shipId: null,
     world,
@@ -74,9 +98,12 @@ export function start(container: HTMLElement): () => void {
   resetGame(state);
 
   const unsubscribeTick = tickSource.subscribe(() => {
+    if (state.dead && input.justPressed('reset'))
+      resetGame(state);
     scheduler.run(state);
     world.endOfTick();
     events.flush();
+    input.clearEdges();
   });
   tickSource.start();
 
@@ -87,44 +114,8 @@ export function start(container: HTMLElement): () => void {
   };
   rafId = window.requestAnimationFrame(loop);
 
-  const setKey = (e: KeyboardEvent, down: boolean): void => {
-    switch (e.key) {
-      case 'ArrowLeft':
-      case 'a':
-      case 'A':
-        state.input.rotateLeft = down;
-        break;
-      case 'ArrowRight':
-      case 'd':
-      case 'D':
-        state.input.rotateRight = down;
-        break;
-      case 'ArrowUp':
-      case 'w':
-      case 'W':
-        state.input.thrust = down;
-        break;
-      case ' ':
-        state.input.fire = down;
-        break;
-      case 'r':
-      case 'R':
-        if (down && state.dead)
-          resetGame(state);
-        break;
-      default:
-        return;
-    }
-    e.preventDefault();
-  };
-  const onDown = (e: KeyboardEvent): void => setKey(e, true);
-  const onUp = (e: KeyboardEvent): void => setKey(e, false);
-  window.addEventListener('keydown', onDown);
-  window.addEventListener('keyup', onUp);
-
   return (): void => {
-    window.removeEventListener('keydown', onDown);
-    window.removeEventListener('keyup', onUp);
+    input.dispose();
     window.cancelAnimationFrame(rafId);
     unsubscribeTick();
     tickSource.stop();

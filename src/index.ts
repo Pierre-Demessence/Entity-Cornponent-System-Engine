@@ -15,6 +15,7 @@ export {
   TagStore,
 } from '#component-store';
 export { EventBus, type EventContext } from '#event-bus';
+export { type InputProvider, type InputRawEvent } from '#input-source';
 export { type LifecycleEvent } from '#lifecycle';
 export { QueryBuilder } from '#query';
 export { type ComponentRef, type SchedulableSystem, Scheduler } from '#scheduler';

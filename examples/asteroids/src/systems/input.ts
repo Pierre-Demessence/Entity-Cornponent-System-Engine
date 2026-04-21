@@ -23,12 +23,12 @@ export const inputSystem: SchedulableSystem<GameState> = {
     const vel = ctx.world.getStore(VelocityDef).get(ctx.shipId)!;
     const pos = ctx.world.getStore(PositionDef).get(ctx.shipId)!;
 
-    if (ctx.input.rotateLeft)
+    if (ctx.input.isDown('rotateLeft'))
       rot.angle -= SHIP_ROT_RAD_PER_S * dt;
-    if (ctx.input.rotateRight)
+    if (ctx.input.isDown('rotateRight'))
       rot.angle += SHIP_ROT_RAD_PER_S * dt;
 
-    if (ctx.input.thrust) {
+    if (ctx.input.isDown('thrust')) {
       vel.vx += Math.cos(rot.angle) * SHIP_THRUST * dt;
       vel.vy += Math.sin(rot.angle) * SHIP_THRUST * dt;
       const sp = Math.hypot(vel.vx, vel.vy);
@@ -39,7 +39,7 @@ export const inputSystem: SchedulableSystem<GameState> = {
     }
 
     ctx.fireCooldownMs = Math.max(0, ctx.fireCooldownMs - ctx.dtMs);
-    if (ctx.input.fire && ctx.fireCooldownMs === 0) {
+    if (ctx.input.isDown('fire') && ctx.fireCooldownMs === 0) {
       const nx = pos.x + Math.cos(rot.angle) * SHIP_RADIUS;
       const ny = pos.y + Math.sin(rot.angle) * SHIP_RADIUS;
       spawnBullet(ctx, nx, ny, rot.angle);

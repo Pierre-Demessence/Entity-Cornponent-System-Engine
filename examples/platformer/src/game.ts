@@ -2,6 +2,7 @@ import type {
   EntityId,
   EventBus,
 } from '@pierre/ecs';
+import type { InputState } from '@pierre/ecs/modules/input';
 import type { HashGrid2D } from '@pierre/ecs/modules/spatial';
 
 import {
@@ -51,18 +52,13 @@ export type PlatformerEvent
   = | { type: 'CoinCollected'; coinId: EntityId; score: number }
     | { type: 'PlayerFell' };
 
-export interface InputState {
-  jump: boolean;
-  jumpPressed: boolean; // edge-triggered for one-shot jump
-  left: boolean;
-  right: boolean;
-}
+export type PlatformerAction = 'jump' | 'left' | 'right';
 
 export interface GameState {
   dtMs: number;
   events: EventBus<PlatformerEvent>;
   grid: HashGrid2D;
-  input: InputState;
+  input: InputState<PlatformerAction>;
   playerId: EntityId | null;
   score: number;
   world: EcsWorld;

@@ -59,7 +59,7 @@ export function render(ctx2d: CanvasRenderingContext2D, state: GameState): void 
     ctx2d.lineTo(-r * 0.7, -r * 0.7);
     ctx2d.closePath();
     ctx2d.stroke();
-    if (state.input.thrust) {
+    if (state.input.isDown('thrust')) {
       ctx2d.strokeStyle = '#fa4';
       ctx2d.beginPath();
       ctx2d.moveTo(-r * 0.4, r * 0.35);

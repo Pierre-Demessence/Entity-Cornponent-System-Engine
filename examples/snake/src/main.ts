@@ -1,6 +1,7 @@
 import type { GameState, SnakeEvent } from './game';
 
 import { EventBus, Scheduler } from '@pierre/ecs';
+import { Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
@@ -69,42 +70,51 @@ export function start(container: HTMLElement): () => void {
   };
   rafId = window.requestAnimationFrame(loop);
 
-  const onKey = (e: KeyboardEvent): void => {
-    switch (e.key) {
-      case 'ArrowUp':
-      case 'w':
-      case 'W':
+  const keyboard = new KeyboardProvider({
+    preventDefaultCodes: [
+      Key.ArrowUp,
+      Key.ArrowDown,
+      Key.ArrowLeft,
+      Key.ArrowRight,
+      Key.KeyW,
+      Key.KeyS,
+      Key.KeyA,
+      Key.KeyD,
+      Key.KeyR,
+    ],
+  });
+  const unsubscribeKeys = keyboard.subscribe((raw) => {
+    if (raw.kind !== 'down')
+      return;
+    switch (raw.code) {
+      case Key.ArrowUp:
+      case Key.KeyW:
         state.pendingDir = { dx: 0, dy: -1 };
         break;
-      case 'ArrowDown':
-      case 's':
-      case 'S':
+      case Key.ArrowDown:
+      case Key.KeyS:
         state.pendingDir = { dx: 0, dy: 1 };
         break;
-      case 'ArrowLeft':
-      case 'a':
-      case 'A':
+      case Key.ArrowLeft:
+      case Key.KeyA:
         state.pendingDir = { dx: -1, dy: 0 };
         break;
-      case 'ArrowRight':
-      case 'd':
-      case 'D':
+      case Key.ArrowRight:
+      case Key.KeyD:
         state.pendingDir = { dx: 1, dy: 0 };
         break;
-      case 'r':
-      case 'R':
+      case Key.KeyR:
         if (state.dead)
           resetGame(state);
         break;
       default:
-        return;
+        break;
     }
-    e.preventDefault();
-  };
-  window.addEventListener('keydown', onKey);
+  });
 
   return (): void => {
-    window.removeEventListener('keydown', onKey);
+    unsubscribeKeys();
+    keyboard.dispose();
     window.cancelAnimationFrame(rafId);
     unsubscribeTick();
     tickSource.stop();

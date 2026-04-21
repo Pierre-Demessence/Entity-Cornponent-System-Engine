@@ -19,16 +19,15 @@ export const inputSystem: SchedulableSystem<GameState> = {
 
     // Horizontal movement: direct velocity (no air-control subtlety yet).
     vel.vx = 0;
-    if (ctx.input.left)
+    if (ctx.input.isDown('left'))
       vel.vx -= MOVE_SPEED;
-    if (ctx.input.right)
+    if (ctx.input.isDown('right'))
       vel.vx += MOVE_SPEED;
 
     // Edge-triggered jump
-    if (ctx.input.jumpPressed && grounded.onGround) {
+    if (ctx.input.justPressed('jump') && grounded.onGround) {
       vel.vy = -JUMP_IMPULSE;
       grounded.onGround = false;
     }
-    ctx.input.jumpPressed = false;
   },
 };

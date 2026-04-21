@@ -1,4 +1,5 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
+import type { InputState } from '@pierre/ecs/modules/input';
 import type { HashGrid2D } from '@pierre/ecs/modules/spatial';
 
 import { EcsWorld } from '@pierre/ecs';
@@ -43,12 +44,7 @@ export type AsteroidsEvent
     | { type: 'ShipDestroyed' }
     | { type: 'GameOver' };
 
-export interface InputState {
-  fire: boolean;
-  rotateLeft: boolean;
-  rotateRight: boolean;
-  thrust: boolean;
-}
+export type AsteroidsAction = 'fire' | 'reset' | 'rotateLeft' | 'rotateRight' | 'thrust';
 
 export interface GameState {
   dead: boolean;
@@ -56,7 +52,7 @@ export interface GameState {
   events: EventBus<AsteroidsEvent>;
   fireCooldownMs: number;
   grid: HashGrid2D;
-  input: InputState;
+  input: InputState<AsteroidsAction>;
   score: number;
   shipId: EntityId | null;
   world: EcsWorld;
@@ -141,10 +137,6 @@ export function resetGame(state: GameState): void {
   state.score = 0;
   state.dead = false;
   state.fireCooldownMs = 0;
-  state.input.rotateLeft = false;
-  state.input.rotateRight = false;
-  state.input.thrust = false;
-  state.input.fire = false;
 
   state.shipId = spawnShip(state);
 
