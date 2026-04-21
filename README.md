@@ -51,11 +51,12 @@ See [`docs/`](./docs/) for per-primitive deep dives:
 
 - [World](./docs/world.md)
 - [ComponentStore](./docs/component-store.md)
-- [SpatialIndex](./docs/spatial.md)
+- [SpatialStructure](./docs/spatial-structure.md) — interface; concrete backends under [`src/modules/spatial/`](./src/modules/spatial/README.md)
 - [QueryBuilder](./docs/query.md)
 - [EntityTemplate](./docs/template.md)
 - [EventBus](./docs/event-bus.md)
 - [Scheduler](./docs/scheduler.md)
+- [Tick](./docs/tick.md) — `TickSource` interface + `TickRunner`; concrete sources under [`src/modules/tick/`](./src/modules/tick/README.md)
 
 ## License
 

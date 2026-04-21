@@ -1,37 +1,10 @@
-# Spatial
+# `@pierre/ecs/modules/spatial`
 
-Spatial indexing is a two-layer design: a **core interface** describing the
-minimum contract every spatial backend satisfies, and **module implementations**
-that plug in backend-specific storage.
+Concrete `SpatialStructure` implementations. The interface itself lives
+in core — see
+[`docs/spatial-structure.md`](../../../docs/spatial-structure.md).
 
-## Core Interface (`packages/ecs/src/spatial-structure.ts`)
-
-```ts
-interface SpatialStructure<TPos> {
-  add(id: EntityId, pos: TPos): void;
-  remove(id: EntityId, pos: TPos): void;
-  move(id: EntityId, from: TPos, to: TPos): void;
-  queryAt(pos: TPos): Iterable<EntityId>;
-  queryRect(min: TPos, max: TPos): Iterable<EntityId>;
-  queryNear(pos: TPos, radius: number): Iterable<EntityId>;
-  clear(): void;
-}
-```
-
-Query methods return `Iterable<EntityId>` (never `Set` or `Array`). Lazy
-backends (quadtree, R-tree, BVH) can yield entities without materializing
-intermediate collections. Consumers that need `Set` semantics call
-`new Set(queryAt(pos))` explicitly — no assumption about storage leaks
-into the contract.
-
-`TPos` is the position shape: `{x, y}` for 2D, `{x, y, z}` for 3D,
-`{min, max}` for AABBs, etc. Pick it to match what your backend indexes.
-
-Import via `@pierre/ecs/spatial-structure`.
-
-## Implementations (`packages/ecs/src/modules/spatial/`)
-
-### `HashGrid2D` — integer grid (current default)
+## `HashGrid2D` — integer grid (current default)
 
 `Map<"x,y", Set<EntityId>>`. Each cell key maps to the set of entities at
 that integer position. Auto-maintained via
@@ -58,7 +31,7 @@ Backend-agnostic code should use `queryAt` and filter via the engine-level
 
 Import via `@pierre/ecs/modules/spatial`.
 
-### Projection helpers
+## Projection helpers
 
 For games that work in continuous coordinates and index into an integer
 cell grid, `@pierre/ecs/modules/spatial` also exports three pure
@@ -74,9 +47,9 @@ These are independent of `HashGrid2D`: use them to compute cell keys for
 any grid backend, and use the returned `CellKey` `{ x, y }` as an input
 to `HashGrid2D.add` / `.remove` / `.cellFor`.
 
-### Future implementations
+## Future implementations
 
-Per the [general-purpose-ecs-roadmap](../../../docs/roadmap/general-purpose-ecs-roadmap.md):
+Per the [general-purpose-ecs-roadmap](../../../../../docs/roadmap/general-purpose-ecs-roadmap.md):
 continuous-space `HashGrid2D` with cell-size parameter, `QuadTree`,
 `Octree`, `SweepAndPrune` / `BVH` for AABBs. None are in scope until a
 real driver (e.g. an Asteroids/platformer prototype) forces them.
@@ -96,14 +69,3 @@ world.enableSpatial(PositionDef, customBackend); // swap in any SpatialStructure
 - `world.move(id, x, y)` atomically updates both the position component
   and the spatial index via the interface. Game code should always use
   `world.move()` rather than mutating positions directly.
-
-## Why an interface?
-
-- **Pay for what you use.** Games on a grid keep the zero-overhead
-  `HashGrid2D`. Games with continuous positions swap in `QuadTree`
-  without touching any system code.
-- **Testability.** Mock `SpatialStructure<TPos>` implementations isolate
-  the rest of the engine in tests.
-- **Pluggability.** Plugins or mods can ship alternative indexing
-  strategies (e.g. multi-resolution pyramids for large worlds) without
-  forking the engine.
