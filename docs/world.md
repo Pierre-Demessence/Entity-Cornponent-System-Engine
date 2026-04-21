@@ -2,11 +2,12 @@
 
 Generic, project-agnostic ECS registry. Owns entity id allocation, component/tag
 stores, the query engine entry point, template-based spawning, serialization,
-and opt-in spatial indexing. It has **zero imports from game-specific code** —
-every game component and tag is registered by the consumer after construction.
+and opt-in spatial indexing. It has **zero imports from consumer code** —
+every component and tag is registered by the consumer after construction.
 
-Game-specific behavior (typed getters, blocker/item lookups, cross-world
-player transfer) lives in the `World` subclass in `src/game/world.ts`.
+Consumer-specific behavior (typed getters, domain-specific lookups,
+cross-world entity transfer) belongs in a subclass owned by the consumer,
+not in this package.
 
 ## Responsibilities
 
@@ -71,19 +72,17 @@ world.move(id, 5, 6);
 world.spatial.getAt(5, 6); // Set { id }
 ```
 
-## Extending for a specific game
+## Extending for a specific consumer
 
-The engine is designed to be subclassed. The game's `World` in
-`src/game/world.ts` does:
+The engine is designed to be subclassed. A consumer subclass typically:
 
-1. `super()` to initialize the engine.
-2. `this.registerComponent(...)` for every game component, storing the
-   returned store as a typed `readonly` field.
-3. `this.registerTag(...)` for every game tag.
-4. `this.enableSpatial(PositionDef)` once.
-5. Adds game-specific helpers (`getBlockingAt`, `transferPlayer`, …).
-
-See [`docs/technical/world.md`](../../../docs/technical/world.md) for the game-specific subclass.
+1. Calls `super()` to initialize the engine.
+2. Calls `this.registerComponent(...)` for every consumer component,
+   storing the returned store as a typed `readonly` field.
+3. Calls `this.registerTag(...)` for every consumer tag.
+4. Calls `this.enableSpatial(PositionDef)` once (if the consumer uses a
+   spatial component).
+5. Adds consumer-specific helpers on top of the generic API.
 
 ## Invariants
 

@@ -58,9 +58,6 @@ documents itself in its source folder
 (`packages/ecs/src/modules/<name>/README.md`). Browse
 [`src/modules/`](../src/modules/) for the current catalog.
 
-See the [general-purpose-ecs-roadmap](../../../docs/roadmap/general-purpose-ecs-roadmap.md)
-Module Catalog for the broader module layering plan.
-
 ## Examples
 
 End-to-end prototypes that exercise the engine in different genres, each

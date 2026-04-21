@@ -146,9 +146,11 @@ In production builds, Vite eliminates the validation wiring entirely.
 
 ## Adding a New Component
 
-1. Define the interface + `ComponentDef` in `src/components/<name>.ts`
-2. Register in `World`'s constructor: `this._foo = this.registerComponent(FooDef)`
-3. Add a typed getter: `get foos() { return this._foo; }`
+1. Define the interface + `ComponentDef<T>` in your consumer code.
+2. Call `world.registerComponent(FooDef)` during world construction and
+   keep the returned store as a typed field.
+3. (Optional) expose a typed getter if you subclass `EcsWorld`:
+   `get foos() { return this._foo; }`.
 
 ~5 lines total.
 

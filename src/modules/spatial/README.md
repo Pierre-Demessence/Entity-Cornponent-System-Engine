@@ -49,10 +49,10 @@ to `HashGrid2D.add` / `.remove` / `.cellFor`.
 
 ## Future implementations
 
-Per the [general-purpose-ecs-roadmap](../../../../../docs/roadmap/general-purpose-ecs-roadmap.md):
-continuous-space `HashGrid2D` with cell-size parameter, `QuadTree`,
-`Octree`, `SweepAndPrune` / `BVH` for AABBs. None are in scope until a
-real driver (e.g. an Asteroids/platformer prototype) forces them.
+Likely candidates as real drivers surface: continuous-space `HashGrid2D`
+with cell-size parameter, `QuadTree`, `Octree`, `SweepAndPrune` / `BVH`
+for AABBs. None are in scope until an example or consumer forces them
+(Rule of Three).
 
 ## Integration with `EcsWorld`
 

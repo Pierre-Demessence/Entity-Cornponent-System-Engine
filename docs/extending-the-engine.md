@@ -240,6 +240,3 @@ is imported as `@pierre/ecs/modules/lifetime`.
 ## Related
 
 - [packages/ecs/docs/README.md](README.md) — engine primitives index.
-- [../../docs/roadmap/general-purpose-ecs-roadmap.md](../../docs/roadmap/general-purpose-ecs-roadmap.md) — module catalog and milestone ladder.
-- [../../docs/roadmap/prototype-games-roadmap.md](../../docs/roadmap/prototype-games-roadmap.md) — prototype ladder for generality-driven changes.
-- [../../docs/plans/done/ecs-engine-audit.md](../../docs/plans/done/ecs-engine-audit.md) — worked example of single-consumer-driven engine improvements.

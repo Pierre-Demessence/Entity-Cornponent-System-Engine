@@ -20,8 +20,7 @@ bug and the example is on hold until the bug is fixed.
   [platformer/POSTMORTEM.md](platformer/POSTMORTEM.md).
 
 The rest of the plan — which examples to build next, in what order, and
-what each one proves — lives in
-[docs/roadmap/prototype-games-roadmap.md](../../../docs/roadmap/prototype-games-roadmap.md).
+what each one proves — lives in the consuming repo's prototype roadmap.
 
 ## Rules for examples
 
@@ -48,7 +47,7 @@ non-negotiable:
 5. **Postmortem required.** After each example, write a one-page note in
    the example's own `POSTMORTEM.md` covering: what engine API was
    missing, what felt awkward, what was surprising. Findings feed back
-   into [docs/plans/done/ecs-engine-audit.md](../../../docs/plans/done/ecs-engine-audit.md).
+   into the consumer's engine-audit plan.
 
 ## Layout (once examples start landing)
 
@@ -86,12 +85,6 @@ npm run build -w @pierre/ecs-example-<name>
 
 ## Related documents
 
-- [Prototype Games Roadmap](../../../docs/roadmap/prototype-games-roadmap.md)
-  — the full ladder of planned examples, coverage matrix, and suggested
-  order.
-- [General-Purpose ECS Roadmap](../../../docs/roadmap/general-purpose-ecs-roadmap.md)
-  — the target engine layering these examples validate.
-- [ECS Engine Audit](../../../docs/plans/done/ecs-engine-audit.md) — the
-  concrete audit items postmortems feed back into.
-- [ECS Engine Public Release Strategy](../../../docs/roadmap/ecs-engine-public-release-strategy.md)
-  — if the engine ever goes public, these examples ship with it.
+- [`../docs/README.md`](../docs/README.md) — engine primitives index.
+- [`../docs/extending-the-engine.md`](../docs/extending-the-engine.md) —
+  Rule-of-Three promotion policy and failure modes to avoid.
