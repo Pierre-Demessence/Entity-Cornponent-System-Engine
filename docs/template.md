@@ -81,4 +81,9 @@ const orc = composeTemplates(baseCreature, orcRace, meleeArchetype, {
 world.spawn(orc, { positions: { x: 5, y: 10 } });
 ```
 
-```
+
+## See also
+
+- [Component Store](component-store.md) - where template components land.
+- [EcsWorld](world.md) - `world.spawn(template, overrides)` is the consumer entry point.
+

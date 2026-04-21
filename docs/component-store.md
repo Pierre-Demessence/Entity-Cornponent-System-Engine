@@ -151,3 +151,10 @@ In production builds, Vite eliminates the validation wiring entirely.
 3. Add a typed getter: `get foos() { return this._foo; }`
 
 ~5 lines total.
+
+## See also
+
+- [Query Builder](query.md) - iterate components with tag filters.
+- [Entity Templates](template.md) - declarative blueprints that write into stores.
+- [EcsWorld](world.md) - registers stores and owns their lifecycle.
+

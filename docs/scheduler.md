@@ -110,3 +110,9 @@ runAfter "movement" (directly or transitively).
 
 This is a foundation for future parallel-execution scheduling, but it's
 useful on its own for documenting and policing data flow between systems.
+
+## See also
+
+- [Tick](tick.md) - `TickRunner` drives the scheduler's `run(ctx)` each tick.
+- [EcsWorld](world.md) - provides the per-tick context passed to systems.
+

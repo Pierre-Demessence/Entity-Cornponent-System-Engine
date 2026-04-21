@@ -75,3 +75,9 @@ bus.on('SomeEvent', (event, ctx) => {
   // event is narrowed to SomeEvent, not the full union
 });
 ```
+
+## See also
+
+- [EcsWorld](world.md) - owns the event bus and flushes it in the game loop.
+- [Scheduler](scheduler.md) - drains events between system phases.
+

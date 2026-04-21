@@ -35,3 +35,10 @@ Concrete `TickSource` implementations live under
 [`src/modules/tick/README.md`](../src/modules/tick/README.md) for the
 current implementations (`ManualTickSource`, `FixedIntervalTickSource`)
 and guidance on which to pick.
+
+## See also
+
+- [Scheduler](scheduler.md) - `TickRunner` calls `scheduler.run(ctx)` each tick.
+- [Event Bus](event-bus.md) - typically flushed inside the tick callback.
+- [`src/modules/tick/README.md`](../src/modules/tick/README.md) - concrete `TickSource` implementations.
+

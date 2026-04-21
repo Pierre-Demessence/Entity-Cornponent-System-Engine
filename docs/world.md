@@ -95,3 +95,12 @@ See [`docs/technical/world.md`](../../../docs/technical/world.md) for the game-s
 - `toJSON` / `loadJSON` preserve registration order of components and tags;
   the caller is responsible for registering the same schemas (in any order)
   before calling `loadJSON`.
+
+## See also
+
+- [Component Store](component-store.md) - typed storage registered on the world.
+- [Query Builder](query.md) - `world.query(...)` entry point.
+- [Entity Templates](template.md) - `world.spawn(template, overrides)`.
+- [Spatial Structure](spatial-structure.md) - `world.enableSpatial(def)` and `world.move(id, x, y)`.
+- [Tick](tick.md) - drives the game loop around the world.
+

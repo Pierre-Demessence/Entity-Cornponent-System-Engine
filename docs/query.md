@@ -34,3 +34,9 @@ for (const [id, pos, stats] of world.query(PositionDef, StatsDef).without(world.
   // pos and stats are fully typed from the ComponentDef generics
 }
 ```
+
+## See also
+
+- [Component Store](component-store.md) - the typed storage queries iterate over.
+- [EcsWorld](world.md) - exposes `world.query(...)` as the main entry point.
+

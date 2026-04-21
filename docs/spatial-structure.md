@@ -46,3 +46,9 @@ current implementations (`HashGrid2D`, projection helpers) and
 - **Pluggability.** Plugins or mods can ship alternative indexing
   strategies (e.g. multi-resolution pyramids for large worlds) without
   forking the engine.
+
+## See also
+
+- [EcsWorld](world.md) - `world.enableSpatial(def)` wires a structure to component mutations.
+- [`src/modules/spatial/README.md`](../src/modules/spatial/README.md) - concrete `HashGrid2D` backend.
+

@@ -1,16 +1,3 @@
----
-post_title: ECS Engine Examples
-author1: pierre
-post_slug: ecs-engine-examples
-microsoft_alias: n/a
-featured_image: n/a
-categories: []
-tags: [ecs, examples, prototypes]
-ai_note: AI-assisted
-summary: Example projects that use the @roguelike/ecs engine to validate its domain-neutrality. Each example is a tiny prototype breaking one or more assumptions baked into the roguelike.
-post_date: 2026-04-17
----
-
 # ECS Engine Examples
 
 This folder hosts small example projects built on top of `@pierre/ecs`.

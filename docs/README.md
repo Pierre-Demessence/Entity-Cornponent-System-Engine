@@ -20,6 +20,36 @@ Project-agnostic ECS primitives in `packages/ecs/src/`. These modules have
 - `validation.ts` — pure data validation helpers (asObject, asArray, asNumber, asString, asBoolean)
 - `test-utils.ts` — `createTestWorld()`, `GenericEntityBuilder`, `entity()` — domain-neutral fluent helpers for ECS unit tests. Import via `@pierre/ecs/test-utils`.
 
+## Quick Start
+
+```ts
+import { EcsWorld } from '@pierre/ecs/world';
+import type { ComponentDef } from '@pierre/ecs/component-store';
+
+interface Pos { x: number; y: number }
+const PosDef: ComponentDef<Pos> = {
+  name: 'pos',
+  serialize: v => v,
+  deserialize: raw => raw as Pos,
+};
+
+const world = new EcsWorld();
+world.registerComponent(PosDef);
+world.enableSpatial(PosDef);
+
+const id = world.spawn({ name: 'marker', components: { pos: { x: 0, y: 0 } } });
+world.move(id, 3, 4);
+
+for (const [entity, pos] of world.query(PosDef)) {
+  console.log(entity, pos.x, pos.y);
+}
+
+world.queueDestroy(id);
+world.flushDestroys();
+```
+
+See [EcsWorld](world.md) for the full registry API.
+
 ## Opt-in Modules
 
 Genre-specific helpers that layer on top of the primitives. Each opt-in
@@ -30,6 +60,17 @@ documents itself in its source folder
 
 See the [general-purpose-ecs-roadmap](../../../docs/roadmap/general-purpose-ecs-roadmap.md)
 Module Catalog for the broader module layering plan.
+
+## Examples
+
+End-to-end prototypes that exercise the engine in different genres, each
+with a short postmortem:
+
+- [Snake](../examples/snake/POSTMORTEM.md) — minimal grid game; validates `HashGrid2D` + `ManualTickSource`.
+- [Asteroids](../examples/asteroids/POSTMORTEM.md) — continuous-space arcade; validates `FixedIntervalTickSource` + spatial projection helpers.
+- [Platformer](../examples/platformer/POSTMORTEM.md) — AABB-based movement and pickups.
+
+Start from [`../examples/README.md`](../examples/README.md) for the full tour.
 
 ## Contributing
 
