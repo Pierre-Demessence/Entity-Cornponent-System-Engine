@@ -22,33 +22,9 @@ Project-agnostic ECS primitives in `packages/ecs/src/`. These modules have
 
 ## Quick Start
 
-```ts
-import { EcsWorld } from '@pierre/ecs/world';
-import type { ComponentDef } from '@pierre/ecs/component-store';
-
-interface Pos { x: number; y: number }
-const PosDef: ComponentDef<Pos> = {
-  name: 'pos',
-  serialize: v => v,
-  deserialize: raw => raw as Pos,
-};
-
-const world = new EcsWorld();
-world.registerComponent(PosDef);
-world.enableSpatial(PosDef);
-
-const id = world.spawn({ name: 'marker', components: { pos: { x: 0, y: 0 } } });
-world.move(id, 3, 4);
-
-for (const [entity, pos] of world.query(PosDef)) {
-  console.log(entity, pos.x, pos.y);
-}
-
-world.queueDestroy(id);
-world.flushDestroys();
-```
-
-See [EcsWorld](world.md) for the full registry API.
+See [`packages/ecs/README.md`](../README.md#quick-start) for a minimal
+register-component / spawn / query example. The primitive docs above
+cover the full API surface.
 
 ## Opt-in Modules
 
