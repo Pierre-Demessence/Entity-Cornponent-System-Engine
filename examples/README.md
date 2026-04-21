@@ -72,6 +72,20 @@ packages/ecs/examples/
 Workspaces are configured (root `package.json` has
 `"workspaces": ["packages/*", "packages/ecs/examples/*"]`).
 
+### Hub mode (single dev server)
+
+Run all examples from one landing page:
+
+```sh
+# From repository root
+npm run dev:ecs-examples
+```
+
+This starts the examples hub at `packages/ecs/examples/hub/` and lets
+you launch Snake, Asteroids, and Platformer from one page.
+
+### Standalone mode (per example)
+
 ```sh
 # Install workspace dependencies (first time only)
 npm install
