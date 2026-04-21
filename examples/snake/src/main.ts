@@ -1,6 +1,6 @@
 import type { GameState, SnakeEvent } from './game';
 
-import { EventBus, Scheduler } from '@pierre/ecs';
+import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
@@ -53,14 +53,14 @@ export function start(container: HTMLElement): () => void {
     state.dead = true;
   });
 
-  const unsubscribeTick = tickSource.subscribe(() => {
-    if (state.dead)
-      return;
-    scheduler.run(state);
-    world.endOfTick();
-    events.flush();
+  const tickRunner = new TickRunner<GameState>({
+    scheduler,
+    source: tickSource,
+    contextFactory: () => state,
+    getEvents: ctx => ctx.events,
+    getWorld: () => state.world,
   });
-  tickSource.start();
+  tickRunner.start();
 
   let rafId = 0;
   const loop = (): void => {
@@ -116,8 +116,7 @@ export function start(container: HTMLElement): () => void {
     unsubscribeKeys();
     keyboard.dispose();
     window.cancelAnimationFrame(rafId);
-    unsubscribeTick();
-    tickSource.stop();
+    tickRunner.stop();
     container.innerHTML = '';
   };
 }

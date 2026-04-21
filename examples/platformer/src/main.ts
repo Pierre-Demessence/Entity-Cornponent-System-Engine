@@ -2,7 +2,7 @@ import type { EntityId } from '@pierre/ecs';
 
 import type { GameState, PlatformerAction, PlatformerEvent } from './game';
 
-import { EventBus, Scheduler } from '@pierre/ecs';
+import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { makeKinematicsSystem } from '@pierre/ecs/modules/kinematics';
 import { HashGrid2D } from '@pierre/ecs/modules/spatial';
@@ -99,21 +99,26 @@ export function start(container: HTMLElement): () => void {
 
   resetGame(state);
 
-  const unsubscribeTick = tickSource.subscribe(() => {
-    scheduler.run(state);
-    // Respawn if player fell out of the world
-    if (state.playerId != null) {
-      const pos = world.getStore(PositionDef).get(state.playerId);
-      if (pos && pos.y > RESPAWN_Y) {
-        events.emit({ type: 'PlayerFell' });
-        resetGame(state);
+  const tickRunner = new TickRunner<GameState>({
+    scheduler,
+    source: tickSource,
+    contextFactory: () => state,
+    getEvents: ctx => ctx.events,
+    getWorld: () => state.world,
+    onTickComplete: () => input.clearEdges(),
+    onBeforeFlush: () => {
+      // Respawn if player fell out of the world. Emit + reset before the
+      // flush so the PlayerFell event drains in this tick.
+      if (state.playerId != null) {
+        const pos = world.getStore(PositionDef).get(state.playerId);
+        if (pos && pos.y > RESPAWN_Y) {
+          events.emit({ type: 'PlayerFell' });
+          resetGame(state);
+        }
       }
-    }
-    world.endOfTick();
-    events.flush();
-    input.clearEdges();
+    },
   });
-  tickSource.start();
+  tickRunner.start();
 
   const renderTickSource = new AnimationFrameTickSource();
   const unsubscribeRender = renderTickSource.subscribe(() => {
@@ -125,8 +130,7 @@ export function start(container: HTMLElement): () => void {
     input.dispose();
     unsubscribeRender();
     renderTickSource.stop();
-    unsubscribeTick();
-    tickSource.stop();
+    tickRunner.stop();
     container.innerHTML = '';
   };
 }

@@ -1,6 +1,6 @@
 import type { AsteroidsAction, AsteroidsEvent, GameState } from './game';
 
-import { EventBus, Scheduler } from '@pierre/ecs';
+import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
@@ -97,15 +97,19 @@ export function start(container: HTMLElement): () => void {
 
   resetGame(state);
 
-  const unsubscribeTick = tickSource.subscribe(() => {
-    if (state.dead && input.justPressed('reset'))
-      resetGame(state);
-    scheduler.run(state);
-    world.endOfTick();
-    events.flush();
-    input.clearEdges();
+  const tickRunner = new TickRunner<GameState>({
+    scheduler,
+    source: tickSource,
+    getEvents: ctx => ctx.events,
+    getWorld: () => state.world,
+    onTickComplete: () => input.clearEdges(),
+    contextFactory: () => {
+      if (state.dead && input.justPressed('reset'))
+        resetGame(state);
+      return state;
+    },
   });
-  tickSource.start();
+  tickRunner.start();
 
   const renderTickSource = new AnimationFrameTickSource();
   const unsubscribeRender = renderTickSource.subscribe(() => {
@@ -117,8 +121,7 @@ export function start(container: HTMLElement): () => void {
     input.dispose();
     unsubscribeRender();
     renderTickSource.stop();
-    unsubscribeTick();
-    tickSource.stop();
+    tickRunner.stop();
     container.innerHTML = '';
   };
 }
