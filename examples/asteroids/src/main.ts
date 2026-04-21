@@ -1,11 +1,13 @@
 import type { AsteroidsEvent, GameState } from './game';
 
 import { EventBus, Scheduler } from '@pierre/ecs';
+import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { HashGrid2D } from '@pierre/ecs/modules/spatial';
 import { FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
 
+  despawn,
   makeWorld,
   resetGame,
   SCREEN_H,
@@ -15,7 +17,6 @@ import { render } from './render';
 import {
   collisionSystem,
   inputSystem,
-  lifetimeSystem,
   movementSystem,
 } from './systems';
 
@@ -37,6 +38,10 @@ export function start(container: HTMLElement): () => void {
   const world = makeWorld();
   const grid = new HashGrid2D();
   const events = new EventBus<AsteroidsEvent>();
+  const lifetimeSystem = makeLifetimeSystem<GameState>({
+    onExpire: despawn,
+    runAfter: ['movement'],
+  });
   const scheduler = new Scheduler<GameState>()
     .add(inputSystem)
     .add(movementSystem)

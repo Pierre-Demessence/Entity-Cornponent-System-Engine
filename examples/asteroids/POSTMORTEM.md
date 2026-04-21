@@ -176,3 +176,11 @@ promotions (five gaps promoted together after the platformer postmortem):
 - EcsWorld.endOfTick — this file's final M2 commit
 
 See `docs/plans/done/engine-m2-promotions.md` for the full plan and migration details.
+
+
+---
+
+## M-Next promotion status (2026-10-31)
+
+Gap #7 (`LifetimeDef` + lifetime system) shipped under the new `Path-B` canon promotion rule as `@pierre/ecs/modules/lifetime`. Single internal consumer (asteroids, still), but canon references (Unreal `AActor::SetLifeSpan`, Unity `Destroy(obj, t)`, Gregory *Game Engine Architecture* 3rd ed. §12.5) substituted for the second data point. Asteroids migrated to the engine module. See `docs/plans/done/engine-lifetime-module.md`.
+

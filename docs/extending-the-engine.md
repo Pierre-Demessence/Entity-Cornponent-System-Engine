@@ -212,6 +212,31 @@ Match the driver to the change:
 | Close a gap for external users | Public-release audit |
 | Add a new primitive | Need from ≥2 consumers |
 
+## Worked Example: Path-B Promotion (`modules/lifetime`)
+
+Asteroids defined a local `LifetimeDef { remainingMs }` + one-pass
+countdown system for bullet expiry. One internal consumer, but:
+
+- The API shape is textbook: countdown field + per-tick decrement +
+  destroy-on-expire.
+- It is directly named in external canon: Unreal's
+  `AActor::SetLifeSpan`, Unity's `Object.Destroy(obj, t)`, Gregory,
+  *Game Engine Architecture* (3rd ed.) §12.5.
+- Minimal surface: a component with one field and a system factory
+  with one optional hook (`onExpire`) for consumers that need extra
+  cleanup.
+- Demotable: the entire module is ~40 LOC across two files; if a
+  future prototype reveals a richer shape (e.g. pause semantics,
+  elapsed-time tracking) and contradicts this one, we delete the
+  module and the consumer re-inlines it.
+
+Under the old Rule-of-Three rule this would have waited for a second
+consumer. Under **Path B** it shipped with the asteroids migration
+alone, because the canon reference is the second data point.
+
+The shipped module lives at `packages/ecs/src/modules/lifetime/` and
+is imported as `@pierre/ecs/modules/lifetime`.
+
 ## Related
 
 - [packages/ecs/docs/README.md](README.md) — engine primitives index.
