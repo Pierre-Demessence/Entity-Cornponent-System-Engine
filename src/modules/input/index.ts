@@ -11,3 +11,12 @@ export {
   KeyboardProvider,
   type KeyboardProviderOptions,
 } from './keyboard-provider';
+export {
+  Pointer,
+  type PointerCode,
+  type PointerProjector,
+  PointerProvider,
+  type PointerProviderOptions,
+  type PointerState,
+  type PointerTarget,
+} from './pointer-provider';

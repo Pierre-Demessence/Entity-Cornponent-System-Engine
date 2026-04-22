@@ -56,12 +56,23 @@ were bracing for it, but the current plain-tag iteration is fine.
 
 ## What was missing / awkward
 
-### 1. `@pierre/ecs/modules/input` has no pointer/axis support — **real gap, now proven**
+### 1. `@pierre/ecs/modules/input` has no pointer/axis support — ~~**real gap, now proven**~~ **resolved after rung 4**
+
+> **Update (landed alongside rung 4 cleanup):** Path A implemented.
+> `@pierre/ecs/modules/input` now ships `PointerProvider` +
+> `Pointer.LeftButton / MiddleButton / RightButton` codes that drop
+> into `createInput` maps identically to keyboard keys. Position is
+> exposed as `pointer.state.{x, y, over}` (analog, provider-hosted,
+> keeps `InputState<T>` cleanly digital). Default projector is
+> canvas-aware — scales `clientX/Y` to internal pixel coordinates
+> when the target has numeric `width`/`height`. The shooter's
+> bespoke DOM listeners + `fireHeld` flag + `aim` struct are gone;
+> `main.ts` dropped ~35 LOC and `GameState` lost two fields.
 
 The rung-4 card of the roadmap flagged this: "first test of input
 abstraction for continuous aim." The prototype confirmed it the
-moment the first line of code was written. The shooter needs three
-things the `input` module does not provide:
+moment the first line of code was written. The shooter needed three
+things the original `input` module did not provide:
 
 1. **Pointer position** (canvas-space `{x, y}`), continuously updated.
 2. **Pointer button hold state** (LMB down/up, separate from key
@@ -69,8 +80,11 @@ things the `input` module does not provide:
 3. **Client-rect → canvas-coordinate projection** (when the canvas
    is CSS-scaled vs. its internal pixel resolution).
 
-Today, `createInput` is purely a digital action map: down/up/edge per
-named action. For mouse aim, we bypass the module entirely:
+All three are covered by the shipped `PointerProvider`. The original
+gap analysis follows (kept for historical reference).
+
+Originally, `createInput` was purely a digital action map: down/up/edge
+per named action. For mouse aim, we bypassed the module entirely:
 
 ```ts
 // in main.ts, outside the input module
@@ -84,60 +98,33 @@ const onPointerMove = (ev: PointerEvent): void => {
 canvas.addEventListener('pointermove', onPointerMove);
 ```
 
-…and then `state.aim` lives on `GameState` and the input system
-reads it directly. Same story for LMB — a bare boolean on
+…and then `state.aim` lived on `GameState` and the input system read
+it directly. Same story for LMB — a bare boolean on
 `GameState.fireHeld` set by `pointerdown` / `pointerup` listeners.
 
-This works, but it's **the exact kind of boilerplate the input
+That worked, but it was **the exact kind of boilerplate the input
 module exists to eliminate for the keyboard case.** The Snake,
 Asteroids, and Platformer postmortems all praised the module for
-exactly this reason. The first continuous-input consumer lands and
-immediately has to hand-roll a parallel system.
+exactly this reason. The first continuous-input consumer landed and
+immediately had to hand-roll a parallel system.
 
-**Concrete proposal — Path A ("pointer source")**
+**Proposal adopted — Path A ("pointer source")**
 
-Minimally, a `PointerProvider` that parallels `KeyboardProvider`:
+A `PointerProvider` paralleling `KeyboardProvider`:
 
 ```ts
-interface PointerState {
-  x: number;
-  y: number;
-  isDown(button: 0 | 1 | 2): boolean;
-  justPressed(button: 0 | 1 | 2): boolean;
-  justReleased(button: 0 | 1 | 2): boolean;
-}
-
-class PointerProvider {
-  constructor(options: {
-    target: HTMLElement;       // the canvas, typically
-    /** Optional element→logical coordinate projector; defaults to clientRect. */
-    project?: (ev: PointerEvent) => { x: number; y: number };
-  });
-  readonly state: PointerState;
-  dispose(): void;
-}
+const pointer = new PointerProvider({ target: canvas });
+createInput<Action>(
+  { fire: [Key.Space, Pointer.LeftButton], /* … */ },
+  [keyboard, pointer],
+);
+// Read continuous aim:
+state.pointer = pointer.state;   // { x, y, over }
 ```
 
-The pointer's button state could be *folded into* `createInput`'s
-action map (e.g. map action `fire` to `[Key.Space, Pointer.LMB]`) or
-kept as a sibling surface. The roguelike and any future prototype
-with pointer input would benefit; the card battler (rung 5) will
-need this anyway.
-
-**Concrete proposal — Path B ("axes as a first-class concept")**
-
-More ambitious. Introduce analog/axis actions distinct from digital
-actions. `input.axis('aimX') → number`, `input.axis('aimY') →
-number`. Gamepad sticks, mouse delta, and mouse position all feed
-the same `axis(name)` query. Worth waiting on — without a gamepad
-consumer yet, Path B would design in a vacuum.
-
-**Recommendation:** Path A first. It matches the existing module's
-shape ("providers feeding an action map"), unblocks every GUI-heavy
-prototype (card battler, roguelike mouse integration), and leaves
-axes to be bolted on later when gamepad support actually lands. Cost
-looks like ~80 LOC of module code + tests, one new sub-module path
-`@pierre/ecs/modules/input/pointer` or similar.
+Path B (axes as a first-class concept) was deferred: without a
+gamepad consumer it would design in a vacuum. Revisit when rung 7
+(3D) or a gamepad-driven prototype lands.
 
 ### 2. Continuous-to-cell projection boilerplate — **fourth consumer confirms**
 

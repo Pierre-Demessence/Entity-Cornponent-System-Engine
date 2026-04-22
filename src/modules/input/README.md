@@ -1,9 +1,10 @@
 # `@pierre/ecs/modules/input`
 
 Action-map + edge-detected input state with pluggable raw-event providers.
-Ships a DOM `KeyboardProvider` out of the box; custom providers (gamepad,
-touch, synthetic test harness) plug in by implementing the tiny
-`InputProvider` interface from `@pierre/ecs/input-source`.
+Ships DOM `KeyboardProvider` and `PointerProvider` out of the box;
+custom providers (gamepad, touch extensions, synthetic test harness)
+plug in by implementing the tiny `InputProvider` interface from
+`@pierre/ecs/input-source`.
 
 Canon pattern: Bevy `bevy_input`, Unity `InputSystem`, Godot `InputMap`.
 
@@ -120,3 +121,102 @@ Edges are **action-level**, not code-level:
   future Path-A addition once a real consumer lands.
 - No global `preventDefault` toggling — pass an explicit list (or empty
   array) via `KeyboardProvider` options to control it.
+
+## Pointer
+
+`PointerProvider` reports mouse / pen / single-finger-touch input via
+the unified DOM [Pointer Events] API. Buttons are emitted as raw
+events (plug directly into `createInput` maps), while position lives
+on `provider.state` as a continuous surface.
+
+```ts
+import {
+  createInput,
+  Key,
+  KeyboardProvider,
+  Pointer,
+  PointerProvider,
+} from '@pierre/ecs/modules/input';
+
+const canvas = document.querySelector('canvas')!;
+const keyboard = new KeyboardProvider();
+const pointer = new PointerProvider({ target: canvas });
+
+type Action = 'up' | 'down' | 'left' | 'right' | 'fire';
+const input = createInput<Action>(
+  {
+    up:    [Key.KeyW, Key.ArrowUp],
+    down:  [Key.KeyS, Key.ArrowDown],
+    left:  [Key.KeyA, Key.ArrowLeft],
+    right: [Key.KeyD, Key.ArrowRight],
+    fire:  [Key.Space, Pointer.LeftButton],
+  },
+  [keyboard, pointer],
+);
+
+// In a system:
+const aimX = pointer.state.x;
+const aimY = pointer.state.y;
+if (input.isDown('fire'))
+  fireBulletToward(aimX, aimY);
+```
+
+### Coordinate projection
+
+The default projector reports **target-local pixels**. When the target
+looks like an `HTMLCanvasElement` (has numeric `width` / `height`), it
+additionally scales by `canvas.width / rect.width` so the returned
+coordinates are in **canvas-internal pixel space** even when the
+canvas is CSS-stretched (high-DPI layouts, fullscreen). Pass
+`options.project` to override:
+
+```ts
+new PointerProvider({
+  target: svg,
+  project: (ev, target) => {
+    // Translate to SVG user units, for example.
+    const pt = (target as SVGSVGElement).createSVGPoint();
+    pt.x = ev.clientX; pt.y = ev.clientY;
+    const ctm = (target as SVGSVGElement).getScreenCTM();
+    const local = ctm ? pt.matrixTransform(ctm.inverse()) : pt;
+    return { x: local.x, y: local.y };
+  },
+});
+```
+
+### Button codes
+
+| Code                     | `PointerEvent.button` |
+| ------------------------ | :-------------------: |
+| `Pointer.LeftButton`     | 0                     |
+| `Pointer.MiddleButton`   | 1                     |
+| `Pointer.RightButton`    | 2                     |
+
+Use them in `createInput` maps identically to `Key.*`. Restrict which
+buttons are emitted with `options.buttons = [0]` (for example).
+
+### Context menu
+
+When button 2 is included in the reported buttons, the provider
+`preventDefault()`s the native `contextmenu` event on the target so
+right-click can be used as a game action. Override with
+`options.preventContextMenu: false`.
+
+### Releases off-target
+
+The `pointerup` listener is attached to `window` (not the target), so
+releasing a button while the pointer is outside the canvas still
+registers — held-fire state doesn't get stuck. Pass
+`options.windowTarget` (e.g. a fresh `EventTarget`) in tests or
+headless environments.
+
+### Scope
+
+- v1 is position + over-flag + buttons 0/1/2, nothing else.
+- No scroll/wheel, no pointer-lock helper, no multi-touch or gesture
+  helpers — these are deferred until a real consumer lands. Single-
+  finger touch already works via Pointer Events.
+- Analog position lives on `provider.state`, not inside `InputState<T>`
+  — action-map state stays cleanly digital.
+
+[Pointer Events]: https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events

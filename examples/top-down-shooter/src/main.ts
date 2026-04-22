@@ -1,7 +1,13 @@
 import type { GameState, ShooterAction, ShooterEvent } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
-import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import {
+  createInput,
+  Key,
+  KeyboardProvider,
+  Pointer,
+  PointerProvider,
+} from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 import { HashGrid2D } from '@pierre/ecs/modules/spatial';
@@ -82,64 +88,38 @@ export function start(container: HTMLElement): () => void {
       Key.KeyR,
     ],
   });
+  const pointer = new PointerProvider({
+    initialPosition: { x: SCREEN_W / 2, y: SCREEN_H / 2 - 1 },
+    target: canvas,
+  });
   const input = createInput<ShooterAction>(
     {
       down: [Key.ArrowDown, Key.KeyS],
-      fire: [Key.Space],
+      fire: [Key.Space, Pointer.LeftButton],
       left: [Key.ArrowLeft, Key.KeyA],
       reset: [Key.KeyR],
       right: [Key.ArrowRight, Key.KeyD],
       up: [Key.ArrowUp, Key.KeyW],
     },
-    [keyboard],
+    [keyboard, pointer],
   );
 
   const state: GameState = {
-    aim: { x: SCREEN_W / 2, y: SCREEN_H / 2 - 1 },
     dead: false,
     dtMs: LOGIC_TICK_MS,
     elapsedMs: 0,
     events,
     fireCooldownMs: 0,
-    fireHeld: false,
     grid,
     input,
     playerId: null,
+    pointer: pointer.state,
     score: 0,
     spawnTimerMs: 0,
     world,
   };
 
   resetGame(state);
-
-  // Mouse position + LMB hold state are maintained outside the input
-  // module: `@pierre/ecs/modules/input` v1 handles discrete action
-  // mappings only. The shooter's continuous aim vector and held-fire
-  // flag live on `GameState` and are updated by DOM listeners. See
-  // POSTMORTEM.md for the gap analysis.
-  const onPointerMove = (ev: PointerEvent): void => {
-    const rect = canvas.getBoundingClientRect();
-    // Account for CSS scaling: canvas internal resolution vs displayed size.
-    const sx = canvas.width / rect.width;
-    const sy = canvas.height / rect.height;
-    state.aim.x = (ev.clientX - rect.left) * sx;
-    state.aim.y = (ev.clientY - rect.top) * sy;
-  };
-  const onPointerDown = (ev: PointerEvent): void => {
-    if (ev.button === 0)
-      state.fireHeld = true;
-  };
-  const onPointerUp = (ev: PointerEvent): void => {
-    if (ev.button === 0)
-      state.fireHeld = false;
-  };
-  const onContextMenu = (ev: MouseEvent): void => {
-    ev.preventDefault();
-  };
-  canvas.addEventListener('pointermove', onPointerMove);
-  canvas.addEventListener('pointerdown', onPointerDown);
-  window.addEventListener('pointerup', onPointerUp);
-  canvas.addEventListener('contextmenu', onContextMenu);
 
   const tickRunner = new TickRunner<GameState>({
     scheduler,
@@ -163,10 +143,6 @@ export function start(container: HTMLElement): () => void {
   renderTickSource.start();
 
   return (): void => {
-    canvas.removeEventListener('pointermove', onPointerMove);
-    canvas.removeEventListener('pointerdown', onPointerDown);
-    window.removeEventListener('pointerup', onPointerUp);
-    canvas.removeEventListener('contextmenu', onContextMenu);
     input.dispose();
     unsubscribeRender();
     renderTickSource.stop();

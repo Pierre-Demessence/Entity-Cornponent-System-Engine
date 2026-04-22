@@ -1,5 +1,5 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
-import type { InputState } from '@pierre/ecs/modules/input';
+import type { InputState, PointerState } from '@pierre/ecs/modules/input';
 import type { HashGrid2D } from '@pierre/ecs/modules/spatial';
 
 import { EcsWorld } from '@pierre/ecs';
@@ -44,24 +44,17 @@ export type ShooterEvent
 
 export type ShooterAction = 'down' | 'fire' | 'left' | 'reset' | 'right' | 'up';
 
-export interface Aim {
-  /** Pointer position in canvas coordinates. Updated by mousemove listener. */
-  x: number;
-  y: number;
-}
-
 export interface GameState {
-  aim: Aim;
   dead: boolean;
   dtMs: number;
   elapsedMs: number;
   events: EventBus<ShooterEvent>;
   fireCooldownMs: number;
-  /** True while LMB is held. Edge detection lives in input state for keyboard fire. */
-  fireHeld: boolean;
   grid: HashGrid2D;
   input: InputState<ShooterAction>;
   playerId: EntityId | null;
+  /** Live aim vector in canvas-internal pixels, read-only view owned by PointerProvider. */
+  pointer: PointerState;
   score: number;
   spawnTimerMs: number;
   world: EcsWorld;
@@ -205,8 +198,6 @@ export function resetGame(state: GameState): void {
   state.fireCooldownMs = 0;
   state.spawnTimerMs = 0;
   state.elapsedMs = 0;
-  state.aim.x = SCREEN_W / 2;
-  state.aim.y = SCREEN_H / 2 - 1;
 
   state.playerId = spawnPlayer(state);
 }

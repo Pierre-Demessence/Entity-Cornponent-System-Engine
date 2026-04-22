@@ -44,20 +44,22 @@ function drawHud(ctx2d: CanvasRenderingContext2D, state: GameState, fps: number)
 }
 
 function drawCrosshair(ctx2d: CanvasRenderingContext2D, state: GameState): void {
+  const ax = state.pointer.x;
+  const ay = state.pointer.y;
   ctx2d.save();
   ctx2d.strokeStyle = '#8cf';
   ctx2d.lineWidth = 1;
   ctx2d.globalAlpha = 0.6;
   ctx2d.beginPath();
-  ctx2d.arc(state.aim.x, state.aim.y, 8, 0, Math.PI * 2);
-  ctx2d.moveTo(state.aim.x - 12, state.aim.y);
-  ctx2d.lineTo(state.aim.x - 4, state.aim.y);
-  ctx2d.moveTo(state.aim.x + 4, state.aim.y);
-  ctx2d.lineTo(state.aim.x + 12, state.aim.y);
-  ctx2d.moveTo(state.aim.x, state.aim.y - 12);
-  ctx2d.lineTo(state.aim.x, state.aim.y - 4);
-  ctx2d.moveTo(state.aim.x, state.aim.y + 4);
-  ctx2d.lineTo(state.aim.x, state.aim.y + 12);
+  ctx2d.arc(ax, ay, 8, 0, Math.PI * 2);
+  ctx2d.moveTo(ax - 12, ay);
+  ctx2d.lineTo(ax - 4, ay);
+  ctx2d.moveTo(ax + 4, ay);
+  ctx2d.lineTo(ax + 12, ay);
+  ctx2d.moveTo(ax, ay - 12);
+  ctx2d.lineTo(ax, ay - 4);
+  ctx2d.moveTo(ax, ay + 4);
+  ctx2d.lineTo(ax, ay + 12);
   ctx2d.stroke();
   ctx2d.restore();
 }

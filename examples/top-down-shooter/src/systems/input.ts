@@ -14,10 +14,12 @@ import {
  * Player input system.
  *
  * WASD / arrows drive velocity (normalized so diagonal is not faster).
- * Rotation is continuous: the stored `aim` vector (updated by a DOM
- * mousemove listener in `main.ts`) gives the target angle directly.
- * Fire is hold-to-shoot with a fixed cooldown; either LMB or keyboard
- * 'fire' action arms the trigger.
+ * Rotation is continuous: the `PointerProvider` state on `ctx.pointer`
+ * gives the aim vector in canvas-internal pixels; we just
+ * `atan2(y - py, x - px)` to get the barrel angle.
+ * Fire is hold-to-shoot with a fixed cooldown — the `fire` action
+ * binds both `Pointer.LeftButton` and `Key.Space`, so the input
+ * module tracks held state uniformly.
  */
 export const inputSystem: SchedulableSystem<GameState> = {
   name: 'input',
@@ -48,14 +50,13 @@ export const inputSystem: SchedulableSystem<GameState> = {
       vel.vy = 0;
     }
 
-    const ax = ctx.aim.x - pos.x;
-    const ay = ctx.aim.y - pos.y;
+    const ax = ctx.pointer.x - pos.x;
+    const ay = ctx.pointer.y - pos.y;
     if (ax !== 0 || ay !== 0)
       rot.angle = Math.atan2(ay, ax);
 
     ctx.fireCooldownMs = Math.max(0, ctx.fireCooldownMs - ctx.dtMs);
-    const firing = ctx.fireHeld || ctx.input.isDown('fire');
-    if (firing && ctx.fireCooldownMs === 0) {
+    if (ctx.input.isDown('fire') && ctx.fireCooldownMs === 0) {
       const nx = pos.x + Math.cos(rot.angle) * PLAYER_RADIUS;
       const ny = pos.y + Math.sin(rot.angle) * PLAYER_RADIUS;
       spawnBullet(ctx, nx, ny, rot.angle);
