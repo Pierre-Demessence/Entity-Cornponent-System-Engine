@@ -10,11 +10,11 @@ import {
 } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
-import { HashGrid2D } from '@pierre/ecs/modules/spatial';
+import { HashGrid2D, makeGridSyncOnMove } from '@pierre/ecs/modules/spatial';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
-  cellOf,
+  CELL_SIZE,
   despawn,
   makeWorld,
   resetGame,
@@ -52,12 +52,7 @@ export function start(container: HTMLElement): () => void {
   const motionSystem = makeVelocityIntegrationSystem<GameState>({
     name: 'movement',
     boundary: { bounds: { height: SCREEN_H, width: SCREEN_W }, mode: 'clamp' },
-    onMove(ctx, id, prev, next) {
-      const p = cellOf(prev.x, prev.y);
-      const n = cellOf(next.x, next.y);
-      if (p.x !== n.x || p.y !== n.y)
-        ctx.grid.move(id, p, n);
-    },
+    onMove: makeGridSyncOnMove({ cellSize: CELL_SIZE, grid }),
   });
   const lifetimeSystem = makeLifetimeSystem<GameState>({
     onExpire: despawn,

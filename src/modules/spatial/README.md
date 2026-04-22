@@ -47,6 +47,35 @@ These are independent of `HashGrid2D`: use them to compute cell keys for
 any grid backend, and use the returned `CellKey` `{ x, y }` as an input
 to `HashGrid2D.add` / `.remove` / `.cellFor`.
 
+## `makeGridSyncOnMove` — motion ↔ grid glue
+
+When an app keeps its own `HashGrid2D` (distinct from
+`world.enableSpatial`'s auto-managed one — e.g. a bullet/enemy broadphase
+grid in Asteroids or the Shooter), it needs an `onMove` callback on
+`makeVelocityIntegrationSystem` to re-index entities as they cross cell
+boundaries. That callback body is identical across every consumer seen
+so far: project prev/next through `cellOfPoint`, call `grid.move` when
+the cells differ.
+
+`makeGridSyncOnMove({ grid, cellSize })` returns that callback:
+
+```ts
+import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
+import { HashGrid2D, makeGridSyncOnMove } from '@pierre/ecs/modules/spatial';
+
+const grid = new HashGrid2D();
+const CELL_SIZE = 64;
+
+const motion = makeVelocityIntegrationSystem({
+  name: 'movement',
+  boundary: { bounds: { height: 600, width: 800 }, mode: 'wrap' },
+  onMove: makeGridSyncOnMove({ cellSize: CELL_SIZE, grid }),
+});
+```
+
+Spawn/despawn bookkeeping stays in app code — the helper only covers
+the motion step.
+
 ## Future implementations
 
 Likely candidates as real drivers surface: continuous-space `HashGrid2D`

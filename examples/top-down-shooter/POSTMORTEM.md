@@ -126,7 +126,18 @@ Path B (axes as a first-class concept) was deferred: without a
 gamepad consumer it would design in a vacuum. Revisit when rung 7
 (3D) or a gamepad-driven prototype lands.
 
-### 2. Continuous-to-cell projection boilerplate — **fourth consumer confirms**
+### 2. Continuous-to-cell projection boilerplate — ~~**fourth consumer confirms**~~ **partially resolved after rung 4**
+
+> **Update (landed alongside rung 4 cleanup):** The `onMove` body is now
+> canned in `@pierre/ecs/modules/spatial` as `makeGridSyncOnMove({ grid,
+> cellSize })`. Asteroids and Shooter now pass it directly to
+> `makeVelocityIntegrationSystem` instead of open-coding the 5-line
+> prev/next projection. The `cellOf` wrapper and the `despawn` helper
+> that wraps `grid.remove` both stay in app code — they couple spatial
+> to Position + `queueDestroy` in ways the engine shouldn't presume.
+> `cellOfPoint` / `cellsForAabb` / `cellsForCircle` already ship in
+> `@pierre/ecs/modules/spatial` as of M-series work; the postmortem's
+> original claim that they hadn't shipped was stale.
 
 Same finding as Asteroids and Platformer. Shooter rewrote:
 

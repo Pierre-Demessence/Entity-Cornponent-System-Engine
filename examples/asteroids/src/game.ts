@@ -21,7 +21,7 @@ import {
 
 export const SCREEN_W = 800;
 export const SCREEN_H = 600;
-const CELL_SIZE = 64;
+export const CELL_SIZE = 64;
 
 export const SHIP_ROT_RAD_PER_S = 3.5;
 export const SHIP_THRUST = 220;
