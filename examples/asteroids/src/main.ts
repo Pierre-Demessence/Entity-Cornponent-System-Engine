@@ -19,6 +19,7 @@ import { render } from './render';
 import {
   collisionSystem,
   inputSystem,
+  thrustFlameSystem,
 } from './systems';
 
 const LOGIC_TICK_MS = 1000 / 60;
@@ -57,7 +58,8 @@ export function start(container: HTMLElement): () => void {
     .add(inputSystem)
     .add(motionSystem)
     .add(lifetimeSystem)
-    .add(collisionSystem);
+    .add(collisionSystem)
+    .add(thrustFlameSystem);
   const tickSource = new FixedIntervalTickSource(LOGIC_TICK_MS);
 
   const keyboard = new KeyboardProvider({

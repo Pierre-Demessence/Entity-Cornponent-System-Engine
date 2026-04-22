@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { PositionDef, RotationDef, VelocityDef } from './index';
+import { PositionDef, RotationDef, ScaleDef, VelocityDef } from './index';
 
 describe('@pierre/ecs/modules/transform', () => {
   describe('positionDef', () => {
@@ -36,6 +36,22 @@ describe('@pierre/ecs/modules/transform', () => {
       expect(RotationDef.name).toBe('rotation');
       expect(PositionDef.name).toBe('position');
       expect(VelocityDef.name).toBe('velocity');
+    });
+  });
+
+  describe('scaleDef', () => {
+    it('round-trips x/y', () => {
+      const v = { x: 2, y: 0.5 };
+      expect(ScaleDef.deserialize(ScaleDef.serialize(v), 's')).toEqual(v);
+    });
+
+    it('rejects non-finite fields', () => {
+      expect(() => ScaleDef.deserialize({ x: Number.NaN, y: 1 }, 's')).toThrow();
+      expect(() => ScaleDef.deserialize({ x: 1, y: '2' }, 's')).toThrow();
+    });
+
+    it('has distinct name', () => {
+      expect(ScaleDef.name).toBe('scale');
     });
   });
 });

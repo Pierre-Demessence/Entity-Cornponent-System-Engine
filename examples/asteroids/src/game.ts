@@ -3,7 +3,7 @@ import type { InputState } from '@pierre/ecs/modules/input';
 import type { HashGrid2D } from '@pierre/ecs/modules/spatial';
 
 import { EcsWorld } from '@pierre/ecs';
-import { RenderableDef } from '@pierre/ecs/modules/render-canvas2d';
+import { OpacityDef, RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
 import { cellOfPoint } from '@pierre/ecs/modules/spatial';
 
 import {
@@ -15,6 +15,7 @@ import {
   RotationDef,
   ShapeCircleDef,
   ShipTag,
+  ThrustFlameTag,
   VelocityDef,
 } from './components';
 
@@ -72,9 +73,12 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(LifetimeDef);
   w.registerComponent(RockTierDef);
   w.registerComponent(RenderableDef);
+  w.registerComponent(RenderOrderDef);
+  w.registerComponent(OpacityDef);
   w.registerTag(ShipTag);
   w.registerTag(RockTag);
   w.registerTag(BulletTag);
+  w.registerTag(ThrustFlameTag);
   return w;
 }
 
@@ -84,9 +88,43 @@ export function spawnShip(state: GameState): EntityId {
   state.world.getStore(VelocityDef).set(id, { vx: 0, vy: 0 });
   state.world.getStore(RotationDef).set(id, { angle: -Math.PI / 2 });
   state.world.getStore(ShapeCircleDef).set(id, { radius: SHIP_RADIUS });
+  state.world.getStore(RenderableDef).set(id, {
+    closed: true,
+    kind: 'polygon',
+    lineWidth: 2,
+    stroke: '#8cf',
+    points: [
+      { x: SHIP_RADIUS, y: 0 },
+      { x: -SHIP_RADIUS * 0.7, y: SHIP_RADIUS * 0.7 },
+      { x: -SHIP_RADIUS * 0.4, y: 0 },
+      { x: -SHIP_RADIUS * 0.7, y: -SHIP_RADIUS * 0.7 },
+    ],
+  });
+  state.world.getStore(RenderOrderDef).set(id, { value: 10 });
   state.world.getTag(ShipTag).add(id);
   const c = cellOf(SCREEN_W / 2, SCREEN_H / 2);
   state.grid.add(id, c.x, c.y);
+
+  // Persistent thrust-flame entity; opacity toggles 0 ↔ 1 based on input.
+  // Position/rotation synced to ship each tick by thrustFlameSystem.
+  const flameId = state.world.createEntity();
+  state.world.getStore(PositionDef).set(flameId, { x: SCREEN_W / 2, y: SCREEN_H / 2 });
+  state.world.getStore(RotationDef).set(flameId, { angle: -Math.PI / 2 });
+  state.world.getStore(RenderableDef).set(flameId, {
+    closed: false,
+    kind: 'polygon',
+    lineWidth: 2,
+    stroke: '#fa4',
+    points: [
+      { x: -SHIP_RADIUS * 0.4, y: SHIP_RADIUS * 0.35 },
+      { x: -SHIP_RADIUS * 1.1, y: 0 },
+      { x: -SHIP_RADIUS * 0.4, y: -SHIP_RADIUS * 0.35 },
+    ],
+  });
+  state.world.getStore(RenderOrderDef).set(flameId, { value: 9 });
+  state.world.getStore(OpacityDef).set(flameId, { value: 0 });
+  state.world.getTag(ThrustFlameTag).add(flameId);
+
   return id;
 }
 

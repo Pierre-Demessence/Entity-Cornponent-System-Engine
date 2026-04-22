@@ -1,8 +1,8 @@
 # `@pierre/ecs/modules/transform`
 
-Canonical 2D transform primitives: position, velocity, rotation. Canon
-pattern: Bevy `Transform`, Godot `Node2D`, Unity `Transform`, flecs
-`flecs.components.transforms`.
+Canonical 2D transform primitives: position, velocity, rotation, scale.
+Canon pattern: Bevy `Transform`, Godot `Node2D`, Unity `Transform`,
+flecs `flecs.components.transforms`.
 
 ## API
 
@@ -10,11 +10,18 @@ pattern: Bevy `Transform`, Godot `Node2D`, Unity `Transform`, flecs
 interface Position { x: number; y: number }
 interface Velocity { vx: number; vy: number }
 interface Rotation { angle: number }  // radians
+interface Scale    { x: number; y: number }  // multiplier per axis
 
-const PositionDef: ComponentDef<Position>;
-const VelocityDef: ComponentDef<Velocity>;
-const RotationDef: ComponentDef<Rotation>;
+const PositionDef:    ComponentDef<Position>;
+const VelocityDef:    ComponentDef<Velocity>;
+const RotationDef:    ComponentDef<Rotation>;
+const ScaleDef: ComponentDef<Scale>;
 ```
+
+`ScaleDef` is a geometric transform sibling to position/rotation.
+`modules/render-canvas2d` reads it when drawing; non-render systems
+(physics, AI vision) may read it if they need per-entity scaling.
+Entities without the component render at 1:1.
 
 Data-only module. No systems. A velocity integrator ships separately in
 `@pierre/ecs/modules/motion` (M2) so games that only need static

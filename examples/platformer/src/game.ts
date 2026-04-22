@@ -140,6 +140,14 @@ export function spawnCoin(state: GameState, x: number, y: number): EntityId {
   state.world.getStore(PositionDef).set(id, { x, y });
   state.world.getStore(ShapeAabbDef).set(id, { h: COIN_H, w: COIN_W });
   state.world.getStore(CoinValueDef).set(id, { score: COIN_SCORE });
+  // `anchor: 'top-left'` draws the circle centred on the AABB midpoint
+  // without splitting PositionDef's physics-side (top-left) semantics.
+  state.world.getStore(RenderableDef).set(id, {
+    anchor: 'top-left',
+    fill: '#f4c542',
+    kind: 'circle',
+    radius: COIN_W / 2,
+  });
   state.world.getTag(CoinTag).add(id);
   // Coins are not solid bodies and not indexed: pickup iterates CoinTag directly.
   return id;
