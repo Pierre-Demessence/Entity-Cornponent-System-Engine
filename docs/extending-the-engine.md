@@ -11,7 +11,7 @@ it back.
 always over-fits the shape. The second consumer is what reveals which
 parameters are real.
 
-There are **two promotion paths**, and it matters which one you're on:
+There are **three promotion paths**, and it matters which one you're on:
 
 ### Path A — Shape-validated promotion (Rule of Three, Fowler variant)
 
@@ -54,19 +54,57 @@ Guardrails for Path B — bias against over-building:
   removed if they turn out to be the wrong fit for downstream consumers.
   No deep coupling to core internals.
 
+### Path C — Universal canon
+
+Use when the primitive is **present in essentially every major engine
+with the same shape**: z-order / sort-key, opacity / alpha, scale,
+rotation, translation, text primitive, polygon / polyline primitive,
+sprite primitive, AABB, viewport. These are so universal across
+Pixi, Phaser, Unity, Godot, Bevy, LÖVE, SFML, etc. that the API
+shape is not a discovery problem at all — skipping them because
+"we don't have two consumers yet" ships a game engine that can't
+draw rotated text.
+
+> Ship it with **zero** current consumers if the canon is
+> unanimous. The external literature is doing the job the "rule of
+> three" normally does for you.
+
+Guardrails for Path C — stricter than Path B, because you have no
+consumer sanity-check:
+
+- **Unanimous across ≥3 major production engines with the same
+  shape.** "Pixi has something like this" is Path B, not Path C.
+  If Bevy, Pixi, and Phaser all expose the concept with
+  structurally-identical APIs (name may differ, shape matches),
+  that's Path C.
+- **Minimal surface, no speculative knobs.** Ship the canonical
+  shape only. No optional parameters, no mode flags, no
+  configuration that isn't in every reference engine.
+- **Demotable by default.** Same as Path B. If the first real
+  consumer reveals the shape is subtly wrong, you can pull it.
+- **Cite three engines in the rationale.** Paste the equivalent
+  API name from each into the plan file.
+
+When to **reach for Path C vs Path B**: Path B is "canon exists,
+ship with one consumer to validate". Path C is "canon is so
+unanimous that waiting for a consumer is just delaying obvious
+infrastructure". Use Path C for small, universal primitives;
+Path B for larger or less-unanimous canon.
+
 ### Choosing the path
 
 | Situation | Path |
 |---|---|
 | Two internal consumers independently grew the same helper | A |
 | Turn cycler, combat log bridge, class/race registry, save-slot manager | A (opinionated game-shape) |
-| Spatial hash, quad-tree, fixed tick source, ring buffer, event bus | B (canon) |
+| Spatial hash, quad-tree, fixed tick source, ring buffer, event bus | B (canon + 1 consumer) |
+| Z-order, opacity, scale, rotation, text / polygon / sprite primitive, AABB | C (universal canon) |
 | "We might want this someday" — no consumer and no canon pedigree | Neither. Keep it out. |
 | One consumer, novel API shape, uncertain design | Neither yet — keep in the consumer. |
 
 When in doubt: **A**. Under-promotion costs a bit of duplication;
-over-promotion via mislabeled Path B costs an engine surface you
-regret.
+over-promotion via mislabeled Path B or C costs an engine surface
+you regret.
 
 ## Three-Layer Triage
 
