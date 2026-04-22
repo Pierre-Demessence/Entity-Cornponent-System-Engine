@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -33,6 +33,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'Side-view gravity + AABB kinematics, pickups, and respawn.',
     title: 'Platformer',
     load: () => import('@pierre/ecs-example-platformer/src/main.ts'),
+  },
+  {
+    id: 'top-down-shooter',
+    controls: 'WASD move, mouse aim, LMB/Space fire, R restart',
+    summary: 'Twin-stick arena: continuous mouse aim, held-fire bullets, enemy swarms at scale.',
+    title: 'Top-Down Shooter',
+    load: () => import('@pierre/ecs-example-top-down-shooter/src/main.ts'),
   },
 ];
 
