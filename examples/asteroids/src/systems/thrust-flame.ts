@@ -21,8 +21,8 @@ export const thrustFlameSystem: SchedulableSystem<GameState> = {
     if (ctx.shipId === null)
       return;
 
-    const flameIds = ctx.world.getTag(ThrustFlameTag).entities();
-    if (flameIds.length === 0)
+    const flameTag = ctx.world.getTag(ThrustFlameTag);
+    if (flameTag.size === 0)
       return;
 
     const shipPos = ctx.world.getStore(PositionDef).get(ctx.shipId);
@@ -32,7 +32,7 @@ export const thrustFlameSystem: SchedulableSystem<GameState> = {
 
     const visible = !ctx.dead && ctx.input.isDown('thrust');
 
-    for (const flameId of flameIds) {
+    for (const flameId of flameTag) {
       const flamePos = ctx.world.getStore(PositionDef).get(flameId);
       const flameRot = ctx.world.getStore(RotationDef).get(flameId);
       const flameOpacity = ctx.world.getStore(OpacityDef).get(flameId);
