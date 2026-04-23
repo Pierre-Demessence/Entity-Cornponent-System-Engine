@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -54,6 +54,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'Four-lane rhythm: tick source driven by AudioContext.currentTime, not performance.now — first external-clock test.',
     title: 'Rhythm',
     load: () => import('@pierre/ecs-example-rhythm/src/main.ts'),
+  },
+  {
+    id: 'platformer-3d',
+    controls: 'WASD move, Space jump, click to capture mouse for camera (Esc to release)',
+    summary: 'Rung 7: 3D platformer via three.js with custom 3D AABB kinematics — the defining test that @pierre/ecs is not secretly 2D.',
+    title: '3D Platformer',
+    load: () => import('@pierre/ecs-example-platformer-3d/src/main.ts'),
   },
 ];
 

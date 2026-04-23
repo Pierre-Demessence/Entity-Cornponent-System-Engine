@@ -7,7 +7,7 @@ bug and the example is on hold until the bug is fixed.
 
 ## Status
 
-**Rungs 1, 2, 3, 4, 5, and 6 landed.** Six examples exist:
+**Rungs 1, 2, 3, 4, 5, 6, and 7 landed.** Seven examples exist:
 
 - [`snake/`](snake/) — Rung 1 (arcade grid, 4-way keyboard, real-time
   tick). See [snake/POSTMORTEM.md](snake/POSTMORTEM.md).
@@ -27,6 +27,10 @@ bug and the example is on hold until the bug is fixed.
 - [`rhythm/`](rhythm/) — Rung 6 (4-lane rhythm, tick source driven by
   `AudioContext.currentTime`, input timestamped to audio clock). See
   [rhythm/POSTMORTEM.md](rhythm/POSTMORTEM.md).
+- [`platformer-3d/`](platformer-3d/) — Rung 7 (3D platformer via
+  three.js, custom 3D AABB kinematics, chase cam, coins — defining
+  test that `@pierre/ecs` is not secretly 2D). See
+  [platformer-3d/POSTMORTEM.md](platformer-3d/POSTMORTEM.md).
 
 The rest of the plan — which examples to build next, in what order, and
 what each one proves — lives in the consuming repo's prototype roadmap.
