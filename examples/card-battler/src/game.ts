@@ -4,6 +4,8 @@ import type { InputState, PointerState } from '@pierre/ecs/modules/input';
 import type { CardDef } from './cards';
 
 import { EcsWorld } from '@pierre/ecs';
+import { DomRenderableDef } from '@pierre/ecs/modules/render-dom';
+import { PositionDef } from '@pierre/ecs/modules/transform';
 
 import { buildStartingDeck } from './cards';
 import {
@@ -61,9 +63,11 @@ export interface GameState {
 export function makeWorld(): EcsWorld {
   const w = new EcsWorld();
   w.registerComponent(CardDefComp);
+  w.registerComponent(DomRenderableDef);
   w.registerComponent(HealthDef);
   w.registerComponent(BlockDef);
   w.registerComponent(EnemyIntentDef);
+  w.registerComponent(PositionDef);
   w.registerTag(InHandTag);
   w.registerTag(InDeckTag);
   w.registerTag(InDiscardTag);

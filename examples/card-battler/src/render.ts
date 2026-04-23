@@ -2,6 +2,9 @@ import type { EcsWorld, EntityId, Renderer } from '@pierre/ecs';
 
 import type { GameState, Phase } from './game';
 
+import { DomRenderableDef, DomRenderer as EcsDomRenderer } from '@pierre/ecs/modules/render-dom';
+import { PositionDef } from '@pierre/ecs/modules/transform';
+
 import {
   BlockDef,
   CardDefComp,
@@ -42,31 +45,25 @@ interface Zones {
 }
 
 /**
- * DOM renderer implementing `Renderer<DomRenderContext>`.
+ * Card-battler wrapper around `@pierre/ecs/modules/render-dom`.
  *
- * Strategy: entity-id → HTMLElement map. On each render:
- * - Mount the static zone skeleton on first render.
- * - Ensure an element exists for the player, the enemy, and every
- *   card entity. Create missing; remove orphans (entities no longer
- *   present in the world — relevant for Reset).
- * - Reparent each card element into its zone based on its current
- *   tag (`InHandTag` / `InDeckTag` / `InDiscardTag`). The browser
- *   handles the layout.
- * - Update text content (HP, energy, card name/cost), classes
- *   (playable, dragging), and transform for the dragged card.
- *
- * No virtual DOM, no keyed-child diffing — the entity-id map is
- * sufficient because entity-lifecycle maps 1:1 to DOM elements.
- *
- * The renderer writes `data-entity-id` on every interactive root
- * (cards, player, enemy), which the drag system uses for
- * `elementFromPoint` hit-testing.
+ * The engine renderer now owns entity-id -> node bookkeeping,
+ * `data-entity-id` mapping, and orphan cleanup. This wrapper keeps the
+ * card-battler-specific zone layout and HUD reconciliation.
  */
 export class DomRenderer implements Renderer<DomRenderContext> {
-  private readonly cardElements = new Map<EntityId, HTMLElement>();
-  private enemyElement: HTMLElement | null = null;
+  private dragCardId: EntityId | null = null;
+  private readonly entityRenderer = new EcsDomRenderer({
+    reconcile: ({ entityId, node }) => {
+      if (this.dragCardId === entityId)
+        return;
+      node.style.left = '';
+      node.style.position = '';
+      node.style.top = '';
+    },
+  });
+
   private mounted = false;
-  private playerElement: HTMLElement | null = null;
   private zones!: Zones;
 
   /**
@@ -82,6 +79,10 @@ export class DomRenderer implements Renderer<DomRenderContext> {
   }
 
   // --- Lifecycle --------------------------------------------------------
+
+  private findNode(ctx: DomRenderContext, entityId: EntityId): HTMLElement | null {
+    return ctx.root.querySelector<HTMLElement>(`[data-entity-id="${entityId}"]`);
+  }
 
   private mount(ctx: DomRenderContext): void {
     ctx.root.innerHTML = '';
@@ -140,6 +141,10 @@ export class DomRenderer implements Renderer<DomRenderContext> {
     if (!this.mounted)
       this.mount(ctx);
 
+    this.dragCardId = ctx.state.drag?.cardId ?? null;
+    this.syncRenderableState(ctx);
+    this.entityRenderer.render({ root: ctx.root, world: ctx.world });
+
     this.renderActor(ctx, 'player');
     this.renderActor(ctx, 'enemy');
     this.renderCards(ctx);
@@ -147,68 +152,52 @@ export class DomRenderer implements Renderer<DomRenderContext> {
     this.renderOverlay(ctx);
   }
 
-  // --- Actor (player / enemy) rendering ---------------------------------
-
   private renderActor(ctx: DomRenderContext, which: 'player' | 'enemy'): void {
     const tagDef = which === 'player' ? PlayerTag : EnemyTag;
-    const tag = ctx.world.getTag(tagDef);
-    const [actorId] = [...tag];
-    if (actorId == null) {
-      if (which === 'player')
-        this.playerElement = null;
-      else
-        this.enemyElement = null;
+    const [actorId] = [...ctx.world.getTag(tagDef)];
+    if (actorId == null)
       return;
-    }
 
-    let el = which === 'player' ? this.playerElement : this.enemyElement;
-    if (!el) {
-      el = createDiv(`cb-actor cb-actor--${which}`);
-      el.setAttribute('data-entity-id', String(actorId));
-      const nameEl = createDiv('cb-actor-name');
-      nameEl.textContent = which === 'player' ? 'You' : 'Enemy';
-      const hpEl = createDiv('cb-actor-hp');
-      const blockEl = createDiv('cb-actor-block');
-      el.append(nameEl, hpEl, blockEl);
-      (which === 'player' ? this.zones.playerZone : this.zones.enemyZone).append(el);
-      if (which === 'player')
-        this.playerElement = el;
-      else
-        this.enemyElement = el;
-    }
-    else {
-      // Entity ids persist across renders but flip on Reset; keep attr synced.
-      el.setAttribute('data-entity-id', String(actorId));
-    }
+    const el = this.findNode(ctx, actorId);
+    if (!el)
+      return;
+
+    ensureActorStructure(el, which);
+    const targetZone = which === 'player' ? this.zones.playerZone : this.zones.enemyZone;
+    if (el.parentElement !== targetZone)
+      targetZone.append(el);
 
     const hp = ctx.world.getStore(HealthDef).get(actorId);
     const block = ctx.world.getStore(BlockDef).get(actorId);
-    const hpEl = el.querySelector('.cb-actor-hp')!;
-    const blockEl = el.querySelector('.cb-actor-block')!;
-    hpEl.textContent = hp ? `HP ${hp.current} / ${hp.max}` : 'HP —';
-    blockEl.textContent = block && block.amount > 0 ? `Block ${block.amount}` : '';
+    const hpEl = el.querySelector<HTMLElement>('.cb-actor-hp');
+    const blockEl = el.querySelector<HTMLElement>('.cb-actor-block');
+    if (hpEl)
+      hpEl.textContent = hp ? `HP ${hp.current} / ${hp.max}` : 'HP -';
+    if (blockEl)
+      blockEl.textContent = block && block.amount > 0 ? `Block ${block.amount}` : '';
   }
 
-  // --- Card rendering ---------------------------------------------------
+  // --- Actor (player / enemy) rendering ---------------------------------
 
   private renderCard(ctx: DomRenderContext, id: EntityId, name: string): void {
-    let el = this.cardElements.get(id);
-    if (!el) {
-      el = createDiv('cb-card');
-      el.setAttribute('data-entity-id', String(id));
-      const nameEl = createDiv('cb-card-name');
-      const costEl = createDiv('cb-card-cost');
-      const descEl = createDiv('cb-card-desc');
-      el.append(costEl, nameEl, descEl);
-      this.cardElements.set(id, el);
-    }
+    const el = this.findNode(ctx, id);
+    if (!el)
+      return;
+
+    ensureCardStructure(el);
 
     const card = ctx.world.getStore(CardDefComp).get(id);
+    const nameEl = el.querySelector<HTMLElement>('.cb-card-name');
+    const costEl = el.querySelector<HTMLElement>('.cb-card-cost');
+    const descEl = el.querySelector<HTMLElement>('.cb-card-desc');
     if (card) {
-      el.querySelector('.cb-card-name')!.textContent = name;
-      el.querySelector('.cb-card-cost')!.textContent = String(card.def.cost);
-      el.querySelector('.cb-card-desc')!.textContent = card.def.description;
-      el.title = `${card.def.name} — ${card.def.description} (cost ${card.def.cost})`;
+      if (nameEl)
+        nameEl.textContent = name;
+      if (costEl)
+        costEl.textContent = String(card.def.cost);
+      if (descEl)
+        descEl.textContent = card.def.description;
+      el.title = `${card.def.name} - ${card.def.description} (cost ${card.def.cost})`;
     }
 
     // Resolve target zone.
@@ -238,44 +227,24 @@ export class DomRenderer implements Renderer<DomRenderContext> {
     el.classList.toggle('cb-card--in-deck', inDeck);
     el.classList.toggle('cb-card--in-discard', inDiscard);
     el.classList.toggle('cb-card--in-hand', inHand && !isDragging);
-
-    // Drag transform — only when dragging. Live pointer coords.
-    if (isDragging) {
-      const px = ctx.state.pointer.x;
-      const py = ctx.state.pointer.y;
-      el.style.left = `${px}px`;
-      el.style.top = `${py}px`;
-    }
-    else {
-      el.style.left = '';
-      el.style.top = '';
-    }
   }
 
-  private renderCards(ctx: DomRenderContext): void {
-    const present = new Set<EntityId>();
-    const cardStore = ctx.world.getStore(CardDefComp);
-    const inHand = ctx.world.getTag(InHandTag);
-    const inDeck = ctx.world.getTag(InDeckTag);
-    const inDiscard = ctx.world.getTag(InDiscardTag);
+  // --- Card rendering ---------------------------------------------------
 
-    for (const zoneTag of [inHand, inDeck, inDiscard]) {
+  private renderCards(ctx: DomRenderContext): void {
+    const cardStore = ctx.world.getStore(CardDefComp);
+    const zoneTags = [
+      ctx.world.getTag(InHandTag),
+      ctx.world.getTag(InDeckTag),
+      ctx.world.getTag(InDiscardTag),
+    ];
+
+    for (const zoneTag of zoneTags) {
       for (const id of zoneTag) {
-        present.add(id);
         this.renderCard(ctx, id, cardStore.get(id)?.def.name ?? '?');
       }
     }
-
-    // Remove orphans (post-reset, entity ids from prior run).
-    for (const [id, el] of this.cardElements) {
-      if (!present.has(id)) {
-        el.remove();
-        this.cardElements.delete(id);
-      }
-    }
   }
-
-  // --- HUD + overlay ----------------------------------------------------
 
   private renderHud(ctx: DomRenderContext): void {
     this.zones.phaseLabel.textContent = phaseLabel(ctx.state.phase);
@@ -290,6 +259,8 @@ export class DomRenderer implements Renderer<DomRenderContext> {
     this.zones.discardZone.textContent = `Discard (${ctx.world.getTag(InDiscardTag).size})`;
   }
 
+  // --- HUD + overlay ----------------------------------------------------
+
   private renderOverlay(ctx: DomRenderContext): void {
     const existing = ctx.root.querySelector<HTMLDivElement>('.cb-overlay');
     if (ctx.state.phase === 'victory' || ctx.state.phase === 'defeat') {
@@ -303,6 +274,69 @@ export class DomRenderer implements Renderer<DomRenderContext> {
       existing?.remove();
     }
   }
+
+  private syncRenderableState(ctx: DomRenderContext): void {
+    const domStore = ctx.world.getStore(DomRenderableDef);
+    const posStore = ctx.world.getStore(PositionDef);
+    const present = new Set<EntityId>();
+
+    for (const playerId of ctx.world.getTag(PlayerTag)) {
+      present.add(playerId);
+      domStore.set(playerId, { className: 'cb-actor cb-actor--player' });
+      posStore.set(playerId, { x: 0, y: 0 });
+    }
+
+    for (const enemyId of ctx.world.getTag(EnemyTag)) {
+      present.add(enemyId);
+      domStore.set(enemyId, { className: 'cb-actor cb-actor--enemy' });
+      posStore.set(enemyId, { x: 0, y: 0 });
+    }
+
+    const zoneTags = [
+      ctx.world.getTag(InHandTag),
+      ctx.world.getTag(InDeckTag),
+      ctx.world.getTag(InDiscardTag),
+    ];
+    for (const zoneTag of zoneTags) {
+      for (const id of zoneTag) {
+        present.add(id);
+        const isDragging = ctx.state.drag?.cardId === id;
+        domStore.set(id, { className: 'cb-card' });
+        posStore.set(id, {
+          x: isDragging ? ctx.state.pointer.x : 0,
+          y: isDragging ? ctx.state.pointer.y : 0,
+        });
+      }
+    }
+
+    for (const [id] of domStore) {
+      if (present.has(id))
+        continue;
+      domStore.delete(id);
+      posStore.delete(id);
+    }
+  }
+}
+
+function ensureActorStructure(node: HTMLElement, which: 'player' | 'enemy'): void {
+  if (node.querySelector('.cb-actor-name'))
+    return;
+
+  const nameEl = createDiv('cb-actor-name');
+  nameEl.textContent = which === 'player' ? 'You' : 'Enemy';
+  const hpEl = createDiv('cb-actor-hp');
+  const blockEl = createDiv('cb-actor-block');
+  node.append(nameEl, hpEl, blockEl);
+}
+
+function ensureCardStructure(node: HTMLElement): void {
+  if (node.querySelector('.cb-card-name'))
+    return;
+
+  const costEl = createDiv('cb-card-cost');
+  const nameEl = createDiv('cb-card-name');
+  const descEl = createDiv('cb-card-desc');
+  node.append(costEl, nameEl, descEl);
 }
 
 function phaseLabel(phase: Phase): string {
