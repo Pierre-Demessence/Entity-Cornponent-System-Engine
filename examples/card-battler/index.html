@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Card Battler — @pierre/ecs example</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: #0d1016;
+      color: #eee;
+      font-family: system-ui, sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+    }
+
+    #root {
+      width: 900px;
+      height: 600px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import { start } from './src/main.ts';
+    const teardown = start(document.getElementById('root'));
+    window.addEventListener('beforeunload', teardown);
+  </script>
+</body>
+
+</html>

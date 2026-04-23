@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -40,6 +40,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'Twin-stick arena: continuous mouse aim, held-fire bullets, enemy swarms at scale.',
     title: 'Top-Down Shooter',
     load: () => import('@pierre/ecs-example-top-down-shooter/src/main.ts'),
+  },
+  {
+    id: 'card-battler',
+    controls: 'LMB drag cards onto enemy, End Turn to resolve',
+    summary: 'Turn-based card combat: DOM renderer, manual tick, drag-to-play — proves the renderer interface is not canvas-coupled.',
+    title: 'Card Battler',
+    load: () => import('@pierre/ecs-example-card-battler/src/main.ts'),
   },
 ];
 

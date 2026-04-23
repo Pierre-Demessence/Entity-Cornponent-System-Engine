@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@pierre/ecs-example-asteroids": "*",
+    "@pierre/ecs-example-card-battler": "*",
     "@pierre/ecs-example-platformer": "*",
     "@pierre/ecs-example-snake": "*",
     "@pierre/ecs-example-top-down-shooter": "*"
