@@ -146,7 +146,7 @@ prototype is well within "re-walk everything" budget — so A3
 stays deferred for the same reason it's been deferred since
 rung 3. Record it; don't act on it.
 
-### 3. PointerProvider projection vs. DOM hit-testing — **minor friction, app-level solved**
+### 3. PointerProvider projection vs. DOM hit-testing — **resolved in engine**
 
 `PointerProvider`'s default projector returns target-local coords
 (pointer x/y relative to the pointer target's bounding rect), but
@@ -156,23 +156,14 @@ rung 3. Record it; don't act on it.
 container is scrolled into a different position — as it is when
 mounted inside the examples hub with its own layout.
 
-The prototype routes around this by having `main.ts` listen to
-raw `pointerdown` / `pointerup` and stash `ev.clientX / ev.clientY`
-into a `setLastClient(x, y)` module-level on the drag system.
-`hitTestEntityAt()` reads those stashed coords.
+The engine now exposes raw viewport coords directly on `PointerState`
+as `clientX` / `clientY`, while preserving projected `x` / `y`.
+Card-battler now reads those fields directly in the drag hit-test path,
+so no app-level stash/handoff is needed.
 
-This is ugly but small (15 lines). A nicer API would be either:
+**Status:** shipped and adopted.
 
-- A `pointer.lastClient` field on `PointerState` that always
-  carries the raw viewport coords alongside the projected ones, or
-- A second projector that's the identity (target-agnostic
-  viewport coords), selectable via an option.
-
-**Finding:** add `{x, y}` viewport-raw coords to `PointerState` or
-document the recipe. Not urgent — prototype works. Log for next
-input-module pass.
-
-### 4. `simpleComponent` only supports primitives — **finding #3, mild ergonomic gap**
+### 4. `simpleComponent` only supports primitives — **resolved with registry helper**
 
 Card defs carry a function reference (`effect: (ctx) => void`),
 which isn't serializable by `simpleComponent`'s `SimpleSchema`
@@ -192,14 +183,10 @@ export const CardDefComp: ComponentDef<Card> = {
 };
 ```
 
-Eight lines, works fine. But it points at a pattern: "component
-that references a registry-backed definition" is going to come up
-repeatedly (card effects, enemy archetypes, item templates, ability
-defs). A `registryComponent<T, Def>(name, registry, keyOf)` helper
-in core would collapse this pattern to a one-liner.
+That pattern is now extracted into core as `registryComponent`, and this
+example uses it for `CardDefComp`.
 
-**Finding:** consider adding `registryComponent` alongside
-`simpleComponent`. Parking for now — one consumer isn't enough.
+**Status:** shipped and adopted.
 
 ### 5. Circular import between `components/card.ts` and `cards.ts` — **self-inflicted, worth noting**
 
@@ -250,12 +237,10 @@ Summary of findings above, by urgency:
    second DOM-heavy consumer exists (Rule of Three).
 2. **Entity-lifecycle events (A3)** — still deferred. Five
    rungs in, nothing has forced it.
-3. **Viewport-raw pointer coords** — small ergonomic fix to
-   `PointerProvider` or `PointerState`. Worth doing if a sixth
-   consumer also needs DOM hit-testing.
-4. **`registryComponent` helper** — parking; wait for another
-   consumer of the "component points at a registry-backed def"
-   pattern.
+3. **Viewport-raw pointer coords** — shipped (`PointerState.clientX`
+  / `.clientY`) and adopted by this example.
+4. **`registryComponent` helper** — shipped and adopted by this
+  example for `CardDefComp`.
 
 None are blocking. Engine continues to be oversupplied relative
 to consumer demand, which is the point of the progression — each
@@ -271,5 +256,5 @@ speculating about it.
 - **Turn-based tick via `ManualTickSource`**: proven. No engine
   accommodation needed.
 - **PointerProvider for DnD**: proven. Minor viewport-coord
-  friction noted (finding #3), everything else worked first
-  try.
+  friction from the initial version is now resolved by the
+  shipped `clientX` / `clientY` fields.

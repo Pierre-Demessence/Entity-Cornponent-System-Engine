@@ -43,6 +43,10 @@ const BUTTON_CODE: Record<PointerButton, PointerCode> = {
  * provider; the type is `readonly` by contract.
  */
 export interface PointerState {
+  /** Raw viewport-space X coordinate (`PointerEvent.clientX`). */
+  readonly clientX: number;
+  /** Raw viewport-space Y coordinate (`PointerEvent.clientY`). */
+  readonly clientY: number;
   /** True iff the pointer is currently over the target. */
   readonly over: boolean;
   /** X coordinate in target-local space (see projector doc). */
@@ -175,7 +179,13 @@ export class PointerProvider implements InputProvider {
   readonly state: PointerState;
   private readonly target: PointerTarget;
   private readonly windowTarget: EventTarget | null;
-  private readonly writableState: { over: boolean; x: number; y: number };
+  private readonly writableState: {
+    over: boolean;
+    clientX: number;
+    clientY: number;
+    x: number;
+    y: number;
+  };
 
   constructor(options: PointerProviderOptions) {
     this.target = options.target;
@@ -185,6 +195,8 @@ export class PointerProvider implements InputProvider {
     this.preventContextMenu
       = options.preventContextMenu ?? this.buttonSet.has(2);
     this.writableState = {
+      clientX: 0,
+      clientY: 0,
       over: false,
       x: options.initialPosition?.x ?? 0,
       y: options.initialPosition?.y ?? 0,
@@ -198,6 +210,8 @@ export class PointerProvider implements InputProvider {
     this.onPointerMove = (e: Event): void => {
       const pe = e as PointerEvent;
       const p = this.project(pe, this.target);
+      this.writableState.clientX = pe.clientX;
+      this.writableState.clientY = pe.clientY;
       this.writableState.x = p.x;
       this.writableState.y = p.y;
     };
@@ -210,6 +224,8 @@ export class PointerProvider implements InputProvider {
     this.onPointerDown = (e: Event): void => {
       const pe = e as PointerEvent;
       const p = this.project(pe, this.target);
+      this.writableState.clientX = pe.clientX;
+      this.writableState.clientY = pe.clientY;
       this.writableState.x = p.x;
       this.writableState.y = p.y;
       if (!isPointerButton(pe.button) || !this.buttonSet.has(pe.button))
@@ -218,6 +234,11 @@ export class PointerProvider implements InputProvider {
     };
     this.onPointerUp = (e: Event): void => {
       const pe = e as PointerEvent;
+      const p = this.project(pe, this.target);
+      this.writableState.clientX = pe.clientX;
+      this.writableState.clientY = pe.clientY;
+      this.writableState.x = p.x;
+      this.writableState.y = p.y;
       if (!isPointerButton(pe.button) || !this.buttonSet.has(pe.button))
         return;
       this.emit({ code: BUTTON_CODE[pe.button], kind: 'up' });

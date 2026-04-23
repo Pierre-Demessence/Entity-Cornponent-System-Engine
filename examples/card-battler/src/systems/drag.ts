@@ -7,24 +7,6 @@ import { discardCard } from '../game';
 
 const DRAG_ACTION = 'drag';
 
-// --- Client-coordinate handoff -----------------------------------------
-//
-// `elementFromPoint` needs viewport-local coords, which the
-// `PointerProvider`'s default projector strips away (it returns
-// target-local coords). `main.ts` feeds the raw `clientX` / `clientY`
-// here from its own `pointerdown` / `pointerup` listeners so
-// `hitTestEntityAt` can consult them.
-
-let lastClient: { x: number; y: number } | null = null;
-
-/**
- * Called by `main.ts` from the `pointerdown` / `pointerup` DOM
- * handlers, passing the raw `clientX` / `clientY`.
- */
-export function setLastClient(x: number, y: number): void {
-  lastClient = { x, y };
-}
-
 /**
  * Drag system.
  *
@@ -62,7 +44,7 @@ export const dragSystem: SchedulableSystem<GameState> = {
 };
 
 function tryStartDrag(ctx: GameState): void {
-  const entityId = hitTestEntityAt();
+  const entityId = hitTestEntityAt(ctx.pointer);
   if (entityId == null)
     return;
   if (!ctx.world.getTag(InHandTag).has(entityId))
@@ -85,7 +67,7 @@ function tryStartDrag(ctx: GameState): void {
 function resolveDrop(ctx: GameState): void {
   if (ctx.drag == null)
     return;
-  const drop = hitTestEntityAt();
+  const drop = hitTestEntityAt(ctx.pointer);
   const draggedId = ctx.drag.cardId;
   const card = ctx.world.getStore(CardDefComp).get(draggedId);
 
@@ -117,16 +99,8 @@ function resolveDrop(ctx: GameState): void {
  * `docs/plans/example-rung5-card-battler.md` § "Contract the
  * renderer upholds for hit-testing".
  */
-function hitTestEntityAt(): EntityId | null {
-  // `elementFromPoint` takes viewport-local coordinates (clientX/Y),
-  // which `PointerProvider` projects away. The `setLastClient` hook
-  // below is called from `main.ts`'s raw `pointerdown` / `pointerup`
-  // handlers, stashing the pre-projection coords so we can hit-test
-  // against the live DOM tree.
-  const last = lastClient;
-  if (last == null)
-    return null;
-  const target = document.elementFromPoint(last.x, last.y);
+function hitTestEntityAt(pointer: GameState['pointer']): EntityId | null {
+  const target = document.elementFromPoint(pointer.clientX, pointer.clientY);
   if (!target)
     return null;
   const holder = target.closest('[data-entity-id]');

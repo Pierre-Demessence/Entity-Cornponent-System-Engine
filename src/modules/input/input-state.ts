@@ -15,11 +15,13 @@ export type InputMap<TAction extends string> = Readonly<Record<TAction, readonly
 export interface InputState<TAction extends string> {
   /** Clears the per-tick edge sets. Typically called at the tick boundary. */
   clearEdges: () => void;
-  /** Unsubscribes from every provider and disposes them. */
+  /** Backward-compatible convenience: unsubscribe and dispose every provider. */
   dispose: () => void;
   isDown: (action: TAction) => boolean;
   justPressed: (action: TAction) => boolean;
   justReleased: (action: TAction) => boolean;
+  /** Unsubscribes this state from every provider without disposing providers. */
+  unsubscribe: () => void;
 }
 
 /**
@@ -78,7 +80,10 @@ export function createInput<TAction extends string>(
         return;
       downCodes.delete(raw.code);
       for (const a of acts) {
-        const next = (downCount.get(a) ?? 1) - 1;
+        const current = downCount.get(a) ?? 0;
+        if (current <= 0)
+          continue;
+        const next = current - 1;
         downCount.set(a, next);
         if (next === 0)
           released.add(a);
@@ -87,8 +92,18 @@ export function createInput<TAction extends string>(
   }
 
   const unsubs = providers.map(p => p.subscribe(handle));
+  let unsubscribed = false;
+
+  function unsubscribe(): void {
+    if (unsubscribed)
+      return;
+    unsubscribed = true;
+    for (const u of unsubs)
+      u();
+  }
 
   return {
+    unsubscribe,
     isDown: a => (downCount.get(a) ?? 0) > 0,
     justPressed: a => pressed.has(a),
     justReleased: a => released.has(a),
@@ -97,8 +112,7 @@ export function createInput<TAction extends string>(
       released.clear();
     },
     dispose() {
-      for (const u of unsubs)
-        u();
+      unsubscribe();
       for (const p of providers)
         p.dispose();
     },

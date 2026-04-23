@@ -291,6 +291,31 @@ export interface SimpleComponentOptions {
   readonly version?: number;
 }
 
+/** Primitive id kind supported by {@link registryComponent}. */
+export type RegistryIdKind = 'number' | 'string';
+
+/** Shape produced by {@link registryComponent}: a single registry-backed field. */
+export type RegistryComponentValue<TValue, TValueKey extends string> = {
+  readonly [K in TValueKey]: TValue;
+};
+
+export interface RegistryComponentOptions<
+  TValue,
+  TId extends number | string,
+  TValueKey extends string = 'def',
+> extends SimpleComponentOptions {
+  /** Serialized id field name. Defaults to `id`. */
+  readonly idKey?: string;
+  /** Serialized id primitive kind. Defaults to `string`. */
+  readonly idKind?: RegistryIdKind;
+  /** Component field name that holds the looked-up value. Defaults to `def`. */
+  readonly valueKey?: TValueKey;
+  /** Lookup function used during deserialize. Returns undefined for unknown ids. */
+  readonly lookup: (id: TId) => TValue | undefined;
+  /** Selects the registry id from the stored value during serialize. */
+  readonly selectId: (value: TValue) => TId;
+}
+
 /**
  * Build a {@link ComponentDef} from a flat schema of primitives.
  *
@@ -334,6 +359,58 @@ export function simpleComponent<T extends { [K in keyof T]: boolean | number | s
       const out: Record<string, unknown> = {};
       for (const k of keys) out[k] = value[k];
       return out;
+    },
+  };
+}
+
+/**
+ * Build a {@link ComponentDef} for registry-backed references.
+ *
+ * The generated serializer stores only an id field (default: `{ id }`),
+ * and deserializer resolves that id through a supplied `lookup` function,
+ * returning a single-field object (default: `{ def }`).
+ *
+ * @example
+ * interface Card { def: CardDef }
+ * const CardDefComp = registryComponent<CardDef, string>('card', {
+ *   lookup: getCardDef,
+ *   selectId: def => def.id,
+ * });
+ */
+export function registryComponent<
+  TValue,
+  TId extends number | string,
+  TValueKey extends string = 'def',
+>(
+  name: string,
+  options: RegistryComponentOptions<TValue, TId, TValueKey>,
+): ComponentDef<RegistryComponentValue<TValue, TValueKey>> {
+  const idKey = options.idKey ?? 'id';
+  const idKind = options.idKind ?? 'string';
+  const valueKey = (options.valueKey ?? 'def') as TValueKey;
+
+  const parseId = (raw: unknown, label: string): TId => {
+    if (idKind === 'number')
+      return asNumber(raw, label) as TId;
+    return asString(raw, label) as TId;
+  };
+
+  return {
+    name,
+    migrations: options.migrations,
+    requires: options.requires,
+    version: options.version,
+    deserialize: (raw, label) => {
+      const obj = asObject(raw, label);
+      const idLabel = `${label}.${idKey}`;
+      const id = parseId(obj[idKey], idLabel);
+      const resolved = options.lookup(id);
+      if (resolved === undefined)
+        throw new Error(`${idLabel} '${String(id)}' is not a registered value`);
+      return { [valueKey]: resolved } as RegistryComponentValue<TValue, TValueKey>;
+    },
+    serialize: (value) => {
+      return { [idKey]: options.selectId(value[valueKey]) };
     },
   };
 }

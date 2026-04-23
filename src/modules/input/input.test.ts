@@ -155,6 +155,34 @@ describe('createInput', () => {
     expect(input.isDown('jump')).toBe(false);
   });
 
+  it('unsubscribe detaches handlers without disposing providers', () => {
+    const p2 = new FakeProvider();
+    const input = createInput<Action>(
+      { jump: ['Space'], left: [], right: [] },
+      [provider, p2],
+    );
+
+    input.unsubscribe();
+    expect(provider.disposed).toBe(false);
+    expect(p2.disposed).toBe(false);
+
+    provider.emit({ code: 'Space', kind: 'down' });
+    expect(input.isDown('jump')).toBe(false);
+  });
+
+  it('unsubscribe is idempotent', () => {
+    const input = createInput<Action>(
+      { jump: ['Space'], left: [], right: [] },
+      [provider],
+    );
+
+    expect(() => {
+      input.unsubscribe();
+      input.unsubscribe();
+    }).not.toThrow();
+    expect(provider.disposed).toBe(false);
+  });
+
   it('merges events from multiple providers', () => {
     const p2 = new FakeProvider();
     const input = createInput<Action>(

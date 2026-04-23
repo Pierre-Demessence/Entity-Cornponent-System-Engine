@@ -42,6 +42,8 @@ describe('pointerProvider', () => {
 
     target.dispatchEvent(pointerEvent('pointermove', { clientX: 150, clientY: 70 }));
 
+    expect(p.state.clientX).toBe(150);
+    expect(p.state.clientY).toBe(70);
     expect(p.state.x).toBe(100);
     expect(p.state.y).toBe(50);
   });
@@ -59,6 +61,19 @@ describe('pointerProvider', () => {
     expect(p.state.y).toBe(300);
   });
 
+  it('falls back to unscaled local coordinates when target rect size is zero', () => {
+    const target = makeTarget(
+      { height: 0, left: 0, top: 0, width: 0 },
+      { height: 600, width: 1200 },
+    );
+    const p = new PointerProvider({ target, windowTarget: new EventTarget() });
+
+    target.dispatchEvent(pointerEvent('pointermove', { clientX: 40, clientY: 25 }));
+
+    expect(p.state.x).toBe(40);
+    expect(p.state.y).toBe(25);
+  });
+
   it('honours a custom projector override', () => {
     const target = makeTarget({ height: 100, left: 0, top: 0, width: 100 });
     const p = new PointerProvider({
@@ -69,6 +84,8 @@ describe('pointerProvider', () => {
 
     target.dispatchEvent(pointerEvent('pointermove', { clientX: 10, clientY: 20 }));
 
+    expect(p.state.clientX).toBe(10);
+    expect(p.state.clientY).toBe(20);
     expect(p.state.x).toBe(20);
     expect(p.state.y).toBe(40);
   });
@@ -81,6 +98,8 @@ describe('pointerProvider', () => {
       windowTarget: new EventTarget(),
     });
 
+    expect(p.state.clientX).toBe(0);
+    expect(p.state.clientY).toBe(0);
     expect(p.state.x).toBe(42);
     expect(p.state.y).toBe(7);
   });
@@ -140,12 +159,16 @@ describe('pointerProvider', () => {
     p.subscribe(r => received.push(r));
 
     target.dispatchEvent(pointerEvent('pointerdown', { button: 0 }));
-    win.dispatchEvent(pointerEvent('pointerup', { button: 0 }));
+    win.dispatchEvent(pointerEvent('pointerup', { button: 0, clientX: 17, clientY: 8 }));
 
     expect(received).toEqual([
       { code: Pointer.LeftButton, kind: 'down' },
       { code: Pointer.LeftButton, kind: 'up' },
     ]);
+    expect(p.state.clientX).toBe(17);
+    expect(p.state.clientY).toBe(8);
+    expect(p.state.x).toBe(17);
+    expect(p.state.y).toBe(8);
   });
 
   it('preventDefaults contextmenu when right button is reported', () => {

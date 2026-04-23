@@ -48,6 +48,48 @@ simpleComponent<Hp>('hp', { cur: 'number', max: 'number' }, {
 Components with nested objects, arrays, enum narrowing, or any custom
 validation logic continue to be written by hand.
 
+## `registryComponent` — factory for registry-backed references
+
+For the common pattern where a component stores a value resolved from a
+registry (card defs, enemy archetypes, ability defs), use
+`registryComponent`.
+
+Default generated shape:
+
+- Component field: `{ def: TValue }`
+- Serialized payload: `{ id: string }`
+
+```ts
+import { registryComponent } from '@pierre/ecs';
+
+interface CardDef { id: string; name: string }
+interface Card { def: CardDef }
+
+const CardDefComp = registryComponent<CardDef, string>('card', {
+  lookup: getCardDef,
+  selectId: def => def.id,
+});
+```
+
+During deserialize, the helper validates the id (`string` by default),
+resolves through `lookup`, and throws a labeled error when the id is not
+registered. During serialize, it writes `{ id: selectId(value.def) }`.
+
+You can customize field names and id kind:
+
+```ts
+const EnemyComp = registryComponent<EnemyDef, number, 'archetype'>('enemy', {
+  idKey: 'defId',
+  idKind: 'number',
+  lookup: getEnemyDef,
+  selectId: def => def.key,
+  valueKey: 'archetype',
+});
+```
+
+Like `simpleComponent`, optional `requires`, `version`, and `migrations`
+pass through to the generated `ComponentDef`.
+
 ## Schema Evolution
 
 A `ComponentDef<T>` may declare a `version: number` (default `0`) and a
@@ -159,4 +201,3 @@ In production builds, Vite eliminates the validation wiring entirely.
 - [Query Builder](query.md) - iterate components with tag filters.
 - [Entity Templates](template.md) - declarative blueprints that write into stores.
 - [EcsWorld](world.md) - registers stores and owns their lifecycle.
-

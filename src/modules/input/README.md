@@ -37,7 +37,8 @@ interface InputState<TAction extends string> {
   justPressed(action: TAction): boolean;
   justReleased(action: TAction): boolean;
   clearEdges(): void;  // call at tick boundary
-  dispose(): void;     // unsubscribes and disposes every provider
+  unsubscribe(): void; // detaches this InputState from providers
+  dispose(): void;     // unsubscribe + dispose every provider (legacy convenience)
 }
 
 function createInput<TAction extends string>(
@@ -93,6 +94,10 @@ input.clearEdges();
 // On teardown:
 input.dispose();
 ```
+
+If providers are shared across multiple input maps, call `unsubscribe()`
+on individual maps and dispose the shared providers from the owning
+composition root.
 
 ## Edge semantics
 
@@ -157,11 +162,18 @@ const input = createInput<Action>(
 // In a system:
 const aimX = pointer.state.x;
 const aimY = pointer.state.y;
+const viewportX = pointer.state.clientX;
+const viewportY = pointer.state.clientY;
 if (input.isDown('fire'))
   fireBulletToward(aimX, aimY);
 ```
 
 ### Coordinate projection
+
+`PointerState` exposes both coordinate spaces:
+
+- `x` / `y`: projected target-local coordinates (projector output).
+- `clientX` / `clientY`: raw viewport coordinates from Pointer Events.
 
 The default projector reports **target-local pixels**. When the target
 looks like an `HTMLCanvasElement` (has numeric `width` / `height`), it
@@ -210,7 +222,7 @@ registers — held-fire state doesn't get stuck. Pass
 `options.windowTarget` (e.g. a fresh `EventTarget`) in tests or
 headless environments.
 
-### Scope
+### Pointer scope
 
 - v1 is position + over-flag + buttons 0/1/2, nothing else.
 - No scroll/wheel, no pointer-lock helper, no multi-touch or gesture

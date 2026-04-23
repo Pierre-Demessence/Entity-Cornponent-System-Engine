@@ -6,7 +6,7 @@ import { AnimationFrameTickSource, ManualTickSource } from '@pierre/ecs/modules/
 
 import { makeWorld, resetGame } from './game';
 import { DomRenderer } from './render';
-import { dragSystem, setLastClient, turnSystem } from './systems';
+import { dragSystem, turnSystem } from './systems';
 
 import './style.css';
 
@@ -82,14 +82,11 @@ export function start(container: HTMLElement): () => void {
   // --- Pointer tick bridge --------------------------------------------
   // Both DOM handlers fire after PointerProvider's own handler (registered
   // first during construction), so `input.justPressed/justReleased` are
-  // already set when we tick. Client coords are stashed for
-  // `hitTestEntityAt`.
-  const onPointerDown = (ev: PointerEvent): void => {
-    setLastClient(ev.clientX, ev.clientY);
+  // already set when we tick.
+  const onPointerDown = (): void => {
     logicTick.tick();
   };
-  const onPointerUp = (ev: PointerEvent): void => {
-    setLastClient(ev.clientX, ev.clientY);
+  const onPointerUp = (): void => {
     logicTick.tick();
   };
   container.addEventListener('pointerdown', onPointerDown);

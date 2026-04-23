@@ -2,7 +2,7 @@ import type { ComponentDef } from '@pierre/ecs';
 
 import type { CardDef } from '../cards';
 
-import { simpleComponent } from '@pierre/ecs';
+import { registryComponent, simpleComponent } from '@pierre/ecs';
 
 import { getCardDef } from '../cards';
 
@@ -19,23 +19,10 @@ export interface Card {
   def: CardDef;
 }
 
-export const CardDefComp: ComponentDef<Card> = {
-  name: 'card',
-  deserialize(raw, label) {
-    if (raw === null || typeof raw !== 'object')
-      throw new Error(`${label} must be an object`);
-    const id = (raw as { id?: unknown }).id;
-    if (typeof id !== 'string')
-      throw new TypeError(`${label}.id must be a string`);
-    const def = getCardDef(id);
-    if (!def)
-      throw new Error(`${label}.id '${id}' is not a registered card def`);
-    return { def };
-  },
-  serialize(value) {
-    return { id: value.def.id };
-  },
-};
+export const CardDefComp: ComponentDef<Card> = registryComponent<CardDef, string>('card', {
+  lookup: getCardDef,
+  selectId: def => def.id,
+});
 
 /** Player and enemy health. */
 export interface Health { current: number; max: number }
