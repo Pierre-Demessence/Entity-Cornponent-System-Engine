@@ -7,7 +7,7 @@ bug and the example is on hold until the bug is fixed.
 
 ## Status
 
-**Rungs 1, 2, 3, 4, 5, 6, and 7 landed.** Seven examples exist:
+**Rungs 1, 2, 3, 4, 5, 6, 7, and 8 landed.** Eight examples exist:
 
 - [`snake/`](snake/) — Rung 1 (arcade grid, 4-way keyboard, real-time
   tick). See [snake/POSTMORTEM.md](snake/POSTMORTEM.md).
@@ -31,6 +31,9 @@ bug and the example is on hold until the bug is fixed.
   three.js, custom 3D AABB kinematics, chase cam, coins — defining
   test that `@pierre/ecs` is not secretly 2D). See
   [platformer-3d/POSTMORTEM.md](platformer-3d/POSTMORTEM.md).
+- [`local-pong/`](local-pong/) — Rung 8 (local multiplayer Pong,
+   player-scoped input identity, score as game state resource). See
+   [local-pong/POSTMORTEM.md](local-pong/POSTMORTEM.md).
 
 The rest of the plan — which examples to build next, in what order, and
 what each one proves — lives in the consuming repo's prototype roadmap.
@@ -95,7 +98,7 @@ npm run dev:ecs-examples
 ```
 
 This starts the examples hub at `packages/ecs/examples/hub/` and lets
-you launch Snake, Asteroids, and Platformer from one page.
+you launch the landed examples from one page.
 
 ### Standalone mode (per example)
 

@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -61,6 +61,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'Rung 7: 3D platformer via three.js with custom 3D AABB kinematics — the defining test that @pierre/ecs is not secretly 2D.',
     title: '3D Platformer',
     load: () => import('@pierre/ecs-example-platformer-3d/src/main.ts'),
+  },
+  {
+    id: 'local-pong',
+    controls: 'Player 1 W/S, Player 2 Arrow Up/Down, R restart',
+    summary: 'Rung 8: local multiplayer Pong with player-scoped keyboard input and score kept as game state, not entity data.',
+    title: 'Local Pong',
+    load: () => import('@pierre/ecs-example-local-pong/src/main.ts'),
   },
 ];
 
@@ -125,7 +132,7 @@ function renderLanding(): void {
       <section class="header">
         <h1 class="title">ECS Example Lab</h1>
         <p class="subtitle">
-          One workspace, one dev server, three intentionally different game loops using the same ECS engine.
+          One workspace, one dev server, eight intentionally different control models and game loops using the same ECS engine.
           Choose an example to mount it directly in this page.
         </p>
         <div class="examples">${cards}</div>
@@ -164,7 +171,7 @@ async function renderExample(id: ExampleId): Promise<void> {
         </div>
         <div id="exampleStage" class="stage-root"></div>
       </section>
-      <p class="stage-note">Tip: each route has its own hash URL (#snake, #asteroids, #platformer).</p>
+      <p class="stage-note">Tip: each example has its own hash URL, so you can deep-link straight to a specific prototype.</p>
     </main>
   `;
 

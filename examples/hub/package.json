@@ -11,6 +11,7 @@
   "dependencies": {
     "@pierre/ecs-example-asteroids": "*",
     "@pierre/ecs-example-card-battler": "*",
+    "@pierre/ecs-example-local-pong": "*",
     "@pierre/ecs-example-platformer": "*",
     "@pierre/ecs-example-platformer-3d": "*",
     "@pierre/ecs-example-rhythm": "*",
