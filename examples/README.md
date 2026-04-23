@@ -7,7 +7,7 @@ bug and the example is on hold until the bug is fixed.
 
 ## Status
 
-**Rungs 1, 2, and 3 landed.** Three examples exist:
+**Rungs 1, 2, 3, 4, 5, and 6 landed.** Six examples exist:
 
 - [`snake/`](snake/) — Rung 1 (arcade grid, 4-way keyboard, real-time
   tick). See [snake/POSTMORTEM.md](snake/POSTMORTEM.md).
@@ -18,6 +18,15 @@ bug and the example is on hold until the bug is fixed.
   gravity + AABB collision resolution, static vs dynamic bodies via
   tags, edge-triggered jump, coin pickup, fall-out respawn). See
   [platformer/POSTMORTEM.md](platformer/POSTMORTEM.md).
+- [`top-down-shooter/`](top-down-shooter/) — Rung 4 (twin-stick arena,
+  continuous mouse aim, held-fire bullets, scaled enemy swarms). See
+  [top-down-shooter/POSTMORTEM.md](top-down-shooter/POSTMORTEM.md).
+- [`card-battler/`](card-battler/) — Rung 5 (turn-based card combat,
+  DOM renderer, manual tick, drag-to-play). See
+  [card-battler/POSTMORTEM.md](card-battler/POSTMORTEM.md).
+- [`rhythm/`](rhythm/) — Rung 6 (4-lane rhythm, tick source driven by
+  `AudioContext.currentTime`, input timestamped to audio clock). See
+  [rhythm/POSTMORTEM.md](rhythm/POSTMORTEM.md).
 
 The rest of the plan — which examples to build next, in what order, and
 what each one proves — lives in the consuming repo's prototype roadmap.

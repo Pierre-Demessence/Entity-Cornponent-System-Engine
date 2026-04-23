@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -47,6 +47,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'Turn-based card combat: DOM renderer, manual tick, drag-to-play — proves the renderer interface is not canvas-coupled.',
     title: 'Card Battler',
     load: () => import('@pierre/ecs-example-card-battler/src/main.ts'),
+  },
+  {
+    id: 'rhythm',
+    controls: 'Click to start audio, D/F/J/K hit lanes, R reset',
+    summary: 'Four-lane rhythm: tick source driven by AudioContext.currentTime, not performance.now — first external-clock test.',
+    title: 'Rhythm',
+    load: () => import('@pierre/ecs-example-rhythm/src/main.ts'),
   },
 ];
 
