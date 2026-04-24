@@ -1,5 +1,6 @@
 export type { EntityId } from '#entity-id';
 
+export { type AudioHandle, type AudioPlayOptions, type AudioProvider } from '#audio-provider';
 export {
   type ComponentDef,
   type ComponentMigration,

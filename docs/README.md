@@ -17,6 +17,7 @@ Project-agnostic ECS primitives in `packages/ecs/src/`. These modules have
 ## Supporting Files
 
 - `entity-id.ts` — `EntityId` type definition
+- `audio-provider.ts` — `AudioProvider` contract (`play`, `stop`, `setVolume`, `dispose`) used by `modules/audio`
 - `validation.ts` — pure data validation helpers (asObject, asArray, asNumber, asString, asBoolean)
 - `test-utils.ts` — `createTestWorld()`, `GenericEntityBuilder`, `entity()` — domain-neutral fluent helpers for ECS unit tests. Import via `@pierre/ecs/test-utils`.
 

@@ -1,8 +1,10 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
+import type { AudioQueue } from '@pierre/ecs/modules/audio';
 import type { InputState, PointerState } from '@pierre/ecs/modules/input';
 import type { HashGrid2D } from '@pierre/ecs/modules/spatial';
 
 import { EcsWorld } from '@pierre/ecs';
+import { AudioSourceDef } from '@pierre/ecs/modules/audio';
 import { OpacityDef, RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
 import { cellOfPoint } from '@pierre/ecs/modules/spatial';
 
@@ -37,6 +39,13 @@ export const FIRE_COOLDOWN_MS = 110;
 
 export const SCORE_PER_KILL = 10;
 
+export const SHOOTER_AUDIO_CLIP_IDS = {
+  enemyKill: 'sfx.enemyKill',
+  fire: 'sfx.fire',
+  musicMain: 'music.main',
+  playerDown: 'sfx.playerDown',
+} as const;
+
 export type ShooterEvent
   = | { type: 'EnemyKilled'; enemyId: EntityId }
     | { type: 'PlayerHit' }
@@ -45,6 +54,8 @@ export type ShooterEvent
 export type ShooterAction = 'down' | 'fire' | 'left' | 'reset' | 'right' | 'up';
 
 export interface GameState {
+  audioEnabled: boolean;
+  audioQueue: AudioQueue;
   dead: boolean;
   dtMs: number;
   elapsedMs: number;
@@ -52,12 +63,15 @@ export interface GameState {
   fireCooldownMs: number;
   grid: HashGrid2D;
   input: InputState<ShooterAction>;
+  musicEntityId: EntityId | null;
   playerId: EntityId | null;
   /** Live aim vector in canvas-internal pixels, read-only view owned by PointerProvider. */
   pointer: PointerState;
   score: number;
   spawnTimerMs: number;
   world: EcsWorld;
+  clearAudioQueue: () => void;
+  isAudioClipReady: (clipId: string) => boolean;
 }
 
 export function cellOf(x: number, y: number): { x: number; y: number } {
@@ -66,6 +80,7 @@ export function cellOf(x: number, y: number): { x: number; y: number } {
 
 export function makeWorld(): EcsWorld {
   const w = new EcsWorld();
+  w.registerComponent(AudioSourceDef);
   w.registerComponent(PositionDef);
   w.registerComponent(VelocityDef);
   w.registerComponent(RotationDef);
@@ -192,12 +207,36 @@ export function resetGame(state: GameState): void {
   state.world.clearAll();
   state.events.clear();
   state.grid.clear();
+  state.clearAudioQueue();
 
   state.score = 0;
   state.dead = false;
   state.fireCooldownMs = 0;
   state.spawnTimerMs = 0;
   state.elapsedMs = 0;
+  state.musicEntityId = null;
 
   state.playerId = spawnPlayer(state);
+
+  ensureMusicSource(state);
+}
+
+export function ensureMusicSource(state: GameState): void {
+  if (!state.audioEnabled)
+    return;
+  if (!state.isAudioClipReady(SHOOTER_AUDIO_CLIP_IDS.musicMain))
+    return;
+
+  const store = state.world.getStore(AudioSourceDef);
+  if (state.musicEntityId != null && store.has(state.musicEntityId))
+    return;
+
+  const musicId = state.world.createEntity();
+  store.set(musicId, {
+    channel: 'music',
+    clipId: SHOOTER_AUDIO_CLIP_IDS.musicMain,
+    loop: true,
+    volume: 1.00,
+  });
+  state.musicEntityId = musicId;
 }

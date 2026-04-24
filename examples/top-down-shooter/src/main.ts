@@ -2,6 +2,11 @@ import type { GameState, ShooterAction, ShooterEvent } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import {
+  AudioQueue,
+  makeAudioSystem,
+  WebAudioProvider,
+} from '@pierre/ecs/modules/audio';
+import {
   createInput,
   Key,
   KeyboardProvider,
@@ -16,10 +21,12 @@ import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/m
 import {
   CELL_SIZE,
   despawn,
+  ensureMusicSource,
   makeWorld,
   resetGame,
   SCREEN_H,
   SCREEN_W,
+  SHOOTER_AUDIO_CLIP_IDS,
 } from './game';
 import { createFpsMeter, render } from './render';
 import {
@@ -30,6 +37,30 @@ import {
 } from './systems';
 
 const LOGIC_TICK_MS = 1000 / 60;
+
+type ShooterClipId = (typeof SHOOTER_AUDIO_CLIP_IDS)[keyof typeof SHOOTER_AUDIO_CLIP_IDS];
+
+const SHOOTER_CLIP_URLS: Record<ShooterClipId, string> = {
+  [SHOOTER_AUDIO_CLIP_IDS.enemyKill]: new URL('./assets/audio/enemy-kill.wav', import.meta.url).toString(),
+  [SHOOTER_AUDIO_CLIP_IDS.fire]: new URL('./assets/audio/fire.wav', import.meta.url).toString(),
+  [SHOOTER_AUDIO_CLIP_IDS.musicMain]: new URL('./assets/audio/music.mp3', import.meta.url).toString(),
+  [SHOOTER_AUDIO_CLIP_IDS.playerDown]: new URL('./assets/audio/player-down.wav', import.meta.url).toString(),
+};
+
+function createAudioContext(): AudioContext | null {
+  const Ctor = (window.AudioContext ?? (window as unknown as {
+    webkitAudioContext?: typeof AudioContext;
+  }).webkitAudioContext);
+  if (!Ctor)
+    return null;
+  try {
+    return new Ctor();
+  }
+  catch (error) {
+    console.warn('TopDownShooter audio: failed to create AudioContext.', error);
+    return null;
+  }
+}
 
 export function start(container: HTMLElement): () => void {
   container.innerHTML = '';
@@ -48,6 +79,72 @@ export function start(container: HTMLElement): () => void {
   const world = makeWorld();
   const grid = new HashGrid2D();
   const events = new EventBus<ShooterEvent>();
+  const clipUrls = SHOOTER_CLIP_URLS;
+
+  const audioQueue = new AudioQueue();
+  const clipBuffers = new Map<string, AudioBuffer>();
+  const clipReady = new Set<ShooterClipId>();
+  const clipFailed = new Set<ShooterClipId>();
+  const audioContext = createAudioContext();
+  const clipLoads = new Map<ShooterClipId, Promise<void>>();
+  const audioLoadAbort = new AbortController();
+  let disposed = false;
+  let stateRef: GameState | null = null;
+
+  const isClipReady = (clipId: string): boolean => {
+    return clipReady.has(clipId as ShooterClipId);
+  };
+
+  const ensureClipLoaded = (clipId: ShooterClipId): void => {
+    if (!audioContext || disposed || clipReady.has(clipId) || clipFailed.has(clipId) || clipLoads.has(clipId))
+      return;
+    const url = clipUrls[clipId];
+    const pending = fetch(url, { signal: audioLoadAbort.signal })
+      .then(async (response) => {
+        if (!response.ok)
+          throw new Error(`HTTP ${response.status}`);
+        const raw = await response.arrayBuffer();
+        const decoded = await audioContext.decodeAudioData(raw);
+        if (disposed)
+          return;
+        clipBuffers.set(clipId, decoded);
+        clipReady.add(clipId);
+        if (clipId === SHOOTER_AUDIO_CLIP_IDS.musicMain && stateRef) {
+          ensureMusicSource(stateRef);
+        }
+      })
+      .catch((error) => {
+        if (disposed)
+          return;
+        if (error instanceof DOMException && error.name === 'AbortError')
+          return;
+        clipFailed.add(clipId);
+        console.warn(`TopDownShooter audio: failed to load ${clipId} from ${url}`, error);
+      })
+      .finally(() => {
+        clipLoads.delete(clipId);
+      });
+    clipLoads.set(clipId, pending);
+  };
+
+  if (!audioContext) {
+    console.warn('TopDownShooter audio: AudioContext unavailable, running without sound.');
+  }
+
+  const audioProvider = audioContext
+    ? new WebAudioProvider({
+        context: audioContext,
+        resolveClip: clipId => clipBuffers.get(clipId),
+      })
+    : null;
+
+  if (audioProvider) {
+    audioProvider.setVolume('music', 0.55);
+    audioProvider.setVolume('sfx', 0.9);
+    for (const clipId of Object.keys(clipUrls) as ShooterClipId[]) {
+      ensureClipLoaded(clipId);
+    }
+  }
 
   const motionSystem = makeVelocityIntegrationSystem<GameState>({
     name: 'movement',
@@ -66,6 +163,19 @@ export function start(container: HTMLElement): () => void {
     .add(lifetimeSystem)
     .add(collisionSystem)
     .add(spawnerSystem);
+
+  if (audioProvider) {
+    scheduler.add(makeAudioSystem<GameState>({
+      provider: audioProvider,
+      queue: audioQueue,
+      runAfter: ['collision'],
+      onError: (error) => {
+        const clipId = error.clipId as ShooterClipId | undefined;
+        if (clipId && Object.hasOwn(clipUrls, clipId))
+          ensureClipLoaded(clipId);
+      },
+    }));
+  }
 
   const tickSource = new FixedIntervalTickSource(LOGIC_TICK_MS);
 
@@ -100,6 +210,8 @@ export function start(container: HTMLElement): () => void {
   );
 
   const state: GameState = {
+    audioEnabled: audioProvider !== null,
+    audioQueue,
     dead: false,
     dtMs: LOGIC_TICK_MS,
     elapsedMs: 0,
@@ -107,14 +219,48 @@ export function start(container: HTMLElement): () => void {
     fireCooldownMs: 0,
     grid,
     input,
+    isAudioClipReady: isClipReady,
+    musicEntityId: null,
     playerId: null,
     pointer: pointer.state,
     score: 0,
     spawnTimerMs: 0,
     world,
+    clearAudioQueue: () => {
+      audioQueue.drain();
+    },
   };
 
+  stateRef = state;
+
+  const unsubscribeEnemyKilled = events.on('EnemyKilled', () => {
+    if (!state.audioEnabled || !state.isAudioClipReady(SHOOTER_AUDIO_CLIP_IDS.enemyKill))
+      return;
+    state.audioQueue.play(SHOOTER_AUDIO_CLIP_IDS.enemyKill, {
+      channel: 'sfx',
+      volume: 0.72,
+    });
+  });
+
+  const unsubscribePlayerHit = events.on('PlayerHit', () => {
+    if (!state.audioEnabled || !state.isAudioClipReady(SHOOTER_AUDIO_CLIP_IDS.playerDown))
+      return;
+    state.audioQueue.play(SHOOTER_AUDIO_CLIP_IDS.playerDown, {
+      channel: 'sfx',
+      volume: 0.9,
+    });
+  });
+
   resetGame(state);
+
+  const resumeAudio = (): void => {
+    if (!audioContext || audioContext.state === 'running')
+      return;
+    void audioContext.resume().catch(() => undefined);
+  };
+
+  canvas.addEventListener('pointerdown', resumeAudio);
+  window.addEventListener('keydown', resumeAudio);
 
   const tickRunner = new TickRunner<GameState>({
     scheduler,
@@ -138,10 +284,20 @@ export function start(container: HTMLElement): () => void {
   renderTickSource.start();
 
   return (): void => {
+    disposed = true;
+    audioLoadAbort.abort();
     input.dispose();
+    unsubscribeEnemyKilled();
+    unsubscribePlayerHit();
+    canvas.removeEventListener('pointerdown', resumeAudio);
+    window.removeEventListener('keydown', resumeAudio);
     unsubscribeRender();
     renderTickSource.stop();
     tickRunner.stop();
+    audioProvider?.dispose();
+    if (audioContext && audioContext.state !== 'closed') {
+      void audioContext.close().catch(() => undefined);
+    }
     container.innerHTML = '';
   };
 }

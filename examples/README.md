@@ -20,7 +20,7 @@ bug and the example is on hold until the bug is fixed.
   [platformer/POSTMORTEM.md](platformer/POSTMORTEM.md).
 - [`top-down-shooter/`](top-down-shooter/) — Rung 4 (twin-stick arena,
   continuous mouse aim, held-fire bullets, scaled enemy swarms). See
-  [top-down-shooter/POSTMORTEM.md](top-down-shooter/POSTMORTEM.md).
+   [top-down-shooter/POSTMORTEM.md](top-down-shooter/POSTMORTEM.md).
 - [`card-battler/`](card-battler/) — Rung 5 (turn-based card combat,
   DOM renderer, manual tick, drag-to-play). See
   [card-battler/POSTMORTEM.md](card-battler/POSTMORTEM.md).
@@ -47,9 +47,10 @@ non-negotiable:
    unchanged. If it can't, stop the example, land the engine change
    through a normal plan/review loop, resume.
 
-2. **One mechanic, one screen.** No menus, no save system, no audio, no
-   polish. Target: < 500–1000 lines of app code per example (see the
-   per-rung targets in the roadmap).
+2. **One mechanic, one screen.** No menus, no save system, minimal
+   polish. Add audio only when it is part of the mechanic being proven.
+   Target: < 500–1000 lines of app code per example (see the per-rung
+   targets in the roadmap).
 
 3. **Each example must break at least one engine assumption.** Otherwise
    it proves nothing. See the roadmap's "ladder" section for which
@@ -67,7 +68,7 @@ non-negotiable:
 
 ## Layout (once examples start landing)
 
-```
+```text
 packages/ecs/examples/
 ├── README.md                 ← this file
 ├── snake/                    ← Rung 1

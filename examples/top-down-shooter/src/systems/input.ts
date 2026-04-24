@@ -7,6 +7,7 @@ import {
   FIRE_COOLDOWN_MS,
   PLAYER_RADIUS,
   PLAYER_SPEED,
+  SHOOTER_AUDIO_CLIP_IDS,
   spawnBullet,
 } from '../game';
 
@@ -60,6 +61,12 @@ export const inputSystem: SchedulableSystem<GameState> = {
       const nx = pos.x + Math.cos(rot.angle) * PLAYER_RADIUS;
       const ny = pos.y + Math.sin(rot.angle) * PLAYER_RADIUS;
       spawnBullet(ctx, nx, ny, rot.angle);
+      if (ctx.audioEnabled && ctx.isAudioClipReady(SHOOTER_AUDIO_CLIP_IDS.fire)) {
+        ctx.audioQueue.play(SHOOTER_AUDIO_CLIP_IDS.fire, {
+          channel: 'sfx',
+          volume: 0.15,
+        });
+      }
       ctx.fireCooldownMs = FIRE_COOLDOWN_MS;
     }
   },
