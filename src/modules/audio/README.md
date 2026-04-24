@@ -6,7 +6,8 @@ scheduler-ready system.
 
 V1 is intentionally small:
 
-- No clip loading pipeline (`modules/asset-loader` will own that).
+- No clip loading pipeline in this module (use
+  `@pierre/ecs/modules/asset-loader`).
 - No spatial listener model yet.
 - No engine-owned event contracts.
 

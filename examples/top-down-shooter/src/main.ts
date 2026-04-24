@@ -2,6 +2,10 @@ import type { GameState, ShooterAction, ShooterEvent } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import {
+  AssetLoader,
+  audioBufferAsset,
+} from '@pierre/ecs/modules/asset-loader';
+import {
   AudioQueue,
   makeAudioSystem,
   WebAudioProvider,
@@ -80,38 +84,44 @@ export function start(container: HTMLElement): () => void {
   const grid = new HashGrid2D();
   const events = new EventBus<ShooterEvent>();
   const clipUrls = SHOOTER_CLIP_URLS;
+  const assetLoader = new AssetLoader();
 
   const audioQueue = new AudioQueue();
-  const clipBuffers = new Map<string, AudioBuffer>();
-  const clipReady = new Set<ShooterClipId>();
   const clipFailed = new Set<ShooterClipId>();
   const audioContext = createAudioContext();
+  const clipHandles = audioContext
+    ? {
+        [SHOOTER_AUDIO_CLIP_IDS.enemyKill]: audioBufferAsset(clipUrls[SHOOTER_AUDIO_CLIP_IDS.enemyKill], audioContext),
+        [SHOOTER_AUDIO_CLIP_IDS.fire]: audioBufferAsset(clipUrls[SHOOTER_AUDIO_CLIP_IDS.fire], audioContext),
+        [SHOOTER_AUDIO_CLIP_IDS.musicMain]: audioBufferAsset(clipUrls[SHOOTER_AUDIO_CLIP_IDS.musicMain], audioContext),
+        [SHOOTER_AUDIO_CLIP_IDS.playerDown]: audioBufferAsset(clipUrls[SHOOTER_AUDIO_CLIP_IDS.playerDown], audioContext),
+      }
+    : null;
   const clipLoads = new Map<ShooterClipId, Promise<void>>();
   const audioLoadAbort = new AbortController();
   let disposed = false;
   let stateRef: GameState | null = null;
 
   const isClipReady = (clipId: string): boolean => {
-    return clipReady.has(clipId as ShooterClipId);
+    if (!clipHandles)
+      return false;
+    const handle = clipHandles[clipId as ShooterClipId];
+    return handle ? assetLoader.has(handle) : false;
   };
 
   const ensureClipLoaded = (clipId: ShooterClipId): void => {
-    if (!audioContext || disposed || clipReady.has(clipId) || clipFailed.has(clipId) || clipLoads.has(clipId))
+    if (!audioContext || !clipHandles || disposed || clipFailed.has(clipId) || clipLoads.has(clipId))
       return;
-    const url = clipUrls[clipId];
-    const pending = fetch(url, { signal: audioLoadAbort.signal })
-      .then(async (response) => {
-        if (!response.ok)
-          throw new Error(`HTTP ${response.status}`);
-        const raw = await response.arrayBuffer();
-        const decoded = await audioContext.decodeAudioData(raw);
+    const handle = clipHandles[clipId];
+    if (assetLoader.has(handle))
+      return;
+
+    const pending = assetLoader.load(handle, { signal: audioLoadAbort.signal })
+      .then(() => {
         if (disposed)
           return;
-        clipBuffers.set(clipId, decoded);
-        clipReady.add(clipId);
-        if (clipId === SHOOTER_AUDIO_CLIP_IDS.musicMain && stateRef) {
+        if (clipId === SHOOTER_AUDIO_CLIP_IDS.musicMain && stateRef)
           ensureMusicSource(stateRef);
-        }
       })
       .catch((error) => {
         if (disposed)
@@ -119,7 +129,7 @@ export function start(container: HTMLElement): () => void {
         if (error instanceof DOMException && error.name === 'AbortError')
           return;
         clipFailed.add(clipId);
-        console.warn(`TopDownShooter audio: failed to load ${clipId} from ${url}`, error);
+        console.warn(`TopDownShooter audio: failed to load ${clipId} from ${clipUrls[clipId]}`, error);
       })
       .finally(() => {
         clipLoads.delete(clipId);
@@ -134,7 +144,12 @@ export function start(container: HTMLElement): () => void {
   const audioProvider = audioContext
     ? new WebAudioProvider({
         context: audioContext,
-        resolveClip: clipId => clipBuffers.get(clipId),
+        resolveClip: (clipId) => {
+          if (!clipHandles)
+            return undefined;
+          const handle = clipHandles[clipId as ShooterClipId];
+          return handle ? assetLoader.get(handle) : undefined;
+        },
       })
     : null;
 
@@ -295,6 +310,7 @@ export function start(container: HTMLElement): () => void {
     renderTickSource.stop();
     tickRunner.stop();
     audioProvider?.dispose();
+    assetLoader.clear();
     if (audioContext && audioContext.state !== 'closed') {
       void audioContext.close().catch(() => undefined);
     }
