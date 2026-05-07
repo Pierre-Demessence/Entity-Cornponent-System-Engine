@@ -50,7 +50,6 @@ Start from [`../examples/README.md`](../examples/README.md) for the full tour.
 
 - [Extending the Engine](extending-the-engine.md) — when to promote code into core vs a module vs leave in the consumer; Rule-of-Three extraction criteria; failure modes to avoid.
 
-
 ## Roadmap
 
 - [Architecture Roadmap](roadmap/architecture-roadmap.md) - engine/ECS improvement tiers
