@@ -1,6 +1,6 @@
 # ECS Engine Documentation
 
-Project-agnostic ECS primitives in `packages/ecs/src/`. These modules have
+Project-agnostic ECS primitives in `src/`. These modules have
 **zero imports from game-specific code** and can be reused in any project.
 
 ## Primitives
@@ -23,7 +23,7 @@ Project-agnostic ECS primitives in `packages/ecs/src/`. These modules have
 
 ## Quick Start
 
-See [`packages/ecs/README.md`](../README.md#quick-start) for a minimal
+See [`../README.md`](../README.md#quick-start) for a minimal
 register-component / spawn / query example. The primitive docs above
 cover the full API surface.
 
@@ -32,8 +32,8 @@ cover the full API surface.
 Genre-specific helpers that layer on top of the primitives. Each opt-in
 module ships as a `@pierre/ecs/modules/<name>` subpath export and
 documents itself in its source folder
-(`packages/ecs/src/modules/<name>/README.md`). Browse
-[`src/modules/`](../src/modules/) for the current catalog.
+(`src/modules/<name>/README.md`). Browse
+[`../src/modules/`](../src/modules/) for the current catalog.
 
 ## Examples
 
@@ -49,3 +49,16 @@ Start from [`../examples/README.md`](../examples/README.md) for the full tour.
 ## Contributing
 
 - [Extending the Engine](extending-the-engine.md) — when to promote code into core vs a module vs leave in the consumer; Rule-of-Three extraction criteria; failure modes to avoid.
+
+
+## Roadmap
+
+- [Architecture Roadmap](roadmap/architecture-roadmap.md) - engine/ECS improvement tiers
+- [General-Purpose ECS Roadmap](roadmap/general-purpose-ecs-roadmap.md) - long-horizon engine layering
+- [ECS Module Backlog](roadmap/ecs-module-backlog.md) - shipped, deferred, speculative, declined modules
+- [ECS Postmortem Additions Audit](roadmap/ecs-postmortem-additions-audit.md) - verified missing additions from example postmortems
+- [Prototype Games Roadmap](roadmap/prototype-games-roadmap.md) - ladder of small games validating the engine
+
+## Plans
+
+Active engine plans live in [docs/plans/](plans/). Done plans for engine work performed while the engine was still in the Roguelike monorepo are kept in that repo's docs/plans/done/ directory for historical context.
