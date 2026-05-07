@@ -1,5 +1,6 @@
-import { EcsWorld } from '#world';
 import { beforeEach, describe, expect, it } from 'vitest';
+
+import { EcsWorld } from '#world';
 
 import { PositionDef, RotationDef, ScaleDef } from '../transform';
 import { Canvas2DRenderer } from './canvas2d-renderer';

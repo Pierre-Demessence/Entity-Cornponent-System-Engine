@@ -1,9 +1,10 @@
 import type { EventBus } from '#event-bus';
 import type { TickInfo, TickSource } from '#tick-source';
 
+import { describe, expect, it, vi } from 'vitest';
+
 import { Scheduler } from '#scheduler';
 import { createTestWorld } from '#test-utils';
-import { describe, expect, it, vi } from 'vitest';
 
 import { TickRunner } from './tick-runner';
 

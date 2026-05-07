@@ -1,7 +1,8 @@
 import type { EntityId } from '#index';
 
-import { EcsWorld } from '#world';
 import { describe, expect, it } from 'vitest';
+
+import { EcsWorld } from '#world';
 
 import { PositionDef } from '../transform/position';
 import { aabbVsAabb } from './narrowphase';

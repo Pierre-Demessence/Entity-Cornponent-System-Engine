@@ -1,5 +1,6 @@
-import { registryComponent } from '#component-store';
 import { describe, expect, it } from 'vitest';
+
+import { registryComponent } from '#component-store';
 
 describe('registryComponent', () => {
   interface CardDef {

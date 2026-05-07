@@ -31,12 +31,43 @@ it's validated inside its first consumer. Not yet published to npm.
 
 ## Installation
 
-This package is consumed locally via a TypeScript + Vite path alias.
-See the consumer's `tsconfig.json` / `vite.config.ts` for alias setup.
+This package is not yet published to npm. Consume it locally as a sibling
+folder via `file:` install:
+
+```jsonc
+// consumer's package.json
+{
+  "dependencies": {
+    "@pierre/ecs": "file:../Entity-Cornponent-System-Engine"
+  }
+}
+```
+
+The package's `exports` field points at TypeScript sources directly, so
+no build step is required for consumers using a TS-aware bundler (Vite,
+esbuild, etc.). Edits in this repo are picked up live by the consumer.
 
 ```ts
-import { EcsWorld, ComponentStore, QueryBuilder } from '@pierre/ecs';
+import { ComponentStore, EcsWorld, QueryBuilder } from '@pierre/ecs';
 ```
+
+## Local development
+
+```sh
+npm install     # installs devDeps + links example workspaces
+npm test        # run the engine unit tests (vitest)
+npm run lint    # eslint
+```
+
+Each example under `examples/` is its own workspace package and depends
+on the engine via `file:../..`. Build any example with:
+
+```sh
+cd examples/snake
+npm run build
+```
+
+The aggregate `examples/hub` mounts every example into a single dev app.
 
 Subpath imports are also supported for selective consumption:
 

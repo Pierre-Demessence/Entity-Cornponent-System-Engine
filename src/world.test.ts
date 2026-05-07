@@ -1,8 +1,9 @@
 import type { ComponentDef, TagDef } from '#component-store';
 import type { EntityTemplate } from '#template';
 
-import { EcsWorld } from '#world';
 import { describe, expect, it, vi } from 'vitest';
+
+import { EcsWorld } from '#world';
 
 interface Pos { x: number; y: number }
 interface Health { hp: number }

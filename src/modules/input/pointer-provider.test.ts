@@ -1,5 +1,4 @@
 import type { InputRawEvent } from '#input-source';
-
 import type { PointerTarget } from './pointer-provider';
 
 import { describe, expect, it } from 'vitest';

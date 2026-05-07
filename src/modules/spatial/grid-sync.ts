@@ -1,5 +1,4 @@
 import type { EntityId } from '#entity-id';
-
 import type { HashGrid2D } from './hash-grid-2d';
 
 import { cellOfPoint } from './projections';

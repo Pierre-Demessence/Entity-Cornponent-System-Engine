@@ -1,6 +1,7 @@
+import { describe, expect, it } from 'vitest';
+
 import { simpleComponent } from '#component-store';
 import { EcsWorld } from '#world';
-import { describe, expect, it } from 'vitest';
 
 import { SceneTransitionQueue, transferEntities } from './scene-transition';
 

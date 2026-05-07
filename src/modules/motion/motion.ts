@@ -1,5 +1,4 @@
 import type { EntityId, SchedulableSystem } from '#index';
-
 import type { Position } from '../transform/position';
 
 import { PositionDef } from '../transform/position';

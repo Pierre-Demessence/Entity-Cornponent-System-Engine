@@ -2,7 +2,6 @@ import type { ComponentStore } from '#component-store';
 import type { EntityId } from '#entity-id';
 import type { Renderer } from '#renderer';
 import type { EcsWorld } from '#world';
-
 import type { DomRenderable } from './dom-renderable';
 
 import { RenderOrderDef } from '../render-canvas2d';

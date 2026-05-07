@@ -1,7 +1,8 @@
 import type { TagDef } from '#component-store';
 
-import { createTestWorld, GenericEntityBuilder } from '#test-utils';
 import { describe, expect, it } from 'vitest';
+
+import { createTestWorld, GenericEntityBuilder } from '#test-utils';
 
 import { TurnCycler } from './turn-cycler';
 

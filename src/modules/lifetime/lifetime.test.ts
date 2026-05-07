@@ -1,7 +1,8 @@
 import type { EntityId } from '#entity-id';
 
-import { EcsWorld } from '#world';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { EcsWorld } from '#world';
 
 import { LifetimeDef, makeLifetimeSystem } from './lifetime';
 

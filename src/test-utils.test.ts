@@ -1,7 +1,8 @@
 import type { ComponentDef } from '#component-store';
 
-import { createTestWorld, entity, GenericEntityBuilder } from '#test-utils';
 import { describe, expect, it } from 'vitest';
+
+import { createTestWorld, entity, GenericEntityBuilder } from '#test-utils';
 
 interface Pos { x: number; y: number }
 const PosDef: ComponentDef<Pos> = {

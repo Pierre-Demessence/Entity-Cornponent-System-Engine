@@ -2,7 +2,6 @@ import type { ComponentStore } from '#component-store';
 import type { EntityId } from '#entity-id';
 import type { Renderer } from '#renderer';
 import type { EcsWorld } from '#world';
-
 import type { Renderable } from './renderable';
 
 import { PositionDef, RotationDef, ScaleDef } from '../transform';

@@ -1,8 +1,9 @@
 import type { TagDef } from '#index';
 
+import { beforeEach, describe, expect, it } from 'vitest';
+
 import { PositionDef } from '#modules/transform/index';
 import { EcsWorld } from '#world';
-import { beforeEach, describe, expect, it } from 'vitest';
 
 import { CameraDef, makeFollowCameraSystem, viewToWorld, worldToView } from './camera';
 

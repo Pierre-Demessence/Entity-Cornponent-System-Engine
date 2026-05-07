@@ -1,5 +1,6 @@
-import { simpleComponent } from '#component-store';
 import { describe, expect, it } from 'vitest';
+
+import { simpleComponent } from '#component-store';
 
 describe('simpleComponent', () => {
   interface Pos { x: number; y: number }

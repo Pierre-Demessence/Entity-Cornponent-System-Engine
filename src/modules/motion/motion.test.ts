@@ -1,9 +1,9 @@
 import type { EntityId } from '#entity-id';
-
 import type { VelocityIntegrationTickCtx } from './motion';
 
-import { EcsWorld } from '#world';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { EcsWorld } from '#world';
 
 import { PositionDef } from '../transform/position';
 import { VelocityDef } from '../transform/velocity';

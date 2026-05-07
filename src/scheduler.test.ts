@@ -1,7 +1,8 @@
 import type { SchedulableSystem } from '#scheduler';
 
-import { Scheduler } from '#scheduler';
 import { describe, expect, it, vi } from 'vitest';
+
+import { Scheduler } from '#scheduler';
 
 function sys(name: string, opts?: { runAfter?: string[]; runBefore?: string[] }): SchedulableSystem<void> {
   return { name, run: vi.fn(), ...opts };

@@ -1,9 +1,9 @@
 import type { EntityId } from '#entity-id';
-
 import type { KinematicsTickCtx } from './kinematics-system';
 
-import { EcsWorld } from '#world';
 import { beforeEach, describe, expect, it } from 'vitest';
+
+import { EcsWorld } from '#world';
 
 import { ShapeAabbDef } from '../collision/shape-aabb';
 import { PositionDef } from '../transform/position';

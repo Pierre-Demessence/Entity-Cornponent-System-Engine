@@ -1,10 +1,10 @@
 import type { ComponentStore } from '#component-store';
-
 import type { RenderOrder } from '../render-canvas2d';
 import type { DomRenderable } from './dom-renderable';
 
-import { EcsWorld } from '#world';
 import { describe, expect, it, vi } from 'vitest';
+
+import { EcsWorld } from '#world';
 
 import { RenderOrderDef } from '../render-canvas2d';
 import { PositionDef } from '../transform';

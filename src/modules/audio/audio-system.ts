@@ -3,7 +3,6 @@ import type { ComponentDef } from '#component-store';
 import type { EntityId } from '#entity-id';
 import type { SchedulableSystem } from '#scheduler';
 import type { EcsWorld } from '#world';
-
 import type { AudioSource } from './audio-source';
 
 import { AudioSourceDef } from './audio-source';

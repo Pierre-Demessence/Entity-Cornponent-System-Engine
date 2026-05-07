@@ -1,9 +1,9 @@
 import type { AudioHandle, AudioPlayOptions, AudioProvider } from '#audio-provider';
-
 import type { AudioSystemError } from './audio-system';
 
-import { EcsWorld } from '#world';
 import { describe, expect, it } from 'vitest';
+
+import { EcsWorld } from '#world';
 
 import { AudioSourceDef } from './audio-source';
 import { AudioQueue, makeAudioSystem } from './audio-system';
