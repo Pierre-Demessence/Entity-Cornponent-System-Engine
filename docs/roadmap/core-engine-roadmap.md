@@ -1,17 +1,17 @@
-# Architecture Improvement Roadmap
+# Core-Engine Roadmap
 
-Pure engine / ECS / infrastructure improvements — no gameplay features.
-Ordered by dependency: earlier tiers unblock later ones.
+**Scope.** Pure **core-engine internals** — primitives in `src/` that
+underpin every module and app: component stores, queries, scheduler,
+event bus, lifecycle, validation, change detection, plugin/extension
+hooks. No modules, no gameplay features.
 
-## Current State (post generic component store)
+For module-level work (camera, audio, render-dom, pathfinding, …) see
+[ecs-module-backlog.md](ecs-module-backlog.md).
 
-- 8 component types + 3 tags in a generic `ComponentStore<T>` / `TagStore` registry (`src/ecs/`)
-- 4 systems running sequentially: PlayerAction → AI → FOV → Render
-- O(n) position queries for collision, item pickup, occupancy checks
-- Queue-and-flush EventBus (`src/ecs/event-bus.ts`) with typed handlers
-- 3 entity factory functions (player, item, enemy) in `src/game/entity.ts`
-- JSON serialization with `ComponentDef.serialize/deserialize`
-- Hardcoded key map, manual UI sync
+For the layering principles and promotion rule-book, see
+[../extending-the-engine.md](../extending-the-engine.md).
+
+Tiers below are ordered by dependency: earlier tiers unblock later ones.
 
 ---
 
@@ -25,7 +25,7 @@ scalability wall and makes every subsequent feature cheaper to build.
 | | |
 |---|---|
 | **Problem** | `getBlockingAt()`, `getItemsAt()`, `isOccupied()` iterate ALL positions — O(n) per call. Called multiple times per turn by multiple systems. |
-| **Solution** | Spatial hash grid: `Map<cellKey, Set<EntityId>>`. Auto-maintained when positions change (set/delete hooks on `ComponentStore`). New file: `src/ecs/spatial.ts`. |
+| **Solution** | Spatial hash grid: `Map<cellKey, Set<EntityId>>`. Auto-maintained when positions change (set/delete hooks on `ComponentStore`). Shipped as `SpatialStructure<TPos>` interface in `src/spatial-structure.ts` plus `HashGrid2D` backend in `src/modules/spatial/`. |
 | **API** | `world.spatial.getAt(x, y)`, `world.spatial.getInRadius(x, y, r)`, `world.spatial.getInRect(x1, y1, x2, y2)` |
 | **Unlocks** | Ranged combat, AoE spells, A* pathfinding, large maps, multi-floor navigation |
 | **Complexity** | Short — ~150 lines. Wire into position store's set/delete. |
@@ -36,7 +36,7 @@ scalability wall and makes every subsequent feature cheaper to build.
 | | |
 |---|---|
 | **Problem** | Systems manually iterate specific stores and cross-reference others with ad-hoc `if` checks. Adding filters (alive, in-range, has-component) duplicates logic everywhere. |
-| **Solution** | Fluent query builder: `world.query(PositionDef, FighterDef).without(DeadTag).run()` returning an iterator of `[EntityId, Position, Fighter]` tuples. New file: `src/ecs/query.ts`. |
+| **Solution** | Fluent query builder: `world.query(PositionDef, FighterDef).without(DeadTag).run()` returning an iterator of `[EntityId, Position, Fighter]` tuples. Shipped in `src/query.ts`. |
 | **Implementation** | Intersect the `keys()` of requested ComponentStores; exclude keys present in excluded TagStores. |
 | **Unlocks** | Clean system code, easy component filtering, foundation for archetype caching |
 | **Complexity** | Short — ~100 lines. Builds on the existing component registry. |
@@ -47,7 +47,7 @@ scalability wall and makes every subsequent feature cheaper to build.
 | | |
 |---|---|
 | **Problem** | 4 systems in a hardcoded array. Adding more requires knowing the implicit order contract. No way to express "run after X" or "run before Y". |
-| **Solution** | DAG-based scheduler. Systems declare `runAfter` / `runBefore` dependencies. Engine topologically sorts them once at startup. Optional: phase grouping (input → logic → render). New file: `src/ecs/scheduler.ts`. |
+| **Solution** | DAG-based scheduler. Systems declare `runAfter` / `runBefore` dependencies. Engine topologically sorts them once at startup. Optional: phase grouping (input → logic → render). Shipped in `src/scheduler.ts`. |
 | **Unlocks** | 50+ systems without order confusion, system hot-plug, conditional system skipping |
 | **Complexity** | Mid — ~200 lines. Toposort + phase tags. |
 | **Dependencies** | None (standalone). But benefits from query DSL. |

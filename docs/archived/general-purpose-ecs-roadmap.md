@@ -1,9 +1,20 @@
 # General-Purpose ECS Roadmap
 
+> **Archived 2026-05-07.** This document’s three roles — layering
+> manifesto, step 1–7 migration narrative, and module catalog M1–M10
+> — are no longer load-bearing. The migration completed (steps 1–6 are
+> all ✅). The layering principles + promotion-paths rule-book +
+> Tradeoffs + Prior Art sections moved into
+> [../extending-the-engine.md](../extending-the-engine.md). The module
+> catalog now lives in [../roadmap/ecs-module-backlog.md](../roadmap/ecs-module-backlog.md);
+> the only entries here that weren’t already there — M9 AI, M10
+> Networking — were ported to that file before archiving. Kept for
+> historical context, not as a roadmap.
+
 A long-horizon companion to
-[architecture-roadmap.md](architecture-roadmap.md) and
+[../roadmap/core-engine-roadmap.md](../roadmap/core-engine-roadmap.md) and
 [../plans/done/ecs-engine-audit.md](../plans/done/ecs-engine-audit.md).
-See also [ecs-module-backlog.md](ecs-module-backlog.md) for deferred /
+See also [../roadmap/ecs-module-backlog.md](../roadmap/ecs-module-backlog.md) for deferred /
 speculative / declined modules (camera, 3D siblings, audio, animation,
 particles, tilemap, pathfinding, debug, scene, asset-loader, rigid-body
 physics) with their promotion triggers.

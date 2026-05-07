@@ -52,10 +52,8 @@ Start from [`../examples/README.md`](../examples/README.md) for the full tour.
 
 ## Roadmap
 
-- [Architecture Roadmap](roadmap/architecture-roadmap.md) - engine/ECS improvement tiers
-- [General-Purpose ECS Roadmap](roadmap/general-purpose-ecs-roadmap.md) - long-horizon engine layering
+- [Core-Engine Roadmap](roadmap/core-engine-roadmap.md) - core-engine internals (component stores, queries, scheduler, hooks)
 - [ECS Module Backlog](roadmap/ecs-module-backlog.md) - shipped, deferred, speculative, declined modules
-- [ECS Postmortem Additions Audit](roadmap/ecs-postmortem-additions-audit.md) - verified missing additions from example postmortems
 - [Prototype Games Roadmap](roadmap/prototype-games-roadmap.md) - ladder of small games validating the engine
 
 ## Plans

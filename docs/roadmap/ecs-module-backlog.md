@@ -1,7 +1,7 @@
 # ECS Module Backlog
 
 Companion to
-[general-purpose-ecs-roadmap.md](general-purpose-ecs-roadmap.md) and
+[core-engine-roadmap.md](core-engine-roadmap.md) and
 [prototype-games-roadmap.md](prototype-games-roadmap.md). Captures modules
 surfaced by
 [../plans/done/ecs-2d-engine-modules.md](../plans/done/ecs-2d-engine-modules.md)
@@ -48,6 +48,9 @@ considered and rejected".
     - [`modules/grid-based` V1 — ✅ shipped 2026-04-23](#modulesgrid-based-v1---shipped-2026-04-23)
     - [`modules/grid-based` V2 — deferred](#modulesgrid-based-v2--deferred)
     - [`modules/debug` — deferred](#modulesdebug--deferred)
+    - [`modules/ai` — speculative](#modulesai--speculative)
+    - [`modules/networking` — speculative](#modulesnetworking--speculative)
+    - [Local-multiplayer player-slot / input-owner helper — speculative](#local-multiplayer-player-slot--input-owner-helper--speculative)
   - [Non-goals (declined)](#non-goals-declined)
   - [Promotion triggers — summary](#promotion-triggers--summary)
 
@@ -272,10 +275,9 @@ shipped arcade `modules/kinematics`.
 
 **Probable shape.** Either roll our own (AABB-only, minimal) or adapt
 `planck.js` / `rapier-js`. Integrates with `SpatialStructure` via a
-physics-appropriate backend (BVH / SweepAndPrune). See the M8 entry
-in
-[general-purpose-ecs-roadmap.md](general-purpose-ecs-roadmap.md) for
-the split between arcade (shipped) and rigid-body (this backlog item).
+physics-appropriate backend (BVH / SweepAndPrune). Distinct from the
+shipped arcade `modules/kinematics`, which covers platformers,
+top-down action, and twin-stick shooters.
 
 **Trigger.** A prototype that arcade physics genuinely cannot handle —
 typical examples: stacking crates with realistic settle, rope / chain,
@@ -620,6 +622,81 @@ when a second consumer wants a similar toggle, Path-A promotes.
 
 </details>
 
+### `modules/ai` — speculative
+
+**Scope.** Generalized AI driver components — behavior trees, finite
+state machines, GOAP — as selectable components, each with its own
+tick system. Distinct from any single game's bespoke AI string-tag.
+
+<details>
+<summary>Details</summary>
+
+**Probable shape.** Three sibling components, each with a paired
+system: `BehaviorTreeDef`, `FsmDef`, `GoapDef`. Apps pick one (or
+compose), and game-specific actions / conditions / leaf nodes register
+through a shared registry per kind.
+
+**Trigger.** A second prototype whose AI clearly outgrows ad-hoc
+`if`-trees. Today the roguelike's AI is a string + target ID, and the
+three real-time prototypes don't have AI at all. Path-A: ship one shape
+only when ≥2 internal consumers converge.
+
+**Rationale for speculative.** AI architecture is a contested space —
+Unity ships none in core (asset-store dependent), Bevy ships none, Godot
+ships an FSM via `AnimationTree` only. Picking a side speculatively is
+waste.
+
+**Canon.** Unreal `Behavior Tree` + `Blackboard`, Godot `LimboAI`
+(community), Halo / F.E.A.R. GOAP papers, behaviortree.cpp.
+
+</details>
+
+### `modules/networking` — speculative
+
+**Scope.** Client-authority / server-authority replication, delta
+compression, lockstep / rollback — layered on top of `EcsWorld.lifecycle`
+events and `modules/save` serialization.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** A scoped multiplayer prototype. None is planned. Local
+multi-input belongs under the player-slot helper below, not here —
+`modules/networking` is for cross-machine sync.
+
+**Rationale for speculative.** Long-horizon. Network code touches every
+layer (input, physics determinism, scene transitions, persistence) and
+is the wrong thing to design without a real game shape forcing the
+constraints.
+
+**Canon.** Bevy `bevy_replicon`, Photon, Mirror (Unity), Source engine
+networking model.
+
+</details>
+
+### Local-multiplayer player-slot / input-owner helper — speculative
+
+**Scope.** A small helper for stable local player identity and
+routing input to the entity each player controls.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** A second local-multiplayer example beyond local-pong.
+Pong kept player identity as the app-level union `'left' | 'right'`,
+which was correct for that single consumer. Path-A: do not design
+from one data point.
+
+**Probable shape.** `PlayerSlotDef { slotId: number }` paired with an
+`InputOwnerDef { slotId: number }` so a system can route per-slot
+actions from `createInput` to the controlled entity. Slot count and
+mapping stays app-defined.
+
+**Canon.** Unity `PlayerInput` + `PlayerInputManager`, Unreal local
+player index, Godot `InputMap` action sets.
+
+</details>
+
 ---
 
 ## Non-goals (declined)
@@ -700,6 +777,9 @@ When any of the below becomes true, open a plan for the matching module.
 | Flow-field / many-pather prototype | `modules/pathfinding` V2 |
 | Stealth / line-of-sight prototype needing non-V1 algorithms | `modules/grid-based` V2 |
 | Second debug-overlay consumer | `modules/debug` |
+| Second prototype with non-trivial AI (BT / FSM / GOAP) | `modules/ai` |
+| Scoped multiplayer prototype | `modules/networking` |
+| Second local-multiplayer example beyond local-pong | Local-multiplayer player-slot helper |
 
 Every promotion still runs through the engine extension rule-book
 (Path-A, Path-B canon, or Path-C universal canon) — this table just

@@ -1,8 +1,17 @@
 # ECS Postmortem Additions Audit
 
+> **Archived 2026-05-07.** This was a one-shot reconciliation exercise:
+> walk every example postmortem, check each suggestion against `src/`,
+> keep only the missing ones. The three surviving items — `render-dom`
+> V2, 3D sibling modules, and a local-multiplayer player-slot helper
+> — are now tracked directly in
+> [../roadmap/ecs-module-backlog.md](../roadmap/ecs-module-backlog.md).
+> Future postmortem additions go straight into that backlog instead of
+> a separate audit pass.
+
 Companion to
 [general-purpose-ecs-roadmap.md](general-purpose-ecs-roadmap.md) and
-[ecs-module-backlog.md](ecs-module-backlog.md).
+[../roadmap/ecs-module-backlog.md](../roadmap/ecs-module-backlog.md).
 
 This document does one narrow job: take the additions suggested by the
 example postmortems, verify them against the current ``

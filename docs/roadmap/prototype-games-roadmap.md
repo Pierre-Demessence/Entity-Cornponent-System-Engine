@@ -1,10 +1,10 @@
 # Prototype Games Roadmap
 
-Companion to
-[general-purpose-ecs-roadmap.md](general-purpose-ecs-roadmap.md). That
-document describes the *target* layering (core / modules / app); this one
-describes the *proof* — a ladder of tiny games, each breaking one more
-assumption baked into the current roguelike, used to validate that
+Companion to [ecs-module-backlog.md](ecs-module-backlog.md) and
+[core-engine-roadmap.md](core-engine-roadmap.md). Those documents
+describe the *target* engine surface (core internals + modules); this
+one describes the *proof* — a ladder of tiny games, each breaking one
+more assumption baked into the current roguelike, used to validate that
 `@pierre/ecs` really is domain-neutral.
 
 ## Status
@@ -66,8 +66,10 @@ ordered by *how many* assumptions each step breaks.
 
 After each prototype: what engine API was missing, what was awkward, what
 was surprising. The postmortem feeds back into
-[ecs-engine-audit.md](../plans/done/ecs-engine-audit.md) and
-[general-purpose-ecs-roadmap.md](general-purpose-ecs-roadmap.md).
+[ecs-module-backlog.md](ecs-module-backlog.md) and
+[core-engine-roadmap.md](core-engine-roadmap.md), where shape-validated
+proposals are tracked through the promotion rule-book in
+[../extending-the-engine.md](../extending-the-engine.md).
 
 ---
 
@@ -438,10 +440,10 @@ Each prototype rung **depends on** certain audit items being done, and
 
 ## Related Documents
 
-- [general-purpose-ecs-roadmap.md](general-purpose-ecs-roadmap.md) — the
-  target layering these prototypes validate.
-- [architecture-roadmap.md](architecture-roadmap.md) — short-horizon engine
-  improvements. Most prototypes depend on one or more of its items.
+- [ecs-module-backlog.md](ecs-module-backlog.md) — deferred / speculative
+  / declined modules these prototypes either consume or unblock.
+- [core-engine-roadmap.md](core-engine-roadmap.md) — core-engine
+  internals. Most prototypes depend on one or more of its items.
 - [../plans/done/ecs-engine-audit.md](../plans/done/ecs-engine-audit.md) — concrete
   audit items (A1-A12, B1-B10); postmortems from each prototype feed back
   here.

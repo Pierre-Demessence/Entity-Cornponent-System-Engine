@@ -106,6 +106,50 @@ When in doubt: **A**. Under-promotion costs a bit of duplication;
 over-promotion via mislabeled Path B or C costs an engine surface
 you regret.
 
+## Layering Principles
+
+The engine is split into three layers — Core / Modules / App — and four
+principles govern how they relate. The triage table below applies these
+operationally; this section spells the principles out so future
+contributors know *why* the table is shaped that way.
+
+### Good defaults, never mandatory assumptions
+
+Every module exposes an **interface** and a **default implementation**.
+Users can swap the implementation without changing the core or other
+modules. `EcsWorld.enableSpatial()` accepts any `SpatialStructure`, with
+`HashGrid2D` as the convenient default for simple 2D grid games — a
+future `QuadTree` or `BVH` drops in with zero core change. Same shape
+applies to `TickSource`, `Renderer<TCtx>`, `InputProvider`,
+`AudioProvider`, and every other module interface.
+
+### Pay for what you use
+
+A simple game that imports only the core pays zero runtime cost for
+unused modules. Modules ship as `@pierre/ecs/modules/<name>` subpath
+exports — tree-shakeable, no giant "ECS framework" object. If your
+prototype doesn't import `modules/audio`, the audio code is not in your
+bundle.
+
+### Composition, not inheritance
+
+Modules don't `extends World` — they receive the world and wire
+themselves in via the core's extension points (store hooks, lifecycle
+events, scheduler registration). This is what makes them swappable and
+what keeps the core small. If a proposed module wants to subclass
+`EcsWorld`, that's a design smell — find the missing extension point on
+the core instead.
+
+### Preset bundles for common game types
+
+When a genre's module combination repeats (e.g. roguelikes always wire
+`HashGrid2D` + `ManualTickSource` + `modules/grid-based` + a save
+backend), an opinionated factory function is the right shape — *not* a
+new core surface. Currently no presets ship; if a second roguelike-shape
+consumer appears and the inline-composition boilerplate hurts, that's
+the trigger to introduce e.g. `createRoguelikeWorld()`. Beginners get
+turnkey setup; power users still compose their own.
+
 ## Three-Layer Triage
 
 Where a piece of code lives depends on who uses it and what it assumes.
@@ -163,6 +207,55 @@ consumer's assumptions. Red flags:
 Wait for a second driver to reveal the real abstraction shape. Better
 "consumer has code the engine could own" than "engine has code nobody
 but one consumer uses."
+
+## Tradeoffs
+
+Layering and module abstraction are not free. Worth naming the costs so
+"why isn't everything just one big `World` class" has a written answer.
+
+**What it costs:**
+
+- **Extra indirection.** `world.spatial.queryAt({x, y})` involves an
+  interface call. Negligible for normal use; profile and inline if a hot
+  loop ever sting.
+- **More types.** Every module ships an interface + a default impl,
+  doubling the surface area vs a hardcoded implementation.
+- **Learning curve for contributors.** "Where does X go?" requires
+  applying the triage table. Documented, but a new contributor still
+  has to read it.
+- **Temptation to over-engineer.** YAGNI is real. Each generalization
+  must be justified by either (a) a concrete current need, or (b) a
+  concrete cost in the current non-general shape — see the failure
+  modes above.
+
+**What it saves:**
+
+- **Reusability.** The engine survives a genre pivot without a rewrite
+  (validated by snake / asteroids / platformer / 3D platformer
+  prototypes consuming `@pierre/ecs` byte-identical).
+- **Testability.** Mock implementations of any module let you test the
+  core + other modules in isolation.
+- **Modding (future).** Plugins fall out naturally once modules are
+  well-separated.
+- **Clearer mental model.** "Where does the turn counter live?" has a
+  single correct answer (`TickSource`), not two.
+
+## Prior Art
+
+Engines worth reading when considering layering or extension shape:
+
+- **[Bevy](https://bevyengine.org)** — Rust. `bevy_ecs` is the model of
+  layer separation. The crate dependency graph is the documentation.
+- **[flecs](https://www.flecs.dev/flecs/)** — C/C++, archetype-based,
+  very fast. Has explicit "basic" and "addons" distributions.
+- **[EnTT](https://github.com/skypjack/entt)** — C++, header-only,
+  widely used in AAA (Minecraft: Bedrock). Strictly core-only; modules
+  are community.
+- **[BitECS](https://github.com/NateTheGreatt/bitECS)** — JS/TS,
+  archetype-based, tiny. Example of a JS ECS that stays core-only.
+- **[Unity DOTS](https://unity.com/dots)** — A cautionary tale of tight
+  coupling to a single host engine. Good for archetype algorithms;
+  **do not copy** the way it's wedded to Unity's component system.
 
 ## Promotion Workflow
 
@@ -237,7 +330,7 @@ Two other legitimate drivers:
   improvements. No prototype needed — the single consumer surfaced real
   quality issues.
 - **Public-release readiness.** Items like dev-inspector, plugin
-  architecture, keybinding registry live on the architecture roadmap
+  architecture, keybinding registry live on the core-engine roadmap
   because the engine needs them to be usable by others, even if the
   roguelike works fine without them.
 
