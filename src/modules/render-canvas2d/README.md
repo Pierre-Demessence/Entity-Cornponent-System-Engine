@@ -25,6 +25,9 @@ type Renderable =
   | { kind: 'text'; text: string; font: string;
       align?: CanvasTextAlign; baseline?: CanvasTextBaseline;
       fill?: string; stroke?: string; lineWidth?: number;
+      blendMode?: GlobalCompositeOperation }
+  | { kind: 'sprite'; atlas: string; frame: string;
+      dw?: number; dh?: number; anchor?: 'top-left' | 'center';
       blendMode?: GlobalCompositeOperation };
 
 const RenderableDef: ComponentDef<Renderable>;
@@ -41,6 +44,26 @@ class Canvas2DRenderer implements Renderer<{ ctx2d: CanvasRenderingContext2D; wo
 
 The renderer also reads, when registered, `RotationDef` and
 `ScaleDef` from `@pierre/ecs/modules/transform`.
+
+## Sprites
+
+The `sprite` kind draws a sub-rectangle of an atlas image, referenced by
+`atlas` + `frame` name (kept as strings so `Renderable` stays
+serializable). Supply an atlas registry via the render context's optional
+`atlases` field — any object satisfying `SpriteFrameSource`
+(`getFrame(atlas, frame) → { image, sx, sy, sw, sh }`). The
+`TextureAtlasRegistry` from
+[`@pierre/ecs/modules/texture-atlas`](../texture-atlas/README.md)
+satisfies it structurally.
+
+```ts
+renderer.render({ atlases: registry, ctx2d, world });
+world.getStore(RenderableDef).set(id, { atlas: 'space', frame: 'ship.png', kind: 'sprite' });
+```
+
+`dw`/`dh` default to the frame's natural pixel size; `anchor` defaults to
+`'center'`. A sprite whose atlas/frame is unresolved (or when no registry
+is supplied) draws nothing.
 
 ## Usage
 

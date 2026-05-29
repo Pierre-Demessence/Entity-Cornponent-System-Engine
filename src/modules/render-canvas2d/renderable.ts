@@ -15,9 +15,13 @@ import { asArray, asNumber, asObject, asString } from '#validation';
  *   space and rotate/scale around position.
  * - `text`: position is the text draw origin; use `align`/`baseline`
  *   to control Canvas2D's text anchoring.
+ * - `sprite`: `anchor` chooses `'center'` (default) or `'top-left'`.
+ *   Resolved against `Canvas2DRenderContext.atlases` by `atlas` + `frame`
+ *   name; `dw`/`dh` default to the frame's natural size.
  *
- * Both fill and stroke are optional; supplying neither draws nothing.
- * Supplying both draws fill first, then stroke on top.
+ * For shape kinds, both fill and stroke are optional; supplying neither
+ * draws nothing. Supplying both draws fill first, then stroke on top.
+ * `sprite` ignores fill/stroke entirely.
  */
 export type RectAnchor = 'center' | 'top-left';
 export type CircleAnchor = 'center' | 'top-left';
@@ -62,6 +66,15 @@ export type Renderable
     fill?: string;
     stroke?: string;
     lineWidth?: number;
+    blendMode?: GlobalCompositeOperation;
+  }
+  | {
+    kind: 'sprite';
+    atlas: string;
+    frame: string;
+    dw?: number;
+    dh?: number;
+    anchor?: RectAnchor;
     blendMode?: GlobalCompositeOperation;
   };
 
@@ -179,8 +192,19 @@ function validate(raw: unknown, label: string): Renderable {
       text: asString(obj.text, `${label}.text`),
     };
   }
+  if (kind === 'sprite') {
+    return {
+      anchor: parseAnchor(obj.anchor, `${label}.anchor`),
+      atlas: asString(obj.atlas, `${label}.atlas`),
+      blendMode,
+      dh: optNonNegNumber(obj.dh, `${label}.dh`),
+      dw: optNonNegNumber(obj.dw, `${label}.dw`),
+      frame: asString(obj.frame, `${label}.frame`),
+      kind: 'sprite',
+    };
+  }
   throw new Error(
-    `${label}.kind: expected 'rect', 'circle', 'polygon', or 'text', got '${kind}'`,
+    `${label}.kind: expected 'rect', 'circle', 'polygon', 'text', or 'sprite', got '${kind}'`,
   );
 }
 
@@ -228,6 +252,16 @@ function serialize(value: Renderable): unknown {
         lineWidth: value.lineWidth,
         stroke: value.stroke,
         text: value.text,
+      };
+    case 'sprite':
+      return {
+        anchor: value.anchor,
+        atlas: value.atlas,
+        blendMode: value.blendMode,
+        dh: value.dh,
+        dw: value.dw,
+        frame: value.frame,
+        kind: 'sprite',
       };
   }
 }

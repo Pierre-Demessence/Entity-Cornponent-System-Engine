@@ -1,3 +1,5 @@
+import type { SpriteFrameSource } from './canvas2d-renderer';
+
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { EcsWorld } from '#world';
@@ -17,6 +19,7 @@ type Call
     | { op: 'polyStroke'; pts: readonly [number, number][]; closed: boolean; strokeStyle: string; lineWidth: number }
     | { op: 'fillText'; text: string; x: number; y: number; font: string; fillStyle: string; align: string; baseline: string }
     | { op: 'strokeText'; text: string; x: number; y: number; font: string; strokeStyle: string; lineWidth: number }
+    | { op: 'drawImage'; sx: number; sy: number; sw: number; sh: number; dx: number; dy: number; dw: number; dh: number }
     | { op: 'save' }
     | { op: 'restore' }
     | { op: 'setAlpha'; value: number }
@@ -83,6 +86,20 @@ function makeRecorder(): Recorder {
       pendingArc = null;
       pendingPath = null;
       pendingPathClosed = false;
+    },
+    drawImage(
+      _image: CanvasImageSource,
+      sx: number,
+      sy: number,
+      sw: number,
+      sh: number,
+      dx: number,
+      dy: number,
+      dw: number,
+      dh: number,
+    ): void {
+      const [gx, gy] = applyMat(dx, dy);
+      calls.push({ dh, dw, dx: gx, dy: gy, op: 'drawImage', sh, sw, sx, sy });
     },
     fill(): void {
       if (pendingArc)
@@ -743,6 +760,37 @@ describe('renderableDef', () => {
     expect(got).toMatchObject(value);
   });
 
+  it('round-trips sprite with dw/dh and anchor', () => {
+    const value = {
+      anchor: 'center' as const,
+      atlas: 'space',
+      dh: 40,
+      dw: 36,
+      frame: 'ship_C.png',
+      kind: 'sprite' as const,
+    };
+    const got = RenderableDef.deserialize(RenderableDef.serialize(value), 'r');
+    expect(got).toMatchObject(value);
+  });
+
+  it('round-trips sprite with default size (no dw/dh)', () => {
+    const value = {
+      atlas: 'space',
+      frame: 'enemy_A.png',
+      kind: 'sprite' as const,
+    };
+    const got = RenderableDef.deserialize(RenderableDef.serialize(value), 'r') as {
+      atlas: string;
+      dh?: number;
+      dw?: number;
+      frame: string;
+      kind: string;
+    };
+    expect(got).toMatchObject(value);
+    expect(got.dw).toBeUndefined();
+    expect(got.dh).toBeUndefined();
+  });
+
   it('rejects unknown kinds', () => {
     expect(() => RenderableDef.deserialize({ kind: 'triangle' }, 'r'))
       .toThrow(/kind/);
@@ -763,6 +811,38 @@ describe('renderableDef', () => {
   it('rejects bad rect anchor value', () => {
     expect(() => RenderableDef.deserialize(
       { anchor: 'middle', h: 1, kind: 'rect', w: 1 },
+      'r',
+    )).toThrow(/anchor/);
+  });
+
+  it('rejects sprite with a non-string atlas', () => {
+    expect(() => RenderableDef.deserialize(
+      { frame: 'ship_C.png', kind: 'sprite' },
+      'r',
+    )).toThrow(/atlas/);
+  });
+
+  it('rejects sprite with a non-string frame', () => {
+    expect(() => RenderableDef.deserialize(
+      { atlas: 'space', kind: 'sprite' },
+      'r',
+    )).toThrow(/frame/);
+  });
+
+  it('rejects sprite with negative dw/dh', () => {
+    expect(() => RenderableDef.deserialize(
+      { atlas: 'space', dw: -1, frame: 'ship_C.png', kind: 'sprite' },
+      'r',
+    )).toThrow(/non-negative/);
+    expect(() => RenderableDef.deserialize(
+      { atlas: 'space', dh: -1, frame: 'ship_C.png', kind: 'sprite' },
+      'r',
+    )).toThrow(/non-negative/);
+  });
+
+  it('rejects sprite with a bad anchor value', () => {
+    expect(() => RenderableDef.deserialize(
+      { anchor: 'middle', atlas: 'space', frame: 'ship_C.png', kind: 'sprite' },
       'r',
     )).toThrow(/anchor/);
   });
@@ -815,5 +895,80 @@ describe('renderOrderDef', () => {
       RenderOrderDef.serialize({ value: 10 }),
       'o',
     )).toEqual({ value: 10 });
+  });
+});
+
+describe('canvas2DRenderer sprite rendering', () => {
+  const image = {} as CanvasImageSource;
+  const atlases: SpriteFrameSource = {
+    getFrame: (atlas, frame) =>
+      atlas === 'space' && frame === 'ship'
+        ? { image, sh: 96, sw: 96, sx: 10, sy: 20 }
+        : undefined,
+  };
+
+  let world: EcsWorld;
+  let renderer: Canvas2DRenderer;
+
+  beforeEach(() => {
+    world = new EcsWorld();
+    world.registerComponent(PositionDef);
+    world.registerComponent(RenderableDef);
+    renderer = new Canvas2DRenderer();
+  });
+
+  it('draws a sprite centered on its position by default', () => {
+    const id = world.createEntity();
+    world.getStore(PositionDef).set(id, { x: 100, y: 200 });
+    world.getStore(RenderableDef).set(id, { atlas: 'space', frame: 'ship', kind: 'sprite' });
+
+    const rec = makeRecorder();
+    renderer.render({ atlases, ctx2d: rec.ctx2d, world });
+
+    expect(drawCalls(rec.calls)).toEqual([
+      { dh: 96, dw: 96, dx: 52, dy: 152, op: 'drawImage', sh: 96, sw: 96, sx: 10, sy: 20 },
+    ]);
+  });
+
+  it('honors top-left anchor and dw/dh overrides', () => {
+    const id = world.createEntity();
+    world.getStore(PositionDef).set(id, { x: 100, y: 200 });
+    world.getStore(RenderableDef).set(id, {
+      anchor: 'top-left',
+      atlas: 'space',
+      dh: 32,
+      dw: 48,
+      frame: 'ship',
+      kind: 'sprite',
+    });
+
+    const rec = makeRecorder();
+    renderer.render({ atlases, ctx2d: rec.ctx2d, world });
+
+    expect(drawCalls(rec.calls)).toEqual([
+      { dh: 32, dw: 48, dx: 100, dy: 200, op: 'drawImage', sh: 96, sw: 96, sx: 10, sy: 20 },
+    ]);
+  });
+
+  it('draws nothing when the frame is unknown', () => {
+    const id = world.createEntity();
+    world.getStore(PositionDef).set(id, { x: 0, y: 0 });
+    world.getStore(RenderableDef).set(id, { atlas: 'space', frame: 'missing', kind: 'sprite' });
+
+    const rec = makeRecorder();
+    renderer.render({ atlases, ctx2d: rec.ctx2d, world });
+
+    expect(drawCalls(rec.calls)).toEqual([]);
+  });
+
+  it('draws nothing when no atlas registry is supplied', () => {
+    const id = world.createEntity();
+    world.getStore(PositionDef).set(id, { x: 0, y: 0 });
+    world.getStore(RenderableDef).set(id, { atlas: 'space', frame: 'ship', kind: 'sprite' });
+
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, world });
+
+    expect(drawCalls(rec.calls)).toEqual([]);
   });
 });

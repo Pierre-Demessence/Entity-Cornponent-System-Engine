@@ -9,7 +9,30 @@ import { OpacityDef } from './opacity';
 import { RenderOrderDef } from './render-order';
 import { RenderableDef } from './renderable';
 
+/**
+ * A frame resolved against a loaded image, ready to use as the source
+ * rectangle of `CanvasRenderingContext2D.drawImage`.
+ */
+export interface ResolvedSpriteFrame {
+  image: CanvasImageSource;
+  sh: number;
+  sw: number;
+  sx: number;
+  sy: number;
+}
+
+/**
+ * Minimal contract the renderer needs to draw `sprite` renderables:
+ * resolve an `atlas` + `frame` name to a drawable image and source rect.
+ * `TextureAtlasRegistry` from `@pierre/ecs/modules/texture-atlas`
+ * satisfies this structurally.
+ */
+export interface SpriteFrameSource {
+  getFrame: (atlas: string, frame: string) => ResolvedSpriteFrame | undefined;
+}
+
 export interface Canvas2DRenderContext {
+  atlases?: SpriteFrameSource;
   ctx2d: CanvasRenderingContext2D;
   world: EcsWorld;
 }
@@ -31,7 +54,7 @@ interface DrawEntry {
  */
 export class Canvas2DRenderer implements Renderer<Canvas2DRenderContext> {
   render(ctx: Canvas2DRenderContext): void {
-    const { ctx2d, world } = ctx;
+    const { atlases, ctx2d, world } = ctx;
     const posStore = world.getStore(PositionDef);
     const renderableStore = world.getStore(RenderableDef);
     const rotStore = tryGetStore<{ angle: number }>(world, RotationDef);
@@ -47,7 +70,7 @@ export class Canvas2DRenderer implements Renderer<Canvas2DRenderContext> {
           const pos = posStore.get(id);
           if (!pos)
             continue;
-          drawEntity(ctx2d, id, pos.x, pos.y, renderable, rotStore, scaleStore, opacityStore);
+          drawEntity(ctx2d, id, pos.x, pos.y, renderable, rotStore, scaleStore, opacityStore, atlases ?? null);
         }
         return;
       }
@@ -71,7 +94,7 @@ export class Canvas2DRenderer implements Renderer<Canvas2DRenderContext> {
       }
       entries.sort((a, b) => (a.order - b.order) || (a.seq - b.seq));
       for (const e of entries)
-        drawEntity(ctx2d, e.id, e.x, e.y, e.renderable, rotStore, scaleStore, opacityStore);
+        drawEntity(ctx2d, e.id, e.x, e.y, e.renderable, rotStore, scaleStore, opacityStore, atlases ?? null);
     }
     finally {
       ctx2d.restore();
@@ -95,8 +118,9 @@ function drawEntity(
   rotStore: ComponentStore<{ angle: number }> | null,
   scaleStore: ComponentStore<{ x: number; y: number }> | null,
   opacityStore: ComponentStore<{ value: number }> | null,
+  atlases: SpriteFrameSource | null,
 ): void {
-  if (r.fill === undefined && r.stroke === undefined)
+  if (r.kind !== 'sprite' && r.fill === undefined && r.stroke === undefined)
     return;
 
   const rot = rotStore?.get(id)?.angle ?? 0;
@@ -121,10 +145,10 @@ function drawEntity(
           ctx2d.rotate(rot);
         if (scale !== null)
           ctx2d.scale(scale.x, scale.y);
-        drawShape(ctx2d, sh.x, sh.y, r);
+        drawShape(ctx2d, sh.x, sh.y, r, atlases);
       }
       else {
-        drawShape(ctx2d, x + sh.x, y + sh.y, r);
+        drawShape(ctx2d, x + sh.x, y + sh.y, r, atlases);
       }
     }
     finally {
@@ -133,7 +157,7 @@ function drawEntity(
     return;
   }
 
-  drawShape(ctx2d, x + sh.x, y + sh.y, r);
+  drawShape(ctx2d, x + sh.x, y + sh.y, r, atlases);
 }
 
 function shapeOffset(r: Renderable): { x: number; y: number } {
@@ -157,6 +181,7 @@ function drawShape(
   originX: number,
   originY: number,
   r: Renderable,
+  atlases: SpriteFrameSource | null,
 ): void {
   switch (r.kind) {
     case 'rect': {
@@ -221,6 +246,20 @@ function drawShape(
         ctx2d.lineWidth = r.lineWidth ?? 1;
         ctx2d.strokeText(r.text, originX, originY);
       }
+      return;
+    }
+    case 'sprite': {
+      if (!atlases)
+        return;
+      const f = atlases.getFrame(r.atlas, r.frame);
+      if (!f)
+        return;
+      const dw = r.dw ?? f.sw;
+      const dh = r.dh ?? f.sh;
+      const anchor = r.anchor ?? 'center';
+      const ox = anchor === 'center' ? originX - dw / 2 : originX;
+      const oy = anchor === 'center' ? originY - dh / 2 : originY;
+      ctx2d.drawImage(f.image, f.sx, f.sy, f.sw, f.sh, ox, oy, dw, dh);
     }
   }
 }

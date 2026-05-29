@@ -1,6 +1,8 @@
 export {
   type Canvas2DRenderContext,
   Canvas2DRenderer,
+  type ResolvedSpriteFrame,
+  type SpriteFrameSource,
 } from './canvas2d-renderer';
 export {
   type Opacity,
