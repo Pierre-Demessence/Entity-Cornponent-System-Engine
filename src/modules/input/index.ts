@@ -1,4 +1,12 @@
 export {
+  Gamepad,
+  type GamepadCode,
+  GamepadProvider,
+  type GamepadProviderOptions,
+  type GamepadSnapshot,
+  type GamepadSource,
+} from './gamepad-provider';
+export {
   createInput,
   type InputMap,
   type InputState,
