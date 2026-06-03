@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -75,6 +75,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'First sprite/texture-atlas consumer: parses a Tiled TMX map (base64+zlib) and renders every tile as a sprite entity, layered via RenderOrderDef.',
     title: 'Tilemap (Tiled TMX)',
     load: () => import('@pierre/ecs-example-tilemap/src/main.ts'),
+  },
+  {
+    id: 'solitaire',
+    controls: 'Click stock to deal · drag to move · double-click to send to a foundation · New deal to reshuffle',
+    summary: 'First interactive canvas scene: draw-1 Klondike with per-frame card dragging, dynamic z-order via RenderOrderDef, and world-space hit-testing over a texture atlas.',
+    title: 'Solitaire (Klondike)',
+    load: () => import('@pierre/ecs-example-solitaire/src/main.ts'),
   },
 ];
 

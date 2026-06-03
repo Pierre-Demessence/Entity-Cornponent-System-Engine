@@ -16,6 +16,7 @@
     "@pierre/ecs-example-platformer-3d": "*",
     "@pierre/ecs-example-rhythm": "*",
     "@pierre/ecs-example-snake": "*",
+    "@pierre/ecs-example-solitaire": "*",
     "@pierre/ecs-example-tilemap": "*",
     "@pierre/ecs-example-top-down-shooter": "*"
   },
