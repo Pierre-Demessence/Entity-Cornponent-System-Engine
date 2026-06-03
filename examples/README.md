@@ -7,7 +7,7 @@ bug and the example is on hold until the bug is fixed.
 
 ## Status
 
-**Rungs 1, 2, 3, 4, 5, 6, 7, and 8 landed.** Ten examples exist:
+**Rungs 1, 2, 3, 4, 5, 6, 7, and 8 landed.** Eleven examples exist:
 
 - [`snake/`](snake/) — Rung 1 (arcade grid, 4-way keyboard, real-time
   tick). See [snake/POSTMORTEM.md](snake/POSTMORTEM.md).
@@ -42,6 +42,12 @@ bug and the example is on hold until the bug is fixed.
   Klondike with per-frame card dragging, dynamic z-order via
   `RenderOrderDef`, and world-space hit-testing over a texture atlas
   (Kenney boardgame pack). See [solitaire/POSTMORTEM.md](solitaire/POSTMORTEM.md).
+- [`rpg/`](rpg/) — first camera-follow + first NPC-dialogue scene: walks
+  a Tiled dungeon through a `modules/camera` follow camera with wall
+  collision, and talks to NPCs via a Kenney-UI nine-slice dialogue box.
+  Drove `modules/tmx` past its first real map — CSV layer data, an
+  external `.tsx` tileset, and per-tile flip flags rendered through
+  `ScaleDef`/`RotationDef`. See [rpg/POSTMORTEM.md](rpg/POSTMORTEM.md).
 
 The rest of the plan — which examples to build next, in what order, and
 what each one proves — lives in the consuming repo's prototype roadmap.

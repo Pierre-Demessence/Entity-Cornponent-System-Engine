@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -82,6 +82,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'First interactive canvas scene: draw-1 Klondike with per-frame card dragging, dynamic z-order via RenderOrderDef, and world-space hit-testing over a texture atlas.',
     title: 'Solitaire (Klondike)',
     load: () => import('@pierre/ecs-example-solitaire/src/main.ts'),
+  },
+  {
+    id: 'rpg',
+    controls: 'WASD/arrows move · Space/E talk to nearby NPCs',
+    summary: 'First camera-follow + first NPC dialogue scene: walks a Tiled dungeon (CSV + external .tsx + flipped tiles) with a follow camera, wall collision, and a Kenney-UI nine-slice dialogue box.',
+    title: 'Top-down RPG',
+    load: () => import('@pierre/ecs-example-rpg/src/main.ts'),
   },
 ];
 
