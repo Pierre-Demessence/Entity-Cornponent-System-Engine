@@ -15,8 +15,8 @@ import { PositionDef } from '@pierre/ecs/modules/transform';
 // `?url` makes Vite fingerprint and emit these assets, returning their final
 // served URLs. The TMX text and the tileset image are then fetched at runtime
 // through AssetLoader (text + image), exercising the asset-loader module.
-import tmxUrl from '../kenney_roguelike-rpg-pack/Map/sample_map.tmx?url';
-import sheetUrl from '../kenney_roguelike-rpg-pack/Spritesheet/roguelikeSheet_transparent.png?url';
+import tmxUrl from '../../assets/kenney_roguelike-rpg-pack/Map/sample_map.tmx?url';
+import sheetUrl from '../../assets/kenney_roguelike-rpg-pack/Spritesheet/roguelikeSheet_transparent.png?url';
 
 const ATLAS_NAME = 'roguelike';
 const VIEWPORT = 800;
