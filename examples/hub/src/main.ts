@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -68,6 +68,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'Rung 8: local multiplayer Pong with player-scoped keyboard input and score kept as game state, not entity data.',
     title: 'Local Pong',
     load: () => import('@pierre/ecs-example-local-pong/src/main.ts'),
+  },
+  {
+    id: 'tilemap',
+    controls: 'Scroll = zoom · drag = pan',
+    summary: 'First sprite/texture-atlas consumer: parses a Tiled TMX map (base64+zlib) and renders every tile as a sprite entity, layered via RenderOrderDef.',
+    title: 'Tilemap (Tiled TMX)',
+    load: () => import('@pierre/ecs-example-tilemap/src/main.ts'),
   },
 ];
 

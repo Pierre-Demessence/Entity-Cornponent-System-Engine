@@ -42,6 +42,7 @@ considered and rejected".
     - [`modules/save` V2 — deferred](#modulessave-v2--deferred)
     - [`modules/asset-loader` V1 — ✅ shipped 2026-04-24](#modulesasset-loader-v1---shipped-2026-04-24)
     - [`modules/asset-loader` V2 — deferred](#modulesasset-loader-v2--deferred)
+    - [`modules/tmx` V1 — ✅ shipped 2026-04-24](#modulestmx-v1---shipped-2026-04-24)
     - [`modules/tilemap` — deferred](#modulestilemap--deferred)
     - [`modules/pathfinding` V1 — ✅ shipped 2026-04-22](#modulespathfinding-v1---shipped-2026-04-22)
     - [`modules/pathfinding` V2 — deferred](#modulespathfinding-v2--deferred)
@@ -518,10 +519,32 @@ progress semantics, or automatic dev-time asset refresh.
 
 </details>
 
+### `modules/tmx` V1 — ✅ shipped 2026-04-24
+
+**Scope.** Pure, DOM-free parser for [Tiled](https://www.mapeditor.org/)
+`.tmx` maps — orthogonal, single image-based tileset, `base64`+`zlib`
+tile data — plus `gidToFrame` for tileset source-rect lookup. Promoted
+Path-B from [`examples/tilemap`](../../examples/tilemap/), the first
+sprite / texture-atlas consumer. See
+[src/modules/tmx/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/tmx/README.md).
+
+This ships the **load/parse** half only. The tile→ECS glue (one sprite
+entity per cell, layered via `RenderOrderDef`) deliberately stayed in
+the example as Path-A integration code. A batched tilemap *renderable*
+that avoids per-tile entities is the distinct second-consumer concern
+tracked below.
+
 ### `modules/tilemap` — deferred
 
 **Scope.** `TilemapDef` + matching renderer pass for explicit authored
-tile grids (Zelda-likes, Tiled-imported levels).
+tile grids (Zelda-likes, Tiled-imported levels). Would consume
+`modules/tmx` data but render a whole layer in one batched pass instead
+of spawning an entity per cell.
+
+**Trigger update (2026-04-24).** `examples/tilemap` proved the
+per-cell-entity approach renders correctly (~10k entities) but is
+wasteful; a second authored-tile-grid prototype is the trigger for the
+batched renderable.
 
 <details>
 <summary>Details</summary>
@@ -537,7 +560,8 @@ a platformer with Tiled-authored levels). Current platformer uses
 procedurally-placed AABB platforms, so it doesn't qualify yet.
 
 **Canon.** Unity `Tilemap`, Godot `TileMap`, Phaser `Tilemap`, Tiled
-editor as the external authoring tool.
+editor as the external authoring tool (`.tmx` parsing already lands in
+`modules/tmx`).
 
 </details>
 

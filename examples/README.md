@@ -7,7 +7,7 @@ bug and the example is on hold until the bug is fixed.
 
 ## Status
 
-**Rungs 1, 2, 3, 4, 5, 6, 7, and 8 landed.** Eight examples exist:
+**Rungs 1, 2, 3, 4, 5, 6, 7, and 8 landed.** Nine examples exist:
 
 - [`snake/`](snake/) — Rung 1 (arcade grid, 4-way keyboard, real-time
   tick). See [snake/POSTMORTEM.md](snake/POSTMORTEM.md).
@@ -34,6 +34,10 @@ bug and the example is on hold until the bug is fixed.
 - [`local-pong/`](local-pong/) — Rung 8 (local multiplayer Pong,
    player-scoped input identity, score as game state resource). See
    [local-pong/POSTMORTEM.md](local-pong/POSTMORTEM.md).
+- [`tilemap/`](tilemap/) — first sprite/texture-atlas consumer: parses
+  a Tiled TMX map (base64 + zlib layer data) and renders each tile as a
+  sprite entity, layered via `RenderOrderDef`. Barebone static render,
+  no movement. See [tilemap/POSTMORTEM.md](tilemap/POSTMORTEM.md).
 
 The rest of the plan — which examples to build next, in what order, and
 what each one proves — lives in the consuming repo's prototype roadmap.
