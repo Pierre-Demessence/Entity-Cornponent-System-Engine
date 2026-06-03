@@ -2,7 +2,7 @@ import type { TmxTileset } from './tmx';
 
 import { describe, expect, it } from 'vitest';
 
-import { gidToFrame, parseTmx } from './tmx';
+import { gidToFrame, parseTmx, TMX_FLIP_D, TMX_FLIP_H, TMX_FLIP_V } from './tmx';
 
 async function base64ZlibLayer(gids: number[]): Promise<string> {
   const bytes = new Uint8Array(gids.length * 4);
@@ -78,6 +78,22 @@ describe('parseTmx', () => {
     expect(map.layers[0]!.gids[0]).toBe(7);
   });
 
+  it('exposes per-tile flip flags parallel to the gids', async () => {
+    const h = (0x80000000 | 7) >>> 0;
+    const v = (0x40000000 | 8) >>> 0;
+    const d = (0x20000000 | 9) >>> 0;
+    const all = (0x80000000 | 0x40000000 | 0x20000000 | 10) >>> 0;
+    const xml = await buildTmx([[h, v, d, all]]);
+    const map = await parseTmx(xml);
+    expect([...map.layers[0]!.gids]).toEqual([7, 8, 9, 10]);
+    expect([...map.layers[0]!.flags]).toEqual([
+      TMX_FLIP_H,
+      TMX_FLIP_V,
+      TMX_FLIP_D,
+      TMX_FLIP_H | TMX_FLIP_V | TMX_FLIP_D,
+    ]);
+  });
+
   it('derives tileset columns when not declared', async () => {
     const xml = (await buildTmx([[1]], { height: 1, width: 1 }))
       .replace(' columns="3"', '');
@@ -112,16 +128,49 @@ describe('parseTmx', () => {
     await expect(parseTmx(xml)).rejects.toThrow(/multiple tilesets/);
   });
 
-  it('throws on an external .tsx tileset', async () => {
+  it('throws when an external .tsx tileset is referenced but not provided', async () => {
     const xml = (await buildTmx([[1]])).replace(
       '<tileset firstgid="1"',
       '<tileset firstgid="1" source="ext.tsx"',
     );
-    await expect(parseTmx(xml)).rejects.toThrow(/external .tsx/);
+    await expect(parseTmx(xml)).rejects.toThrow(/not provided/);
+  });
+
+  it('resolves an external .tsx tileset supplied via options', async () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+      <map version="1.10" orientation="orthogonal" width="2" height="2" tilewidth="16" tileheight="16">
+        <tileset firstgid="5" source="ext.tsx"/>
+        <layer id="1" name="layer0" width="2" height="2">
+          <data encoding="csv">5,6,7,8</data>
+        </layer>
+      </map>`;
+    const tsx = `<?xml version="1.0" encoding="UTF-8"?>
+      <tileset name="sheet" tilewidth="16" tileheight="16" spacing="1" columns="3" tilecount="9">
+        <image source="sheet.png" width="50" height="50"/>
+      </tileset>`;
+    const map = await parseTmx(xml, { tilesets: { 'ext.tsx': tsx } });
+    expect(map.tileset.firstgid).toBe(5);
+    expect(map.tileset.columns).toBe(3);
+    expect(map.tileset.spacing).toBe(1);
+    expect(map.tileset.imageSource).toBe('sheet.png');
+    expect([...map.layers[0]!.gids]).toEqual([5, 6, 7, 8]);
+  });
+
+  it('parses a csv-encoded layer', async () => {
+    const xml = (await buildTmx([[1]]))
+      .replace(/<data[^>]*>[\s\S]*?<\/data>/, '<data encoding="csv">1,2,\n3,4\n</data>');
+    const map = await parseTmx(xml);
+    expect([...map.layers[0]!.gids]).toEqual([1, 2, 3, 4]);
+  });
+
+  it('throws on a non-numeric csv gid', async () => {
+    const xml = (await buildTmx([[1]]))
+      .replace(/<data[^>]*>[\s\S]*?<\/data>/, '<data encoding="csv">1,nope,3,4</data>');
+    await expect(parseTmx(xml)).rejects.toThrow(/non-numeric csv gid/);
   });
 
   it('throws on a non-base64 layer encoding', async () => {
-    const xml = (await buildTmx([[1]])).replace('encoding="base64"', 'encoding="csv"');
+    const xml = (await buildTmx([[1]])).replace('encoding="base64"', 'encoding="xml"');
     await expect(parseTmx(xml)).rejects.toThrow(/encoding/);
   });
 

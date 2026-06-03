@@ -3,12 +3,16 @@
  *
  * Scope — only what an image-based orthogonal map exercises:
  * - orthogonal maps with a single image-based tileset,
- * - tile-layer `<data>` encoded as `base64` and compressed with `zlib`.
+ * - the tileset inline in the `.tmx` or referenced as an external `.tsx`
+ *   (whose text is supplied via {@link ParseTmxOptions.tilesets}),
+ * - tile-layer `<data>` encoded as `csv`, or as `base64` compressed with
+ *   `zlib`,
+ * - per-tile horizontal/vertical/diagonal flip flags, exposed on
+ *   {@link TmxLayer.flags} while {@link TmxLayer.gids} stays flag-masked.
  *
- * Deliberately unsupported (throws or ignores): `csv`/`gzip`/`zstd`/
- * uncompressed encodings, multiple tilesets, external `.tsx` tilesets,
- * object/image/group layers, infinite/chunked maps, and tile flip flags
- * (the flag bits are masked off so callers see clean local tile ids).
+ * Deliberately unsupported (throws or ignores): `gzip`/`zstd`/uncompressed
+ * encodings, multiple tilesets, object/image/group layers, and
+ * infinite/chunked maps.
  *
  * Pure and DOM-free apart from `atob` + `DecompressionStream`, both of
  * which are standard web platform APIs.
@@ -16,6 +20,26 @@
 
 /** Global-tile-ID flip/rotation flags occupy the top 4 bits. */
 const GID_FLAG_MASK = 0x0FFFFFFF;
+
+/** Raw GID bit set when a tile is flipped horizontally. */
+const RAW_FLIP_H = 0x80000000;
+/** Raw GID bit set when a tile is flipped vertically. */
+const RAW_FLIP_V = 0x40000000;
+/** Raw GID bit set when a tile is flipped along its main diagonal. */
+const RAW_FLIP_D = 0x20000000;
+
+/** {@link TmxLayer.flags} bit: tile is mirrored horizontally. */
+export const TMX_FLIP_H = 1;
+/** {@link TmxLayer.flags} bit: tile is mirrored vertically. */
+export const TMX_FLIP_V = 2;
+/** {@link TmxLayer.flags} bit: tile is transposed across its main diagonal. */
+export const TMX_FLIP_D = 4;
+
+/** Options controlling how {@link parseTmx} resolves external resources. */
+export interface ParseTmxOptions {
+  /** Maps each external tileset `source` path to its `.tsx` document text. */
+  tilesets?: Record<string, string>;
+}
 
 /** A single image-based tileset cut into a uniform grid. */
 export interface TmxTileset {
@@ -42,6 +66,11 @@ export interface TmxTileset {
 /** One tile layer: a row-major grid of (flag-masked) global tile ids. */
 export interface TmxLayer {
   name: string;
+  /**
+   * Row-major per-tile flip flags, parallel to {@link gids}: a bitfield of
+   * {@link TMX_FLIP_H} | {@link TMX_FLIP_V} | {@link TMX_FLIP_D}.
+   */
+  flags: Uint8Array;
   /** Row-major global tile ids; `0` marks an empty cell. */
   gids: Uint32Array;
   height: number;
@@ -103,26 +132,55 @@ async function inflateZlib(bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<A
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
-function bytesToGids(bytes: Uint8Array): Uint32Array {
+function bytesToRawGids(bytes: Uint8Array): Uint32Array {
   const count = bytes.byteLength >>> 2;
   const view = new DataView(bytes.buffer, bytes.byteOffset, count * 4);
-  const gids = new Uint32Array(count);
+  const raw = new Uint32Array(count);
   for (let i = 0; i < count; i++)
-    gids[i] = view.getUint32(i * 4, true) & GID_FLAG_MASK;
-  return gids;
+    raw[i] = view.getUint32(i * 4, true);
+  return raw;
 }
 
-function parseTileset(xml: string): TmxTileset {
-  const tags = [...xml.matchAll(/<tileset\b[^>]*>/g)];
-  if (tags.length === 0)
-    throw new Error('tmx: no <tileset> element found');
-  if (tags.length > 1)
-    throw new Error('tmx: multiple tilesets are not supported');
-  const tilesetTag = tags[0]![0];
-  if (readAttr(tilesetTag, 'source') !== undefined)
-    throw new Error('tmx: external .tsx tilesets are not supported');
+function parseCsvGids(payload: string, name: string): Uint32Array {
+  const raw: number[] = [];
+  for (const token of payload.split(',')) {
+    const trimmed = token.trim();
+    if (trimmed === '')
+      continue;
+    const value = Number(trimmed);
+    if (!Number.isFinite(value))
+      throw new Error(`tmx: layer '${name}' has non-numeric csv gid '${trimmed}'`);
+    raw.push(value >>> 0);
+  }
+  return Uint32Array.from(raw);
+}
 
-  const imageMatch = xml.match(/<image\b[^>]*>/);
+/** Splits raw GIDs into flag-masked ids and a parallel flip-flag bitfield. */
+function splitGidFlags(raw: Uint32Array): { flags: Uint8Array; gids: Uint32Array } {
+  const gids = new Uint32Array(raw.length);
+  const flags = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) {
+    const value = raw[i]!;
+    let flag = 0;
+    if ((value & RAW_FLIP_H) !== 0)
+      flag |= TMX_FLIP_H;
+    if ((value & RAW_FLIP_V) !== 0)
+      flag |= TMX_FLIP_V;
+    if ((value & RAW_FLIP_D) !== 0)
+      flag |= TMX_FLIP_D;
+    gids[i] = value & GID_FLAG_MASK;
+    flags[i] = flag;
+  }
+  return { flags, gids };
+}
+
+/**
+ * Builds a tileset from its defining `<tileset>` tag and the document that
+ * holds the matching `<image>`. `firstgid` comes from the map (external
+ * `.tsx` files omit it), so it is passed in explicitly.
+ */
+function buildTileset(tilesetTag: string, imageScope: string, firstgid: number): TmxTileset {
+  const imageMatch = imageScope.match(/<image\b[^>]*>/);
   if (!imageMatch)
     throw new Error('tmx: tileset is missing its <image> element');
   const imageTag = imageMatch[0];
@@ -143,7 +201,7 @@ function parseTileset(xml: string): TmxTileset {
 
   return {
     columns,
-    firstgid: readNumberAttr(tilesetTag, 'firstgid', '<tileset>'),
+    firstgid,
     imageHeight,
     imageSource,
     imageWidth,
@@ -152,6 +210,29 @@ function parseTileset(xml: string): TmxTileset {
     tileHeight,
     tileWidth,
   };
+}
+
+function parseTileset(xml: string, options: ParseTmxOptions): TmxTileset {
+  const tags = [...xml.matchAll(/<tileset\b[^>]*>/g)];
+  if (tags.length === 0)
+    throw new Error('tmx: no <tileset> element found');
+  if (tags.length > 1)
+    throw new Error('tmx: multiple tilesets are not supported');
+  const tilesetTag = tags[0]![0];
+  const firstgid = readNumberAttr(tilesetTag, 'firstgid', '<tileset>');
+
+  const source = readAttr(tilesetTag, 'source');
+  if (source !== undefined) {
+    const tsx = options.tilesets?.[source];
+    if (tsx === undefined)
+      throw new Error(`tmx: external tileset '${source}' not provided (pass it via parseTmx options.tilesets)`);
+    const tsxTag = tsx.match(/<tileset\b[^>]*>/);
+    if (!tsxTag)
+      throw new Error(`tmx: external tileset '${source}' has no <tileset> element`);
+    return buildTileset(tsxTag[0], tsx, firstgid);
+  }
+
+  return buildTileset(tilesetTag, xml, firstgid);
 }
 
 async function parseLayer(tag: string, inner: string): Promise<TmxLayer> {
@@ -165,14 +246,22 @@ async function parseLayer(tag: string, inner: string): Promise<TmxLayer> {
   const [, dataAttrs, payload] = dataMatch;
 
   const encoding = readAttr(dataAttrs!, 'encoding');
-  if (encoding !== 'base64')
-    throw new Error(`tmx: layer '${name}' uses unsupported encoding '${encoding ?? '(none)'}' (only base64)`);
-  const compression = readAttr(dataAttrs!, 'compression');
-  if (compression !== 'zlib')
-    throw new Error(`tmx: layer '${name}' uses unsupported compression '${compression ?? '(none)'}' (only zlib)`);
+  let raw: Uint32Array;
+  if (encoding === 'csv') {
+    raw = parseCsvGids(payload!, name);
+  }
+  else if (encoding === 'base64') {
+    const compression = readAttr(dataAttrs!, 'compression');
+    if (compression !== 'zlib')
+      throw new Error(`tmx: layer '${name}' uses unsupported compression '${compression ?? '(none)'}' (only zlib)`);
+    raw = bytesToRawGids(await inflateZlib(base64ToBytes(payload!)));
+  }
+  else {
+    throw new Error(`tmx: layer '${name}' uses unsupported encoding '${encoding ?? '(none)'}' (only csv or base64)`);
+  }
 
-  const gids = bytesToGids(await inflateZlib(base64ToBytes(payload!)));
-  return { name, gids, height, width };
+  const { flags, gids } = splitGidFlags(raw);
+  return { name, flags, gids, height, width };
 }
 
 /**
@@ -181,9 +270,10 @@ async function parseLayer(tag: string, inner: string): Promise<TmxLayer> {
  * `DecompressionStream`.
  *
  * @param xml Raw `.tmx` document text.
+ * @param options External-resource resolution (e.g. `.tsx` tileset text).
  * @throws When the map uses an unsupported feature (see module scope).
  */
-export async function parseTmx(xml: string): Promise<TmxMap> {
+export async function parseTmx(xml: string, options: ParseTmxOptions = {}): Promise<TmxMap> {
   const mapMatch = xml.match(/<map\b[^>]*>/);
   if (!mapMatch)
     throw new Error('tmx: no <map> element found');
@@ -199,7 +289,7 @@ export async function parseTmx(xml: string): Promise<TmxMap> {
   if (unsupportedLayer)
     throw new Error(`tmx: '<${unsupportedLayer[1]}>' layers are not supported (only tile <layer>)`);
 
-  const tileset = parseTileset(xml);
+  const tileset = parseTileset(xml, options);
 
   const layers: TmxLayer[] = [];
   for (const match of xml.matchAll(/<layer\b([^>]*)>([\s\S]*?)<\/layer>/g))
