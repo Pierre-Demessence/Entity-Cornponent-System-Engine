@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -89,6 +89,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'First camera-follow + first NPC dialogue scene: walks a Tiled dungeon (CSV + external .tsx + flipped tiles) with a follow camera, wall collision, and a Kenney-UI nine-slice dialogue box.',
     title: 'Top-down RPG',
     load: () => import('@pierre/ecs-example-rpg/src/main.ts'),
+  },
+  {
+    id: 'flappy',
+    controls: 'Click / Space / Up to flap, R to restart',
+    summary: '20 Games Challenge #2: gravity + flap impulse, scrolling recycled pipe pairs, circle-vs-AABB collision, and score-on-pass — first one-Renderable-per-entity composite (pipes drawn manually).',
+    title: 'Flappy Bird',
+    load: () => import('@pierre/ecs-example-flappy/src/main.ts'),
   },
 ];
 

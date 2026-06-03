@@ -7,7 +7,7 @@ bug and the example is on hold until the bug is fixed.
 
 ## Status
 
-**Rungs 1, 2, 3, 4, 5, 6, 7, and 8 landed.** Eleven examples exist:
+**Rungs 1, 2, 3, 4, 5, 6, 7, and 8 landed.** Twelve examples exist:
 
 - [`snake/`](snake/) — Rung 1 (arcade grid, 4-way keyboard, real-time
   tick). See [snake/POSTMORTEM.md](snake/POSTMORTEM.md).
@@ -48,6 +48,11 @@ bug and the example is on hold until the bug is fixed.
   Drove `modules/tmx` past its first real map — CSV layer data, an
   external `.tsx` tileset, and per-tile flip flags rendered through
   `ScaleDef`/`RotationDef`. See [rpg/POSTMORTEM.md](rpg/POSTMORTEM.md).
+- [`flappy/`](flappy/) — first [20 Games Challenge](https://20_games_challenge.gitlab.io/)
+  entry built working the list in order: gravity + flap impulse, scrolling
+  recycled pipe pairs, circle-vs-AABB collision, and score-on-pass. See
+  [flappy/POSTMORTEM.md](flappy/POSTMORTEM.md) and the
+  [challenge roadmap](../docs/roadmap/twenty-games-challenge.md).
 
 The rest of the plan — which examples to build next, in what order, and
 what each one proves — lives in the consuming repo's prototype roadmap.
