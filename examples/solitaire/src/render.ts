@@ -3,10 +3,11 @@
  *
  * Each card owns a sprite entity (`PositionDef` + `RenderableDef` +
  * `RenderOrderDef`). `syncLayout` rewrites those components from the game
- * state every frame; `renderFrame` paints the felt + empty pile slots onto
- * the canvas, then lets the engine's `Canvas2DRenderer` draw the sprites on
- * top, then overlays the win banner. The dragged stack is lifted above
- * everything via a large `RenderOrderDef` bump applied by `main.ts`.
+ * state every frame — and, when a stack is being dragged, lifts those cards
+ * to the pointer with a large `RenderOrderDef` bump in the same pass, so it
+ * stays the single writer of layout. `renderFrame` paints the felt + empty
+ * pile slots onto the canvas, then lets the engine's `Canvas2DRenderer` draw
+ * the sprites on top, then overlays the win banner.
  */
 
 import type { EcsWorld } from '@pierre/ecs';
@@ -36,10 +37,25 @@ export const BACKS_ATLAS = 'backs';
 /** Render-order bump applied to the dragged stack so it floats on top. */
 export const DRAG_ORDER_BUMP = 100_000;
 
+/** Vertical fan offset between cards in a dragged run. */
+const DRAG_FAN = 24;
+
+/**
+ * The cards currently held by the pointer, plus the grab/pointer geometry
+ * needed to position them. `syncLayout` lifts these above every pile.
+ */
+export interface DragOverride {
+  cards: Card[];
+  grabX: number;
+  grabY: number;
+  pointerX: number;
+  pointerY: number;
+}
+
 const renderer = new Canvas2DRenderer();
 
 /** Rewrite every card's sprite components from the current game state. */
-export function syncLayout(world: EcsWorld, state: GameState): void {
+export function syncLayout(world: EcsWorld, state: GameState, drag?: DragOverride | null): void {
   const positions = world.getStore(PositionDef);
   const renderables = world.getStore(RenderableDef);
   const orders = world.getStore(RenderOrderDef);
@@ -65,6 +81,16 @@ export function syncLayout(world: EcsWorld, state: GameState): void {
     pile.forEach((card, i) => place(card, { index: f, kind: 'foundation' }, i)));
   state.tableau.forEach((pile, t) =>
     pile.forEach((card, i) => place(card, { index: t, kind: 'tableau' }, i)));
+
+  if (drag) {
+    drag.cards.forEach((card, i) => {
+      positions.set(card.id, {
+        x: drag.pointerX - drag.grabX,
+        y: drag.pointerY - drag.grabY + i * DRAG_FAN,
+      });
+      orders.set(card.id, { value: DRAG_ORDER_BUMP + i });
+    });
+  }
 }
 
 export function renderFrame(

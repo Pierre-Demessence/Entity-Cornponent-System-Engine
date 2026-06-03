@@ -60,7 +60,6 @@ import {
 import {
   BACKS_ATLAS,
   CARDS_ATLAS,
-  DRAG_ORDER_BUMP,
   renderFrame,
   syncLayout,
 } from './render';
@@ -283,9 +282,7 @@ export function start(container: HTMLElement): () => void {
     if (disposed)
       return;
     if (state) {
-      syncLayout(world, state);
-      if (drag)
-        applyDragOverride(world, drag);
+      syncLayout(world, state, drag);
       renderFrame(ctx2d, world, atlasesOrEmpty(), state);
     }
     rafId = requestAnimationFrame(loop);
@@ -346,18 +343,6 @@ export function start(container: HTMLElement): () => void {
 function registerClip(clips: Record<string, AudioBuffer>, id: string, buf: AudioBuffer): string {
   clips[id] = buf;
   return id;
-}
-
-function applyDragOverride(world: EcsWorld, drag: Drag): void {
-  const positions = world.getStore(PositionDef);
-  const orders = world.getStore(RenderOrderDef);
-  drag.cards.forEach((card, i) => {
-    positions.set(card.id, {
-      x: drag.pointerX - drag.grabX,
-      y: drag.pointerY - drag.grabY + i * 24,
-    });
-    orders.set(card.id, { value: DRAG_ORDER_BUMP + i });
-  });
 }
 
 function inSlot(point: { x: number; y: number }, slot: { x: number; y: number }): boolean {
