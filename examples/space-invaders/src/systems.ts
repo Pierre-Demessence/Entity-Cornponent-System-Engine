@@ -1,7 +1,9 @@
 import type { EntityId, SchedulableSystem } from '@pierre/ecs';
+import type { Aabb } from '@pierre/ecs/modules/collision';
 
 import type { GameState } from './game';
 
+import { aabbVsAabb } from '@pierre/ecs/modules/collision';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 
 import {
@@ -11,8 +13,6 @@ import {
   BunkerDef,
   BunkerTag,
   MothershipTag,
-  ParticleDef,
-  ParticleTag,
   PositionDef,
   RenderableDef,
   RocketTag,
@@ -40,21 +40,7 @@ import {
   startWave,
 } from './game';
 
-interface Box {
-  h: number;
-  w: number;
-  x: number;
-  y: number;
-}
-
-function overlaps(a: Box, b: Box): boolean {
-  return a.x < b.x + b.w
-    && a.x + a.w > b.x
-    && a.y < b.y + b.h
-    && a.y + a.h > b.y;
-}
-
-function boxOf(state: GameState, id: EntityId): Box | null {
+function boxOf(state: GameState, id: EntityId): Aabb | null {
   const pos = state.world.getStore(PositionDef).get(id);
   const size = state.world.getStore(SizeDef).get(id);
   if (!pos || !size)
@@ -257,7 +243,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
         if (consumed.has(alien))
           continue;
         const ab = boxOf(ctx, alien);
-        if (ab && overlaps(rb, ab)) {
+        if (ab && aabbVsAabb(rb, ab)) {
           ctx.score += world.getStore(AlienDef).get(alien)!.points;
           explode(ctx, ab.x + ab.w / 2, ab.y + ab.h / 2, 12, ['#ffd23f', '#ff7b00', '#fff']);
           destroy(alien);
@@ -273,7 +259,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
         if (consumed.has(ship))
           continue;
         const sb = boxOf(ctx, ship);
-        if (sb && overlaps(rb, sb)) {
+        if (sb && aabbVsAabb(rb, sb)) {
           const bonus = 100 + Math.floor(Math.random() * 5) * 50;
           ctx.score += bonus;
           explode(ctx, sb.x + sb.w / 2, sb.y + sb.h / 2, 22, ['#ff4d6d', '#ffd23f', '#fff']);
@@ -291,7 +277,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
         if (consumed.has(bomb))
           continue;
         const bb = boxOf(ctx, bomb);
-        if (bb && overlaps(rb, bb)) {
+        if (bb && aabbVsAabb(rb, bb)) {
           explode(ctx, bb.x + bb.w / 2, bb.y, 6, ['#ff9f1c', '#fff3b0']);
           destroy(bomb);
           destroy(rocket);
@@ -306,7 +292,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
         if (consumed.has(brick))
           continue;
         const cb = boxOf(ctx, brick);
-        if (cb && overlaps(rb, cb)) {
+        if (cb && aabbVsAabb(rb, cb)) {
           damageBrick(brick);
           destroy(rocket);
           break;
@@ -324,7 +310,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
       if (!bb)
         continue;
 
-      if (pb && overlaps(bb, pb)) {
+      if (pb && aabbVsAabb(bb, pb)) {
         destroy(bomb);
         if (ctx.invulnMs > 0)
           continue;
@@ -343,7 +329,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
         if (consumed.has(brick))
           continue;
         const cb = boxOf(ctx, brick);
-        if (cb && overlaps(bb, cb)) {
+        if (cb && aabbVsAabb(bb, cb)) {
           damageBrick(brick);
           destroy(bomb);
           blocked = true;
@@ -376,22 +362,6 @@ export const recycleSystem: SchedulableSystem<GameState> = {
       const pos = posStore.get(id);
       const size = sizeStore.get(id);
       if (pos && size && (pos.x + size.w < -10 || pos.x > SCREEN_W + 10))
-        ctx.world.queueDestroy(id);
-    }
-  },
-};
-
-export const particleSystem: SchedulableSystem<GameState> = {
-  name: 'particle',
-  runAfter: ['motion'],
-  run(ctx) {
-    const store = ctx.world.getStore(ParticleDef);
-    for (const id of ctx.world.getTag(ParticleTag)) {
-      const p = store.get(id);
-      if (!p)
-        continue;
-      p.ageMs += ctx.dtMs;
-      if (p.ageMs >= p.lifeMs)
         ctx.world.queueDestroy(id);
     }
   },

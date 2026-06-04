@@ -2,6 +2,7 @@ import type { Facing, FroggerAction, GameState } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
@@ -19,7 +20,6 @@ import {
   diveSystem,
   inputSystem,
   motionSystem,
-  particleSystem,
   wrapSystem,
 } from './systems';
 
@@ -67,7 +67,7 @@ export function start(container: HTMLElement): () => void {
     .add(wrapSystem)
     .add(diveSystem)
     .add(collisionSystem)
-    .add(particleSystem);
+    .add(makeLifetimeSystem<GameState>({ runAfter: ['motion'] }));
 
   const keyboard = new KeyboardProvider({
     preventDefaultCodes: [Key.ArrowUp, Key.ArrowDown, Key.ArrowLeft, Key.ArrowRight],

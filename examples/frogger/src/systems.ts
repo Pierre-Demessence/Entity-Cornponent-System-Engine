@@ -1,14 +1,14 @@
 import type { EntityId, SchedulableSystem } from '@pierre/ecs';
+import type { Aabb } from '@pierre/ecs/modules/collision';
 
 import type { Facing, GameState } from './game';
 
+import { aabbVsAabb } from '@pierre/ecs/modules/collision';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 
 import {
   ObstacleDef,
   ObstacleTag,
-  ParticleDef,
-  ParticleTag,
   PositionDef,
   RenderableDef,
   SizeDef,
@@ -31,21 +31,7 @@ import {
   TURTLE_FILL_SUBMERGED,
 } from './game';
 
-interface Box {
-  h: number;
-  w: number;
-  x: number;
-  y: number;
-}
-
-function overlaps(a: Box, b: Box): boolean {
-  return a.x < b.x + b.w
-    && a.x + a.w > b.x
-    && a.y < b.y + b.h
-    && a.y + a.h > b.y;
-}
-
-function boxOf(state: GameState, id: EntityId): Box {
+function boxOf(state: GameState, id: EntityId): Aabb {
   const pos = state.world.getStore(PositionDef).get(id)!;
   const size = state.world.getStore(SizeDef).get(id)!;
   return { h: size.h, w: size.w, x: pos.x, y: pos.y };
@@ -207,7 +193,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
         const ob = obStore.get(id)!;
         if (ob.row !== row)
           continue;
-        if (overlaps(frog, boxOf(ctx, id))) {
+        if (aabbVsAabb(frog, boxOf(ctx, id))) {
           killFrog(ctx, 'squash');
           return;
         }
@@ -246,20 +232,5 @@ export const collisionSystem: SchedulableSystem<GameState> = {
     const ncx = pos.x + FROG / 2;
     if (ncx < 0 || ncx > SCREEN_W)
       killFrog(ctx, 'offscreen');
-  },
-};
-
-/** Age particles and despawn them once their lifetime elapses. */
-export const particleSystem: SchedulableSystem<GameState> = {
-  name: 'particle',
-  runAfter: ['motion'],
-  run(ctx) {
-    const store = ctx.world.getStore(ParticleDef);
-    for (const id of ctx.world.getTag(ParticleTag)) {
-      const p = store.get(id)!;
-      p.ageMs += ctx.dtMs;
-      if (p.ageMs >= p.lifeMs)
-        ctx.world.queueDestroy(id);
-    }
   },
 };

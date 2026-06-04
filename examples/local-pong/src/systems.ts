@@ -3,6 +3,8 @@ import type { SchedulableSystem } from '@pierre/ecs';
 import type { PlayerId } from './components';
 import type { GameState } from './game';
 
+import { aabbVsAabb } from '@pierre/ecs/modules/collision';
+
 import { BallDef, PaddleDef, PaddleTag, Player, PositionDef, SizeDef, VelocityDef } from './components';
 import {
   cloneScores,
@@ -23,22 +25,6 @@ const FIXED_DT_S = LOGIC_TICK_MS / 1000;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
-}
-
-function overlaps(
-  ax: number,
-  ay: number,
-  aw: number,
-  ah: number,
-  bx: number,
-  by: number,
-  bw: number,
-  bh: number,
-): boolean {
-  return ax < bx + bw
-    && ax + aw > bx
-    && ay < by + bh
-    && ay + ah > by;
 }
 
 function scorePoint(ctx: GameState, scorer: PlayerId): void {
@@ -154,15 +140,9 @@ export const collisionSystem: SchedulableSystem<GameState> = {
       if (!isApproaching)
         continue;
 
-      if (!overlaps(
-        ballPos.x,
-        ballPos.y,
-        ballSize.w,
-        ballSize.h,
-        paddlePos.x,
-        paddlePos.y,
-        paddleSize.w,
-        paddleSize.h,
+      if (!aabbVsAabb(
+        { h: ballSize.h, w: ballSize.w, x: ballPos.x, y: ballPos.y },
+        { h: paddleSize.h, w: paddleSize.w, x: paddlePos.x, y: paddlePos.y },
       )) {
         continue;
       }

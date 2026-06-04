@@ -2,6 +2,7 @@ import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
 
 import { EcsWorld } from '@pierre/ecs';
+import { LifetimeDef } from '@pierre/ecs/modules/lifetime';
 
 import {
   AlienDef,
@@ -10,8 +11,6 @@ import {
   BunkerDef,
   BunkerTag,
   MothershipTag,
-  ParticleDef,
-  ParticleTag,
   PlayerTag,
   PositionDef,
   RenderableDef,
@@ -106,7 +105,7 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(SizeDef);
   w.registerComponent(AlienDef);
   w.registerComponent(BunkerDef);
-  w.registerComponent(ParticleDef);
+  w.registerComponent(LifetimeDef);
   w.registerComponent(RenderableDef);
   w.registerComponent(RenderOrderDef);
   w.registerTag(PlayerTag);
@@ -115,7 +114,6 @@ export function makeWorld(): EcsWorld {
   w.registerTag(BombTag);
   w.registerTag(MothershipTag);
   w.registerTag(BunkerTag);
-  w.registerTag(ParticleTag);
   return w;
 }
 
@@ -269,7 +267,7 @@ export function spawnParticle(
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x, y });
   state.world.getStore(VelocityDef).set(id, { vx, vy });
-  state.world.getStore(ParticleDef).set(id, { ageMs: 0, lifeMs });
+  state.world.getStore(LifetimeDef).set(id, { remainingMs: lifeMs });
   state.world.getStore(RenderableDef).set(id, {
     anchor: 'center',
     fill,
@@ -278,7 +276,6 @@ export function spawnParticle(
     w: size,
   });
   state.world.getStore(RenderOrderDef).set(id, { value: 28 });
-  state.world.getTag(ParticleTag).add(id);
 }
 
 export function explode(

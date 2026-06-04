@@ -50,17 +50,5 @@ export const ObstacleDef: ComponentDef<Obstacle> = simpleComponent<Obstacle>('ob
   submerged: 'boolean',
 });
 
-/** Fading particle (death splash/splat, lillypad sparkle). ageMs counts up to lifeMs. */
-export interface Particle {
-  ageMs: number;
-  lifeMs: number;
-}
-
-export const ParticleDef: ComponentDef<Particle> = simpleComponent<Particle>('particle', {
-  ageMs: 'number',
-  lifeMs: 'number',
-});
-
 export const FrogTag: TagDef = { name: 'frog' };
 export const ObstacleTag: TagDef = { name: 'obstacle' };
-export const ParticleTag: TagDef = { name: 'particleBody' };

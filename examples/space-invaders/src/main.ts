@@ -2,6 +2,7 @@ import type { GameState, InvadersAction } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
@@ -19,7 +20,6 @@ import {
   inputSystem,
   mothershipSystem,
   motionSystem,
-  particleSystem,
   recycleSystem,
   waveSystem,
 } from './systems';
@@ -70,7 +70,7 @@ export function start(container: HTMLElement): () => void {
     .add(motionSystem)
     .add(collisionSystem)
     .add(recycleSystem)
-    .add(particleSystem)
+    .add(makeLifetimeSystem<GameState>({ runAfter: ['motion'] }))
     .add(waveSystem);
 
   const keyboard = new KeyboardProvider({

@@ -24,17 +24,6 @@ export const SizeDef: ComponentDef<Size> = simpleComponent<Size>('size', {
   w: 'number',
 });
 
-/** Fading particle (death sparks, jet exhaust). ageMs counts up to lifeMs. */
-export interface Particle {
-  ageMs: number;
-  lifeMs: number;
-}
-
-export const ParticleDef: ComponentDef<Particle> = simpleComponent<Particle>('particle', {
-  ageMs: 'number',
-  lifeMs: 'number',
-});
-
 export const PlayerTag: TagDef = { name: 'player' };
 export const ObstacleTag: TagDef = { name: 'obstacle' };
 export const BulletTag: TagDef = { name: 'bullet' };

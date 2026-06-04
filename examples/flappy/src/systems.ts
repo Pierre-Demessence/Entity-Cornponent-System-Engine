@@ -2,6 +2,7 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from './game';
 
+import { aabbVsCircle } from '@pierre/ecs/modules/collision';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 
 import { PipeDef, PipeTag, PositionDef, VelocityDef } from './components';
@@ -16,15 +17,6 @@ import {
   PIPE_W,
   spawnPipe,
 } from './game';
-
-/** True when circle (cx,cy,r) overlaps axis-aligned rect (rx,ry,rw,rh). */
-function circleVsRect(cx: number, cy: number, r: number, rx: number, ry: number, rw: number, rh: number): boolean {
-  const nearestX = Math.max(rx, Math.min(cx, rx + rw));
-  const nearestY = Math.max(ry, Math.min(cy, ry + rh));
-  const dx = cx - nearestX;
-  const dy = cy - nearestY;
-  return dx * dx + dy * dy <= r * r;
-}
 
 function freeze(ctx: GameState): void {
   ctx.dead = true;
@@ -139,8 +131,8 @@ export const collisionSystem: SchedulableSystem<GameState> = {
       const left = posStore.get(id)!.x - PIPE_W / 2;
       const topH = pipe.gapY - pipe.gapHalf;
       const botY = pipe.gapY + pipe.gapHalf;
-      const hitTop = circleVsRect(birdPos.x, birdPos.y, BIRD_R, left, CEIL_Y, PIPE_W, topH);
-      const hitBottom = circleVsRect(birdPos.x, birdPos.y, BIRD_R, left, botY, PIPE_W, FLOOR_Y - botY);
+      const hitTop = aabbVsCircle({ h: topH, w: PIPE_W, x: left, y: CEIL_Y }, { x: birdPos.x, y: birdPos.y }, BIRD_R);
+      const hitBottom = aabbVsCircle({ h: FLOOR_Y - botY, w: PIPE_W, x: left, y: botY }, { x: birdPos.x, y: birdPos.y }, BIRD_R);
       if (hitTop || hitBottom) {
         freeze(ctx);
         return;

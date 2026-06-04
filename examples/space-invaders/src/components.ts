@@ -46,17 +46,6 @@ export const BunkerDef: ComponentDef<Bunker> = simpleComponent<Bunker>('bunker',
   hp: 'number',
 });
 
-/** Fading particle (explosions, hit sparks). ageMs counts up to lifeMs. */
-export interface Particle {
-  ageMs: number;
-  lifeMs: number;
-}
-
-export const ParticleDef: ComponentDef<Particle> = simpleComponent<Particle>('particle', {
-  ageMs: 'number',
-  lifeMs: 'number',
-});
-
 export const PlayerTag: TagDef = { name: 'player' };
 export const AlienTag: TagDef = { name: 'alien' };
 export const RocketTag: TagDef = { name: 'rocket' };

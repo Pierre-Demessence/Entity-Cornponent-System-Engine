@@ -2,11 +2,11 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from './game';
 
+import { aabbVsAabb } from '@pierre/ecs/modules/collision';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 
 import {
   ObstacleTag,
-  ParticleDef,
   ParticleTag,
   PositionDef,
   SizeDef,
@@ -33,10 +33,6 @@ import {
   THRUST_ACCEL,
 } from './game';
 
-function thrustHeld(ctx: GameState): boolean {
-  return ctx.input.isDown('thrust') || ctx.pointerThrust;
-}
-
 export const thrustSystem: SchedulableSystem<GameState> = {
   name: 'thrust',
   run(ctx) {
@@ -44,7 +40,7 @@ export const thrustSystem: SchedulableSystem<GameState> = {
       return;
     const vel = ctx.world.getStore(VelocityDef).get(ctx.playerId)!;
     const dt = ctx.dtMs / 1000;
-    ctx.thrusting = thrustHeld(ctx);
+    ctx.thrusting = ctx.input.isDown('thrust');
     if (ctx.thrusting)
       ctx.started = true;
 
@@ -161,22 +157,6 @@ export const recycleSystem: SchedulableSystem<GameState> = {
   },
 };
 
-export const particleSystem: SchedulableSystem<GameState> = {
-  name: 'particle',
-  runAfter: ['motion'],
-  run(ctx) {
-    const store = ctx.world.getStore(ParticleDef);
-    for (const id of ctx.world.getTag(ParticleTag)) {
-      const p = store.get(id);
-      if (!p)
-        continue;
-      p.ageMs += ctx.dtMs;
-      if (p.ageMs >= p.lifeMs)
-        ctx.world.queueDestroy(id);
-    }
-  },
-};
-
 export const collisionSystem: SchedulableSystem<GameState> = {
   name: 'collision',
   runAfter: ['playerBounds'],
@@ -192,11 +172,10 @@ export const collisionSystem: SchedulableSystem<GameState> = {
       const os = sizeStore.get(id);
       if (!op || !os)
         continue;
-      const hit
-        = pos.x < op.x + os.w
-          && pos.x + PLAYER_W > op.x
-          && pos.y < op.y + os.h
-          && pos.y + PLAYER_H > op.y;
+      const hit = aabbVsAabb(
+        { h: PLAYER_H, w: PLAYER_W, x: pos.x, y: pos.y },
+        { h: os.h, w: os.w, x: op.x, y: op.y },
+      );
       if (hit) {
         ctx.dead = true;
         ctx.best = Math.max(ctx.best, ctx.score);

@@ -2,10 +2,10 @@ import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
 
 import { EcsWorld } from '@pierre/ecs';
+import { LifetimeDef } from '@pierre/ecs/modules/lifetime';
 
 import {
   ObstacleTag,
-  ParticleDef,
   ParticleTag,
   PlayerTag,
   PositionDef,
@@ -53,8 +53,6 @@ export interface GameState {
   events: EventBus<never>;
   input: InputState<JetpackAction>;
   playerId: EntityId | null;
-  /** Thrust requested via pointer hold this tick (OR-ed with the keyboard action). */
-  pointerThrust: boolean;
   score: number;
   scrollSpeed: number;
   spawnTimerMs: number;
@@ -68,7 +66,7 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(PositionDef);
   w.registerComponent(VelocityDef);
   w.registerComponent(SizeDef);
-  w.registerComponent(ParticleDef);
+  w.registerComponent(LifetimeDef);
   w.registerComponent(RenderableDef);
   w.registerComponent(RenderOrderDef);
   w.registerTag(PlayerTag);
@@ -154,7 +152,7 @@ export function spawnBullet(state: GameState, x: number, y: number): void {
   });
   state.world.getStore(RenderOrderDef).set(id, { value: 25 });
   state.world.getTag(ParticleTag).add(id);
-  state.world.getStore(ParticleDef).set(id, { ageMs: 0, lifeMs: 700 });
+  state.world.getStore(LifetimeDef).set(id, { remainingMs: 700 });
 }
 
 export function spawnParticle(
@@ -170,7 +168,7 @@ export function spawnParticle(
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x, y });
   state.world.getStore(VelocityDef).set(id, { vx, vy });
-  state.world.getStore(ParticleDef).set(id, { ageMs: 0, lifeMs });
+  state.world.getStore(LifetimeDef).set(id, { remainingMs: lifeMs });
   state.world.getStore(RenderableDef).set(id, {
     anchor: 'center',
     fill,

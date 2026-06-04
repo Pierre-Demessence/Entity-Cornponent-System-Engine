@@ -1,9 +1,11 @@
 import type { EntityId, TagDef } from '@pierre/ecs';
+import type { InputState } from '@pierre/ecs/modules/input';
 import type { Canvas2DRenderContext } from '@pierre/ecs/modules/render-canvas2d';
 
 import { EcsWorld } from '@pierre/ecs';
 import { AssetLoader, imageAsset, textAsset } from '@pierre/ecs/modules/asset-loader';
 import { CameraDef, makeFollowCameraSystem } from '@pierre/ecs/modules/camera';
+import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import {
   Canvas2DRenderer,
   RenderableDef,
@@ -71,7 +73,7 @@ const WALKABLE_PROPS = new Set<number>([
 const PlayerTag: TagDef = { name: 'player' };
 const CameraTag: TagDef = { name: 'camera' };
 
-interface Keys { down: boolean; left: boolean; right: boolean; up: boolean }
+type RpgAction = 'down' | 'interact' | 'left' | 'right' | 'up';
 
 function makeWorld(): EcsWorld {
   const world = new EcsWorld();
@@ -119,6 +121,7 @@ export function start(container: HTMLElement): () => void {
   const abort = new AbortController();
   let disposed = false;
   let raf = 0;
+  let input: InputState<RpgAction> | null = null;
 
   void (async () => {
     try {
@@ -192,25 +195,18 @@ export function start(container: HTMLElement): () => void {
       world.getTag(CameraTag).add(cameraId);
       const followCamera = makeFollowCameraSystem({ cameraTag: CameraTag, positionDef: PositionDef, targetTag: PlayerTag });
 
-      const keys: Keys = { down: false, left: false, right: false, up: false };
-      const setKey = (code: string, value: boolean): boolean => {
-        switch (code) {
-          case 'ArrowUp': case 'KeyW':
-            keys.up = value;
-            return true;
-          case 'ArrowDown': case 'KeyS':
-            keys.down = value;
-            return true;
-          case 'ArrowLeft': case 'KeyA':
-            keys.left = value;
-            return true;
-          case 'ArrowRight': case 'KeyD':
-            keys.right = value;
-            return true;
-          default:
-            return false;
-        }
-      };
+      const keyboard = new KeyboardProvider();
+      const inputState = createInput<RpgAction>(
+        {
+          down: [Key.ArrowDown, Key.KeyS],
+          interact: [Key.Space, Key.KeyE],
+          left: [Key.ArrowLeft, Key.KeyA],
+          right: [Key.ArrowRight, Key.KeyD],
+          up: [Key.ArrowUp, Key.KeyW],
+        },
+        [keyboard],
+      );
+      input = inputState;
 
       const nearestNpc = (): typeof npcs[number] | undefined => {
         const pos = positions.get(playerId)!;
@@ -226,28 +222,6 @@ export function start(container: HTMLElement): () => void {
         return best;
       };
 
-      window.addEventListener('keydown', (event) => {
-        if (event.code === 'Space' || event.code === 'KeyE') {
-          event.preventDefault();
-          if (dialogue.open) {
-            dialogue.advance();
-          }
-          else {
-            const npc = nearestNpc();
-            if (npc)
-              dialogue.start(npc.name, npc.dialog);
-          }
-          return;
-        }
-        if (setKey(event.code, true))
-          event.preventDefault();
-      }, { signal: abort.signal });
-
-      window.addEventListener('keyup', (event) => {
-        if (setKey(event.code, false))
-          event.preventDefault();
-      }, { signal: abort.signal });
-
       const renderer = new Canvas2DRenderer();
       const renderCtx: Canvas2DRenderContext = { atlases: atlas, ctx2d, world };
 
@@ -261,9 +235,20 @@ export function start(container: HTMLElement): () => void {
         const dt = Math.min(0.05, (now - last) / 1000);
         last = now;
 
+        if (inputState.justPressed('interact')) {
+          if (dialogue.open) {
+            dialogue.advance();
+          }
+          else {
+            const npc = nearestNpc();
+            if (npc)
+              dialogue.start(npc.name, npc.dialog);
+          }
+        }
+
         if (!dialogue.open) {
-          let dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
-          let dy = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
+          let dx = (inputState.isDown('right') ? 1 : 0) - (inputState.isDown('left') ? 1 : 0);
+          let dy = (inputState.isDown('down') ? 1 : 0) - (inputState.isDown('up') ? 1 : 0);
           if (dx !== 0 || dy !== 0) {
             const inv = 1 / Math.hypot(dx, dy);
             dx *= inv * PLAYER_SPEED * dt;
@@ -291,6 +276,7 @@ export function start(container: HTMLElement): () => void {
         renderer.render(renderCtx);
         ctx2d.restore();
 
+        inputState.clearEdges();
         raf = requestAnimationFrame(frame);
       };
       raf = requestAnimationFrame(frame);
@@ -308,6 +294,7 @@ export function start(container: HTMLElement): () => void {
   return () => {
     disposed = true;
     cancelAnimationFrame(raf);
+    input?.dispose();
     abort.abort();
     container.innerHTML = '';
   };

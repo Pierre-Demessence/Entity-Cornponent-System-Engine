@@ -1,7 +1,8 @@
 import type { GameState, JetpackAction } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
-import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { createInput, Key, KeyboardProvider, Pointer, PointerProvider } from '@pierre/ecs/modules/input';
+import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import { makeWorld, resetGame, SCREEN_H, SCREEN_W } from './game';
@@ -10,7 +11,6 @@ import {
   bulletSystem,
   collisionSystem,
   motionSystem,
-  particleSystem,
   playerBoundsSystem,
   recycleSystem,
   scoreSystem,
@@ -65,19 +65,20 @@ export function start(container: HTMLElement): () => void {
     .add(motionSystem)
     .add(playerBoundsSystem)
     .add(recycleSystem)
-    .add(particleSystem)
+    .add(makeLifetimeSystem<GameState>({ runAfter: ['motion'] }))
     .add(collisionSystem)
     .add(scoreSystem);
 
   const keyboard = new KeyboardProvider({
     preventDefaultCodes: [Key.Space, Key.ArrowUp, Key.KeyR],
   });
+  const pointer = new PointerProvider({ target: canvas });
   const input = createInput<JetpackAction>(
     {
-      reset: [Key.KeyR],
-      thrust: [Key.Space, Key.ArrowUp],
+      reset: [Key.KeyR, Pointer.LeftButton],
+      thrust: [Key.Space, Key.ArrowUp, Pointer.LeftButton],
     },
-    [keyboard],
+    [keyboard, pointer],
   );
 
   const state: GameState = {
@@ -89,7 +90,6 @@ export function start(container: HTMLElement): () => void {
     events: new EventBus<never>(),
     input,
     playerId: null,
-    pointerThrust: false,
     score: 0,
     scrollSpeed: 0,
     spawnTimerMs: 0,
@@ -100,19 +100,6 @@ export function start(container: HTMLElement): () => void {
 
   resetGame(state);
   let savedBest = state.best;
-
-  const onPointerDown = (event: PointerEvent): void => {
-    event.preventDefault();
-    if (state.dead)
-      resetGame(state);
-    else
-      state.pointerThrust = true;
-  };
-  const onPointerUp = (): void => {
-    state.pointerThrust = false;
-  };
-  canvas.addEventListener('pointerdown', onPointerDown);
-  window.addEventListener('pointerup', onPointerUp);
 
   const tickRunner = new TickRunner<GameState>({
     scheduler,
@@ -141,8 +128,6 @@ export function start(container: HTMLElement): () => void {
   renderTickSource.start();
 
   return (): void => {
-    canvas.removeEventListener('pointerdown', onPointerDown);
-    window.removeEventListener('pointerup', onPointerUp);
     input.dispose();
     unsubscribeRender();
     renderTickSource.stop();

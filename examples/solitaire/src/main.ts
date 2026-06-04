@@ -22,7 +22,7 @@ import { EcsWorld } from '@pierre/ecs';
 import { AssetLoader, audioBufferAsset, imageAsset, textAsset } from '@pierre/ecs/modules/asset-loader';
 import { WebAudioProvider } from '@pierre/ecs/modules/audio';
 import { RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
-import { TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
+import { parseTexturePackerAtlas, TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
 import place1Url from '../../assets/kenney_boardgame-pack/Bonus/cardPlace1.ogg?url';
@@ -39,7 +39,6 @@ import backsXmlUrl from '../../assets/kenney_boardgame-pack/Spritesheets/playing
 // tilemap example's postmortem).
 import cardsSheetUrl from '../../assets/kenney_boardgame-pack/Spritesheets/playingCards.png?url';
 import cardsXmlUrl from '../../assets/kenney_boardgame-pack/Spritesheets/playingCards.xml?url';
-import { parseAtlasXml } from './atlas';
 import {
   canDropOnFoundation,
   canDropOnTableau,
@@ -309,8 +308,8 @@ export function start(container: HTMLElement): () => void {
         return;
 
       atlases = new TextureAtlasRegistry()
-        .add(CARDS_ATLAS, cardsImg, parseAtlasXml(cardsXml))
-        .add(BACKS_ATLAS, backsImg, parseAtlasXml(backsXml));
+        .add(CARDS_ATLAS, cardsImg, parseTexturePackerAtlas(cardsXml).frames)
+        .add(BACKS_ATLAS, backsImg, parseTexturePackerAtlas(backsXml).frames);
 
       const clips: Record<string, AudioBuffer> = {};
       const slide = slideBufs.map((buf, i) => registerClip(clips, `slide${i}`, buf));

@@ -4,13 +4,12 @@ import type { InputState } from '@pierre/ecs/modules/input';
 import type { ObstacleKind } from './components';
 
 import { EcsWorld } from '@pierre/ecs';
+import { LifetimeDef } from '@pierre/ecs/modules/lifetime';
 
 import {
   FrogTag,
   ObstacleDef,
   ObstacleTag,
-  ParticleDef,
-  ParticleTag,
   PositionDef,
   RenderableDef,
   RenderOrderDef,
@@ -134,12 +133,11 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(VelocityDef);
   w.registerComponent(SizeDef);
   w.registerComponent(ObstacleDef);
-  w.registerComponent(ParticleDef);
+  w.registerComponent(LifetimeDef);
   w.registerComponent(RenderableDef);
   w.registerComponent(RenderOrderDef);
   w.registerTag(FrogTag);
   w.registerTag(ObstacleTag);
-  w.registerTag(ParticleTag);
   return w;
 }
 
@@ -244,7 +242,7 @@ export function spawnParticle(
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x, y });
   state.world.getStore(VelocityDef).set(id, { vx, vy });
-  state.world.getStore(ParticleDef).set(id, { ageMs: 0, lifeMs });
+  state.world.getStore(LifetimeDef).set(id, { remainingMs: lifeMs });
   state.world.getStore(RenderableDef).set(id, {
     anchor: 'center',
     fill,
@@ -253,7 +251,6 @@ export function spawnParticle(
     w: size,
   });
   state.world.getStore(RenderOrderDef).set(id, { value: 28 });
-  state.world.getTag(ParticleTag).add(id);
 }
 
 export function burst(
