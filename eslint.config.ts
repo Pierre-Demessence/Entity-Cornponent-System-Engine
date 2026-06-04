@@ -3,7 +3,7 @@ import * as pluginImportX from 'eslint-plugin-import-x';
 
 export default antfu(
   {
-    ignores: ['docs/**', 'coverage/**', 'examples/**/dist/**'],
+    ignores: ['docs/**', 'coverage/**', 'examples/**/dist/**', 'examples/assets/**'],
     markdown: false,
     typescript: true,
     stylistic: {
