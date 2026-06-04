@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -117,6 +117,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: '20 Games Challenge #5: beat-stepped alien fleet that drops and reverses at the walls and speeds up as it thins, single-rocket fire, bombs the player can shoot down, destructible bunkers, a bonus mothership, lives, waves, and a persisted high score.',
     title: 'Space Invaders',
     load: () => import('@pierre/ecs-example-space-invaders/src/main.ts'),
+  },
+  {
+    id: 'frogger',
+    controls: 'Arrows / W A S D to hop, R restart',
+    summary: '20 Games Challenge #6: tile-discrete hopping across five recycled traffic lanes and a river of logs and diving turtles, crocodile mouths, carried platform-rider kinematics, five lillypads to fill, lives, level ramp, and a persisted high score.',
+    title: 'Frogger',
+    load: () => import('@pierre/ecs-example-frogger/src/main.ts'),
   },
 ];
 
