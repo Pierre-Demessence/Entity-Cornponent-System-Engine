@@ -25,11 +25,17 @@ The engine is mid-extraction from the roguelike. The priority is to
 **validate primitive shape via prototypes** — does each module survive
 a genre shift? — not to lock down a stable surface. This means:
 
-- Path A / B / C in [`docs/extending-the-engine.md`](docs/extending-the-engine.md)
-  is canon. New core or module additions go through it. Default to
-  **Path A** under uncertainty.
+- The sliding-scale promotion rule in [`docs/extending-the-engine.md`](docs/extending-the-engine.md)
+  is canon. New core or module additions go through it. Internal
+  consumers and external canon are interchangeable shape-evidence:
+  unanimous universal canon ships with 0 consumers, solid canon with 1,
+  a novel shape needs 2. These examples are deliberately generic, so a
+  gap one of them hits is strong generality signal — don't reflexively
+  defer canon to "wait for a second consumer".
 - Each prototype in `examples/` is a first-class engine consumer, not
-  throwaway demo code. Its `POSTMORTEM.md` feeds
+  throwaway demo code. Engine gaps it surfaces are logged in
+  [`docs/roadmap/engine-gap-ledger.md`](docs/roadmap/engine-gap-ledger.md),
+  which a triage pass promotes into
   [`docs/roadmap/ecs-module-backlog.md`](docs/roadmap/ecs-module-backlog.md).
 - Aggressive renames, signature changes, and cross-module refactors
   are encouraged when shape-validation reveals a better fit. Migrate

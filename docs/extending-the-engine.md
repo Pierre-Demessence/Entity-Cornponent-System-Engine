@@ -7,104 +7,101 @@ it back.
 
 ## The Core Rule
 
-**Don't abstract into the engine from one data point.** The first consumer
-always over-fits the shape. The second consumer is what reveals which
-parameters are real.
+**Promote a primitive into the engine once its *shape* is proven.** The
+risk you are managing is shipping the wrong shape — an API that over-fits
+its first caller and has to be reworked or demoted later. So the only
+question that matters is: *do you have enough evidence that this shape is
+right?*
 
-There are **three promotion paths**, and it matters which one you're on:
+Two things are evidence, and they **trade off against each other**:
 
-### Path A — Shape-validated promotion (Rule of Three, Fowler variant)
+- **Internal consumers.** Each real consumer that uses the primitive
+  validates the shape. Two independent consumers that grew the same helper
+  are strong proof.
+- **External canon.** A primitive that is well-established across major
+  engines (Bevy, Pixi, Phaser, Unity, Godot, Box2D, Flecs, …) with a
+  stable, obvious API has *already* had its shape validated by the
+  industry. The literature is a substitute for an internal consumer.
 
-Use when the abstraction is **opinionated or non-obvious** — where the
-*right shape* of the API is what you're trying to discover.
+The stronger the canon, the fewer internal consumers you need:
 
-> Implement in the consumer. When duplication appears between two real
-> consumers — or a second consumer would genuinely use the identical
-> primitive if it existed — *then* lift.
-
-Default for uncertainty: **stays in the consumer**. Most engine
-additions land on this path.
-
-### Path B — Canon promotion
-
-Use when the primitive is **well-established in game-engine literature**
-with a stable, obvious API: spatial hash, quad-tree / BVH, fixed-step
-tick source, AABB sweep, ring buffer, dirty-flag change detection,
-event bus, command buffer. These are domain-standard; their shape is
-not what you're discovering.
-
-> Ship it when **one** real consumer can exercise it. You still need
-> proof the code works, but you do **not** need three internal
-> prototypes to justify its existence — the external literature
-> already does.
-
-Guardrails for Path B — bias against over-building:
-
-- **Minimal surface.** Start with the 2–3 operations the consumer
-  actually calls. Resist optional parameters and configuration knobs
-  until a second consumer asks.
-- **One real user before you ship.** Canon ≠ theoretical. A primitive
-  that has never touched a running game belongs in a spike branch, not
-  the engine.
-- **Document the canon reference.** Promotion rationale should name the
-  literature / engines the shape comes from (Box2D, Rapier, Bevy,
-  Flecs, etc.). If you can't, it's actually Path A and you need more
-  consumers.
-- **Demotable by default.** Write Path-B primitives so they can be
-  removed if they turn out to be the wrong fit for downstream consumers.
-  No deep coupling to core internals.
-
-### Path C — Universal canon
-
-Use when the primitive is **present in essentially every major engine
-with the same shape**: z-order / sort-key, opacity / alpha, scale,
-rotation, translation, text primitive, polygon / polyline primitive,
-sprite primitive, AABB, viewport. These are so universal across
-Pixi, Phaser, Unity, Godot, Bevy, LÖVE, SFML, etc. that the API
-shape is not a discovery problem at all — skipping them because
-"we don't have two consumers yet" ships a game engine that can't
-draw rotated text.
-
-> Ship it with **zero** current consumers if the canon is
-> unanimous. The external literature is doing the job the "rule of
-> three" normally does for you.
-
-Guardrails for Path C — stricter than Path B, because you have no
-consumer sanity-check:
-
-- **Unanimous across ≥3 major production engines with the same
-  shape.** "Pixi has something like this" is Path B, not Path C.
-  If Bevy, Pixi, and Phaser all expose the concept with
-  structurally-identical APIs (name may differ, shape matches),
-  that's Path C.
-- **Minimal surface, no speculative knobs.** Ship the canonical
-  shape only. No optional parameters, no mode flags, no
-  configuration that isn't in every reference engine.
-- **Demotable by default.** Same as Path B. If the first real
-  consumer reveals the shape is subtly wrong, you can pull it.
-- **Cite three engines in the rationale.** Paste the equivalent
-  API name from each into the plan file.
-
-When to **reach for Path C vs Path B**: Path B is "canon exists,
-ship with one consumer to validate". Path C is "canon is so
-unanimous that waiting for a consumer is just delaying obvious
-infrastructure". Use Path C for small, universal primitives;
-Path B for larger or less-unanimous canon.
-
-### Choosing the path
-
-| Situation | Path |
+| Canon strength | Internal consumers needed before promotion |
 |---|---|
-| Two internal consumers independently grew the same helper | A |
-| Turn cycler, combat log bridge, class/race registry, save-slot manager | A (opinionated game-shape) |
-| Spatial hash, quad-tree, fixed tick source, ring buffer, event bus | B (canon + 1 consumer) |
-| Z-order, opacity, scale, rotation, text / polygon / sprite primitive, AABB | C (universal canon) |
-| "We might want this someday" — no consumer and no canon pedigree | Neither. Keep it out. |
-| One consumer, novel API shape, uncertain design | Neither yet — keep in the consumer. |
+| **Unanimous, universal** — same shape in ≥3 major engines (z-order, opacity, scale, rotation, AABB, sprite/text/polygon primitives, viewport) | **0** — ship it; waiting just delays obvious infrastructure |
+| **Solid** — domain-standard with an obvious API (spatial hash, quad-tree/BVH, fixed-step tick, AABB sweep, ring buffer, event bus, command buffer, lifetime/lifespan) | **1** — ship once one real consumer exercises it |
+| **None** — novel, opinionated, or genre-specific shape you are still discovering (turn cycler, combat-log bridge, class/race registry, save-slot manager) | **2** — the genuine Rule of Three; wait for a second consumer to reveal the real parameters |
 
-When in doubt: **A**. Under-promotion costs a bit of duplication;
-over-promotion via mislabeled Path B or C costs an engine surface
-you regret.
+### These examples are deliberately generic
+
+The mini-game examples in [`examples/`](../../examples/) are intentionally
+small and genre-spanning. That changes the calculus: **a gap that even one
+of these generic examples hits is strong evidence the gap is generic too.**
+The "first consumer over-fits the shape" worry — the whole reason the Rule
+of Three exists — is much weaker here than in a single product codebase.
+Combine that with canon and the bar drops fast. Do **not** reflexively
+file everything as "wait for a second consumer"; that under-promotion is
+the failure mode this project actually suffers from.
+
+### Guardrails (slide with the evidence)
+
+The less internal-consumer proof you have, the more these apply:
+
+- **Minimal surface.** Ship the 2–3 operations the consumer actually
+  calls. No optional parameters or config knobs until a second consumer
+  asks for them.
+- **Cite the canon.** If you are promoting on canon strength (0 or 1
+  consumers), name the engines/libraries/textbook the shape comes from in
+  the commit body and plan. If you *can't* name them, you don't have
+  canon — you have a novel shape, and that needs 2 consumers.
+- **Demotable by default.** Write it so it can be pulled if the first real
+  downstream consumer reveals the shape is subtly wrong. No deep coupling
+  to core internals.
+
+When genuinely in doubt about a *novel* shape: keep it in the consumer and
+log it as a gap (see below). When the thing is canon: ship it. Promoting
+recognised canon early is cheap to demote; under-promoting canon ships an
+engine that can't draw rotated text.
+
+## How gaps reach the engine
+
+When an example needs something the engine doesn't give it — whether the
+engine has *nothing*, or has a module that's *insufficient* — you always
+have two options. Which one is right is governed by the **same
+sliding-scale rule above**, not by whether a module already exists.
+
+> **Extending an existing module is an engine-shape decision with exactly
+> the same bar as adding a new one.** Cramming a one-off into
+> `modules/tmx` is no safer than shipping a one-off new module. "A module
+> already exists" is *not* a license to put anything into it.
+
+**You can always build the example without touching the engine.** If a
+module can't do what you need, ignore it (or wrap it) and do the thing
+locally in the example. So there is never a *forced* engine change — the
+local fallback is always available. The only real question is: *is this
+capability proven enough to promote?*
+
+### Option 1 — promote (the capability is canon)
+
+The capability is standard / well-established — the engine *ought* to have
+it. Add the new primitive, or extend the existing module, under the
+sliding-scale rule (canon + this one consumer is enough). Record it in the
+[gap ledger](roadmap/engine-gap-ledger.md) as resolved. (Standard
+`.tsx`/CSV/flip-flag TMX → extend `modules/tmx`; a bespoke dialect → keep
+it local, see Option 2.)
+
+### Option 2 — keep it local (the capability is novel / non-standard)
+
+The capability is non-standard, opinionated, or over-fitted to this one
+example — a bespoke dialogue tree, a game-specific tween, a one-off map
+format. **Do not touch the engine — not even an existing module.**
+Implement it locally in the example and append the raw gap to the
+[gap ledger](roadmap/engine-gap-ledger.md) — symptom only, no module
+decision. A separate triage pass groups the accumulated gaps and decides
+which ones become engine modules (and where), applying the sliding-scale
+rule above. Keeping the *where-does-it-go* decision out of the
+example-builder's hands is deliberate: it prevents one game's shape from
+biasing the abstraction, and it stops one blocked consumer from baking a
+bespoke format into the engine.
 
 ## Layering Principles
 
@@ -156,9 +153,9 @@ Where a piece of code lives depends on who uses it and what it assumes.
 
 | Layer | Path | Criteria |
 |---|---|---|
-| **Core** | `packages/ecs/src/` | Domain-neutral + ≥2 real consumers + zero game imports. `EventBus`, `Scheduler`, `ComponentStore`, `SpatialStructure` interface. |
-| **Modules** | `packages/ecs/src/modules/<domain>/` | Domain-scoped but **genre-reusable** (turn-based, spatial-2D, physics-2D, real-time tick). Opt-in import. `modules/turn-based/turn-cycler`, `modules/spatial/HashGrid2D`, `modules/spatial/projections`, `modules/tick/ManualTickSource`, `modules/tick/FixedIntervalTickSource`. |
-| **Consumer** | Game source tree (`src/…`) or prototype | One-consumer-specific, references concrete game components/tags, encodes genre rules, or not-yet-proven. Everything else. |
+| **Core** | `src/` | Domain-neutral + enough shape-evidence (≥2 consumers, or canon — see [The Core Rule](#the-core-rule)) + zero game imports. `EventBus`, `Scheduler`, `ComponentStore`, `SpatialStructure` interface. |
+| **Modules** | `src/modules/<domain>/` | Domain-scoped but **genre-reusable** (turn-based, spatial-2D, physics-2D, real-time tick). Opt-in import. `modules/turn-based/turn-cycler`, `modules/spatial/HashGrid2D`, `modules/spatial/projections`, `modules/tick/ManualTickSource`, `modules/tick/FixedIntervalTickSource`. |
+| **Consumer** | Game source tree (`examples/<name>/src/…`) | One-consumer-specific, references concrete game components/tags, encodes genre rules, or a novel shape not yet proven. Everything else. |
 
 Core = interfaces + universal machinery. Modules = concrete implementations
 of a genre pattern. Consumer = application semantics.
@@ -174,8 +171,10 @@ Promotion and demotion are not symmetric:
   depended on the primitive, feels like a regression, politically awkward
   once the engine ships externally.
 
-So: **bias toward leaving things in the consumer until promotion is
-forced by real duplication.**
+So: **bias toward leaving *novel* shapes in the consumer until a second
+consumer reveals the real parameters** — but promote *canon* early, since
+its shape is already proven and demotion of a canonical primitive is
+rare.
 
 ## Two Failure Modes
 
@@ -190,9 +189,13 @@ a primitive. Red flags:
 - Consumer using engine types in ways the engine didn't intend.
 
 **Triage**: leave the hack in the consumer as tagged tech debt
-(`// HACK: engine gap — see issue #N`). Do not paper over it in the
-engine by adding one-off support. **Wait for a second consumer to hit
-the same wall**, then promote with confidence.
+(`// HACK: engine gap — see gap ledger`) and log it in the
+[gap ledger](roadmap/engine-gap-ledger.md). Do not paper over it in the
+engine by adding one-off support. Promote when the shape is proven — a
+second consumer hitting the same wall, *or* canon that already pins the
+shape (see [The Core Rule](#the-core-rule)). If an existing module is what
+falls short, the same bar applies: extend it only when the missing
+capability is canon — otherwise keep the workaround local to the example.
 
 ### Failure mode 2: premature generalization in the engine
 
@@ -261,25 +264,27 @@ Engines worth reading when considering layering or extension shape:
 
 When you identify a primitive worth promoting:
 
-1. **Confirm the promotion path:**
-   - **Path A:** ≥2 real consumers. A hypothetical future consumer
-     doesn't count. The second consumer can be a planned, scoped
+1. **Confirm you have enough shape-evidence** (see [The Core Rule](#the-core-rule)):
+   - **Novel shape, no canon:** ≥2 real consumers. A hypothetical future
+     consumer doesn't count. The second consumer can be a planned, scoped
      prototype — but not a vague "someone might want this someday".
-   - **Path B:** 1 real consumer exercising the primitive + a citable
-     canon reference (named engine, library, or standard textbook
-     treatment with a stable API shape). Paste the reference into the
-     plan file and the commit body.
+   - **Canon shape:** 1 consumer (solid canon) or 0 (unanimous universal
+     canon) + a citable reference (named engine, library, or standard
+     textbook treatment with a stable API shape). Paste the reference into
+     the plan file and the commit body. If you can't cite it, it's a novel
+     shape and needs 2 consumers.
 2. **Identify what parameterizes the difference.** Component defs? Tag
    names? A strategy interface? If you can't name the parameter, you
    don't yet have the abstraction.
 3. **Choose the layer.**
-   - Domain-neutral → `packages/ecs/src/` (core).
-   - Genre-scoped → `packages/ecs/src/modules/<domain>/`.
+   - Domain-neutral → `src/` (core).
+   - Genre-scoped → `src/modules/<domain>/`.
    - Not sure? Default to **modules** over core. Easier to promote
      module → core later than to split core → modules.
 4. **Write a tight plan** in `docs/plans/<feature>.md` if the extraction
-   is non-trivial. Include the two consumers that justify it.
-5. **Ship the primitive + migrate both consumers in the same commit**
+   is non-trivial. Name the evidence that justifies it — the consumers
+   and/or the canon reference.
+5. **Ship the primitive + migrate its consumer(s) in the same commit**
    when feasible. Keeps the "why this shape" visible in one diff.
 6. **Keep consumer-facing ergonomics** (dual signatures, helper methods)
    on the implementation class, not the interface. See `HashGrid2D`'s
@@ -304,6 +309,10 @@ so the split was one tight commit instead of an archaeology expedition.
 - Two real consumers have copy-pasted or near-duplicated the code.
 - A second consumer's need shows the first consumer had unnecessary
   specificity baked in.
+- The shape is **canon** — well-established across major engines with a
+  stable API — and at least one real consumer exercises it (or it's
+  unanimous universal canon needing none). Canon substitutes for the
+  second consumer.
 - The code has no natural dependency on consumer-specific types — it
   could be written with type parameters or zero consumer imports.
 - The abstraction boundary is obvious (a clear interface + ≥1 impl).
@@ -312,7 +321,8 @@ so the split was one tight commit instead of an archaeology expedition.
 
 - It references consumer-specific components or tags.
 - It encodes genre-specific rules.
-- Only one consumer wants it.
+- Only one consumer wants it **and** the shape is novel (no canon to pin
+  it).
 - You can't name what parameterizes the difference across consumers.
 - The engine already has a primitive that covers 80% of the need — the
   remaining 20% may be consumer-scoped custom logic, not an engine gap.
@@ -341,9 +351,9 @@ Match the driver to the change:
 | Improve primitive quality (perf, ergonomics, bug fixes) | Existing consumer usage |
 | Test primitive generality (does it survive genre change?) | Prototype in a different genre |
 | Close a gap for external users | Public-release audit |
-| Add a new primitive | Need from ≥2 consumers |
+| Add a new primitive | ≥2 consumers, **or** canon + 1 (or unanimous canon + 0) — see [The Core Rule](#the-core-rule) |
 
-## Worked Example: Path-B Promotion (`modules/lifetime`)
+## Worked Example: Canon promotion with one consumer (`modules/lifetime`)
 
 Asteroids defined a local `LifetimeDef { remainingMs }` + one-pass
 countdown system for bullet expiry. One internal consumer, but:
@@ -361,13 +371,13 @@ countdown system for bullet expiry. One internal consumer, but:
   elapsed-time tracking) and contradicts this one, we delete the
   module and the consumer re-inlines it.
 
-Under the old Rule-of-Three rule this would have waited for a second
-consumer. Under **Path B** it shipped with the asteroids migration
-alone, because the canon reference is the second data point.
+Under a strict rule-of-three this would have waited for a second
+consumer. Under **the sliding-scale rule** it shipped with the asteroids
+migration alone, because the canon reference is the second data point.
 
-The shipped module lives at `packages/ecs/src/modules/lifetime/` and
+The shipped module lives at `src/modules/lifetime/` and
 is imported as `@pierre/ecs/modules/lifetime`.
 
 ## Related
 
-- [packages/ecs/docs/README.md](README.md) — engine primitives index.
+- [docs/README.md](README.md) — engine primitives index.

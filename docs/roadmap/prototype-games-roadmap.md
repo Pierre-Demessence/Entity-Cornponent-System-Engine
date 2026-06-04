@@ -13,7 +13,9 @@ Rungs 1–8 landed. Remaining rung (9 networked pong) is backlog — pick
 from coverage gaps as real needs surface rather than working through
 them linearly. See
 [`examples/README.md`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/examples/README.md)
-for per-example links and postmortems.
+for the example folders, and the
+[engine gap ledger](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/docs/roadmap/engine-gap-ledger.md)
+for the gaps they surfaced.
 
 ---
 

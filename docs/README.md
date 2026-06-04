@@ -37,18 +37,17 @@ documents itself in its source folder
 
 ## Examples
 
-End-to-end prototypes that exercise the engine in different genres, each
-with a short postmortem:
-
-- [Snake](../examples/snake/POSTMORTEM.md) — minimal grid game; validates `HashGrid2D` + `ManualTickSource`.
-- [Asteroids](../examples/asteroids/POSTMORTEM.md) — continuous-space arcade; validates `FixedIntervalTickSource` + spatial projection helpers.
-- [Platformer](../examples/platformer/POSTMORTEM.md) — AABB-based movement and pickups.
-
-Start from [`../examples/README.md`](../examples/README.md) for the full tour.
+End-to-end prototypes that exercise the engine in different genres. Each
+subfolder of [`../examples/`](../examples/) is one runnable example; see
+[`../examples/README.md`](../examples/README.md) for the guided tour and
+the [prototype roadmap](roadmap/prototype-games-roadmap.md) for what each
+one proves. Engine gaps these prototypes surface are tracked in the
+[engine gap ledger](roadmap/engine-gap-ledger.md).
 
 ## Contributing
 
-- [Extending the Engine](extending-the-engine.md) — when to promote code into core vs a module vs leave in the consumer; Rule-of-Three extraction criteria; failure modes to avoid.
+- [Extending the Engine](extending-the-engine.md) — when to promote code into core vs a module vs leave in the consumer; the sliding-scale evidence rule (canon vs internal consumers); failure modes to avoid.
+- [Engine Gap Ledger](roadmap/engine-gap-ledger.md) — central log of engine gaps surfaced by the examples, awaiting triage into the module backlog.
 
 ## Roadmap
 

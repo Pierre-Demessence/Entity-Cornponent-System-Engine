@@ -89,12 +89,13 @@ do" signals separate without rewriting history.
 
 ### Engine extension rule-book
 
-Every entry follows the same rule: a module ships when **Path-A** (rule
-of three — three internal consumers), **Path-B** (one internal
-consumer + external canon), or **Path-C** (universal canon, zero
-consumers required) is satisfied. Nothing ships speculatively. See
+Every entry follows the same sliding-scale rule: a module ships once its
+*shape* is proven, where internal consumers and external canon are
+interchangeable evidence — unanimous universal canon needs **0**
+consumers, solid canon **1**, and a novel/opinionated shape **2** (the
+genuine rule of three). Nothing ships speculatively. See
 [https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/docs/extending-the-engine.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/docs/extending-the-engine.md)
-for the full rule-book including Path-C guardrails.
+for the full rule-book and guardrails.
 
 ---
 
@@ -124,8 +125,9 @@ instead of baking it into every renderable).
 **Rationale for deferral.** Each feature pays a real cost — zoom
 invalidates viewport-space assumptions in the renderer, clamping
 demands a world-bounds concept that doesn't exist in the core, parallax
-adds a layer model, rotation adds a matrix-math hot path. Path-A /
-Path-B promotion from a single consumer is how each lands.
+adds a layer model, rotation adds a matrix-math hot path. A real
+consumer (plus the canon that already pins each shape) is how each
+lands.
 
 </details>
 
@@ -145,17 +147,17 @@ tilemap variant, Canvas filters.
 <details>
 <summary>Details</summary>
 
-**Sprite / texture variant.** Path-C on shape (canon unanimous
-across Pixi `Sprite`, Phaser `Image` / `Sprite`, Unity
-`SpriteRenderer`, Bevy `SpriteBundle`). Blocked on `modules/asset-loader`
-— shipping a sprite primitive before there's a way to load image
-assets is premature.
+**Sprite / texture variant.** Canon is unanimous on the shape (Pixi
+`Sprite`, Phaser `Image` / `Sprite`, Unity `SpriteRenderer`, Bevy
+`SpriteBundle`), so it can ship on canon alone. Blocked on
+`modules/asset-loader` — shipping a sprite primitive before there's a way
+to load image assets is premature.
 
-**Tilemap variant.** Path-A. No internal consumer yet; snake's
-cell-based rendering currently goes through `rect`.
+**Tilemap variant.** Novel enough to want a real consumer first — none
+yet; snake's cell-based rendering currently goes through `rect`.
 
-**Canvas filters (`ctx.filter`).** Path-A. Blur, drop-shadow and
-similar post-processing effects are rarely used in practice;
+**Canvas filters (`ctx.filter`).** Wait for a consumer. Blur, drop-shadow
+and similar post-processing effects are rarely used in practice;
 wait for a concrete request.
 
 **Snake ↔ `modules/render-canvas2d` migration.** Separately tracked
@@ -178,8 +180,8 @@ positions to cells by hand.
 currently asteroids and platformer both find it ergonomic. Third
 consumer or a reported pain point unblocks.
 
-**Rationale.** Path-B deferral; the composition-in-app pattern is
-explicit and debuggable, the wrapper would only hide one function call.
+**Rationale.** Deferred despite the canon: the composition-in-app pattern
+is explicit and debuggable, the wrapper would only hide one function call.
 
 </details>
 
@@ -370,7 +372,7 @@ existing `RenderableDef` variants — no special particle renderer in v1.
 
 **Trigger.** Second prototype that wants visual juice (explosions, dust,
 impact sparks). Asteroids currently uses ad-hoc spawned entities for the
-death burst — if a second consumer does the same, Path-A promotes.
+death burst — if a second consumer does the same, it promotes.
 
 **Canon.** Unity `ParticleSystem`, Godot `GPUParticles2D`, Phaser
 `ParticleEmitter`.
@@ -524,13 +526,14 @@ progress semantics, or automatic dev-time asset refresh.
 **Scope.** Pure, DOM-free parser for [Tiled](https://www.mapeditor.org/)
 `.tmx` maps — orthogonal, single image-based tileset, `base64`+`zlib`
 tile data — plus `gidToFrame` for tileset source-rect lookup. Promoted
-Path-B from [`examples/tilemap`](../../examples/tilemap/), the first
+on canon (the TMX format) plus its first consumer,
+[`examples/tilemap`](../../examples/tilemap/), the first
 sprite / texture-atlas consumer. See
 [src/modules/tmx/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/tmx/README.md).
 
 This ships the **load/parse** half only. The tile→ECS glue (one sprite
 entity per cell, layered via `RenderOrderDef`) deliberately stayed in
-the example as Path-A integration code. A batched tilemap *renderable*
+the example as one-consumer integration code. A batched tilemap *renderable*
 that avoids per-tile entities is the distinct second-consumer concern
 tracked below.
 
@@ -639,7 +642,7 @@ builds.
 **Trigger.** Enough friction debugging existing prototypes that a
 one-off `drawDebug` call inside `Canvas2DRenderer` is no longer enough.
 Platformer's static-collision overlay already lives in the example —
-when a second consumer wants a similar toggle, Path-A promotes.
+when a second consumer wants a similar toggle, it promotes.
 
 **Canon.** Unity `Gizmos` / `Debug.DrawRay`, Godot `Debug` tab,
 `dat.gui` / `lil-gui` (DOM-based), Tracy / Optick for native engines.
@@ -662,8 +665,9 @@ through a shared registry per kind.
 
 **Trigger.** A second prototype whose AI clearly outgrows ad-hoc
 `if`-trees. Today the roguelike's AI is a string + target ID, and the
-three real-time prototypes don't have AI at all. Path-A: ship one shape
-only when ≥2 internal consumers converge.
+three real-time prototypes don't have AI at all. Ship one shape
+only when ≥2 consumers converge — it's a contested space with no canon
+to lean on, so it needs the genuine rule of three.
 
 **Rationale for speculative.** AI architecture is a contested space —
 Unity ships none in core (asset-store dependent), Bevy ships none, Godot
@@ -708,8 +712,8 @@ routing input to the entity each player controls.
 
 **Trigger.** A second local-multiplayer example beyond local-pong.
 Pong kept player identity as the app-level union `'left' | 'right'`,
-which was correct for that single consumer. Path-A: do not design
-from one data point.
+which was correct for that single consumer. Don't design from one data
+point — wait for a second.
 
 **Probable shape.** `PlayerSlotDef { slotId: number }` paired with an
 `InputOwnerDef { slotId: number }` so a system can route per-slot
@@ -806,6 +810,6 @@ When any of the below becomes true, open a plan for the matching module.
 | Second local-multiplayer example beyond local-pong | Local-multiplayer player-slot helper |
 
 Every promotion still runs through the engine extension rule-book
-(Path-A, Path-B canon, or Path-C universal canon) — this table just
+(the sliding-scale evidence rule) — this table just
 catalogs the
 likely first signals.
