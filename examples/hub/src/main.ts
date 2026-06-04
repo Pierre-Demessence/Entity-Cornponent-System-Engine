@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -103,6 +103,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: '20 Games Challenge #3: circle-vs-AABB brick field with axis-of-least-penetration bounce response, paddle english, lives, escalating ball speed, and a persisted high score.',
     title: 'Breakout',
     load: () => import('@pierre/ecs-example-breakout/src/main.ts'),
+  },
+  {
+    id: 'jetpack',
+    controls: 'Hold Space / Up / mouse to fly, R restart',
+    summary: '20 Games Challenge #4: endless right-to-left scroller with hold-to-rise gravity, script-spawned recycled zappers, distance score + persisted best, machine-gun bullets and particle juice.',
+    title: 'Jetpack Joyride',
+    load: () => import('@pierre/ecs-example-jetpack/src/main.ts'),
   },
 ];
 

@@ -13,6 +13,7 @@
     "@pierre/ecs-example-breakout": "*",
     "@pierre/ecs-example-card-battler": "*",
     "@pierre/ecs-example-flappy": "*",
+    "@pierre/ecs-example-jetpack": "*",
     "@pierre/ecs-example-local-pong": "*",
     "@pierre/ecs-example-platformer": "*",
     "@pierre/ecs-example-platformer-3d": "*",

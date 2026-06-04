@@ -25,7 +25,7 @@ unmodified `@pierre/ecs`.
 | 1 | Pong | 1972 | [link](https://20_games_challenge.gitlab.io/games/pong/) | ✅ done (`local-pong`) |
 | 2 | Flappy Bird | 2013 | [link](https://20_games_challenge.gitlab.io/games/flappy/) | ✅ done (`flappy`) |
 | 3 | Breakout | 1976 | [link](https://20_games_challenge.gitlab.io/games/breakout/) | ✅ done (`breakout`) |
-| 4 | Jetpack Joyride | 2011 | [link](https://20_games_challenge.gitlab.io/games/jetpack/) | ⬜ |
+| 4 | Jetpack Joyride | 2011 | [link](https://20_games_challenge.gitlab.io/games/jetpack/) | ✅ done (`jetpack`) |
 | 5 | Space Invaders | 1978 | [link](https://20_games_challenge.gitlab.io/games/invaders/) | ⬜ |
 | 6 | Frogger | 1981 | [link](https://20_games_challenge.gitlab.io/games/frogger/) | ⬜ |
 | 7 | River Raid | 1982 | [link](https://20_games_challenge.gitlab.io/games/river_raid/) | ⬜ |
