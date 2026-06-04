@@ -1,5 +1,12 @@
 # Example Engine-Gap Audit (all 18 examples)
 
+> **📦 Archived 2026-07-15.** This was a one-time cross-sectional sweep of all
+> 18 examples. Its findings have been folded into the long-lived
+> [engine-gap-ledger](../roadmap/engine-gap-ledger.md) (Bucket A migrations
+> done; Bucket B/C + hub gaps merged in as `Open` rows). Kept for historical
+> detail and the per-gap reasoning notes; the **ledger is the live source of
+> truth** from here on.
+
 > One read-only subagent swept each example for logic hand-rolled locally that
 > arguably belongs in `@pierre/ecs`. Reporting bias was deliberately **generous**
 > ("better to over-report and triage down"). This doc is the triage worksheet:
@@ -76,7 +83,7 @@ new engine surface required — except A4, which is only half-shipped.
 > **But the underlying capability gaps are real and now logged.** Two distinct
 > engine-capability gaps (not adoption gaps) sit beneath A5. The renderer's
 > failure to consume a camera/view transform is logged as its own row in the
-> [engine-gap-ledger](engine-gap-ledger.md) — rpg runs `makeFollowCameraSystem`
+> [engine-gap-ledger](../roadmap/engine-gap-ledger.md) — rpg runs `makeFollowCameraSystem`
 > then *still* hand-writes `ctx2d.translate(...)`. tilemap's need for a
 > free-pan/zoom camera variant is noted *within* that same ledger row (not a
 > separate row). The Unity/Godot model is: world rendering always goes through
@@ -91,7 +98,7 @@ new engine surface required — except A4, which is only half-shipped.
 > migration (entities via the module, decorations still hand-drawn) is possible
 > but mixes two render paths for marginal benefit. So this is **not an adoption
 > gap** — but it *is* a real engine-capability gap, now logged in the
-> [engine-gap-ledger](engine-gap-ledger.md): the renderer can't express
+> [engine-gap-ledger](../roadmap/engine-gap-ledger.md): the renderer can't express
 > non-entity decorations, text/labels, or screen-space overlays. The Unity/Godot
 > fix is a separate screen-space UI/overlay layer plus text & shape renderables.
 
