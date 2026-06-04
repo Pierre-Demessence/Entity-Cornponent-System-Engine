@@ -68,7 +68,8 @@ The **Consumers** column is the live tally that feeds the promotion rule.
 | Component serialize/deserialize boilerplate for components that are never persisted — dead pass-through code required by the store API. | asteroids, snake | Open | |
 | Sprite renderer ignores GID flip/rotation bits. Consumers unpack flip bits from the GID but `gidToFrame` doesn't apply them, so flipped tiles render unflipped. | tilemap, rpg | Open | rpg added flip-flag *unpacking* to `modules/tmx`; the renderer still doesn't honour them. |
 | Entity-lifecycle / tag-change events. No reactive hook, so consumers walk every entity every frame to detect tag (zone) changes. | card-battler | Open | |
-| Circle-vs-AABB collision helper. Engine ships `circleVsCircle` only; consumers hand-write `circleVsRect`. | flappy | Open | |
+| Circle-vs-AABB collision helper. Engine ships `circleVsCircle` only; consumers hand-write `circleVsRect`. | flappy, breakout | Open | Second consumer. breakout uses the expanded-AABB (Minkowski) overlap form for both the test and the bounce response. |
+| Collision bounce/reflection response. Engine has no helper to resolve a circle-vs-AABB overlap into a corrected position + reflected velocity, so consumers hand-roll axis-of-least-penetration reflection. | breakout | Open | Distinct from the *test* above: this is the *response* (push-out + velocity flip on the smaller-penetration axis). |
 | Composite / multi-drawable renderable. `Renderable` is one drawable per entity, so multi-part sprites (pipe pairs) are hand-drawn instead of using the renderer. | flappy | Open | |
 | 3D transform components. `PositionDef` / `VelocityDef` / `GroundedDef` are 2D-only; 3D consumers redefine them locally. | platformer-3d | Open | |
 | 3D spatial structure (`HashGrid3D`). No 3D broadphase, so consumers brute-force collision checks. | platformer-3d | Open | Compare backlog "3D siblings — speculative". |

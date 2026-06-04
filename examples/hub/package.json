@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@pierre/ecs-example-asteroids": "*",
+    "@pierre/ecs-example-breakout": "*",
     "@pierre/ecs-example-card-battler": "*",
     "@pierre/ecs-example-flappy": "*",
     "@pierre/ecs-example-local-pong": "*",

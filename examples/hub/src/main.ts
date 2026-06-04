@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -96,6 +96,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: '20 Games Challenge #2: gravity + flap impulse, scrolling recycled pipe pairs, circle-vs-AABB collision, and score-on-pass — first one-Renderable-per-entity composite (pipes drawn manually).',
     title: 'Flappy Bird',
     load: () => import('@pierre/ecs-example-flappy/src/main.ts'),
+  },
+  {
+    id: 'breakout',
+    controls: 'Arrows/A D or mouse move paddle, Space/Click launch, R restart',
+    summary: '20 Games Challenge #3: circle-vs-AABB brick field with axis-of-least-penetration bounce response, paddle english, lives, escalating ball speed, and a persisted high score.',
+    title: 'Breakout',
+    load: () => import('@pierre/ecs-example-breakout/src/main.ts'),
   },
 ];
 

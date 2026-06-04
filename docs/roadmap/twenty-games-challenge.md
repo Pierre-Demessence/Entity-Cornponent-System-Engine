@@ -14,8 +14,8 @@ unmodified `@pierre/ecs`.
   pick up only the ones that are genuinely interesting or that exercise a new
   engine surface.
 - Each game follows the existing example conventions: own Vite app +
-  `package.json`, registered in the [hub](../../examples/hub/), and a
-  `POSTMORTEM.md`.
+  `package.json`, registered in the [hub](../../examples/hub/). Engine gaps it
+  surfaces go in the [engine gap ledger](engine-gap-ledger.md).
 - Tick the checkbox here when a game lands.
 
 ## Game list (in order)
@@ -24,7 +24,7 @@ unmodified `@pierre/ecs`.
 |---|------|------|------|--------|
 | 1 | Pong | 1972 | [link](https://20_games_challenge.gitlab.io/games/pong/) | ✅ done (`local-pong`) |
 | 2 | Flappy Bird | 2013 | [link](https://20_games_challenge.gitlab.io/games/flappy/) | ✅ done (`flappy`) |
-| 3 | Breakout | 1976 | [link](https://20_games_challenge.gitlab.io/games/breakout/) | ⬜ |
+| 3 | Breakout | 1976 | [link](https://20_games_challenge.gitlab.io/games/breakout/) | ✅ done (`breakout`) |
 | 4 | Jetpack Joyride | 2011 | [link](https://20_games_challenge.gitlab.io/games/jetpack/) | ⬜ |
 | 5 | Space Invaders | 1978 | [link](https://20_games_challenge.gitlab.io/games/invaders/) | ⬜ |
 | 6 | Frogger | 1981 | [link](https://20_games_challenge.gitlab.io/games/frogger/) | ⬜ |
