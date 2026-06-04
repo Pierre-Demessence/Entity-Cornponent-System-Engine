@@ -21,6 +21,7 @@
     "@pierre/ecs-example-rpg": "*",
     "@pierre/ecs-example-snake": "*",
     "@pierre/ecs-example-solitaire": "*",
+    "@pierre/ecs-example-space-invaders": "*",
     "@pierre/ecs-example-tilemap": "*",
     "@pierre/ecs-example-top-down-shooter": "*"
   },

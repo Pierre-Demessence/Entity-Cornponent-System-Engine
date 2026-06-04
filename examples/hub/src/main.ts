@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -110,6 +110,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: '20 Games Challenge #4: endless right-to-left scroller with hold-to-rise gravity, script-spawned recycled zappers, distance score + persisted best, machine-gun bullets and particle juice.',
     title: 'Jetpack Joyride',
     load: () => import('@pierre/ecs-example-jetpack/src/main.ts'),
+  },
+  {
+    id: 'space-invaders',
+    controls: 'Left/Right or A D move, Space fire, R restart',
+    summary: '20 Games Challenge #5: beat-stepped alien fleet that drops and reverses at the walls and speeds up as it thins, single-rocket fire, bombs the player can shoot down, destructible bunkers, a bonus mothership, lives, waves, and a persisted high score.',
+    title: 'Space Invaders',
+    load: () => import('@pierre/ecs-example-space-invaders/src/main.ts'),
   },
 ];
 
