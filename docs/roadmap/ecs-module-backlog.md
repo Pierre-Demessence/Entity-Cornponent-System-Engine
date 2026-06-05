@@ -60,7 +60,7 @@ considered and rejected".
     - [`modules/spawner` — deferred](#modulesspawner--deferred)
     - [`modules/cooldown` — deferred](#modulescooldown--deferred)
     - [`modules/grid-movement` — deferred](#modulesgrid-movement--deferred)
-    - [`modules/rng` — deferred](#modulesrng--deferred)
+    - [`modules/rng` — ✅ shipped 2026-07-15](#modulesrng---shipped-2026-07-15)
     - [`modules/attach` — deferred](#modulesattach--deferred)
     - [`modules/rhythm` — speculative](#modulesrhythm--speculative)
     - [App-host mount / teardown helper — speculative](#app-host-mount--teardown-helper--speculative)
@@ -967,27 +967,12 @@ grid step, classic Snake/Sokoban/Pac-Man movement.
 
 </details>
 
-### `modules/rng` — deferred
+### `modules/rng` — ✅ shipped 2026-07-15
 
-**Scope.** A pure, domain-neutral randomness utility: Fisher–Yates
-shuffle, random-pick (optionally from a tag set), and an optional
-seedable generator.
-
-<details>
-<summary>Details</summary>
-
-**Trigger — MET (3 consumers).** card-battler, solitaire, and snake
-(`randomEmptyCell`) each hand-roll a shuffle and/or random pick
-(engine-gap-ledger B6).
-
-**Probable shape.** `shuffle<T>(arr, rand?)`, `pick<T>(arr, rand?)`, and
-an optional `makeSeededRng(seed) => () => number` so deterministic
-replays / tests are possible. Pure functions, no ECS coupling.
-
-**Canon.** Unity `Random`, Godot `RandomNumberGenerator` (seedable),
-lodash `shuffle`, every roguelike's seeded RNG.
-
-</details>
+See
+[src/modules/rng/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/rng/README.md)
+and plan
+[../plans/done/modules-rng.md](../plans/done/modules-rng.md).
 
 ### `modules/attach` — deferred
 
@@ -1163,7 +1148,6 @@ When any of the below becomes true, open a plan for the matching module.
 | **MET** — timed spawn cadence in 4 consumers | `modules/spawner` |
 | **MET** — cooldown / grace timer in 4 consumers | `modules/cooldown` |
 | **MET** — discrete grid movement in 3 consumers | `modules/grid-movement` |
-| **MET** — shuffle / random-pick in 3 consumers | `modules/rng` |
 | **MET** — follow/carrier attach in 3 consumers | `modules/attach` |
 | **MET** — FX bursts in 4 consumers | `modules/particles` |
 | **MET** — renderer camera-consume / off-screen cull in 2 consumers | `modules/camera` V2 |

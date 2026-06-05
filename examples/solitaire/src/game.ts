@@ -11,6 +11,8 @@ import type { EntityId } from '@pierre/ecs';
 
 import type { Suit } from './cards';
 
+import { shuffle } from '@pierre/ecs/modules/rng';
+
 import { RANKS, suitColor, SUITS } from './cards';
 
 export interface Card {
@@ -109,13 +111,6 @@ function makeDeck(createEntity: () => EntityId): Card[] {
       deck.push({ id: createEntity(), faceUp: false, rank, suit });
   }
   return deck;
-}
-
-function shuffle(deck: Card[]): void {
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j]!, deck[i]!];
-  }
 }
 
 export function dealNewGame(createEntity: () => EntityId): GameState {

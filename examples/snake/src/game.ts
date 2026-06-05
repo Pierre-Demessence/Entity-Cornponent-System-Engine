@@ -1,6 +1,7 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 
 import { EcsWorld } from '@pierre/ecs';
+import { pick } from '@pierre/ecs/modules/rng';
 
 import {
   DirectionDef,
@@ -60,7 +61,7 @@ function randomEmptyCell(world: EcsWorld): { x: number; y: number } | null {
   }
   if (candidates.length === 0)
     return null;
-  return candidates[Math.floor(Math.random() * candidates.length)]!;
+  return pick(candidates) ?? null;
 }
 
 export function spawnFood(state: GameState): void {

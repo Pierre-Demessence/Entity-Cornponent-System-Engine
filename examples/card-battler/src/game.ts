@@ -5,6 +5,7 @@ import type { CardDef } from './cards';
 
 import { EcsWorld } from '@pierre/ecs';
 import { DomRenderableDef } from '@pierre/ecs/modules/render-dom';
+import { pick, shuffle } from '@pierre/ecs/modules/rng';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
 import { buildStartingDeck } from './cards';
@@ -76,20 +77,6 @@ export function makeWorld(): EcsWorld {
   return w;
 }
 
-/**
- * Fisher–Yates shuffle, in place. Deterministic if `random` is
- * supplied (used by tests); defaults to `Math.random`.
- */
-export function shuffleInPlace<T>(arr: T[], random: () => number = Math.random): T[] {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    const tmp = arr[i]!;
-    arr[i] = arr[j]!;
-    arr[j] = tmp;
-  }
-  return arr;
-}
-
 /** Create all card entities for the deck and tag them InDeck. */
 function spawnDeck(state: GameState, deck: CardDef[]): void {
   const cardStore = state.world.getStore(CardDefComp);
@@ -134,7 +121,7 @@ export function resetGame(state: GameState): void {
   state.enemyId = spawnEnemy(state);
 
   const deck = buildStartingDeck();
-  shuffleInPlace(deck);
+  shuffle(deck);
   spawnDeck(state, deck);
 
   drawCards(state, HAND_SIZE);
@@ -156,7 +143,7 @@ export function drawCards(state: GameState, count: number): void {
       }
       reshuffleDiscardIntoDeck(state);
     }
-    const cardId = pickRandomFromTag(inDeck);
+    const cardId = pick([...inDeck]);
     if (cardId == null)
       return;
     inDeck.delete(cardId);
@@ -164,24 +151,11 @@ export function drawCards(state: GameState, count: number): void {
   }
 }
 
-function pickRandomFromTag(tagSet: Iterable<EntityId> & { size: number }): EntityId | null {
-  if (tagSet.size === 0)
-    return null;
-  const idx = Math.floor(Math.random() * tagSet.size);
-  let i = 0;
-  for (const id of tagSet) {
-    if (i === idx)
-      return id;
-    i++;
-  }
-  return null;
-}
-
 function reshuffleDiscardIntoDeck(state: GameState): void {
   const inDeck = state.world.getTag(InDeckTag);
   const inDiscard = state.world.getTag(InDiscardTag);
   const cardsToShuffle: EntityId[] = [...inDiscard];
-  shuffleInPlace(cardsToShuffle);
+  shuffle(cardsToShuffle);
   for (const id of cardsToShuffle) {
     inDiscard.delete(id);
     inDeck.add(id);

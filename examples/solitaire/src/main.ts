@@ -22,6 +22,7 @@ import { EcsWorld } from '@pierre/ecs';
 import { AssetLoader, audioBufferAsset, imageAsset, textAsset } from '@pierre/ecs/modules/asset-loader';
 import { WebAudioProvider } from '@pierre/ecs/modules/audio';
 import { RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
+import { pick } from '@pierre/ecs/modules/rng';
 import { parseTexturePackerAtlas, TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
@@ -132,7 +133,7 @@ export function start(container: HTMLElement): () => void {
     if (!audio)
       return;
     const ids = kind === 'slide' ? audio.slide : audio.place;
-    const id = ids[Math.floor(Math.random() * ids.length)]!;
+    const id = pick(ids)!;
     try {
       audio.provider.play(id, { channel: 'sfx', volume: 0.6 });
     }
