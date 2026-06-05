@@ -36,6 +36,7 @@
     "lint:fix": "eslint --cache --fix .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "docs:api": "jiti scripts/engine-api.gen.ts",
     "prepare": "husky || true"
   },
   "workspaces": [

@@ -1,6 +1,6 @@
 ---
-last-updated: 2026-05-07
-applicable: ["src/**", "examples/**"]
+last-updated: 2026-06-05
+applicable: ["src/**", "examples/**", "scripts/**"]
 owner: agent
 ---
 
@@ -33,11 +33,22 @@ The core primitive surface is catalogued in
 [`docs/README.md`](../README.md) (Primitives + Supporting Files). Each
 primitive also has a dedicated page under [`docs/`](../).
 
+### Discovering engine capabilities (read before authoring a consumer)
+
+[`engine-api.md`](engine-api.md) is a generated, one-line-per-symbol catalog
+of the **entire public surface** — every `@pierre/ecs/*` and
+`@pierre/ecs/modules/*` export plus its JSDoc summary. Read it first to find an
+existing helper before hand-rolling one in an example (the cheap alternative to
+opening every module README, and the fix for reinventing shipped primitives).
+
+- Regenerate after changing any public export: `npm run docs:api`.
+- A drift test (`scripts/engine-api.test.ts`) fails `npm test` if it is stale.
+
 ### Modules (`src/modules/<name>/`, exported as `@pierre/ecs/modules/<name>`)
 
-Each module is exported as `@pierre/ecs/modules/<name>` and documents
-itself in its own `src/modules/<name>/README.md`. Browse
-[`../../src/modules/`](../../src/modules/) for the current catalog.
+Each module is exported as `@pierre/ecs/modules/<name>` and documents itself in
+its own `src/modules/<name>/README.md` (deep reference). For the one-read
+capability map across all modules, use [`engine-api.md`](engine-api.md).
 
 ### Tests
 

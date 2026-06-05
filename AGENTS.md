@@ -92,8 +92,20 @@ implementation change — not a separate follow-up commit. `git mv` only
 works on tracked files; for plans created in the same session, either
 `git add` the plan first, or use `Move-Item` then `git add -A`.
 
+## Discovering engine capabilities
+
+Before hand-rolling a helper in a consumer (`examples/*`), check
+[`docs/agent/engine-api.md`](docs/agent/engine-api.md) — a generated,
+one-line-per-symbol catalog of the whole public surface (every
+`@pierre/ecs/*` + `@pierre/ecs/modules/*` export and its JSDoc summary).
+Reinventing a shipped primitive listed there is the #1 cause of
+false-positive gaps in the ledger. Regenerate it with `npm run docs:api`
+whenever you add, remove, or rename a public export — a drift test fails
+`npm test` if it goes stale.
+
 ## See also
 
+- [`docs/agent/engine-api.md`](docs/agent/engine-api.md) — generated catalog of the whole public API surface (read before hand-rolling in a consumer)
 - [`docs/README.md`](docs/README.md) — full docs map
 - [`docs/extending-the-engine.md`](docs/extending-the-engine.md) — promotion paths + layering principles + tradeoffs
 - [`docs/roadmap/core-engine-roadmap.md`](docs/roadmap/core-engine-roadmap.md) — open core-internals work
