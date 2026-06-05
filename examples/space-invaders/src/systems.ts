@@ -6,6 +6,7 @@ import type { GameState } from './game';
 import { aabbVsAabb } from '@pierre/ecs/modules/collision';
 import { CooldownDef, ready, trigger } from '@pierre/ecs/modules/cooldown';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
+import { tickSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
   AlienDef,
@@ -21,14 +22,11 @@ import {
 } from './components';
 import {
   beatInterval,
-  BOMB_INTERVAL_MS,
   explode,
   FLEET_STEP_DOWN,
   FLEET_STEP_X,
   INVASION_Y,
   INVULN_MS,
-  MOTHERSHIP_MAX_MS,
-  MOTHERSHIP_MIN_MS,
   PLAYER_SPEED,
   PLAYER_W,
   ROCKET_H,
@@ -152,30 +150,26 @@ export const bombSystem: SchedulableSystem<GameState> = {
     const aliens = [...ctx.world.getTag(AlienTag)];
     if (aliens.length === 0)
       return;
-    ctx.bombTimerMs -= ctx.dtMs;
-    if (ctx.bombTimerMs > 0)
-      return;
-    // Cadence quickens slightly with the wave; keep some randomness.
-    ctx.bombTimerMs = BOMB_INTERVAL_MS - Math.min(ctx.wave - 1, 5) * 80 + Math.random() * 400;
-
-    // Prefer the front-most alien in a random column so bombs clear the fleet.
-    const alienDef = ctx.world.getStore(AlienDef);
-    const posStore = ctx.world.getStore(PositionDef);
-    const col = ctx.world.getStore(AlienDef).get(aliens[Math.floor(Math.random() * aliens.length)])!.col;
-    let shooter: EntityId | null = null;
-    let lowestY = -Infinity;
-    for (const id of aliens) {
-      if (alienDef.get(id)!.col !== col)
-        continue;
-      const y = posStore.get(id)!.y;
-      if (y > lowestY) {
-        lowestY = y;
-        shooter = id;
+    tickSpawner(ctx.bombSpawner, ctx.dtMs, () => {
+      // Prefer the front-most alien in a random column so bombs clear the fleet.
+      const alienDef = ctx.world.getStore(AlienDef);
+      const posStore = ctx.world.getStore(PositionDef);
+      const col = ctx.world.getStore(AlienDef).get(aliens[Math.floor(Math.random() * aliens.length)])!.col;
+      let shooter: EntityId | null = null;
+      let lowestY = -Infinity;
+      for (const id of aliens) {
+        if (alienDef.get(id)!.col !== col)
+          continue;
+        const y = posStore.get(id)!.y;
+        if (y > lowestY) {
+          lowestY = y;
+          shooter = id;
+        }
       }
-    }
-    shooter ??= aliens[Math.floor(Math.random() * aliens.length)];
-    const box = boxOf(ctx, shooter)!;
-    spawnBomb(ctx, box.x + box.w / 2 - 2, box.y + box.h);
+      shooter ??= aliens[Math.floor(Math.random() * aliens.length)];
+      const box = boxOf(ctx, shooter)!;
+      spawnBomb(ctx, box.x + box.w / 2 - 2, box.y + box.h);
+    });
   },
 };
 
@@ -187,11 +181,7 @@ export const mothershipSystem: SchedulableSystem<GameState> = {
       return;
     if ([...ctx.world.getTag(MothershipTag)].length > 0)
       return;
-    ctx.mothershipTimerMs -= ctx.dtMs;
-    if (ctx.mothershipTimerMs > 0)
-      return;
-    ctx.mothershipTimerMs = MOTHERSHIP_MIN_MS + Math.random() * (MOTHERSHIP_MAX_MS - MOTHERSHIP_MIN_MS);
-    spawnMothership(ctx);
+    tickSpawner(ctx.mothershipSpawner, ctx.dtMs, () => spawnMothership(ctx));
   },
 };
 

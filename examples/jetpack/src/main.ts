@@ -3,9 +3,10 @@ import type { GameState, JetpackAction } from './game';
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider, Pointer, PointerProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
+import { makeSpawner } from '@pierre/ecs/modules/spawner';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
-import { makeWorld, resetGame, SCREEN_H, SCREEN_W } from './game';
+import { BULLET_INTERVAL_MS, makeWorld, nextObstacleIntervalMs, resetGame, SCREEN_H, SCREEN_W } from './game';
 import { render } from './render';
 import {
   bulletSystem,
@@ -83,16 +84,16 @@ export function start(container: HTMLElement): () => void {
 
   const state: GameState = {
     best: loadBest(),
-    bulletTimerMs: 0,
+    bulletSpawner: makeSpawner(() => BULLET_INTERVAL_MS, { active: () => state.thrusting }),
     dead: false,
     distance: 0,
     dtMs: LOGIC_TICK_MS,
     events: new EventBus<never>(),
     input,
+    obstacleSpawner: makeSpawner(() => nextObstacleIntervalMs(state.scrollSpeed)),
     playerId: null,
     score: 0,
     scrollSpeed: 0,
-    spawnTimerMs: 0,
     started: false,
     thrusting: false,
     world,

@@ -4,6 +4,7 @@ import type { GameState } from './game';
 
 import { aabbVsCircle } from '@pierre/ecs/modules/collision';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
+import { tickSpawner } from '@pierre/ecs/modules/spawner';
 
 import { PipeDef, PipeTag, PositionDef, VelocityDef } from './components';
 import {
@@ -13,7 +14,6 @@ import {
   FLOOR_Y,
   GRAVITY,
   MAX_FALL_SPEED,
-  PIPE_SPAWN_MS,
   PIPE_W,
   spawnPipe,
 } from './game';
@@ -60,11 +60,7 @@ export const pipeSpawnSystem: SchedulableSystem<GameState> = {
   run(ctx) {
     if (!ctx.started || ctx.dead)
       return;
-    ctx.spawnTimerMs += ctx.dtMs;
-    while (ctx.spawnTimerMs >= PIPE_SPAWN_MS) {
-      ctx.spawnTimerMs -= PIPE_SPAWN_MS;
-      spawnPipe(ctx);
-    }
+    tickSpawner(ctx.pipeSpawner, ctx.dtMs, () => spawnPipe(ctx));
   },
 };
 

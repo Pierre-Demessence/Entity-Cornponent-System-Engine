@@ -4,10 +4,13 @@ import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { makeCooldownSystem } from '@pierre/ecs/modules/cooldown';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
+import { makeSpawner } from '@pierre/ecs/modules/spawner';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
+  BOMB_INTERVAL_MS,
   makeWorld,
+  MOTHERSHIP_MAX_MS,
   MOTHERSHIP_MIN_MS,
   resetGame,
   SCREEN_H,
@@ -90,7 +93,7 @@ export function start(container: HTMLElement): () => void {
 
   const state: GameState = {
     best: loadBest(),
-    bombTimerMs: 0,
+    bombSpawner: makeSpawner(() => BOMB_INTERVAL_MS - Math.min(state.wave - 1, 5) * 80 + Math.random() * 400),
     dead: false,
     dtMs: LOGIC_TICK_MS,
     events: new EventBus<never>(),
@@ -98,7 +101,7 @@ export function start(container: HTMLElement): () => void {
     fleetStepTimerMs: 0,
     input,
     lives: 3,
-    mothershipTimerMs: MOTHERSHIP_MIN_MS,
+    mothershipSpawner: makeSpawner(() => MOTHERSHIP_MIN_MS + Math.random() * (MOTHERSHIP_MAX_MS - MOTHERSHIP_MIN_MS)),
     playerId: null,
     pointerDir: 0,
     pointerFire: false,

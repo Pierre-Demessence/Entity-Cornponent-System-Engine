@@ -4,6 +4,7 @@ import type { GameState } from './game';
 
 import { aabbVsAabb } from '@pierre/ecs/modules/collision';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
+import { tickSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
   ObstacleTag,
@@ -13,7 +14,6 @@ import {
   VelocityDef,
 } from './components';
 import {
-  BULLET_INTERVAL_MS,
   CEIL_Y,
   explode,
   FLOOR_Y,
@@ -25,8 +25,6 @@ import {
   SCREEN_W,
   SCROLL_MAX,
   SCROLL_RAMP,
-  SPAWN_MS_MIN,
-  SPAWN_MS_START,
   spawnBullet,
   spawnObstacle,
   spawnParticle,
@@ -71,14 +69,7 @@ export const spawnSystem: SchedulableSystem<GameState> = {
   run(ctx) {
     if (ctx.dead || !ctx.started)
       return;
-    ctx.spawnTimerMs -= ctx.dtMs;
-    if (ctx.spawnTimerMs > 0)
-      return;
-    spawnObstacle(ctx);
-    // Spawn cadence tightens as the run speeds up.
-    const t = (ctx.scrollSpeed - 300) / (SCROLL_MAX - 300);
-    const base = SPAWN_MS_START + (SPAWN_MS_MIN - SPAWN_MS_START) * Math.max(0, Math.min(1, t));
-    ctx.spawnTimerMs = base + Math.random() * 400;
+    tickSpawner(ctx.obstacleSpawner, ctx.dtMs, () => spawnObstacle(ctx));
   },
 };
 
@@ -88,27 +79,21 @@ export const bulletSystem: SchedulableSystem<GameState> = {
   run(ctx) {
     if (ctx.dead || ctx.playerId == null)
       return;
-    if (!ctx.thrusting) {
-      ctx.bulletTimerMs = 0;
-      return;
-    }
-    ctx.bulletTimerMs -= ctx.dtMs;
-    if (ctx.bulletTimerMs > 0)
-      return;
-    ctx.bulletTimerMs = BULLET_INTERVAL_MS;
-    const pos = ctx.world.getStore(PositionDef).get(ctx.playerId)!;
-    spawnBullet(ctx, pos.x + PLAYER_W, pos.y + PLAYER_H - 6);
-    // Jet exhaust puffs beneath the player while rising.
-    spawnParticle(
-      ctx,
-      pos.x + PLAYER_W * 0.3,
-      pos.y + PLAYER_H,
-      -ctx.scrollSpeed * 0.4 - Math.random() * 60,
-      80 + Math.random() * 140,
-      280 + Math.random() * 160,
-      Math.random() < 0.5 ? '#9fd2ff' : '#e8f4ff',
-      3 + Math.random() * 3,
-    );
+    tickSpawner(ctx.bulletSpawner, ctx.dtMs, () => {
+      const pos = ctx.world.getStore(PositionDef).get(ctx.playerId!)!;
+      spawnBullet(ctx, pos.x + PLAYER_W, pos.y + PLAYER_H - 6);
+      // Jet exhaust puffs beneath the player while rising.
+      spawnParticle(
+        ctx,
+        pos.x + PLAYER_W * 0.3,
+        pos.y + PLAYER_H,
+        -ctx.scrollSpeed * 0.4 - Math.random() * 60,
+        80 + Math.random() * 140,
+        280 + Math.random() * 160,
+        Math.random() < 0.5 ? '#9fd2ff' : '#e8f4ff',
+        3 + Math.random() * 3,
+      );
+    });
   },
 };
 

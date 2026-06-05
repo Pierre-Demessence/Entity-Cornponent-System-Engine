@@ -2,11 +2,13 @@ import type { EntityId, EventBus } from '@pierre/ecs';
 import type { AudioQueue } from '@pierre/ecs/modules/audio';
 import type { InputState, PointerState } from '@pierre/ecs/modules/input';
 import type { HashGrid2D } from '@pierre/ecs/modules/spatial';
+import type { Spawner } from '@pierre/ecs/modules/spawner';
 
 import { EcsWorld } from '@pierre/ecs';
 import { AudioSourceDef } from '@pierre/ecs/modules/audio';
 import { OpacityDef, RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
 import { cellOfPoint } from '@pierre/ecs/modules/spatial';
+import { resetSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
   BulletTag,
@@ -62,6 +64,7 @@ export interface GameState {
   dead: boolean;
   dtMs: number;
   elapsedMs: number;
+  enemySpawner: Spawner;
   events: EventBus<ShooterEvent>;
   grid: HashGrid2D;
   input: InputState<ShooterAction>;
@@ -70,7 +73,6 @@ export interface GameState {
   /** Live aim vector in canvas-internal pixels, read-only view owned by PointerProvider. */
   pointer: PointerState;
   score: number;
-  spawnTimerMs: number;
   world: EcsWorld;
   clearAudioQueue: () => void;
   isAudioClipReady: (clipId: string) => boolean;
@@ -215,8 +217,8 @@ export function resetGame(state: GameState): void {
 
   state.score = 0;
   state.dead = false;
-  state.spawnTimerMs = 0;
   state.elapsedMs = 0;
+  resetSpawner(state.enemySpawner);
   state.musicEntityId = null;
 
   state.playerId = spawnPlayer(state);

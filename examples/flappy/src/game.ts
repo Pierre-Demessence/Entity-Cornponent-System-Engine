@@ -1,7 +1,9 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
+import type { Spawner } from '@pierre/ecs/modules/spawner';
 
 import { EcsWorld } from '@pierre/ecs';
+import { resetSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
   BirdTag,
@@ -41,10 +43,10 @@ export interface GameState {
   dtMs: number;
   events: EventBus<never>;
   input: InputState<FlappyAction>;
+  pipeSpawner: Spawner;
   /** Click/tap flap queued by the canvas pointer listener, consumed each tick. */
   pointerFlap: boolean;
   score: number;
-  spawnTimerMs: number;
   started: boolean;
   world: EcsWorld;
 }
@@ -103,6 +105,6 @@ export function resetGame(state: GameState): void {
   state.started = false;
   state.dead = false;
   state.score = 0;
-  state.spawnTimerMs = 0;
+  resetSpawner(state.pipeSpawner);
   state.birdId = spawnBird(state);
 }

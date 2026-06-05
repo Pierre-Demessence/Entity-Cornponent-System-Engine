@@ -58,7 +58,7 @@ considered and rejected".
     - [`modules/motion` — vector util (normalize / set-speed) — ✅ shipped 2026-07-15](#modulesmotion--vector-util-normalize--set-speed---shipped-2026-07-15)
     - [`modules/motion` — boundary inset / per-entity size — deferred](#modulesmotion--boundary-inset--per-entity-size--deferred)
     - [`modules/timer` — ✅ shipped 2026-07-16](#modulestimer---shipped-2026-07-16)
-    - [`modules/spawner` — deferred](#modulesspawner--deferred)
+    - [`modules/spawner` — ✅ shipped 2026-07-17](#modulesspawner---shipped-2026-07-17)
     - [`modules/cooldown` — ✅ shipped 2026-07-16](#modulescooldown---shipped-2026-07-16)
     - [`modules/grid-movement` — deferred](#modulesgrid-movement--deferred)
     - [`modules/rng` — ✅ shipped 2026-07-15](#modulesrng---shipped-2026-07-15)
@@ -916,23 +916,34 @@ without colliding. (Bevy's `Timer`/`Stopwatch` split is the precedent.)
 
 </details>
 
-### `modules/spawner` — deferred
+### `modules/spawner` — ✅ shipped (2026-07-17)
 
-**Scope.** A `SpawnerDef { everyMs, … }` + system that emits an entity on
-a cadence, with an optional difficulty-ramp on the interval.
+**Scope.** A value-object `Spawner` + `tickSpawner` that emits on a
+cadence, with the next interval supplied by an app callback (so
+difficulty-ramp and jitter live in game code, not an engine knob).
 
 <details>
 <summary>Details</summary>
 
 **Trigger — MET (4 consumers).** flappy, jetpack, space-invaders, and
-top-down-shooter each hand-roll "emit an entity every T ms, where T
+top-down-shooter each hand-rolled "emit an entity every T ms, where T
 lerps with difficulty" (engine-gap-ledger B2). jetpack's `bulletTimerMs`
-auto-emitter (re-homed from the original cooldown scope) lands here too.
+auto-emitter (re-homed from the original cooldown scope) landed here too.
 
-**Probable shape.** `SpawnerDef { everyMs, jitterMs?, rampPerSec? }` built
-on a **repeating `Timer`** (now shipped) +
-`makeSpawnerSystem(spawn: (world) => void)` that fires the callback on
-the timer's `justFinished` edge. The *what* to spawn stays app-defined.
+**Shipped shape.** A **value object**, not a `SpawnerDef` component:
+`Spawner { remainingMs; nextIntervalMs(): number; active?(): boolean }`
+built via `makeSpawner(nextIntervalMs, { active? })`. `tickSpawner(s,
+dtMs, emit)` drains the accumulator and fires `emit` on each boundary
+crossing (drain-all within a tick, overshoot carried). `resetSpawner(s,
+remainingMs?)` re-seeds. The component route was rejected: each
+consumer's *next interval* is a live function of game state (elapsed,
+scroll speed, wave) and is cleanest as a closure, while the *what* to
+spawn stays app-defined in the `emit` callback. A per-interval provider
+absorbs ramp + jitter with no engine-side `rampPerSec`; the optional
+`active` gate covers jetpack's thrust-gated bullet stream (holds at 0
+while closed, fires immediately on reopen). See
+[`spawner/README.md`](../../src/modules/spawner/README.md) for the
+"Relationship to modules/timer" rationale.
 
 **Canon.** Unity coroutine spawners / `InvokeRepeating`, Godot `Timer`
 nodes, Phaser `time.addEvent({ loop })`.
@@ -1168,7 +1179,7 @@ When any of the below becomes true, open a plan for the matching module.
 | Second local-multiplayer example beyond local-pong | Local-multiplayer player-slot helper |
 | **MET** — 3rd continuous→cell projection consumer | `ContinuousHashGrid2D` |
 | **MET** — bounce/reflection response in 3 consumers | `modules/collision` V2 (reflection) |
-| **MET** — timed spawn cadence in 4 consumers | `modules/spawner` |
+| ✅ **SHIPPED 2026-07-17** — timed spawn cadence (4 consumers) | `modules/spawner` |
 | ✅ **SHIPPED 2026-07-16** — cooldown / grace timer (3 poll/trigger consumers) | `modules/cooldown` (+ `modules/timer` core) |
 | **MET** — discrete grid movement in 3 consumers | `modules/grid-movement` |
 | **MET** — follow/carrier attach in 3 consumers | `modules/attach` |

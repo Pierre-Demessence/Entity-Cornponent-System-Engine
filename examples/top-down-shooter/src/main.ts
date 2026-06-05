@@ -21,10 +21,12 @@ import {
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 import { HashGrid2D, makeGridSyncOnMove } from '@pierre/ecs/modules/spatial';
+import { makeSpawner } from '@pierre/ecs/modules/spawner';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
   CELL_SIZE,
+  currentSpawnInterval,
   despawn,
   ensureMusicSource,
   makeWorld,
@@ -233,6 +235,7 @@ export function start(container: HTMLElement): () => void {
     dead: false,
     dtMs: LOGIC_TICK_MS,
     elapsedMs: 0,
+    enemySpawner: makeSpawner(() => currentSpawnInterval(state.elapsedMs)),
     events,
     grid,
     input,
@@ -241,7 +244,6 @@ export function start(container: HTMLElement): () => void {
     playerId: null,
     pointer: pointer.state,
     score: 0,
-    spawnTimerMs: 0,
     world,
     clearAudioQueue: () => {
       audioQueue.drain();

@@ -1,9 +1,11 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
+import type { Spawner } from '@pierre/ecs/modules/spawner';
 
 import { EcsWorld } from '@pierre/ecs';
 import { CooldownDef, makeCooldown } from '@pierre/ecs/modules/cooldown';
 import { LifetimeDef, makeLifetime } from '@pierre/ecs/modules/lifetime';
+import { resetSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
   AlienDef,
@@ -76,7 +78,7 @@ export type InvadersAction = 'fire' | 'left' | 'reset' | 'right';
 
 export interface GameState {
   best: number;
-  bombTimerMs: number;
+  bombSpawner: Spawner;
   dead: boolean;
   dtMs: number;
   events: EventBus<never>;
@@ -85,7 +87,7 @@ export interface GameState {
   fleetStepTimerMs: number;
   input: InputState<InvadersAction>;
   lives: number;
-  mothershipTimerMs: number;
+  mothershipSpawner: Spawner;
   playerId: EntityId | null;
   /** Move intent via on-screen pointer drag (-1, 0, 1); OR-ed with keyboard. */
   pointerDir: number;
@@ -306,7 +308,7 @@ export function startWave(state: GameState): void {
   spawnFleet(state);
   state.fleetDir = 1;
   state.fleetStepTimerMs = beatInterval(state);
-  state.bombTimerMs = BOMB_INTERVAL_MS;
+  resetSpawner(state.bombSpawner, BOMB_INTERVAL_MS);
 }
 
 export function beatInterval(state: GameState): number {
@@ -328,7 +330,7 @@ export function resetGame(state: GameState): void {
   state.fleetDir = 1;
   state.pointerDir = 0;
   state.pointerFire = false;
-  state.mothershipTimerMs = MOTHERSHIP_MIN_MS;
+  resetSpawner(state.mothershipSpawner, MOTHERSHIP_MIN_MS);
   state.playerId = spawnPlayer(state);
   spawnBunkers(state);
   startWave(state);

@@ -2,12 +2,14 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
-import { currentSpawnInterval, spawnEnemyAtEdge } from '../game';
+import { tickSpawner } from '@pierre/ecs/modules/spawner';
+
+import { spawnEnemyAtEdge } from '../game';
 
 /**
- * Spawn timer: accumulates dt, emits an enemy every
- * `currentSpawnInterval(elapsed)` ms. Also advances `elapsedMs` since
- * the spawner is the authoritative game-time counter.
+ * Spawn timer: emits an enemy every `currentSpawnInterval(elapsed)` ms (the
+ * spawner's ramped interval provider). Also advances `elapsedMs` since the
+ * spawner is the authoritative game-time counter.
  */
 export const spawnerSystem: SchedulableSystem<GameState> = {
   name: 'spawner',
@@ -15,11 +17,6 @@ export const spawnerSystem: SchedulableSystem<GameState> = {
     if (ctx.dead)
       return;
     ctx.elapsedMs += ctx.dtMs;
-    ctx.spawnTimerMs += ctx.dtMs;
-    const interval = currentSpawnInterval(ctx.elapsedMs);
-    while (ctx.spawnTimerMs >= interval) {
-      ctx.spawnTimerMs -= interval;
-      spawnEnemyAtEdge(ctx);
-    }
+    tickSpawner(ctx.enemySpawner, ctx.dtMs, () => spawnEnemyAtEdge(ctx));
   },
 };

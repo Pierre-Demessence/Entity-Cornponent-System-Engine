@@ -1,8 +1,10 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
+import type { Spawner } from '@pierre/ecs/modules/spawner';
 
 import { EcsWorld } from '@pierre/ecs';
 import { LifetimeDef, makeLifetime } from '@pierre/ecs/modules/lifetime';
+import { resetSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
   ObstacleTag,
@@ -45,17 +47,17 @@ export type JetpackAction = 'thrust' | 'reset';
 
 export interface GameState {
   best: number;
-  bulletTimerMs: number;
+  bulletSpawner: Spawner;
   dead: boolean;
   /** Pixels scrolled, the raw distance the score derives from. */
   distance: number;
   dtMs: number;
   events: EventBus<never>;
   input: InputState<JetpackAction>;
+  obstacleSpawner: Spawner;
   playerId: EntityId | null;
   score: number;
   scrollSpeed: number;
-  spawnTimerMs: number;
   started: boolean;
   thrusting: boolean;
   world: EcsWorld;
@@ -197,6 +199,13 @@ export function explode(state: GameState, x: number, y: number): void {
   }
 }
 
+/** Obstacle cadence tightens as the run speeds up, with per-spawn jitter. */
+export function nextObstacleIntervalMs(scrollSpeed: number): number {
+  const t = (scrollSpeed - 300) / (SCROLL_MAX - 300);
+  const base = SPAWN_MS_START + (SPAWN_MS_MIN - SPAWN_MS_START) * Math.max(0, Math.min(1, t));
+  return base + Math.random() * 400;
+}
+
 export function resetGame(state: GameState): void {
   state.world.clearAll();
   state.dead = false;
@@ -205,7 +214,7 @@ export function resetGame(state: GameState): void {
   state.score = 0;
   state.distance = 0;
   state.scrollSpeed = SCROLL_START;
-  state.spawnTimerMs = 0;
-  state.bulletTimerMs = 0;
+  resetSpawner(state.obstacleSpawner, 0);
+  resetSpawner(state.bulletSpawner, 0);
   state.playerId = spawnPlayer(state);
 }

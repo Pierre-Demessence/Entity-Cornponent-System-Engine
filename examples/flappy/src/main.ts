@@ -2,9 +2,10 @@ import type { FlappyAction, GameState } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { makeSpawner } from '@pierre/ecs/modules/spawner';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
-import { makeWorld, resetGame, SCREEN_H, SCREEN_W } from './game';
+import { makeWorld, PIPE_SPAWN_MS, resetGame, SCREEN_H, SCREEN_W } from './game';
 import { render } from './render';
 import {
   collisionSystem,
@@ -60,9 +61,9 @@ export function start(container: HTMLElement): () => void {
     dtMs: LOGIC_TICK_MS,
     events: new EventBus<never>(),
     input,
+    pipeSpawner: makeSpawner(() => PIPE_SPAWN_MS),
     pointerFlap: false,
     score: 0,
-    spawnTimerMs: 0,
     started: false,
     world,
   };
