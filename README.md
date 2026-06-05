@@ -1,14 +1,16 @@
 # @pierre/ecs
 
-Project-agnostic Entity-Component-System (ECS) primitives extracted from
-a TypeScript roguelike game. Designed for small to mid-scale turn-based
-projects where clarity and zero runtime cost matter more than raw ECS
-throughput.
+Project-agnostic Entity-Component-System (ECS) primitives for 2D games and
+simulations: component stores, typed queries, a spatial index, entity
+templates, a scheduler, and an event bus — plus opt-in modules (rendering,
+input, audio, collision, camera, motion, and more). Built for clarity and
+zero runtime cost over raw ECS throughput.
 
 ## Status
 
-**Pre-release (`0.0.0`, `private: true`).** The API is still shifting as
-it's validated inside its first consumer. Not yet published to npm.
+**Pre-release (`0.0.0`, `private: true`).** The API is still shifting as it's
+validated across a suite of genre-spanning example games. Not yet published
+to npm.
 
 ## What's included
 

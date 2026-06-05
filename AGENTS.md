@@ -21,9 +21,10 @@ consumer appears, this file gets revisited.
 
 ## Prototype phase: validate shape, not surface stability
 
-The engine is mid-extraction from the roguelike. The priority is to
-**validate primitive shape via prototypes** — does each module survive
-a genre shift? — not to lock down a stable surface. This means:
+The priority is to get each primitive's **shape** right — for novel shapes,
+validated by prototypes (does it survive a genre shift?); for standard
+subsystems, taken from **external canon** up front — not to lock down a
+stable surface. This means:
 
 - The sliding-scale promotion rule in [`docs/extending-the-engine.md`](docs/extending-the-engine.md)
   is canon. New core or module additions go through it. Internal
@@ -32,6 +33,15 @@ a genre shift? — not to lock down a stable surface. This means:
   a novel shape needs 2. These examples are deliberately generic, so a
   gap one of them hits is strong generality signal — don't reflexively
   defer canon to "wait for a second consumer".
+- **Canon-complete over incremental.** For a recognized canonical
+  subsystem (a 2D camera, a scalar-math library, a collision narrowphase),
+  build the *canon-complete* surface in one pass — the operations every
+  major engine ships — not the minimal slice one consumer happens to call.
+  Strong external canon (Godot/Unity/Bevy/…) is sufficient justification on
+  its own; consumers **validate** a shape, they do **not gate** its
+  existence. Half-baked / under-promoted primitives are the failure mode
+  this project actually suffers from. Only genuinely *novel* (non-canon)
+  shapes wait for a second consumer.
 - Each prototype in `examples/` is a first-class engine consumer, not
   throwaway demo code. Engine gaps it surfaces are logged in
   [`docs/roadmap/engine-gap-ledger.md`](docs/roadmap/engine-gap-ledger.md),

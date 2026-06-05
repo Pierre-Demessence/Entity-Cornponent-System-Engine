@@ -1,7 +1,7 @@
 # Extending the Engine
 
 How to decide where new code belongs when you hit an engine gap — whether
-from the roguelike, a future prototype, or anywhere else. This is the
+from an example prototype, a downstream consumer, or anywhere else. This is the
 rule-book for promoting code into the engine, keeping it out, or demoting
 it back.
 
@@ -42,13 +42,30 @@ Combine that with canon and the bar drops fast. Do **not** reflexively
 file everything as "wait for a second consumer"; that under-promotion is
 the failure mode this project actually suffers from.
 
+### Canon-complete by default
+
+When a subsystem is recognised canon — a 2D camera, a scalar-math library,
+a collision narrowphase, a tween/easing set — ship the **canon-complete
+surface in one pass**: the operations every major engine provides, not just
+the 2–3 a first consumer happens to call. Strong external canon
+(Godot/Unity/Bevy/Pixi/…) is sufficient justification on its own;
+**consumers validate a shape, they do not gate its existence.** A camera
+with position but no zoom/limits/smoothing, or a math module with `clamp`
+but no `lerp`/`remap`, is a *half-baked* primitive — the under-promotion
+flagged just above. Build the whole canonical thing, cite the engines it
+mirrors, and let consumers exercise it as they land.
+
 ### Guardrails (slide with the evidence)
 
 The less internal-consumer proof you have, the more these apply:
 
-- **Minimal surface.** Ship the 2–3 operations the consumer actually
-  calls. No optional parameters or config knobs until a second consumer
-  asks for them.
+- **Minimal surface — for *novel* shapes only.** When you have **no**
+  canon (a genuinely new, opinionated shape), ship just the 2–3 operations
+  the consumer calls and no speculative knobs. This does **not** apply to
+  recognised canon: for a canonical subsystem the canonical surface *is*
+  the minimal correct surface (see [Canon-complete by default](#canon-complete-by-default))
+  — shipping a camera without zoom to "wait for a consumer" is the
+  under-promotion failure, not discipline.
 - **Cite the canon.** If you are promoting on canon strength (0 or 1
   consumers), name the engines/libraries/textbook the shape comes from in
   the commit body and plan. If you *can't* name them, you don't have
@@ -335,14 +352,14 @@ genre shift?). It's not the only one.
 
 Two other legitimate drivers:
 
-- **Existing consumer pain.** The roguelike alone has driven the entire
-  engine audit, M1 spatial split, M2 tick infrastructure, and all A1–A10
-  improvements. No prototype needed — the single consumer surfaced real
-  quality issues.
+- **Existing consumer pain.** A real consumer's day-to-day use surfaces
+  quality issues no prototype would — it has driven the engine audit, the
+  M1 spatial split, M2 tick infrastructure, and the A1–A10 improvements.
+  No prototype needed; the consumer surfaced real quality issues.
 - **Public-release readiness.** Items like dev-inspector, plugin
   architecture, keybinding registry live on the core-engine roadmap
-  because the engine needs them to be usable by others, even if the
-  roguelike works fine without them.
+  because the engine needs them to be usable by others, even if current
+  consumers work fine without them.
 
 Match the driver to the change:
 
