@@ -1,13 +1,22 @@
 import type { ComponentDef, EcsWorld, EntityId, SchedulableSystem } from '#index';
+import type { Timer } from '../timer';
 
 import { simpleComponent } from '#index';
 
-export interface Lifetime { remainingMs: number }
+import { finished, makeTimer, tickTimer, timerSchema } from '../timer';
+
+/** A countdown-to-destroy timer. A `'once'` {@link Timer}. */
+export type Lifetime = Timer;
 
 export const LifetimeDef: ComponentDef<Lifetime> = simpleComponent<Lifetime>(
   'lifetime',
-  { remainingMs: 'number' },
+  timerSchema,
 );
+
+/** Create a {@link Lifetime} that expires after `durationMs`. */
+export function makeLifetime(durationMs: number): Lifetime {
+  return makeTimer(durationMs, 'once');
+}
 
 export interface LifetimeTickCtx { dtMs: number; world: EcsWorld }
 
@@ -36,8 +45,8 @@ export function makeLifetimeSystem<TCtx extends LifetimeTickCtx>(
       const expired: EntityId[] = [];
       for (const id of store.keys()) {
         const life = store.get(id)!;
-        life.remainingMs -= ctx.dtMs;
-        if (life.remainingMs <= 0)
+        tickTimer(life, ctx.dtMs);
+        if (finished(life))
           expired.push(id);
       }
       for (const id of expired) {

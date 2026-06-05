@@ -2,10 +2,8 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
-import { PositionDef, RotationDef, VelocityDef } from '../components';
+import { CooldownDef, PositionDef, ready, RotationDef, trigger, VelocityDef } from '../components';
 import {
-  FIRE_COOLDOWN_MS,
-
   SHIP_MAX_SPEED,
   SHIP_RADIUS,
   SHIP_ROT_RAD_PER_S,
@@ -38,12 +36,12 @@ export const inputSystem: SchedulableSystem<GameState> = {
       }
     }
 
-    ctx.fireCooldownMs = Math.max(0, ctx.fireCooldownMs - ctx.dtMs);
-    if (ctx.input.isDown('fire') && ctx.fireCooldownMs === 0) {
+    const cd = ctx.world.getStore(CooldownDef).get(ctx.shipId)!;
+    if (ctx.input.isDown('fire') && ready(cd)) {
       const nx = pos.x + Math.cos(rot.angle) * SHIP_RADIUS;
       const ny = pos.y + Math.sin(rot.angle) * SHIP_RADIUS;
       spawnBullet(ctx, nx, ny, rot.angle);
-      ctx.fireCooldownMs = FIRE_COOLDOWN_MS;
+      trigger(cd);
     }
   },
 };

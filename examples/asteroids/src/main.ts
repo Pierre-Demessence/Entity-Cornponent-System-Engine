@@ -1,6 +1,7 @@
 import type { AsteroidsAction, AsteroidsEvent, GameState } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
+import { makeCooldownSystem } from '@pierre/ecs/modules/cooldown';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
@@ -49,7 +50,9 @@ export function start(container: HTMLElement): () => void {
     onExpire: despawn,
     runAfter: ['movement'],
   });
+  const cooldownSystem = makeCooldownSystem<GameState>();
   const scheduler = new Scheduler<GameState>()
+    .add(cooldownSystem)
     .add(inputSystem)
     .add(motionSystem)
     .add(lifetimeSystem)
@@ -84,7 +87,6 @@ export function start(container: HTMLElement): () => void {
     dead: false,
     dtMs: LOGIC_TICK_MS,
     events,
-    fireCooldownMs: 0,
     grid,
     input,
     score: 0,

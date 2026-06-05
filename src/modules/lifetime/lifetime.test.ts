@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EcsWorld } from '#world';
 
-import { LifetimeDef, makeLifetimeSystem } from './lifetime';
+import { LifetimeDef, makeLifetime, makeLifetimeSystem } from './lifetime';
 
 interface Ctx { dtMs: number; world: EcsWorld }
 
@@ -17,7 +17,7 @@ function setup(): Ctx {
 describe('lifetimeDef', () => {
   it('has name "lifetime" and round-trips through simpleComponent', () => {
     expect(LifetimeDef.name).toBe('lifetime');
-    const raw = { remainingMs: 500 };
+    const raw = makeLifetime(500);
     const serialized = LifetimeDef.serialize(raw);
     const restored = LifetimeDef.deserialize(serialized, 'lifetime');
     expect(restored).toEqual(raw);
@@ -46,18 +46,18 @@ describe('makeLifetimeSystem', () => {
     const sys = makeLifetimeSystem<Ctx>();
     const store = ctx.world.getStore(LifetimeDef);
     const id = ctx.world.createEntity();
-    store.set(id, { remainingMs: 100 });
+    store.set(id, makeLifetime(100));
 
     sys.run(ctx);
 
-    expect(store.get(id)).toEqual({ remainingMs: 84 });
+    expect(store.get(id)?.remainingMs).toBe(84);
   });
 
   it('queues destroy when remainingMs reaches zero', () => {
     const sys = makeLifetimeSystem<Ctx>();
     const store = ctx.world.getStore(LifetimeDef);
     const id = ctx.world.createEntity();
-    store.set(id, { remainingMs: 16 });
+    store.set(id, makeLifetime(16));
 
     sys.run(ctx);
     ctx.world.flushDestroys();
@@ -69,7 +69,7 @@ describe('makeLifetimeSystem', () => {
     const sys = makeLifetimeSystem<Ctx>();
     const store = ctx.world.getStore(LifetimeDef);
     const id = ctx.world.createEntity();
-    store.set(id, { remainingMs: 1 });
+    store.set(id, makeLifetime(1));
 
     sys.run(ctx);
     ctx.world.flushDestroys();
@@ -81,13 +81,13 @@ describe('makeLifetimeSystem', () => {
     const sys = makeLifetimeSystem<Ctx>();
     const store = ctx.world.getStore(LifetimeDef);
     const id = ctx.world.createEntity();
-    store.set(id, { remainingMs: 100 });
+    store.set(id, makeLifetime(100));
 
     for (let i = 0; i < 5; i++) sys.run(ctx);
     ctx.world.flushDestroys();
 
     expect(store.has(id)).toBe(true);
-    expect(store.get(id)).toEqual({ remainingMs: 20 });
+    expect(store.get(id)?.remainingMs).toBe(20);
   });
 
   it('invokes onExpire instead of queueDestroy when provided', () => {
@@ -95,7 +95,7 @@ describe('makeLifetimeSystem', () => {
     const sys = makeLifetimeSystem<Ctx>({ onExpire });
     const store = ctx.world.getStore(LifetimeDef);
     const id = ctx.world.createEntity();
-    store.set(id, { remainingMs: 5 });
+    store.set(id, makeLifetime(5));
 
     sys.run(ctx);
     ctx.world.flushDestroys();
@@ -111,7 +111,7 @@ describe('makeLifetimeSystem', () => {
     const ids: EntityId[] = [];
     for (let i = 0; i < 3; i++) {
       const id = ctx.world.createEntity();
-      store.set(id, { remainingMs: 10 });
+      store.set(id, makeLifetime(10));
       ids.push(id);
     }
 

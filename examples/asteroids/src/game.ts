@@ -8,7 +8,10 @@ import { cellOfPoint } from '@pierre/ecs/modules/spatial';
 
 import {
   BulletTag,
+  CooldownDef,
   LifetimeDef,
+  makeCooldown,
+  makeLifetime,
   PositionDef,
   RockTag,
   RockTierDef,
@@ -52,7 +55,6 @@ export interface GameState {
   dead: boolean;
   dtMs: number;
   events: EventBus<AsteroidsEvent>;
-  fireCooldownMs: number;
   grid: HashGrid2D;
   input: InputState<AsteroidsAction>;
   score: number;
@@ -71,6 +73,7 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(RotationDef);
   w.registerComponent(ShapeCircleDef);
   w.registerComponent(LifetimeDef);
+  w.registerComponent(CooldownDef);
   w.registerComponent(RockTierDef);
   w.registerComponent(RenderableDef);
   w.registerComponent(RenderOrderDef);
@@ -101,6 +104,7 @@ export function spawnShip(state: GameState): EntityId {
     ],
   });
   state.world.getStore(RenderOrderDef).set(id, { value: 10 });
+  state.world.getStore(CooldownDef).set(id, makeCooldown(FIRE_COOLDOWN_MS));
   state.world.getTag(ShipTag).add(id);
   const c = cellOf(SCREEN_W / 2, SCREEN_H / 2);
   state.grid.add(id, c.x, c.y);
@@ -159,7 +163,7 @@ export function spawnBullet(state: GameState, x: number, y: number, angle: numbe
     vy: Math.sin(angle) * BULLET_SPEED,
   });
   state.world.getStore(ShapeCircleDef).set(id, { radius: BULLET_RADIUS });
-  state.world.getStore(LifetimeDef).set(id, { remainingMs: BULLET_LIFE_MS });
+  state.world.getStore(LifetimeDef).set(id, makeLifetime(BULLET_LIFE_MS));
   state.world.getStore(RenderableDef).set(id, {
     fill: '#fe6',
     kind: 'circle',
@@ -187,7 +191,6 @@ export function resetGame(state: GameState): void {
 
   state.score = 0;
   state.dead = false;
-  state.fireCooldownMs = 0;
 
   state.shipId = spawnShip(state);
 

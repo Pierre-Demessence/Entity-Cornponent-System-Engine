@@ -2,7 +2,7 @@ import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
 
 import { EcsWorld } from '@pierre/ecs';
-import { LifetimeDef } from '@pierre/ecs/modules/lifetime';
+import { LifetimeDef, makeLifetime } from '@pierre/ecs/modules/lifetime';
 
 import {
   ObstacleTag,
@@ -152,7 +152,7 @@ export function spawnBullet(state: GameState, x: number, y: number): void {
   });
   state.world.getStore(RenderOrderDef).set(id, { value: 25 });
   state.world.getTag(ParticleTag).add(id);
-  state.world.getStore(LifetimeDef).set(id, { remainingMs: 700 });
+  state.world.getStore(LifetimeDef).set(id, makeLifetime(700));
 }
 
 export function spawnParticle(
@@ -168,7 +168,7 @@ export function spawnParticle(
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x, y });
   state.world.getStore(VelocityDef).set(id, { vx, vy });
-  state.world.getStore(LifetimeDef).set(id, { remainingMs: lifeMs });
+  state.world.getStore(LifetimeDef).set(id, makeLifetime(lifeMs));
   state.world.getStore(RenderableDef).set(id, {
     anchor: 'center',
     fill,

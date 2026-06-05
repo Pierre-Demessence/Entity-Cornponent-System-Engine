@@ -1,6 +1,7 @@
 import type { GameState, InvadersAction } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
+import { makeCooldownSystem } from '@pierre/ecs/modules/cooldown';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
@@ -63,6 +64,7 @@ export function start(container: HTMLElement): () => void {
   const world = makeWorld();
 
   const scheduler = new Scheduler<GameState>()
+    .add(makeCooldownSystem<GameState>())
     .add(inputSystem)
     .add(fleetSystem)
     .add(bombSystem)
@@ -95,7 +97,6 @@ export function start(container: HTMLElement): () => void {
     fleetDir: 1,
     fleetStepTimerMs: 0,
     input,
-    invulnMs: 0,
     lives: 3,
     mothershipTimerMs: MOTHERSHIP_MIN_MS,
     playerId: null,

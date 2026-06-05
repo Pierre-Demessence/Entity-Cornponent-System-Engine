@@ -3,7 +3,13 @@ export {
   type ShapeCircle,
   ShapeCircleDef,
 } from '@pierre/ecs/modules/collision';
-export { LifetimeDef } from '@pierre/ecs/modules/lifetime';
+export {
+  CooldownDef,
+  makeCooldown,
+  ready,
+  trigger,
+} from '@pierre/ecs/modules/cooldown';
+export { LifetimeDef, makeLifetime } from '@pierre/ecs/modules/lifetime';
 export {
   type Position,
   PositionDef,

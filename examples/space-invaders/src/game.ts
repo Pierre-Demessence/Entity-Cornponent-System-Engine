@@ -2,7 +2,8 @@ import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
 
 import { EcsWorld } from '@pierre/ecs';
-import { LifetimeDef } from '@pierre/ecs/modules/lifetime';
+import { CooldownDef, makeCooldown } from '@pierre/ecs/modules/cooldown';
+import { LifetimeDef, makeLifetime } from '@pierre/ecs/modules/lifetime';
 
 import {
   AlienDef,
@@ -83,8 +84,6 @@ export interface GameState {
   fleetDir: number;
   fleetStepTimerMs: number;
   input: InputState<InvadersAction>;
-  /** Post-hit grace window; the player ignores bombs while this is positive. */
-  invulnMs: number;
   lives: number;
   mothershipTimerMs: number;
   playerId: EntityId | null;
@@ -105,6 +104,7 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(SizeDef);
   w.registerComponent(AlienDef);
   w.registerComponent(BunkerDef);
+  w.registerComponent(CooldownDef);
   w.registerComponent(LifetimeDef);
   w.registerComponent(RenderableDef);
   w.registerComponent(RenderOrderDef);
@@ -133,6 +133,7 @@ function spawnPlayer(state: GameState): EntityId {
     w: PLAYER_W,
   });
   state.world.getStore(RenderOrderDef).set(id, { value: 30 });
+  state.world.getStore(CooldownDef).set(id, makeCooldown(INVULN_MS));
   state.world.getTag(PlayerTag).add(id);
   return id;
 }
@@ -267,7 +268,7 @@ export function spawnParticle(
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x, y });
   state.world.getStore(VelocityDef).set(id, { vx, vy });
-  state.world.getStore(LifetimeDef).set(id, { remainingMs: lifeMs });
+  state.world.getStore(LifetimeDef).set(id, makeLifetime(lifeMs));
   state.world.getStore(RenderableDef).set(id, {
     anchor: 'center',
     fill,
@@ -323,7 +324,6 @@ export function resetGame(state: GameState): void {
   state.started = false;
   state.score = 0;
   state.lives = 3;
-  state.invulnMs = 0;
   state.wave = 1;
   state.fleetDir = 1;
   state.pointerDir = 0;

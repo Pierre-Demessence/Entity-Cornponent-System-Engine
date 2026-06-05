@@ -10,8 +10,11 @@ import { cellOfPoint } from '@pierre/ecs/modules/spatial';
 
 import {
   BulletTag,
+  CooldownDef,
   EnemyTag,
   LifetimeDef,
+  makeCooldown,
+  makeLifetime,
   PlayerTag,
   PositionDef,
   RotationDef,
@@ -60,7 +63,6 @@ export interface GameState {
   dtMs: number;
   elapsedMs: number;
   events: EventBus<ShooterEvent>;
-  fireCooldownMs: number;
   grid: HashGrid2D;
   input: InputState<ShooterAction>;
   musicEntityId: EntityId | null;
@@ -86,6 +88,7 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(RotationDef);
   w.registerComponent(ShapeCircleDef);
   w.registerComponent(LifetimeDef);
+  w.registerComponent(CooldownDef);
   w.registerComponent(RenderableDef);
   w.registerComponent(RenderOrderDef);
   w.registerComponent(OpacityDef);
@@ -117,6 +120,7 @@ export function spawnPlayer(state: GameState): EntityId {
     ],
   });
   state.world.getStore(RenderOrderDef).set(id, { value: 10 });
+  state.world.getStore(CooldownDef).set(id, makeCooldown(FIRE_COOLDOWN_MS));
   state.world.getTag(PlayerTag).add(id);
   const c = cellOf(x, y);
   state.grid.add(id, c.x, c.y);
@@ -150,7 +154,7 @@ export function spawnBullet(state: GameState, x: number, y: number, angle: numbe
     vy: Math.sin(angle) * BULLET_SPEED,
   });
   state.world.getStore(ShapeCircleDef).set(id, { radius: BULLET_RADIUS });
-  state.world.getStore(LifetimeDef).set(id, { remainingMs: BULLET_LIFE_MS });
+  state.world.getStore(LifetimeDef).set(id, makeLifetime(BULLET_LIFE_MS));
   state.world.getStore(RenderableDef).set(id, {
     fill: '#fe6',
     kind: 'circle',
@@ -211,7 +215,6 @@ export function resetGame(state: GameState): void {
 
   state.score = 0;
   state.dead = false;
-  state.fireCooldownMs = 0;
   state.spawnTimerMs = 0;
   state.elapsedMs = 0;
   state.musicEntityId = null;

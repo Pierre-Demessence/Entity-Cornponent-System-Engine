@@ -4,6 +4,7 @@ import type { Aabb } from '@pierre/ecs/modules/collision';
 import type { GameState } from './game';
 
 import { aabbVsAabb } from '@pierre/ecs/modules/collision';
+import { CooldownDef, ready, trigger } from '@pierre/ecs/modules/cooldown';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 
 import {
@@ -69,13 +70,11 @@ export const inputSystem: SchedulableSystem<GameState> = {
     pos.x += dir * PLAYER_SPEED * (ctx.dtMs / 1000);
     pos.x = Math.max(SIDE_MARGIN, Math.min(SCREEN_W - SIDE_MARGIN - PLAYER_W, pos.x));
 
-    // Count down post-hit grace and blink the ship while it lasts.
-    if (ctx.invulnMs > 0) {
-      ctx.invulnMs -= ctx.dtMs;
-      const r = ctx.world.getStore(RenderableDef).get(ctx.playerId);
-      if (r && r.kind === 'rect')
-        r.fill = ctx.invulnMs > 0 && Math.floor(ctx.invulnMs / 100) % 2 === 1 ? '#2f7d4d' : '#7CFC9B';
-    }
+    // Blink the ship while the post-hit grace window is active.
+    const cd = ctx.world.getStore(CooldownDef).get(ctx.playerId);
+    const r = ctx.world.getStore(RenderableDef).get(ctx.playerId);
+    if (cd && r && r.kind === 'rect')
+      r.fill = !ready(cd) && Math.floor(cd.remainingMs / 100) % 2 === 1 ? '#2f7d4d' : '#7CFC9B';
 
     const fire = ctx.input.isDown('fire') || ctx.pointerFire;
     if (fire && [...ctx.world.getTag(RocketTag)].length === 0) {
@@ -312,11 +311,13 @@ export const collisionSystem: SchedulableSystem<GameState> = {
 
       if (pb && aabbVsAabb(bb, pb)) {
         destroy(bomb);
-        if (ctx.invulnMs > 0)
+        const cd = playerId != null ? ctx.world.getStore(CooldownDef).get(playerId) : null;
+        if (cd && !ready(cd))
           continue;
         explode(ctx, pb.x + pb.w / 2, pb.y + pb.h / 2, 20, ['#7CFC9B', '#fff', '#ff4d6d']);
         ctx.lives -= 1;
-        ctx.invulnMs = INVULN_MS;
+        if (cd)
+          trigger(cd, INVULN_MS);
         if (ctx.lives <= 0) {
           ctx.dead = true;
           ctx.best = Math.max(ctx.best, ctx.score);

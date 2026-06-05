@@ -57,8 +57,9 @@ considered and rejected".
     - [`modules/collision` V2 — reflection response — deferred](#modulescollision-v2--reflection-response--deferred)
     - [`modules/motion` — vector util (normalize / set-speed) — ✅ shipped 2026-07-15](#modulesmotion--vector-util-normalize--set-speed---shipped-2026-07-15)
     - [`modules/motion` — boundary inset / per-entity size — deferred](#modulesmotion--boundary-inset--per-entity-size--deferred)
+    - [`modules/timer` — ✅ shipped 2026-07-16](#modulestimer---shipped-2026-07-16)
     - [`modules/spawner` — deferred](#modulesspawner--deferred)
-    - [`modules/cooldown` — deferred](#modulescooldown--deferred)
+    - [`modules/cooldown` — ✅ shipped 2026-07-16](#modulescooldown---shipped-2026-07-16)
     - [`modules/grid-movement` — deferred](#modulesgrid-movement--deferred)
     - [`modules/rng` — ✅ shipped 2026-07-15](#modulesrng---shipped-2026-07-15)
     - [`modules/attach` — deferred](#modulesattach--deferred)
@@ -887,6 +888,34 @@ Space Invaders cannon rails).
 
 </details>
 
+### `modules/timer` — ✅ shipped (2026-07-16)
+
+**Scope.** A Bevy-style `Timer` **value primitive** (not an ECS component):
+the shared countdown core that `lifetime`, `cooldown`, and (future)
+`spawner` embed.
+
+<details>
+<summary>Details</summary>
+
+**Shipped.** `Timer { remainingMs, durationMs, mode, justFinished }` with
+`mode: 'once' | 'repeating'`; pure functions `makeTimer`/`tickTimer`/
+`finished`/`justFinished`/`fraction`/`restart`@[`timer/timer.ts`](../../src/modules/timer/timer.ts).
+`timerSchema` is a flat `SimpleSchema<Timer>` so any module can wrap it in
+a `simpleComponent` (lifetime, cooldown both do).
+
+**Why a value, not a `TimerDef` component.** A single `TimerDef` would let
+an entity hold only one timer — but a bullet needs a lifetime AND an enemy
+needs an i-frame cooldown on the *same* entity slot pattern. Shipping
+`Timer` as an embeddable value lets each consumer module define its own
+flat component (`LifetimeDef`, `CooldownDef`) that shares the timing core
+without colliding. (Bevy's `Timer`/`Stopwatch` split is the precedent.)
+
+**Consumers.** `modules/lifetime` (`Lifetime = Timer`, once-mode),
+`modules/cooldown` (`Cooldown = Timer`, once-mode poll/trigger). `spawner`
+(#7) will use repeating-mode.
+
+</details>
+
 ### `modules/spawner` — deferred
 
 **Scope.** A `SpawnerDef { everyMs, … }` + system that emits an entity on
@@ -897,33 +926,42 @@ a cadence, with an optional difficulty-ramp on the interval.
 
 **Trigger — MET (4 consumers).** flappy, jetpack, space-invaders, and
 top-down-shooter each hand-roll "emit an entity every T ms, where T
-lerps with difficulty" (engine-gap-ledger B2).
+lerps with difficulty" (engine-gap-ledger B2). jetpack's `bulletTimerMs`
+auto-emitter (re-homed from the original cooldown scope) lands here too.
 
-**Probable shape.** `SpawnerDef { everyMs, jitterMs?, rampPerSec? }` +
+**Probable shape.** `SpawnerDef { everyMs, jitterMs?, rampPerSec? }` built
+on a **repeating `Timer`** (now shipped) +
 `makeSpawnerSystem(spawn: (world) => void)` that fires the callback on
-the accumulated-time edge. The *what* to spawn stays app-defined.
+the timer's `justFinished` edge. The *what* to spawn stays app-defined.
 
 **Canon.** Unity coroutine spawners / `InvokeRepeating`, Godot `Timer`
 nodes, Phaser `time.addEvent({ loop })`.
 
 </details>
 
-### `modules/cooldown` — deferred
+### `modules/cooldown` — ✅ shipped (2026-07-16)
 
-**Scope.** A `CooldownDef` + auto-decrement system covering fire-rate
-gating and invulnerability/grace i-frames.
+**Scope.** A `CooldownDef` per-entity component + auto-decrement system
+covering fire-rate gating and invulnerability/grace i-frames.
 
 <details>
 <summary>Details</summary>
 
-**Trigger — MET (4 consumers).** asteroids (fire), top-down-shooter
-(fire), jetpack (bullet), space-invaders (invuln) each hand-roll a
-per-entity countdown that gates an action (engine-gap-ledger B3).
+**Shipped.** `Cooldown = Timer` (once-mode) wrapped as `CooldownDef`@[`cooldown/cooldown.ts`](../../src/modules/cooldown/cooldown.ts);
+`makeCooldown(durationMs)` starts **ready** (remainingMs=0); `ready(c)`
+predicate + `trigger(c, durationMs?)` reset; `makeCooldownSystem<TCtx>()`
+ticks every `CooldownDef` each frame.
 
-**Probable shape.** `CooldownDef { remainingMs, durationMs }` +
-`makeCooldownSystem` that decrements each tick; `ready(e)` predicate +
-`trigger(e)` reset helper. One component serves both fire-rate and
-i-frames.
+**Shape correction vs. the original deferred note.** The proposed shape
+was right (`{ remainingMs, durationMs }` + `makeCooldownSystem` + `ready`/
+`trigger`), but it's now built on the shared `Timer` value and ships as a
+**per-entity component** — cites `modules/lifetime`'s component precedent
+(same-author bias acknowledged). 3 adopters, all poll-`ready()`/`trigger()`
+once-mode: asteroids fire@[`input.ts`](../../examples/asteroids/src/systems/input.ts),
+top-down-shooter fire@[`input.ts`](../../examples/top-down-shooter/src/systems/input.ts),
+space-invaders i-frames@[`systems.ts`](../../examples/space-invaders/src/systems.ts).
+jetpack's `bulletTimerMs` is a repeating auto-emitter → **moved to
+`modules/spawner`** (#7), not a cooldown.
 
 **Canon.** Unity ability cooldowns, Godot `Timer` one-shots, fighting-
 game i-frame windows.
@@ -1131,7 +1169,7 @@ When any of the below becomes true, open a plan for the matching module.
 | **MET** — 3rd continuous→cell projection consumer | `ContinuousHashGrid2D` |
 | **MET** — bounce/reflection response in 3 consumers | `modules/collision` V2 (reflection) |
 | **MET** — timed spawn cadence in 4 consumers | `modules/spawner` |
-| **MET** — cooldown / grace timer in 4 consumers | `modules/cooldown` |
+| ✅ **SHIPPED 2026-07-16** — cooldown / grace timer (3 poll/trigger consumers) | `modules/cooldown` (+ `modules/timer` core) |
 | **MET** — discrete grid movement in 3 consumers | `modules/grid-movement` |
 | **MET** — follow/carrier attach in 3 consumers | `modules/attach` |
 | **MET** — FX bursts in 4 consumers | `modules/particles` |

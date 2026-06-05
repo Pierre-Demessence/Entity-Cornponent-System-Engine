@@ -4,9 +4,8 @@ import type { GameState } from '../game';
 
 import { scaleToSpeed } from '@pierre/ecs/modules/motion';
 
-import { PositionDef, RotationDef, VelocityDef } from '../components';
+import { CooldownDef, PositionDef, ready, RotationDef, trigger, VelocityDef } from '../components';
 import {
-  FIRE_COOLDOWN_MS,
   PLAYER_RADIUS,
   PLAYER_SPEED,
   SHOOTER_AUDIO_CLIP_IDS,
@@ -52,8 +51,8 @@ export const inputSystem: SchedulableSystem<GameState> = {
     if (ax !== 0 || ay !== 0)
       rot.angle = Math.atan2(ay, ax);
 
-    ctx.fireCooldownMs = Math.max(0, ctx.fireCooldownMs - ctx.dtMs);
-    if (ctx.input.isDown('fire') && ctx.fireCooldownMs === 0) {
+    const cd = ctx.world.getStore(CooldownDef).get(ctx.playerId)!;
+    if (ctx.input.isDown('fire') && ready(cd)) {
       const nx = pos.x + Math.cos(rot.angle) * PLAYER_RADIUS;
       const ny = pos.y + Math.sin(rot.angle) * PLAYER_RADIUS;
       spawnBullet(ctx, nx, ny, rot.angle);
@@ -63,7 +62,7 @@ export const inputSystem: SchedulableSystem<GameState> = {
           volume: 0.15,
         });
       }
-      ctx.fireCooldownMs = FIRE_COOLDOWN_MS;
+      trigger(cd);
     }
   },
 };

@@ -10,6 +10,7 @@ import {
   makeAudioSystem,
   WebAudioProvider,
 } from '@pierre/ecs/modules/audio';
+import { makeCooldownSystem } from '@pierre/ecs/modules/cooldown';
 import {
   createInput,
   Key,
@@ -171,7 +172,9 @@ export function start(container: HTMLElement): () => void {
     runAfter: ['movement'],
   });
   const collisionSystem = makeCollisionSystem();
+  const cooldownSystem = makeCooldownSystem<GameState>();
   const scheduler = new Scheduler<GameState>()
+    .add(cooldownSystem)
     .add(inputSystem)
     .add(enemySteerSystem)
     .add(motionSystem)
@@ -231,7 +234,6 @@ export function start(container: HTMLElement): () => void {
     dtMs: LOGIC_TICK_MS,
     elapsedMs: 0,
     events,
-    fireCooldownMs: 0,
     grid,
     input,
     isAudioClipReady: isClipReady,
