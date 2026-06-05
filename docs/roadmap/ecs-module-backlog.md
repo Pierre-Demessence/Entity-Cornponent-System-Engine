@@ -26,6 +26,7 @@ considered and rejected".
     - [`RenderableDef` extensions V3 — deferred](#renderabledef-extensions-v3--deferred)
     - [`ContinuousHashGrid2D(cellSize)` — deferred](#continuoushashgrid2dcellsize--deferred)
     - [`modules/input` event-mode variant — deferred](#modulesinput-event-mode-variant--deferred)
+    - [`modules/input` — pure `projectPointer` export — deferred](#modulesinput--pure-projectpointer-export--deferred)
   - [3D siblings — speculative](#3d-siblings--speculative)
   - [Rigid-body physics — speculative](#rigid-body-physics--speculative)
   - [Standard engine modules](#standard-engine-modules)
@@ -254,6 +255,47 @@ The honest split is: `createInput` for real-time, `EventInput` for
 turn-based. Promote per the engine's ≥2-real-consumer rule. Until
 then, the roguelike keeps its existing `src/ui/input.ts` mapping
 layer and DOM listeners — those are the right shape for that game.
+
+</details>
+
+---
+
+### `modules/input` — pure `projectPointer` export — deferred
+
+**Scope.** Export the DPI-aware client→canvas projection as a pure
+`projectPointer(ev, target) => { x, y }` so event-time pointer handlers
+can reuse it without instantiating the stateful `PointerProvider`.
+
+<details>
+<summary>Details</summary>
+
+**Trigger — MET (2 consumers, dual-cited 2026-07-15).** The projection
+logic ships, but only as the **module-private** `defaultProject`@
+`src/modules/input/pointer-provider.ts:140`; the public surface is
+`PointerProvider`, a stateful, tick-read `InputProvider` that owns its
+listeners and exposes `state.x/y`. breakout
+(`examples/breakout/src/main.ts:103`) and solitaire
+(`examples/solitaire/src/main.ts:146`) project at **event-time** inside
+click/move handlers and replicate `defaultProject`'s
+`(clientX/Y − rect) × (canvas.width / rect.width)` math verbatim — they
+cannot adopt the provider without a timing/architecture change
+(engine-gap-ledger B9). This is a **Build** (export a pure fn), not a
+mechanical adoption.
+
+**Probable shape.** Lift `defaultProject` to an exported
+`projectPointer(ev: { clientX: number; clientY: number }, target:
+HTMLCanvasElement) => { x: number; y: number }` and have
+`PointerProvider` call it internally. No new component; the provider's
+surface is unchanged.
+
+**Non-fits (verified).** tilemap (`examples/tilemap/src/main.ts:119`)
+layers zoom/pan on top → custom viewport project; space-invaders
+(`examples/space-invaders/src/main.ts:115`) does no DPI scaling (a
+half-screen decision). Neither would consume the helper.
+
+**Canon.** Every canvas game with mouse/touch input needs the same
+client→backing-store transform; exposing it as a pure fn is the minimal
+shared surface (vs. forcing the stateful provider on event-driven UIs).
 
 </details>
 
