@@ -55,6 +55,7 @@ considered and rejected".
   - [Gameplay \& utility modules — from the examples audit (2026-07-15)](#gameplay--utility-modules--from-the-examples-audit-2026-07-15)
     - [`modules/collision` V2 — reflection response — deferred](#modulescollision-v2--reflection-response--deferred)
     - [`modules/motion` — vector util (normalize / set-speed) — deferred](#modulesmotion--vector-util-normalize--set-speed--deferred)
+    - [`modules/motion` — boundary inset / per-entity size — deferred](#modulesmotion--boundary-inset--per-entity-size--deferred)
     - [`modules/spawner` — deferred](#modulesspawner--deferred)
     - [`modules/cooldown` — deferred](#modulescooldown--deferred)
     - [`modules/grid-movement` — deferred](#modulesgrid-movement--deferred)
@@ -825,6 +826,36 @@ component — these are math utilities co-located with the integrator.
 
 **Canon.** Every engine's `Vector2.normalized` / `.ClampMagnitude`
 (Unity), `Vector2.normalized()` (Godot), gl-matrix `vec2.normalize`.
+
+</details>
+
+### `modules/motion` — boundary inset / per-entity size — deferred
+
+**Scope.** Extend the shipped `VelocityIntegrationBoundary` so `clamp`
+can pin to an inset range `[inset, width−inset]` (or a per-entity
+half-extent) instead of only the playfield `[0, width]` point range.
+
+<details>
+<summary>Details</summary>
+
+**Trigger — MET (4 consumers).** The shipped `clamp` mode
+(`integrateBoundary`@`src/modules/motion/motion.ts:51`, `Bounds =
+{ width, height }`@:7) pins the entity's **origin point** to
+`[0, width] × [0, height]` — there is no inset or per-entity size. Full-
+playfield clampers (asteroids, top-down-shooter) adopt it as-is, but
+size/margin-aware clampers hand-roll their own bounded clamp: breakout
+paddle (`[half, width−half]`), frogger, local-pong paddles, and
+space-invaders cannon all need the sprite's half-width subtracted
+(engine-gap-ledger B4 split, 2026-07-15).
+
+**Probable shape.** Add an optional `inset?: number` (uniform) or
+`halfExtentOf?: (e) => { x, y }` to the `clamp` branch of
+`VelocityIntegrationBoundary`@`motion.ts:15`; the wrap branch is
+unaffected. No new component — it rides the existing `boundary` option.
+
+**Canon.** Every paddle/player-confine in arcade engines clamps to the
+sprite extent, not the raw playfield edge (Pong, Breakout, Arkanoid,
+Space Invaders cannon rails).
 
 </details>
 
