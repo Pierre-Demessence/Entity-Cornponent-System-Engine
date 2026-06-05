@@ -2,6 +2,7 @@ import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
 
 import { EcsWorld } from '@pierre/ecs';
+import { degToRad } from '@pierre/ecs/modules/math';
 
 import {
   BallTag,
@@ -33,7 +34,7 @@ export const BALL_SPEED_START = 320;
 export const BALL_SPEED_MAX = 660;
 export const BALL_SPEED_STEP = 8;
 /** Steepest launch/bounce angle off vertical, keeps the ball from near-horizontal stalls. */
-export const BALL_MAX_BOUNCE = (60 * Math.PI) / 180;
+export const BALL_MAX_BOUNCE = degToRad(60);
 
 export const BRICK_ROWS = 8;
 export const BRICK_COLS = 14;

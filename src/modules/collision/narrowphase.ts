@@ -9,6 +9,8 @@
  * - Circles: centre is `{x,y}`; radius is scalar.
  */
 
+import { clamp } from '../math';
+
 export interface Vec2 {
   x: number;
   y: number;
@@ -39,8 +41,8 @@ export function circleVsCircle(pa: Vec2, ra: number, pb: Vec2, rb: number): bool
 
 /** Circle–AABB overlap: closest point on the AABB to the circle centre lies within the radius. */
 export function aabbVsCircle(a: Aabb, c: Vec2, r: number): boolean {
-  const cx = Math.max(a.x, Math.min(c.x, a.x + a.w));
-  const cy = Math.max(a.y, Math.min(c.y, a.y + a.h));
+  const cx = clamp(c.x, a.x, a.x + a.w);
+  const cy = clamp(c.y, a.y, a.y + a.h);
   const dx = c.x - cx;
   const dy = c.y - cy;
   return dx * dx + dy * dy <= r * r;

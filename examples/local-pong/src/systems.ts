@@ -4,6 +4,7 @@ import type { PlayerId } from './components';
 import type { GameState } from './game';
 
 import { aabbVsAabb } from '@pierre/ecs/modules/collision';
+import { clamp } from '@pierre/ecs/modules/math';
 
 import { BallDef, PaddleDef, PaddleTag, Player, PositionDef, SizeDef, VelocityDef } from './components';
 import {
@@ -22,10 +23,6 @@ import {
 } from './game';
 
 const FIXED_DT_S = LOGIC_TICK_MS / 1000;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
 
 function scorePoint(ctx: GameState, scorer: PlayerId): void {
   ctx.scores[scorer] += 1;

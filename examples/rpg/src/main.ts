@@ -6,6 +6,7 @@ import { EcsWorld } from '@pierre/ecs';
 import { AssetLoader, imageAsset, textAsset } from '@pierre/ecs/modules/asset-loader';
 import { CameraDef, makeFollowCameraSystem } from '@pierre/ecs/modules/camera';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { clamp } from '@pierre/ecs/modules/math';
 import {
   Canvas2DRenderer,
   RenderableDef,
@@ -298,10 +299,6 @@ export function start(container: HTMLElement): () => void {
     abort.abort();
     container.innerHTML = '';
   };
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return value < min ? min : value > max ? max : value;
 }
 
 /** Spiral out from the map centre to the nearest standable tile. */

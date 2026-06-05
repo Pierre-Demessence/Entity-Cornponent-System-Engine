@@ -6,6 +6,7 @@ import type { Spawner } from '@pierre/ecs/modules/spawner';
 
 import { EcsWorld } from '@pierre/ecs';
 import { AudioSourceDef } from '@pierre/ecs/modules/audio';
+import { clamp01, lerp } from '@pierre/ecs/modules/math';
 import { OpacityDef, RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
 import { cellOfPoint } from '@pierre/ecs/modules/spatial';
 import { resetSpawner } from '@pierre/ecs/modules/spawner';
@@ -205,8 +206,8 @@ export function spawnEnemyAtEdge(state: GameState): void {
  * postmortem.
  */
 export function currentSpawnInterval(elapsedMs: number): number {
-  const t = Math.min(1, elapsedMs / ENEMY_SPAWN_RAMP_MS);
-  return ENEMY_SPAWN_INTERVAL_MS + (ENEMY_SPAWN_MIN_MS - ENEMY_SPAWN_INTERVAL_MS) * t;
+  const t = clamp01(elapsedMs / ENEMY_SPAWN_RAMP_MS);
+  return lerp(ENEMY_SPAWN_INTERVAL_MS, ENEMY_SPAWN_MIN_MS, t);
 }
 
 export function resetGame(state: GameState): void {

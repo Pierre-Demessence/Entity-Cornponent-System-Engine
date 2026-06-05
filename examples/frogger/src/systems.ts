@@ -4,6 +4,7 @@ import type { Aabb } from '@pierre/ecs/modules/collision';
 import type { Facing, GameState } from './game';
 
 import { aabbVsAabb } from '@pierre/ecs/modules/collision';
+import { clamp } from '@pierre/ecs/modules/math';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 
 import {
@@ -61,7 +62,7 @@ function hop(ctx: GameState, dir: Facing): void {
   }
   const pos = ctx.world.getStore(PositionDef).get(ctx.frogId!)!;
   pos.x += dir === 'left' ? -TILE : TILE;
-  pos.x = Math.max(0, Math.min(SCREEN_W - FROG, pos.x));
+  pos.x = clamp(pos.x, 0, SCREEN_W - FROG);
 }
 
 export const inputSystem: SchedulableSystem<GameState> = {

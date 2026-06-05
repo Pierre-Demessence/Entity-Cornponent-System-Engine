@@ -5,6 +5,7 @@ import type { GameState } from './game';
 
 import { aabbVsAabb } from '@pierre/ecs/modules/collision';
 import { CooldownDef, ready, trigger } from '@pierre/ecs/modules/cooldown';
+import { clamp } from '@pierre/ecs/modules/math';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 import { tickSpawner } from '@pierre/ecs/modules/spawner';
 
@@ -66,7 +67,7 @@ export const inputSystem: SchedulableSystem<GameState> = {
     if (dir !== 0)
       ctx.started = true;
     pos.x += dir * PLAYER_SPEED * (ctx.dtMs / 1000);
-    pos.x = Math.max(SIDE_MARGIN, Math.min(SCREEN_W - SIDE_MARGIN - PLAYER_W, pos.x));
+    pos.x = clamp(pos.x, SIDE_MARGIN, SCREEN_W - SIDE_MARGIN - PLAYER_W);
 
     // Blink the ship while the post-hit grace window is active.
     const cd = ctx.world.getStore(CooldownDef).get(ctx.playerId);

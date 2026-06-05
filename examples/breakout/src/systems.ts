@@ -2,6 +2,7 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from './game';
 
+import { clamp } from '@pierre/ecs/modules/math';
 import { makeVelocityIntegrationSystem, scaleToSpeed } from '@pierre/ecs/modules/motion';
 
 import { BrickDef, BrickTag, PositionDef, RenderableDef, VelocityDef } from './components';
@@ -55,7 +56,7 @@ export const paddleInputSystem: SchedulableSystem<GameState> = {
     else if (ctx.pointerX != null) {
       pos.x = ctx.pointerX - ctx.paddleW / 2;
     }
-    pos.x = Math.max(minX, Math.min(maxX, pos.x));
+    pos.x = clamp(pos.x, minX, maxX);
   },
 };
 
@@ -139,7 +140,7 @@ export const paddleBounceSystem: SchedulableSystem<GameState> = {
 
     pos.y = top - BALL_R - 0.5;
     const offset = (pos.x - (left + ctx.paddleW / 2)) / (ctx.paddleW / 2);
-    const angle = Math.max(-1, Math.min(1, offset)) * BALL_MAX_BOUNCE;
+    const angle = clamp(offset, -1, 1) * BALL_MAX_BOUNCE;
     setBallSpeed(ctx, Math.sin(angle), -Math.cos(angle));
   },
 };

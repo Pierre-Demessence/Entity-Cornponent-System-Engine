@@ -54,6 +54,9 @@ aabbVsAabbSwept(a: Aabb, motionA: Vec2, b: Aabb): SweptHit
 - `aabbVsAabbSwept` returns `{ hit, tEntry, normal }`. `tEntry ∈ [0,1]`
   is the fraction of `motionA` at first contact; `normal` is the unit
   vector on `b`'s surface at contact.
+- `aabbVsCircle` clamps the circle centre onto the box with `clamp`
+  from [`modules/math`](../math/README.md) — this module's only
+  cross-module dependency.
 
 ## Trigger system
 

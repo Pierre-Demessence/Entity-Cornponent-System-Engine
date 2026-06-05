@@ -3,6 +3,7 @@ import type { SchedulableSystem } from '@pierre/ecs';
 import type { GameState } from './game';
 
 import { aabbVsAabb } from '@pierre/ecs/modules/collision';
+import { clamp } from '@pierre/ecs/modules/math';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 import { tickSpawner } from '@pierre/ecs/modules/spawner';
 
@@ -43,7 +44,7 @@ export const thrustSystem: SchedulableSystem<GameState> = {
       ctx.started = true;
 
     vel.vy += (GRAVITY + (ctx.thrusting ? THRUST_ACCEL : 0)) * dt;
-    vel.vy = Math.max(MIN_VY, Math.min(MAX_VY, vel.vy));
+    vel.vy = clamp(vel.vy, MIN_VY, MAX_VY);
   },
 };
 

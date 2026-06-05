@@ -3,6 +3,7 @@ import type { TmxMap } from '@pierre/ecs/modules/tmx';
 
 import { EcsWorld } from '@pierre/ecs';
 import { AssetLoader, imageAsset, textAsset } from '@pierre/ecs/modules/asset-loader';
+import { clamp } from '@pierre/ecs/modules/math';
 import {
   Canvas2DRenderer,
   RenderableDef,
@@ -121,7 +122,7 @@ function attachPanZoom(viewport: HTMLElement, canvas: HTMLCanvasElement, signal:
     const worldX = (px - tx) / zoom;
     const worldY = (py - ty) / zoom;
     const factor = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
-    zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
+    zoom = clamp(zoom * factor, MIN_ZOOM, MAX_ZOOM);
     tx = px - worldX * zoom;
     ty = py - worldY * zoom;
     apply();

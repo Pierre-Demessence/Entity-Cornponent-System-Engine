@@ -4,6 +4,7 @@ import type { Spawner } from '@pierre/ecs/modules/spawner';
 
 import { EcsWorld } from '@pierre/ecs';
 import { LifetimeDef, makeLifetime } from '@pierre/ecs/modules/lifetime';
+import { clamp01, inverseLerp, lerp } from '@pierre/ecs/modules/math';
 import { resetSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
@@ -201,8 +202,8 @@ export function explode(state: GameState, x: number, y: number): void {
 
 /** Obstacle cadence tightens as the run speeds up, with per-spawn jitter. */
 export function nextObstacleIntervalMs(scrollSpeed: number): number {
-  const t = (scrollSpeed - 300) / (SCROLL_MAX - 300);
-  const base = SPAWN_MS_START + (SPAWN_MS_MIN - SPAWN_MS_START) * Math.max(0, Math.min(1, t));
+  const t = clamp01(inverseLerp(300, SCROLL_MAX, scrollSpeed));
+  const base = lerp(SPAWN_MS_START, SPAWN_MS_MIN, t);
   return base + Math.random() * 400;
 }
 

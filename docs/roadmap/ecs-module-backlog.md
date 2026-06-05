@@ -56,7 +56,7 @@ considered and rejected".
   - [Gameplay \& utility modules — from the examples audit (2026-07-15)](#gameplay--utility-modules--from-the-examples-audit-2026-07-15)
     - [`modules/collision` V2 — reflection response — deferred](#modulescollision-v2--reflection-response--deferred)
     - [`modules/motion` — vector util (normalize / set-speed) — ✅ shipped 2026-07-15](#modulesmotion--vector-util-normalize--set-speed---shipped-2026-07-15)
-    - [`modules/motion` — boundary inset / per-entity size — deferred](#modulesmotion--boundary-inset--per-entity-size--deferred)
+    - [`modules/math` — ✅ shipped 2026-07-18](#modulesmath---shipped-2026-07-18)
     - [`modules/timer` — ✅ shipped 2026-07-16](#modulestimer---shipped-2026-07-16)
     - [`modules/spawner` — ✅ shipped 2026-07-17](#modulesspawner---shipped-2026-07-17)
     - [`modules/cooldown` — ✅ shipped 2026-07-16](#modulescooldown---shipped-2026-07-16)
@@ -858,6 +858,22 @@ see [src/modules/motion/README.md](https://github.com/Pierre-Demessence/Entity-C
 and plan [../plans/done/modules-motion-vec.md](../plans/done/modules-motion-vec.md).
 Migrated breakout + top-down-shooter (Local→Engine migration #5).
 
+### `modules/math` — ✅ shipped (2026-07-18)
+
+**Shipped as `modules/math`, reshaped from the boundary-inset row below.**
+A dual-side check killed the boundary-inset framing: none of the
+size-aware clampers route their clamped entity through
+`makeVelocityIntegrationSystem`, so a boundary-mode extension would have
+**0** consumers. Shipped instead as a pure scalar module —
+`clamp`/`clamp01`/`lerp`/`inverseLerp`/`remap`/`smoothstep`/`wrap`/
+`pingPong`/`lerpAngle`/`degToRad`/`radToDeg`/`approximately`@[`math/math.ts`](../../src/modules/math/math.ts)
+— a module (not core; core stays ECS-structural), with `modules/collision`
+documenting the one cross-module dep (closest-point `clamp`, the
+`cooldown`→`timer` pattern). 8 example clamp sites migrated (local-pong &
+rpg drop private `clamp`s), the #7 spawner ramps refactored to
+`lerp`/`remap`. `moveToward`→motion/`vec` (vector form); `sign` native.
+The original boundary-inset analysis is kept below as the reshape record.
+
 ### `modules/motion` — boundary inset / per-entity size — deferred
 
 **Scope.** Extend the shipped `VelocityIntegrationBoundary` so `clamp`
@@ -1179,6 +1195,7 @@ When any of the below becomes true, open a plan for the matching module.
 | Second local-multiplayer example beyond local-pong | Local-multiplayer player-slot helper |
 | **MET** — 3rd continuous→cell projection consumer | `ContinuousHashGrid2D` |
 | **MET** — bounce/reflection response in 3 consumers | `modules/collision` V2 (reflection) |
+| ✅ **SHIPPED 2026-07-18** — scalar math: clamp + interpolation (9 consumers) | `modules/math` |
 | ✅ **SHIPPED 2026-07-17** — timed spawn cadence (4 consumers) | `modules/spawner` |
 | ✅ **SHIPPED 2026-07-16** — cooldown / grace timer (3 poll/trigger consumers) | `modules/cooldown` (+ `modules/timer` core) |
 | **MET** — discrete grid movement in 3 consumers | `modules/grid-movement` |
