@@ -55,7 +55,7 @@ considered and rejected".
     - [Local-multiplayer player-slot / input-owner helper — speculative](#local-multiplayer-player-slot--input-owner-helper--speculative)
   - [Gameplay \& utility modules — from the examples audit (2026-07-15)](#gameplay--utility-modules--from-the-examples-audit-2026-07-15)
     - [`modules/collision` V2 — reflection response — deferred](#modulescollision-v2--reflection-response--deferred)
-    - [`modules/motion` — vector util (normalize / set-speed) — deferred](#modulesmotion--vector-util-normalize--set-speed--deferred)
+    - [`modules/motion` — vector util (normalize / set-speed) — ✅ shipped 2026-07-15](#modulesmotion--vector-util-normalize--set-speed---shipped-2026-07-15)
     - [`modules/motion` — boundary inset / per-entity size — deferred](#modulesmotion--boundary-inset--per-entity-size--deferred)
     - [`modules/spawner` — deferred](#modulesspawner--deferred)
     - [`modules/cooldown` — deferred](#modulescooldown--deferred)
@@ -849,27 +849,13 @@ normal. Pairs with the shipped `aabbVsCircle` / `aabbVsAabb` tests.
 
 </details>
 
-### `modules/motion` — vector util (normalize / set-speed) — deferred
+### `modules/motion` — vector util (normalize / set-speed) — ✅ shipped 2026-07-15
 
-**Scope.** A small vector helper to rescale a velocity to a target
-magnitude (`hypot`-normalize + multiply), extending the shipped
-`modules/motion`.
-
-<details>
-<summary>Details</summary>
-
-**Trigger — MET (2 consumers).** breakout and top-down-shooter both
-hand-roll "normalize this velocity then set it to speed S"
-(engine-gap-ledger B13).
-
-**Probable shape.** `setSpeed(vx, vy, speed) => { vx, vy }` /
-`normalize(vx, vy)` pure helpers exported from `modules/motion`. No new
-component — these are math utilities co-located with the integrator.
-
-**Canon.** Every engine's `Vector2.normalized` / `.ClampMagnitude`
-(Unity), `Vector2.normalized()` (Godot), gl-matrix `vec2.normalize`.
-
-</details>
+Shipped `normalize` + `scaleToSpeed`@
+[src/modules/motion/vec.ts](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/motion/vec.ts);
+see [src/modules/motion/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/motion/README.md#vector-helpers)
+and plan [../plans/done/modules-motion-vec.md](../plans/done/modules-motion-vec.md).
+Migrated breakout + top-down-shooter (Local→Engine migration #5).
 
 ### `modules/motion` — boundary inset / per-entity size — deferred
 
@@ -1144,7 +1130,6 @@ When any of the below becomes true, open a plan for the matching module.
 | Second local-multiplayer example beyond local-pong | Local-multiplayer player-slot helper |
 | **MET** — 3rd continuous→cell projection consumer | `ContinuousHashGrid2D` |
 | **MET** — bounce/reflection response in 3 consumers | `modules/collision` V2 (reflection) |
-| **MET** — vector normalize/set-speed in 2 consumers | `modules/motion` vector util |
 | **MET** — timed spawn cadence in 4 consumers | `modules/spawner` |
 | **MET** — cooldown / grace timer in 4 consumers | `modules/cooldown` |
 | **MET** — discrete grid movement in 3 consumers | `modules/grid-movement` |

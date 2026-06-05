@@ -2,6 +2,8 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
+import { scaleToSpeed } from '@pierre/ecs/modules/motion';
+
 import { PositionDef, RotationDef, VelocityDef } from '../components';
 import {
   FIRE_COOLDOWN_MS,
@@ -41,15 +43,9 @@ export const inputSystem: SchedulableSystem<GameState> = {
       dy -= 1;
     if (ctx.input.isDown('down'))
       dy += 1;
-    const len = Math.hypot(dx, dy);
-    if (len > 0) {
-      vel.vx = (dx / len) * PLAYER_SPEED;
-      vel.vy = (dy / len) * PLAYER_SPEED;
-    }
-    else {
-      vel.vx = 0;
-      vel.vy = 0;
-    }
+    const move = scaleToSpeed(dx, dy, PLAYER_SPEED);
+    vel.vx = move.x;
+    vel.vy = move.y;
 
     const ax = ctx.pointer.x - pos.x;
     const ay = ctx.pointer.y - pos.y;

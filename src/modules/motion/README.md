@@ -67,6 +67,37 @@ const motion = makeVelocityIntegrationSystem<GameTickCtx>({
 scheduler.add(motion);
 ```
 
+## Vector helpers
+
+Pure, allocation-returning 2D vector utilities. No ECS coupling — they
+operate on bare `(x, y)` number pairs so they work for velocities,
+steering deltas, input axes, or any direction vector.
+
+```ts
+interface Vec2 { x: number; y: number }
+
+function normalize(x: number, y: number): Vec2;            // unit vector; (0,0) → (0,0)
+function scaleToSpeed(x: number, y: number, speed: number): Vec2; // length === speed; (0,0) → (0,0)
+```
+
+`scaleToSpeed` is the canonical "normalize then multiply" used to drive a
+body at a fixed speed from an arbitrary direction — a WASD input axis
+(diagonals don't go faster), a seek/steer delta toward a target, or a
+reflected ball velocity. A zero-length input has no direction, so both
+helpers return `{ x: 0, y: 0 }` instead of `NaN`; supply a fallback
+direction yourself if you need one.
+
+Canon: Unity `Vector2.normalized`, Godot `Vector2.normalized()` /
+`limit_length()`, Bevy `Vec2::normalize_or_zero`.
+
+```ts
+import { scaleToSpeed } from '@pierre/ecs/modules/motion';
+
+const v = scaleToSpeed(dx, dy, PLAYER_SPEED);
+vel.vx = v.x;
+vel.vy = v.y;
+```
+
 ## Scope
 
 - Depends on `@pierre/ecs/modules/transform` (`PositionDef`, `VelocityDef`).

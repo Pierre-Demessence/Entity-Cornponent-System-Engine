@@ -2,7 +2,7 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from './game';
 
-import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
+import { makeVelocityIntegrationSystem, scaleToSpeed } from '@pierre/ecs/modules/motion';
 
 import { BrickDef, BrickTag, PositionDef, RenderableDef, VelocityDef } from './components';
 import {
@@ -26,10 +26,10 @@ import {
 
 /** Rescale the ball's velocity vector to the current target speed. */
 function setBallSpeed(state: GameState, vx: number, vy: number): void {
-  const mag = Math.hypot(vx, vy) || 1;
   const ball = state.world.getStore(VelocityDef).get(state.ballId!)!;
-  ball.vx = (vx / mag) * state.speed;
-  ball.vy = (vy / mag) * state.speed;
+  const v = scaleToSpeed(vx, vy, state.speed);
+  ball.vx = v.x;
+  ball.vy = v.y;
 }
 
 export const paddleInputSystem: SchedulableSystem<GameState> = {
