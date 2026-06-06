@@ -63,6 +63,7 @@ function makeRecorder(): Recorder {
   }
 
   const ctx = {
+    canvas: { height: 600, width: 800 } as HTMLCanvasElement,
     closePath(): void { pendingPathClosed = true; },
     get fillStyle(): string { return fillStyle; },
     set fillStyle(v: string) { fillStyle = v; },
@@ -970,5 +971,127 @@ describe('canvas2DRenderer sprite rendering', () => {
     renderer.render({ ctx2d: rec.ctx2d, world });
 
     expect(drawCalls(rec.calls)).toEqual([]);
+  });
+});
+
+describe('canvas2DRenderer camera view + cull', () => {
+  let world: EcsWorld;
+  let renderer: Canvas2DRenderer;
+
+  beforeEach(() => {
+    world = new EcsWorld();
+    world.registerComponent(PositionDef);
+    world.registerComponent(RenderableDef);
+    renderer = new Canvas2DRenderer();
+  });
+
+  function addRect(x: number, y: number, w = 10, h = 10): void {
+    const id = world.createEntity();
+    world.getStore(PositionDef).set(id, { x, y });
+    world.getStore(RenderableDef).set(id, { fill: '#fff', h, kind: 'rect', w });
+  }
+
+  it('applies the view transform to draw coords (translate + zoom)', () => {
+    addRect(100, 50);
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, view: { x: 90, y: 40, zoom: 2 }, world });
+    // screen = (world − viewTopLeft) · zoom = (100−90, 50−40)·2 = (20, 20).
+    expect(drawCalls(rec.calls)).toEqual([
+      { fillStyle: '#fff', h: 10, op: 'fillRect', w: 10, x: 20, y: 20 },
+    ]);
+  });
+
+  it('defaults zoom to 1 (translate only)', () => {
+    addRect(100, 50);
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, view: { x: 10, y: 5 }, world });
+    expect(drawCalls(rec.calls)).toEqual([
+      { fillStyle: '#fff', h: 10, op: 'fillRect', w: 10, x: 90, y: 45 },
+    ]);
+  });
+
+  it('culls a rect fully outside the view rect', () => {
+    addRect(5000, 5000); // canvas is 800×600 at view origin (0,0), zoom 1
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, view: { x: 0, y: 0 }, world });
+    expect(drawCalls(rec.calls)).toEqual([]);
+  });
+
+  it('keeps a rect straddling the view edge', () => {
+    addRect(795, 10); // right edge at 805, view maxX = 800 → overlaps
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, view: { x: 0, y: 0 }, world });
+    expect(drawCalls(rec.calls)).toHaveLength(1);
+  });
+
+  it('never culls text or sprite renderables (no reliable bounds)', () => {
+    const t = world.createEntity();
+    world.getStore(PositionDef).set(t, { x: 9000, y: 9000 });
+    world.getStore(RenderableDef).set(t, { fill: '#fff', font: '10px sans', kind: 'text', text: 'hi' });
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, view: { x: 0, y: 0 }, world });
+    expect(drawCalls(rec.calls)).toHaveLength(1);
+  });
+
+  it('culls under zoom using the zoomed view rect', () => {
+    // zoom 2 halves the visible world span: view sees [0,400]×[0,300].
+    addRect(450, 10); // outside the zoomed view rect
+    addRect(100, 10); // inside
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, view: { x: 0, y: 0, zoom: 2 }, world });
+    expect(drawCalls(rec.calls)).toHaveLength(1);
+  });
+
+  it('culls a center-anchored rect by its centered AABB', () => {
+    const inside = world.createEntity();
+    world.getStore(PositionDef).set(inside, { x: 2, y: 10 });
+    world.getStore(RenderableDef).set(inside, { anchor: 'center', fill: '#fff', h: 10, kind: 'rect', w: 10 });
+    const outside = world.createEntity();
+    // centre at x=-20, half-width 5 → right edge −15 < view minX 0 → culled.
+    world.getStore(PositionDef).set(outside, { x: -20, y: 10 });
+    world.getStore(RenderableDef).set(outside, { anchor: 'center', fill: '#0f0', h: 10, kind: 'rect', w: 10 });
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, view: { x: 0, y: 0 }, world });
+    expect(drawCalls(rec.calls)).toHaveLength(1);
+  });
+
+  it('culls a circle by its radius AABB (center + top-left anchors)', () => {
+    const inside = world.createEntity();
+    world.getStore(PositionDef).set(inside, { x: 20, y: 20 });
+    world.getStore(RenderableDef).set(inside, { fill: '#fff', kind: 'circle', radius: 6 });
+    const outside = world.createEntity();
+    // center anchor at x=-10, r=6 → right edge −4 < 0 → culled.
+    world.getStore(PositionDef).set(outside, { x: -10, y: 20 });
+    world.getStore(RenderableDef).set(outside, { fill: '#0f0', kind: 'circle', radius: 6 });
+    const tl = world.createEntity();
+    // top-left anchor at x=790, centre x=796, r=6 → left edge 790 < maxX 800 → kept.
+    world.getStore(PositionDef).set(tl, { x: 790, y: 20 });
+    world.getStore(RenderableDef).set(tl, { anchor: 'top-left', fill: '#00f', kind: 'circle', radius: 6 });
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, view: { x: 0, y: 0 }, world });
+    expect(drawCalls(rec.calls)).toHaveLength(2);
+  });
+
+  it('draws normally (no transform, no cull) when view is absent', () => {
+    addRect(5000, 5000);
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, world });
+    expect(drawCalls(rec.calls)).toEqual([
+      { fillStyle: '#fff', h: 10, op: 'fillRect', w: 10, x: 5000, y: 5000 },
+    ]);
+  });
+
+  it('culls within the ordered (RenderOrderDef) path too', () => {
+    world.registerComponent(RenderOrderDef);
+    addRect(100, 10); // visible
+    const off = world.createEntity();
+    world.getStore(PositionDef).set(off, { x: 5000, y: 5000 });
+    world.getStore(RenderableDef).set(off, { fill: '#0f0', h: 10, kind: 'rect', w: 10 });
+    world.getStore(RenderOrderDef).set(off, { value: 1 });
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, view: { x: 0, y: 0 }, world });
+    expect(drawCalls(rec.calls)).toEqual([
+      { fillStyle: '#fff', h: 10, op: 'fillRect', w: 10, x: 100, y: 10 },
+    ]);
   });
 });

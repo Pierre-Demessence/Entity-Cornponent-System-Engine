@@ -1,6 +1,7 @@
 export {
   type Canvas2DRenderContext,
   Canvas2DRenderer,
+  type RenderView,
   type ResolvedSpriteFrame,
   type SpriteFrameSource,
 } from './canvas2d-renderer';

@@ -36,8 +36,16 @@ const RenderableDef: ComponentDef<Renderable>;
 const OpacityDef: ComponentDef<{ value: number }>;         // 0..1
 const RenderOrderDef: ComponentDef<{ value: number }>;     // ascending = later = on top
 
+// Optional camera transform on the render context (see "Camera view" below)
+interface RenderView { x: number; y: number; zoom?: number }
+
 // Renderer: draws every entity with Position + Renderable
-class Canvas2DRenderer implements Renderer<{ ctx2d: CanvasRenderingContext2D; world: EcsWorld }> {
+class Canvas2DRenderer implements Renderer<{
+  ctx2d: CanvasRenderingContext2D;
+  world: EcsWorld;
+  atlases?: SpriteFrameSource;
+  view?: RenderView;
+}> {
   render(ctx): void;
 }
 ```
@@ -137,6 +145,28 @@ when neither `RotationDef`, `ScaleDef`, `OpacityDef`, nor
 `blendMode` apply to an entity, the draw path is byte-identical to V1
 (no per-entity `save`/`restore`).
 
+## Camera view + culling
+
+Pass an optional `view` on the render context to draw the whole scene through a
+camera transform: `(x, y)` is the world coordinate at the viewport's top-left
+and `zoom` (default 1) magnifies, so `screen = (world − {x, y}) · zoom`. With a
+`view` set, entities whose world AABB falls outside the visible rect are
+**culled** before drawing — cheap off-screen rejection for large scenes.
+
+```ts
+renderer.render({ ctx2d, world, view: { x: camX, y: camY, zoom: 2 } });
+```
+
+- **Decoupled from `modules/camera`.** The renderer takes a plain `view`, never
+  importing the camera module. Drive it from a `Camera` with
+  `cameraToView(cam)` (see [`modules/camera`](../camera/README.md)), or from any
+  bespoke pan/zoom state.
+- **Cull bounds.** Only `rect` and `circle` have a cheap reliable world AABB;
+  `text`, `sprite`, and `polygon` are **never culled** (drawn regardless of the
+  view rect).
+- **No `view` → no transform, no cull** — fully back-compatible with callers that
+  bake their own transform or draw in raw world/screen coords.
+
 ## Validation
 
 - `RenderableDef` declares `requires: ['position']` — registering it
@@ -158,8 +188,8 @@ Deferred (see `docs/roadmap/ecs-module-backlog.md`):
 - Sprites / textures — needs an asset-loader module first.
 - Tilemap kind — Path-A (wait for a second consumer).
 - Canvas filters (`ctx.filter`) — Path-A.
-- Snake migration — needs a camera zoom/transform (`modules/camera`
-  V2).
+- Snake migration — push the cells→pixels scale onto a `CameraDef` `zoom`
+  (the `view` hook now exists; snake just needs to adopt it).
 
 Notes:
 
@@ -175,4 +205,6 @@ Consumers handle:
 
 - Canvas clear / background
 - HUD, score, game-over screens
-- Pixel scaling, viewport transforms, camera (reserved for `modules/camera`)
+- Pixel scaling and DPI. The **camera transform + off-screen cull** ship here
+  via the optional `view` (see [Camera view + culling](#camera-view--culling));
+  drive it from [`modules/camera`](../camera/README.md) or bespoke pan/zoom.

@@ -21,7 +21,7 @@ considered and rejected".
     - [Engine extension rule-book](#engine-extension-rule-book)
   - [Deferred 2D modules](#deferred-2d-modules)
     - [`modules/camera` V1 — ✅ shipped 2026-04-21](#modulescamera-v1---shipped-2026-04-21)
-    - [`modules/camera` V2 — deferred](#modulescamera-v2--deferred)
+    - [`modules/camera` V2 — ✅ shipped 2026-07-18](#modulescamera-v2---shipped-2026-07-18)
     - [`RenderableDef` extensions V2 — ✅ shipped 2026-04-22](#renderabledef-extensions-v2---shipped-2026-04-22)
     - [`RenderableDef` extensions V3 — deferred](#renderabledef-extensions-v3--deferred)
     - [`ContinuousHashGrid2D(cellSize)` — deferred](#continuoushashgrid2dcellsize--deferred)
@@ -121,35 +121,35 @@ See
 and plan
 [../plans/done/ecs-camera-module.md](../plans/done/ecs-camera-module.md).
 
-### `modules/camera` V2 — deferred
+### `modules/camera` V2 — ✅ shipped (2026-07-18)
 
-**Scope.** Features deliberately left out of V1: zoom, rotation,
-deadzone, clamping, parallax, pixel/tile helpers, an exposed **view
-rect** (for off-screen culling), and **renderer camera-consumption**
-(world rendering goes through the camera transform instead of the
-renderer ignoring `CameraDef`).
+**Shipped** canon-complete Godot `Camera2D` parity (minus rotation): zoom,
+offset, limits (bounds clamp), follow smoothing + drag-margin deadzone,
+zoom-aware `worldToView`/`viewToWorld`, `cameraViewRect`, `cameraToView`,
+`clampCameraToLimits`, `makeCamera`@[`camera/camera.ts`](../../src/modules/camera/camera.ts).
+The renderer gained an optional `view` transform + off-screen view-rect cull
+(`Canvas2DRenderContext.view`@[`render-canvas2d/canvas2d-renderer.ts`](../../src/modules/render-canvas2d/canvas2d-renderer.ts)),
+**decoupled** — it consumes a plain `{x,y,zoom?}` and never imports `camera`
+(drive it via `cameraToView(cam)`). Migrated rpg (smooth follow + limits, drops
+its hand-rolled offset clamp + manual `translate`; the live per-entity **cull**
+consumer) and tilemap (adopts `CameraDef` for pan/zoom; bakes the static
+10k-tile map to one offscreen bitmap drawn through the camera transform — the
+canonical static-tilemap technique, seam-free at fractional zoom; mouse-pick via
+the zoom-aware `viewToWorld`). Built canon-first per
+[extending-the-engine](../extending-the-engine.md#canon-complete-by-default),
+not consumer-gated.
 
 <details>
-<summary>Details</summary>
+<summary>Still deferred (post-V2)</summary>
 
-**Trigger.** Second consumer that needs any of these. Today only the
-roguelike uses the camera and it has none of these requirements. The
-snake ↔ `modules/render-canvas2d` migration is also blocked on V2
-(needs zoom to push the `cells → pixels` scale onto the camera
-instead of baking it into every renderable).
-
-**Rationale for deferral.** Each feature pays a real cost — zoom
-invalidates viewport-space assumptions in the renderer, clamping
-demands a world-bounds concept that doesn't exist in the core, parallax
-adds a layer model, rotation adds a matrix-math hot path. A real
-consumer (plus the canon that already pins each shape) is how each
-lands.
-
-**Renderer camera-consume + cull — MET (2026-07-15).** Two consumers
-(rpg, tilemap) run a follow-camera then *still* manually
-`ctx2d.translate(...)` because `Canvas2DRenderer` ignores `CameraDef`
-(engine-gap-ledger). The same exposed view-rect feeds off-screen render
-culling (tilemap, audit B1). Both land with V2.
+- **Rotation** — Godot `Camera2D.rotation`. A rotated view needs a full affine
+  transform + a conservative rotated-AABB cull, and 2D top-down/platformers
+  rarely rotate the camera. Add when a consumer needs it.
+- **Parallax layers** — a layer/scroll-factor model; its own follow-up.
+- **Pixel/tile helpers** — stay in app code (DOM/canvas-specific).
+- snake ↔ `render-canvas2d`: the `view`/zoom hook now exists; snake just needs
+  to adopt a `CameraDef` zoom instead of baking the cells→pixels scale into
+  every renderable.
 
 </details>
 
@@ -1201,7 +1201,7 @@ When any of the below becomes true, open a plan for the matching module.
 | **MET** — discrete grid movement in 3 consumers | `modules/grid-movement` |
 | **MET** — follow/carrier attach in 3 consumers | `modules/attach` |
 | **MET** — FX bursts in 4 consumers | `modules/particles` |
-| **MET** — renderer camera-consume / off-screen cull in 2 consumers | `modules/camera` V2 |
+| ✅ **SHIPPED 2026-07-18** — renderer camera-consume + off-screen cull (rpg, tilemap) | `modules/camera` V2 |
 | **MET** — screen-space HUD/overlay in 2 consumers | `RenderableDef` V3 overlay |
 | **MET** — 2nd authored tile-grid (auto-spawn) | `modules/tilemap` |
 | Rhythm/timing prototype beyond `examples/rhythm` | `modules/rhythm` (speculative) |

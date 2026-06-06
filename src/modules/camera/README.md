@@ -1,22 +1,46 @@
 # `@pierre/ecs/modules/camera`
 
-2D camera component, follow system, and world↔view transforms. Canon
-pattern: Bevy `Camera2dBundle`, Godot `Camera2D`, Phaser `Cameras`,
-Unity `Camera` (orthographic 2D).
+2D camera component, follow system, and world↔view transforms, modelled on
+Godot `Camera2D` (zoom, offset, limits, smoothing, drag-margin deadzone). Canon
+pattern: Bevy `Camera2dBundle`, Godot `Camera2D`, Phaser `Cameras`, Unity
+`Camera` (orthographic 2D).
 
 ## API
 
 ```ts
 interface Camera {
-  x: number;
+  x: number; // anchor centre, world coords
   y: number;
-  viewportW: number;
+  viewportW: number; // viewport size, screen pixels
   viewportH: number;
+  zoom: number; // magnification; screen = (world − topLeft) · zoom
+  offsetX: number; // view shift from the anchor (Godot Camera2D.offset)
+  offsetY: number;
+  limitLeft: number; // world rect the view never shows past (Godot limit_*)
+  limitTop: number;
+  limitRight: number;
+  limitBottom: number;
 }
 
 const CameraDef: ComponentDef<Camera>;
+const CAMERA_NO_LIMIT: number; // large finite sentinel (JSON-safe, unlike Infinity)
 
-interface CameraFollowTickCtx { world: EcsWorld }
+// Construct with canonical defaults (zoom 1, no offset, no limits):
+function makeCamera(options: {
+  x: number; y: number; viewportW: number; viewportH: number;
+  zoom?: number; offsetX?: number; offsetY?: number;
+  limitLeft?: number; limitTop?: number; limitRight?: number; limitBottom?: number;
+}): Camera;
+
+// Zoom- and offset-aware transforms (vx/vy are screen pixels):
+function worldToView(wx: number, wy: number, cam: Camera): { vx: number; vy: number };
+function viewToWorld(vx: number, vy: number, cam: Camera): { wx: number; wy: number };
+
+function cameraViewRect(cam: Camera): { x: number; y: number; w: number; h: number }; // world rect seen
+function cameraToView(cam: Camera): { x: number; y: number; zoom: number };           // renderer input
+function clampCameraToLimits(cam: Camera): void;                                       // enforce limit_*
+
+interface CameraFollowTickCtx { world: EcsWorld; dtMs?: number }
 
 interface CameraFollowOptions {
   cameraTag: TagDef;
@@ -24,30 +48,45 @@ interface CameraFollowOptions {
   positionDef: ComponentDef<{ x: number; y: number }>;
   name?: string;
   runAfter?: string[];
+  smoothing?: number; // exponential ease toward target (per second); needs ctx.dtMs
+  deadzoneW?: number; // chase horizontally only once the target leaves this half-width
+  deadzoneH?: number;
 }
 
 function makeFollowCameraSystem<TCtx extends CameraFollowTickCtx>(
   options: CameraFollowOptions,
 ): SchedulableSystem<TCtx>;
-
-function worldToView(wx: number, wy: number, cam: Camera): { vx: number; vy: number };
-function viewToWorld(vx: number, vy: number, cam: Camera): { wx: number; wy: number };
 ```
+
+## Driving a renderer
+
+`cameraToView(cam)` returns `{ x, y, zoom }` — the viewport's top-left in world
+coords plus zoom — which is exactly the `view` shape
+[`modules/render-canvas2d`](../render-canvas2d/README.md) consumes. This keeps
+the renderer **decoupled** from this module: it never imports `camera`, it just
+takes a plain view transform.
+
+```ts
+renderer.render({ atlases, ctx2d, world, view: cameraToView(cam) });
+```
+
+For zoom-aware **pointer picking**, `viewToWorld(screenX, screenY, cam)` is the
+canonical unproject (replaces hand-rolled `(px − tx) / zoom`).
 
 ## Units
 
-The camera works in **whatever units world positions are in**. Tile
-games use tile units; continuous games use pixels or game-units. The
-module does not know about pixels — converting the view-space result
-to screen pixels (multiplying by a tile size, scaling for canvas
-DPI, etc.) is the caller's job.
-
-- `cam.x, cam.y` is the **center** of the viewport in world
-  coordinates (Bevy/Godot convention, not top-left).
-- `viewportW, viewportH` are the viewport dimensions in world units.
-- `worldToView(wx, wy, cam)` returns the offset from the viewport's
-  top-left in world units. A world point at the camera center maps
-  to `(viewportW/2, viewportH/2)`.
+- `cam.x, cam.y` is the **anchor centre** of the view in world coords
+  (Bevy/Godot convention, not top-left). `offsetX/Y` shift the view from it.
+- `viewportW, viewportH` are **screen pixels**; the world span seen on an axis
+  is `viewport / zoom`. When driving `modules/render-canvas2d`, set these to the
+  **canvas backing size** (`canvas.width`/`canvas.height`) — the renderer derives
+  its cull rect from the canvas dimensions, so a mismatch would offset culling.
+- `worldToView` returns **screen-pixel** offset from the viewport top-left
+  (zoom-applied). A world point at the camera centre maps to
+  `(viewportW/2, viewportH/2)` at any zoom.
+- `limit*` are world coords; `clampCameraToLimits` (and the follow system) keep
+  the visible rect inside them, centring on the midpoint when a limit span is
+  narrower than the view.
 
 ## Tags
 
@@ -81,10 +120,11 @@ those instead. Keeps the module decoupled from `modules/transform`.
 
 ```ts
 import { EcsWorld } from '@pierre/ecs';
-import { CameraDef, makeFollowCameraSystem } from '@pierre/ecs/modules/camera';
+import { CameraDef, cameraToView, makeCamera, makeFollowCameraSystem } from '@pierre/ecs/modules/camera';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
-const CameraTag = { name: 'camera' };
+// Not 'camera' — tag names share the save namespace with component names.
+const CameraTag = { name: 'cameraEntity' };
 const PlayerTag = { name: 'player' };
 
 const world = new EcsWorld();
@@ -98,18 +138,21 @@ world.getStore(PositionDef).set(playerId, { x: 0, y: 0 });
 world.getTag(PlayerTag).add(playerId);
 
 const cameraId = world.createEntity();
-world.getStore(CameraDef).set(cameraId, {
-  x: 0, y: 0, viewportW: 40, viewportH: 25,
-});
+world.getStore(CameraDef).set(cameraId, makeCamera({
+  x: 0, y: 0, viewportW: 400, viewportH: 250,
+  limitLeft: 0, limitTop: 0, limitRight: mapW, limitBottom: mapH,
+}));
 world.getTag(CameraTag).add(cameraId);
 
 const followSys = makeFollowCameraSystem({
   cameraTag: CameraTag,
   targetTag: PlayerTag,
   positionDef: PositionDef,
+  smoothing: 10, // ease toward the player; pass ctx.dtMs each tick
 });
 
-// Schedule `followSys` before the render system each tick.
+// Schedule `followSys` before the render system each tick; then:
+//   renderer.render({ ctx2d, world, view: cameraToView(cam) });
 ```
 
 ## Multi-camera
@@ -124,10 +167,13 @@ Multiple `targetTag`-tagged entities are **not** supported — tag
 exactly one, or the choice of follow target is undefined (iteration
 order).
 
-## Out of scope (Path-B minimum)
+## Out of scope
 
-- `zoom` and `rotation` — add via Path-A when a 2nd consumer needs them
-- Deadzone / lerp follow — same
-- Scroll clamping — same
-- Parallax layers — same
-- Pixel-space helpers — stays in app (DOM/canvas-specific)
+- **Rotation** — Godot `Camera2D.rotation`. Deferred: a rotated view needs a
+  full affine transform and a conservative rotated-AABB cull, and 2D
+  top-down/platformers rarely rotate the camera. Add when a consumer needs it.
+- **Parallax layers** — a layer/scroll-factor model; its own follow-up.
+- **Pixel-space / DPI helpers** — stay in app code (DOM/canvas-specific).
+
+Import via `@pierre/ecs/modules/camera`. Depends on
+[`modules/math`](../math/README.md) (`clamp`, `lerp`).

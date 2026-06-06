@@ -31,11 +31,27 @@ export interface SpriteFrameSource {
   getFrame: (atlas: string, frame: string) => ResolvedSpriteFrame | undefined;
 }
 
+/**
+ * Optional camera transform applied to the whole scene before drawing.
+ * `(x, y)` is the world coordinate at the viewport's top-left corner and
+ * `zoom` (default 1) magnifies: `screen = (world − {x, y}) · zoom`. Decoupled
+ * from `modules/camera` — pass `cameraToView(cam)` to drive it from a `Camera`.
+ */
+export interface RenderView {
+  x: number;
+  y: number;
+  zoom?: number;
+}
+
 export interface Canvas2DRenderContext {
   atlases?: SpriteFrameSource;
   ctx2d: CanvasRenderingContext2D;
+  /** When set, the scene is drawn through this camera transform and entities outside the view rect are culled. */
+  view?: RenderView;
   world: EcsWorld;
 }
+
+interface ViewRect { maxX: number; maxY: number; minX: number; minY: number }
 
 interface DrawEntry {
   id: EntityId;
@@ -51,10 +67,15 @@ interface DrawEntry {
  * reads: `RotationDef`, `ScaleDef`, `OpacityDef`, `RenderOrderDef`.
  * When no entity carries `RenderOrderDef`, short-circuits to
  * component-store iteration order.
+ *
+ * When `ctx.view` is set, the whole scene is drawn through that camera
+ * transform and entities whose world AABB falls outside the view rect are
+ * culled. `text` / `sprite` / `polygon` renderables have no cheap reliable
+ * world bounds, so they are never culled.
  */
 export class Canvas2DRenderer implements Renderer<Canvas2DRenderContext> {
   render(ctx: Canvas2DRenderContext): void {
-    const { atlases, ctx2d, world } = ctx;
+    const { atlases, ctx2d, view, world } = ctx;
     const posStore = world.getStore(PositionDef);
     const renderableStore = world.getStore(RenderableDef);
     const rotStore = tryGetStore<{ angle: number }>(world, RotationDef);
@@ -64,11 +85,14 @@ export class Canvas2DRenderer implements Renderer<Canvas2DRenderContext> {
 
     ctx2d.save();
     try {
+      const viewRect = view ? applyView(ctx2d, view) : null;
       const hasAnyOrder = orderStore !== null && orderStore.size > 0;
       if (!hasAnyOrder) {
         for (const [id, renderable] of renderableStore) {
           const pos = posStore.get(id);
           if (!pos)
+            continue;
+          if (viewRect && isCulled(pos.x, pos.y, renderable, viewRect))
             continue;
           drawEntity(ctx2d, id, pos.x, pos.y, renderable, rotStore, scaleStore, opacityStore, atlases ?? null);
         }
@@ -80,6 +104,10 @@ export class Canvas2DRenderer implements Renderer<Canvas2DRenderContext> {
       for (const [id, renderable] of renderableStore) {
         const pos = posStore.get(id);
         if (!pos) {
+          seq++;
+          continue;
+        }
+        if (viewRect && isCulled(pos.x, pos.y, renderable, viewRect)) {
           seq++;
           continue;
         }
@@ -100,6 +128,55 @@ export class Canvas2DRenderer implements Renderer<Canvas2DRenderContext> {
       ctx2d.restore();
     }
   }
+}
+
+/** Apply the camera transform to `ctx2d` and return the visible world rect. */
+function applyView(ctx2d: CanvasRenderingContext2D, view: RenderView): ViewRect {
+  const zoom = view.zoom ?? 1;
+  ctx2d.scale(zoom, zoom);
+  ctx2d.translate(-view.x, -view.y);
+  return {
+    maxX: view.x + ctx2d.canvas.width / zoom,
+    maxY: view.y + ctx2d.canvas.height / zoom,
+    minX: view.x,
+    minY: view.y,
+  };
+}
+
+/**
+ * Whether the renderable's world AABB lies fully outside `rect`. `text`,
+ * `sprite`, and `polygon` have no cheap reliable bounds here, so they are
+ * never culled (returns `false`).
+ */
+function isCulled(x: number, y: number, r: Renderable, rect: ViewRect): boolean {
+  let minX: number;
+  let minY: number;
+  let maxX: number;
+  let maxY: number;
+  if (r.kind === 'rect') {
+    if ((r.anchor ?? 'top-left') === 'center') {
+      minX = x - r.w / 2;
+      minY = y - r.h / 2;
+    }
+    else {
+      minX = x;
+      minY = y;
+    }
+    maxX = minX + r.w;
+    maxY = minY + r.h;
+  }
+  else if (r.kind === 'circle') {
+    const cx = (r.anchor ?? 'center') === 'top-left' ? x + r.radius : x;
+    const cy = (r.anchor ?? 'center') === 'top-left' ? y + r.radius : y;
+    minX = cx - r.radius;
+    minY = cy - r.radius;
+    maxX = cx + r.radius;
+    maxY = cy + r.radius;
+  }
+  else {
+    return false;
+  }
+  return maxX < rect.minX || minX > rect.maxX || maxY < rect.minY || minY > rect.maxY;
 }
 
 function tryGetStore<T>(

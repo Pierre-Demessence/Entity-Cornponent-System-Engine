@@ -4,9 +4,8 @@ import type { Canvas2DRenderContext } from '@pierre/ecs/modules/render-canvas2d'
 
 import { EcsWorld } from '@pierre/ecs';
 import { AssetLoader, imageAsset, textAsset } from '@pierre/ecs/modules/asset-loader';
-import { CameraDef, makeFollowCameraSystem } from '@pierre/ecs/modules/camera';
+import { CameraDef, cameraToView, makeCamera, makeFollowCameraSystem } from '@pierre/ecs/modules/camera';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
-import { clamp } from '@pierre/ecs/modules/math';
 import {
   Canvas2DRenderer,
   RenderableDef,
@@ -31,6 +30,8 @@ const TILE = 16;
 const VIEW_W = 24 * TILE; // 384
 const VIEW_H = 15 * TILE; // 240
 const SCALE = 2;
+/** Camera follow easing (per second); higher = snappier. */
+const CAMERA_SMOOTHING = 10;
 const PLAYER_SPEED = 70; // px/s
 const PLAYER_HALF = 5; // collision half-extent
 const TALK_RANGE = 22;
@@ -72,7 +73,8 @@ const WALKABLE_PROPS = new Set<number>([
 ]);
 
 const PlayerTag: TagDef = { name: 'player' };
-const CameraTag: TagDef = { name: 'camera' };
+// Not 'camera' — a tag sharing CameraDef's component name collides on save/load.
+const CameraTag: TagDef = { name: 'cameraEntity' };
 
 type RpgAction = 'down' | 'interact' | 'left' | 'right' | 'up';
 
@@ -192,9 +194,23 @@ export function start(container: HTMLElement): () => void {
       }));
 
       const cameraId = world.createEntity();
-      world.getStore(CameraDef).set(cameraId, { viewportH: VIEW_H, viewportW: VIEW_W, x: spawn.x, y: spawn.y });
+      world.getStore(CameraDef).set(cameraId, makeCamera({
+        limitBottom: mapH,
+        limitLeft: 0,
+        limitRight: mapW,
+        limitTop: 0,
+        viewportH: VIEW_H,
+        viewportW: VIEW_W,
+        x: spawn.x,
+        y: spawn.y,
+      }));
       world.getTag(CameraTag).add(cameraId);
-      const followCamera = makeFollowCameraSystem({ cameraTag: CameraTag, positionDef: PositionDef, targetTag: PlayerTag });
+      const followCamera = makeFollowCameraSystem<{ dtMs: number; world: typeof world }>({
+        cameraTag: CameraTag,
+        positionDef: PositionDef,
+        smoothing: CAMERA_SMOOTHING,
+        targetTag: PlayerTag,
+      });
 
       const keyboard = new KeyboardProvider();
       const inputState = createInput<RpgAction>(
@@ -262,20 +278,19 @@ export function start(container: HTMLElement): () => void {
           }
         }
 
-        followCamera.run({ world });
+        followCamera.run({ dtMs: dt * 1000, world });
         const cam = world.getStore(CameraDef).get(cameraId)!;
-        const offX = Math.round(clamp(cam.x - VIEW_W / 2, 0, Math.max(0, mapW - VIEW_W)));
-        const offY = Math.round(clamp(cam.y - VIEW_H / 2, 0, Math.max(0, mapH - VIEW_H)));
+        const view = cameraToView(cam);
+        // Round to whole pixels so the pixel-art tiles stay crisp.
+        view.x = Math.round(view.x);
+        view.y = Math.round(view.y);
 
         prompt.style.display = !dialogue.open && nearestNpc() ? 'block' : 'none';
 
         ctx2d.imageSmoothingEnabled = false;
         ctx2d.fillStyle = '#0b0d12';
         ctx2d.fillRect(0, 0, VIEW_W, VIEW_H);
-        ctx2d.save();
-        ctx2d.translate(-offX, -offY);
-        renderer.render(renderCtx);
-        ctx2d.restore();
+        renderer.render({ ...renderCtx, view });
 
         inputState.clearEdges();
         raf = requestAnimationFrame(frame);
