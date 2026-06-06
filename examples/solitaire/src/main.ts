@@ -21,6 +21,7 @@ import type { Card, GameState, PileRef } from './game';
 import { EcsWorld } from '@pierre/ecs';
 import { AssetLoader, audioBufferAsset, imageAsset, textAsset } from '@pierre/ecs/modules/asset-loader';
 import { WebAudioProvider } from '@pierre/ecs/modules/audio';
+import { projectPointer } from '@pierre/ecs/modules/input';
 import { RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
 import { pick } from '@pierre/ecs/modules/rng';
 import { parseTexturePackerAtlas, TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
@@ -144,13 +145,8 @@ export function start(container: HTMLElement): () => void {
 
   // --- Input ---
 
-  const toWorld = (event: PointerEvent | MouseEvent): { x: number; y: number } => {
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: (event.clientX - rect.left) * (CANVAS_W / rect.width),
-      y: (event.clientY - rect.top) * (CANVAS_H / rect.height),
-    };
-  };
+  const toWorld = (event: PointerEvent | MouseEvent): { x: number; y: number } =>
+    projectPointer(event, canvas);
 
   const onPointerDown = (event: PointerEvent): void => {
     if (!state || state.won)

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { createInput } from './input-state';
 import { Key } from './key-codes';
 import { KeyboardProvider } from './keyboard-provider';
-import { Pointer, PointerProvider } from './pointer-provider';
+import { Pointer, PointerProvider, projectPointer } from './pointer-provider';
 
 function makeTarget(
   rect: { height: number; left: number; top: number; width: number },
@@ -257,5 +257,41 @@ describe('pointerProvider', () => {
     expect(input.isDown('fire')).toBe(true);
 
     input.dispose();
+  });
+});
+
+describe('projectPointer', () => {
+  it('scales CSS-space offset into canvas backing pixels (both axes)', () => {
+    // Canvas drawing buffer 800x600 displayed at 400x300 CSS px → 2x scale.
+    const target = makeTarget(
+      { height: 300, left: 10, top: 20, width: 400 },
+      { height: 600, width: 800 },
+    );
+    const ev = pointerEvent('pointermove', { clientX: 10 + 100, clientY: 20 + 50 }) as PointerEvent;
+    expect(projectPointer(ev, target)).toEqual({ x: 200, y: 100 });
+  });
+
+  it('is identity when the buffer matches the CSS size', () => {
+    const target = makeTarget(
+      { height: 300, left: 0, top: 0, width: 400 },
+      { height: 300, width: 400 },
+    );
+    const ev = pointerEvent('pointermove', { clientX: 123, clientY: 77 }) as PointerEvent;
+    expect(projectPointer(ev, target)).toEqual({ x: 123, y: 77 });
+  });
+
+  it('falls back to raw local offset for a non-canvas target', () => {
+    const target = makeTarget({ height: 300, left: 10, top: 20, width: 400 });
+    const ev = pointerEvent('pointermove', { clientX: 60, clientY: 70 }) as PointerEvent;
+    expect(projectPointer(ev, target)).toEqual({ x: 50, y: 50 });
+  });
+
+  it('falls back to raw local offset for a zero-size rect', () => {
+    const target = makeTarget(
+      { height: 0, left: 5, top: 5, width: 0 },
+      { height: 600, width: 800 },
+    );
+    const ev = pointerEvent('pointermove', { clientX: 15, clientY: 25 }) as PointerEvent;
+    expect(projectPointer(ev, target)).toEqual({ x: 10, y: 20 });
   });
 });

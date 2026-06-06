@@ -131,7 +131,24 @@ export interface PointerProviderOptions {
   windowTarget?: EventTarget | null;
 }
 
-function defaultProject(ev: PointerEvent, target: PointerTarget): { x: number; y: number } {
+/**
+ * The default DPI-aware canvas projection: maps an event's client coordinates
+ * to the target's **backing-pixel** coordinates. For a canvas-like target (one
+ * exposing numeric `width`/`height`) it scales the CSS-space offset by
+ * `width / rect.width` (and the same for height), so a CSS-stretched or
+ * high-DPR canvas still reports coordinates in its drawing-buffer space.
+ * Non-canvas targets fall back to the raw `rect`-local offset.
+ *
+ * Accepts any event with `clientX`/`clientY` (Pointer, Mouse, Touch-derived),
+ * so it works equally in `pointer*` and `click`/`dblclick` handlers. This is
+ * the same projection `PointerProvider` applies by default; it is exported so
+ * consumers that read the pointer at **event time** (rather than through the
+ * tick-read provider) can share the exact math instead of re-deriving it.
+ */
+export function projectPointer(
+  ev: { clientX: number; clientY: number },
+  target: PointerTarget,
+): { x: number; y: number } {
   const rect = target.getBoundingClientRect();
   const localX = ev.clientX - rect.left;
   const localY = ev.clientY - rect.top;
@@ -189,7 +206,7 @@ export class PointerProvider implements InputProvider {
 
   constructor(options: PointerProviderOptions) {
     this.target = options.target;
-    this.project = options.project ?? defaultProject;
+    this.project = options.project ?? projectPointer;
     const buttons = options.buttons ?? ([0, 1, 2] as const);
     this.buttonSet = new Set(buttons);
     this.preventContextMenu

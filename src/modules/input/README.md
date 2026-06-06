@@ -179,8 +179,22 @@ The default projector reports **target-local pixels**. When the target
 looks like an `HTMLCanvasElement` (has numeric `width` / `height`), it
 additionally scales by `canvas.width / rect.width` so the returned
 coordinates are in **canvas-internal pixel space** even when the
-canvas is CSS-stretched (high-DPI layouts, fullscreen). Pass
-`options.project` to override:
+canvas is CSS-stretched (high-DPI layouts, fullscreen).
+
+That default projection is also exported as the pure function
+`projectPointer(ev, target)` — reach for it when you read the pointer at
+**event time** (inside your own `pointerdown`/`pointermove` handlers) instead
+of through the tick-read provider, so you share the exact DPI math:
+
+```ts
+import { projectPointer } from '@pierre/ecs/modules/input';
+
+canvas.addEventListener('pointerdown', (ev) => {
+  const { x, y } = projectPointer(ev, canvas); // canvas backing-pixel coords
+});
+```
+
+Pass `options.project` to override the provider's projection:
 
 ```ts
 new PointerProvider({

@@ -26,7 +26,7 @@ considered and rejected".
     - [`RenderableDef` extensions V3 — deferred](#renderabledef-extensions-v3--deferred)
     - [`ContinuousHashGrid2D(cellSize)` — deferred](#continuoushashgrid2dcellsize--deferred)
     - [`modules/input` event-mode variant — deferred](#modulesinput-event-mode-variant--deferred)
-    - [`modules/input` — pure `projectPointer` export — deferred](#modulesinput--pure-projectpointer-export--deferred)
+    - [`modules/input` — pure `projectPointer` export — ✅ shipped 2026-07-18](#modulesinput--pure-projectpointer-export---shipped-2026-07-18)
   - [3D siblings — speculative](#3d-siblings--speculative)
   - [Rigid-body physics — speculative](#rigid-body-physics--speculative)
   - [Standard engine modules](#standard-engine-modules)
@@ -261,14 +261,20 @@ layer and DOM listeners — those are the right shape for that game.
 
 ---
 
-### `modules/input` — pure `projectPointer` export — deferred
+### `modules/input` — pure `projectPointer` export — ✅ shipped (2026-07-18)
 
-**Scope.** Export the DPI-aware client→canvas projection as a pure
-`projectPointer(ev, target) => { x, y }` so event-time pointer handlers
-can reuse it without instantiating the stateful `PointerProvider`.
+**Shipped.** Promoted the module-private `defaultProject` to an exported pure
+`projectPointer(ev, target) => { x, y }`@[`pointer-provider.ts`](../../src/modules/input/pointer-provider.ts)
+— the DPI-aware client→backing-pixel projection (scales the CSS-space offset by
+`canvas.width / rect.width` for a canvas-like target, raw local offset
+otherwise). `PointerProvider` still uses it as its default `project`, so the
+provider surface is unchanged. breakout@[`main.ts`](../../examples/breakout/src/main.ts)
+and solitaire@[`main.ts`](../../examples/solitaire/src/main.ts) replaced their
+verbatim event-time copies with the one fn. tilemap (custom viewport project)
+and space-invaders (no-DPI half-screen) don't fit, as noted in B9.
 
 <details>
-<summary>Details</summary>
+<summary>Original analysis (pre-build) — shipped as planned</summary>
 
 **Trigger — MET (2 consumers, dual-cited 2026-07-15).** The projection
 logic ships, but only as the **module-private** `defaultProject`@

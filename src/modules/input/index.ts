@@ -27,4 +27,5 @@ export {
   type PointerProviderOptions,
   type PointerState,
   type PointerTarget,
+  projectPointer,
 } from './pointer-provider';

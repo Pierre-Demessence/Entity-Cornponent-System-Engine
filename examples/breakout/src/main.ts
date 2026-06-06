@@ -1,7 +1,7 @@
 import type { BreakoutAction, GameState } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
-import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { createInput, Key, KeyboardProvider, projectPointer } from '@pierre/ecs/modules/input';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import { makeWorld, resetGame, SCREEN_H, SCREEN_W } from './game';
@@ -100,11 +100,7 @@ export function start(container: HTMLElement): () => void {
   resetGame(state);
   let savedBest = state.best;
 
-  const pointerXFromEvent = (event: PointerEvent): number => {
-    const rect = canvas.getBoundingClientRect();
-    const scale = canvas.width / rect.width;
-    return (event.clientX - rect.left) * scale;
-  };
+  const pointerXFromEvent = (event: PointerEvent): number => projectPointer(event, canvas).x;
 
   const onPointerMove = (event: PointerEvent): void => {
     state.pointerX = pointerXFromEvent(event);
