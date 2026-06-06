@@ -1,14 +1,13 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 import type { AudioQueue } from '@pierre/ecs/modules/audio';
 import type { InputState, PointerState } from '@pierre/ecs/modules/input';
-import type { HashGrid2D } from '@pierre/ecs/modules/spatial';
+import type { ContinuousHashGrid2D } from '@pierre/ecs/modules/spatial';
 import type { Spawner } from '@pierre/ecs/modules/spawner';
 
 import { EcsWorld } from '@pierre/ecs';
 import { AudioSourceDef } from '@pierre/ecs/modules/audio';
 import { clamp01, lerp } from '@pierre/ecs/modules/math';
 import { OpacityDef, RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
-import { cellOfPoint } from '@pierre/ecs/modules/spatial';
 import { resetSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
@@ -67,7 +66,7 @@ export interface GameState {
   elapsedMs: number;
   enemySpawner: Spawner;
   events: EventBus<ShooterEvent>;
-  grid: HashGrid2D;
+  grid: ContinuousHashGrid2D;
   input: InputState<ShooterAction>;
   musicEntityId: EntityId | null;
   playerId: EntityId | null;
@@ -77,10 +76,6 @@ export interface GameState {
   world: EcsWorld;
   clearAudioQueue: () => void;
   isAudioClipReady: (clipId: string) => boolean;
-}
-
-export function cellOf(x: number, y: number): { x: number; y: number } {
-  return cellOfPoint(x, y, CELL_SIZE);
 }
 
 export function makeWorld(): EcsWorld {
@@ -125,8 +120,7 @@ export function spawnPlayer(state: GameState): EntityId {
   state.world.getStore(RenderOrderDef).set(id, { value: 10 });
   state.world.getStore(CooldownDef).set(id, makeCooldown(FIRE_COOLDOWN_MS));
   state.world.getTag(PlayerTag).add(id);
-  const c = cellOf(x, y);
-  state.grid.add(id, c.x, c.y);
+  state.grid.add(id, x, y);
   return id;
 }
 
@@ -144,8 +138,7 @@ export function spawnEnemy(state: GameState, x: number, y: number): EntityId {
   });
   state.world.getStore(RenderOrderDef).set(id, { value: 5 });
   state.world.getTag(EnemyTag).add(id);
-  const c = cellOf(x, y);
-  state.grid.add(id, c.x, c.y);
+  state.grid.add(id, x, y);
   return id;
 }
 
@@ -165,16 +158,14 @@ export function spawnBullet(state: GameState, x: number, y: number, angle: numbe
   });
   state.world.getStore(RenderOrderDef).set(id, { value: 3 });
   state.world.getTag(BulletTag).add(id);
-  const c = cellOf(x, y);
-  state.grid.add(id, c.x, c.y);
+  state.grid.add(id, x, y);
   return id;
 }
 
 export function despawn(state: GameState, id: EntityId): void {
   const pos = state.world.getStore(PositionDef).get(id);
   if (pos) {
-    const c = cellOf(pos.x, pos.y);
-    state.grid.remove(id, c.x, c.y);
+    state.grid.remove(id, pos.x, pos.y);
   }
   state.world.queueDestroy(id);
 }

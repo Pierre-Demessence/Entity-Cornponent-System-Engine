@@ -1,3 +1,4 @@
+export { ContinuousHashGrid2D } from './continuous-hash-grid-2d';
 export {
   type GridSyncOnMove,
   type GridSyncOnMoveOptions,

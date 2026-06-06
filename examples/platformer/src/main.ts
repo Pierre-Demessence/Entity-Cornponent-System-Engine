@@ -5,12 +5,12 @@ import type { GameState, PlatformerAction, PlatformerEvent } from './game';
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { makeKinematicsSystem } from '@pierre/ecs/modules/kinematics';
-import { HashGrid2D } from '@pierre/ecs/modules/spatial';
+import { ContinuousHashGrid2D } from '@pierre/ecs/modules/spatial';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import { PositionDef, StaticBodyTag } from './components';
 import {
-
+  CELL_SIZE,
   cellsForAabb,
   GRAVITY,
   makeWorld,
@@ -42,7 +42,7 @@ export function start(container: HTMLElement): () => void {
 
   const ctx2d = canvas.getContext('2d')!;
   const world = makeWorld();
-  const grid = new HashGrid2D();
+  const grid = new ContinuousHashGrid2D(CELL_SIZE);
   const events = new EventBus<PlatformerEvent>();
   const kinematicsSystem = makeKinematicsSystem<GameState>({
     gravity: GRAVITY,
@@ -52,7 +52,7 @@ export function start(container: HTMLElement): () => void {
     broadphase: (ctx, x, y, w, h) => {
       const out = new Set<EntityId>();
       for (const c of cellsForAabb(x, y, w, h)) {
-        const ids = ctx.grid.getAt(c.x, c.y);
+        const ids = ctx.grid.grid.getAt(c.x, c.y);
         if (!ids)
           continue;
         for (const id of ids) out.add(id);

@@ -13,7 +13,7 @@ import {
   ShapeCircleDef,
 } from '../components';
 import {
-  cellOf,
+  CELL_SIZE,
   despawn,
 
   ROCK_TIERS,
@@ -49,8 +49,7 @@ function makeCollisionSystem(): SchedulableSystem<GameState> {
         const rPos = posStore.get(rockId);
         if (!rPos)
           continue;
-        const rCell = cellOf(rPos.x, rPos.y);
-        for (const otherId of ctx.grid.queryNear(rCell, 2)) {
+        for (const otherId of ctx.grid.queryNear(rPos.x, rPos.y, 2 * CELL_SIZE)) {
           if (otherId === rockId)
             continue;
           pairs.push([rockId, otherId] as const);

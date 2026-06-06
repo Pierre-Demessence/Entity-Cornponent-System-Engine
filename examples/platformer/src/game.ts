@@ -3,7 +3,7 @@ import type {
   EventBus,
 } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
-import type { HashGrid2D } from '@pierre/ecs/modules/spatial';
+import type { ContinuousHashGrid2D } from '@pierre/ecs/modules/spatial';
 
 import {
   EcsWorld,
@@ -58,7 +58,7 @@ export type PlatformerAction = 'jump' | 'left' | 'right';
 export interface GameState {
   dtMs: number;
   events: EventBus<PlatformerEvent>;
-  grid: HashGrid2D;
+  grid: ContinuousHashGrid2D;
   input: InputState<PlatformerAction>;
   playerId: EntityId | null;
   score: number;
@@ -92,12 +92,12 @@ export function makeWorld(): EcsWorld {
 
 /** Index a static body into every cell its AABB overlaps. */
 function indexStatic(state: GameState, id: EntityId, x: number, y: number, w: number, h: number): void {
-  for (const c of cellsForAabb(x, y, w, h)) state.grid.add(id, c.x, c.y);
+  for (const c of cellsForAabb(x, y, w, h)) state.grid.grid.add(id, c.x, c.y);
 }
 
 /** Reverse of indexStatic. Must be called BEFORE the aabb/position is lost. */
 function unindexStatic(state: GameState, id: EntityId, x: number, y: number, w: number, h: number): void {
-  for (const c of cellsForAabb(x, y, w, h)) state.grid.remove(id, c.x, c.y);
+  for (const c of cellsForAabb(x, y, w, h)) state.grid.grid.remove(id, c.x, c.y);
 }
 
 export function spawnPlayer(state: GameState, x: number, y: number): EntityId {

@@ -6,7 +6,7 @@ import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 import { makeParticleSystem } from '@pierre/ecs/modules/particles';
-import { HashGrid2D, makeGridSyncOnMove } from '@pierre/ecs/modules/spatial';
+import { ContinuousHashGrid2D, makeGridSyncOnMove } from '@pierre/ecs/modules/spatial';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
@@ -40,12 +40,12 @@ export function start(container: HTMLElement): () => void {
 
   const ctx2d = canvas.getContext('2d')!;
   const world = makeWorld();
-  const grid = new HashGrid2D();
+  const grid = new ContinuousHashGrid2D(CELL_SIZE);
   const events = new EventBus<AsteroidsEvent>();
   const motionSystem = makeVelocityIntegrationSystem<GameState>({
     name: 'movement',
     boundary: { bounds: { height: SCREEN_H, width: SCREEN_W }, mode: 'wrap' },
-    onMove: makeGridSyncOnMove({ cellSize: CELL_SIZE, grid }),
+    onMove: makeGridSyncOnMove({ cellSize: CELL_SIZE, grid: grid.grid }),
   });
   const lifetimeSystem = makeLifetimeSystem<GameState>({
     onExpire: despawn,

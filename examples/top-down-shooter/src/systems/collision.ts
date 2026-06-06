@@ -11,7 +11,7 @@ import {
   ShapeCircleDef,
 } from '../components';
 import {
-  cellOf,
+  CELL_SIZE,
   despawn,
   SCORE_PER_KILL,
 } from '../game';
@@ -40,8 +40,7 @@ export function makeCollisionSystem(): SchedulableSystem<GameState> {
         const pos = posStore.get(enemyId);
         if (!pos)
           continue;
-        const cell = cellOf(pos.x, pos.y);
-        for (const otherId of ctx.grid.queryNear(cell, 1)) {
+        for (const otherId of ctx.grid.queryNear(pos.x, pos.y, CELL_SIZE)) {
           if (otherId === enemyId)
             continue;
           pairs.push([enemyId, otherId] as const);
