@@ -174,6 +174,40 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`ready`** _(fn)_ — Whether the cooldown has elapsed and the gated action may fire.
 - **`trigger`** _(fn)_ — Re-arm the cooldown after firing (optionally changing its duration).
 
+### `@pierre/ecs/modules/easing`
+- **`easeInBack`** _(const)_ — —
+- **`easeInBounce`** _(const)_ — —
+- **`easeInCirc`** _(const)_ — —
+- **`easeInCubic`** _(const)_ — —
+- **`easeInElastic`** _(const)_ — —
+- **`easeInExpo`** _(const)_ — —
+- **`easeInOutBack`** _(const)_ — —
+- **`easeInOutBounce`** _(const)_ — —
+- **`easeInOutCirc`** _(const)_ — —
+- **`easeInOutCubic`** _(const)_ — —
+- **`easeInOutElastic`** _(const)_ — —
+- **`easeInOutExpo`** _(const)_ — —
+- **`easeInOutQuad`** _(const)_ — —
+- **`easeInOutQuart`** _(const)_ — —
+- **`easeInOutQuint`** _(const)_ — —
+- **`easeInOutSine`** _(const)_ — —
+- **`easeInQuad`** _(const)_ — —
+- **`easeInQuart`** _(const)_ — —
+- **`easeInQuint`** _(const)_ — —
+- **`easeInSine`** _(const)_ — —
+- **`easeOutBack`** _(const)_ — —
+- **`easeOutBounce`** _(const)_ — —
+- **`easeOutCirc`** _(const)_ — —
+- **`easeOutCubic`** _(const)_ — —
+- **`easeOutElastic`** _(const)_ — —
+- **`easeOutExpo`** _(const)_ — —
+- **`easeOutQuad`** _(const)_ — —
+- **`easeOutQuart`** _(const)_ — —
+- **`easeOutQuint`** _(const)_ — —
+- **`easeOutSine`** _(const)_ — —
+- **`Easing`** _(type)_ — Maps normalized time `t ∈ [0, 1]` to eased progress (may overshoot for back/elastic).
+- **`linear`** _(const)_ — Identity — constant-speed interpolation.
+
 ### `@pierre/ecs/modules/grid-based`
 - **`bresenhamLine`** _(fn)_ — —
 - **`computeFieldOfView`** _(fn)_ — Compute field-of-view tiles using recursive shadowcasting over 8 octants. Returns the visible tile coordinates for the current cast, incl...
@@ -360,3 +394,11 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 ### `@pierre/ecs/modules/turn-based`
 - **`TurnCycler`** _(class)_ — Round-robin active-turn cycler for turn-based games. Parameterized by the `controlled` tag (which entities take turns) and the `activeTur...
 - **`TurnCyclerTags`** _(interface)_ — Tag defs the cycler reads & writes. `controlled` is the "whose turn is it" population; `activeTurn` marks the current actor; `cameraTarge...
+
+### `@pierre/ecs/modules/tween`
+- **`makeTween`** _(fn)_ — Create a Tween from `from` to `to` over `durationMs`. Defaults to a `linear` curve and `'once'` mode; pass `'repeating'` to loop.
+- **`resetTween`** _(fn)_ — Restart the tween from the beginning. Optionally retarget `from`/`to` and the duration in one call (e.g. to chase a new value).
+- **`tickTween`** _(fn)_ — Advance the tween by `dtMs` and return the new eased value.
+- **`Tween`** _(interface)_ — A number interpolated `from → to` over `timer.durationMs` along `easing`.
+- **`tweenDone`** _(fn)_ — Whether a `'once'` tween has reached `to` (a `'repeating'` tween's per-wrap edge).
+- **`tweenValue`** _(fn)_ — Current eased value without advancing time.

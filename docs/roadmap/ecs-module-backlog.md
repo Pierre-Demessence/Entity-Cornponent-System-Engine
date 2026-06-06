@@ -32,7 +32,7 @@ considered and rejected".
   - [Standard engine modules](#standard-engine-modules)
     - [`modules/audio` V1 — ✅ shipped 2026-04-23](#modulesaudio-v1---shipped-2026-04-23)
     - [`modules/audio` V2 — deferred](#modulesaudio-v2--deferred)
-    - [`modules/animation` — deferred](#modulesanimation--deferred)
+    - [`modules/animation` — partially shipped (easing + tween 2026-07-18; sprite-frame + skeletal deferred)](#modulesanimation--partially-shipped-easing--tween-2026-07-18-sprite-frame--skeletal-deferred)
     - [`modules/particles` — deferred](#modulesparticles--deferred)
     - [`modules/ui` — speculative](#modulesui--speculative)
     - [`modules/render-dom` V1 — ✅ shipped 2026-04-23](#modulesrender-dom-v1---shipped-2026-04-23)
@@ -407,28 +407,37 @@ Phaser `SoundManager`, Bevy `bevy_audio`.
 
 </details>
 
-### `modules/animation` — deferred
+### `modules/animation` — partially shipped (easing + tween 2026-07-18; sprite-frame + skeletal deferred)
 
 **Scope.** Sprite-frame animation, tweens, and (much later) skeletal /
-2D rig animation — probably as three separate sub-modules.
+2D rig animation — three separate sub-modules. The **tween + easing** slice
+shipped 2026-07-18; sprite-frame and skeletal remain deferred.
 
 <details>
 <summary>Details</summary>
 
-**Probable shape.**
+**Shipped (2026-07-18) — easing + tween.** `modules/easing`@[`easing/easing.ts`](../../src/modules/easing/easing.ts)
+is the full Robert Penner curve set (31 fns: linear + quad/cubic/quart/quint/
+sine/expo/circ/back/elastic/bounce × in/out/inOut), a zero-dep math-tier leaf.
+`modules/tween`@[`tween/tween.ts`](../../src/modules/tween/tween.ts) is the
+`Tween` **value primitive** (`makeTween`/`tickTween`/`tweenValue`/`tweenDone`/
+`resetTween`) composing `Timer` (time) + `Easing` (curve) + `math.lerp` (value).
+Built canon-first — 6 consumers hand-rolled linear interp for lack of easing
+curves. **`TweenDef` ECS component deferred**: no consumer animates via a
+component (they read `tweenValue` inline), and the ECS-wrapper shape isn't
+single-canon (Godot node vs DOTween fluent chain). rhythm migrated its fade-outs
+to `easeOutCubic`@[`rhythm/render.ts`](../../examples/rhythm/src/render.ts).
 
-- **Sprite animation** — `SpriteAnimationDef { frames, fps, loop }`
-  - frame-advance system tied to an `AnimationFrameTickSource`.
-- **Tweens** — `TweenDef { target, from, to, durationMs, easing }` +
-  system that interpolates and fires `onComplete` events.
+**Still deferred.**
+
+- **Sprite animation** — `SpriteAnimationDef { frames, fps, loop }` +
+  frame-advance system tied to an `AnimationFrameTickSource`.
 - **Skeletal / 2D rigs** — much later; a second consumer must request
   it (likely with a 3D prototype).
 
-**Trigger.** Any prototype with non-static sprites, or any roguelike
-feature that wants tweened UI (e.g. damage numbers floating up).
-`examples/rpg` is the first sprite-animation consumer (idle→walk→attack
-frame cycling — engine-gap-ledger B18); ship the sprite-animation slice
-once a second lands.
+**Trigger (sprite-frame).** `examples/rpg` is the first sprite-animation
+consumer (idle→walk→attack frame cycling — engine-gap-ledger B18); ship the
+sprite-animation slice once a second lands.
 
 **Canon.** Unity `Animator`, Godot `AnimationPlayer` / `Tween`, Bevy
 `bevy_animation`, GSAP (tweens).
@@ -1183,7 +1192,8 @@ When any of the below becomes true, open a plan for the matching module.
 | 3D prototype scoped | All 3D sibling modules |
 | Stacking / ragdoll / vehicle prototype | Rigid-body physics |
 | Spatialized playback or shared bus-driven audio events in a second consumer | `modules/audio` V2 |
-| Sprite animation or tween in any prototype | `modules/animation` |
+| ✅ **SHIPPED 2026-07-18** — tween / easing canon (6 consumers hand-rolled linear) | `modules/easing` + `modules/tween` (split from `modules/animation`) |
+| Sprite-frame animation in a 2nd prototype | `modules/animation` (sprite-frame slice) |
 | Second app with multiple runtime worlds and full scene stack needs | `modules/scene` V2 |
 | Second app needing shared slot metadata/policy conventions | `modules/save` V2 |
 | Asset volume exceeds Vite import comfort | `modules/asset-loader` |

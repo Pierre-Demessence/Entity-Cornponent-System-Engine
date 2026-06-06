@@ -1,5 +1,8 @@
 import type { GameState, Judgement } from './game';
 
+import { easeOutCubic } from '@pierre/ecs/modules/easing';
+import { clamp01 } from '@pierre/ecs/modules/math';
+
 import {
   APPROACH_S,
   NoteDef,
@@ -15,6 +18,13 @@ export const LANE_W = (CANVAS_W - LANE_GAP_X * 2) / LANE_COUNT;
 
 const LANE_COLORS = ['#ff6363', '#ffc163', '#63ffae', '#6ab4ff'];
 const LANE_KEYS = ['D', 'F', 'J', 'K'];
+
+/** Duration (s) over which a struck-lane highlight fades out. */
+const LANE_FLASH_S = 0.125;
+/** Duration (s) over which a hit / missed note fades out after its judgement. */
+const NOTE_FADE_S = 0.25;
+/** Duration (s) over which the judgement popup fades out. */
+const JUDGEMENT_FADE_S = 0.6;
 
 const JUDGEMENT_COLORS: Record<Judgement, string> = {
   good: '#9aff6a',
@@ -59,7 +69,9 @@ export function render(
     ctx.fillRect(x, 0, LANE_W - 4, CANVAS_H);
     const flash = Math.max(0, laneFlashUntilS[lane]! - now);
     if (flash > 0) {
-      ctx.globalAlpha = Math.min(flash * 4, 0.5);
+      // Ease the highlight out: bright near the strike, dropping off steeply as
+      // it nears the end of the flash window (easeOutCubic).
+      ctx.globalAlpha = easeOutCubic(clamp01(flash / LANE_FLASH_S)) * 0.5;
       ctx.fillStyle = LANE_COLORS[lane]!;
       ctx.fillRect(x, 0, LANE_W - 4, CANVAS_H);
       ctx.globalAlpha = 1;
@@ -93,11 +105,11 @@ export function render(
     const w = LANE_W - 14;
     const h = 22;
     if (note.hit === 1) {
-      ctx.globalAlpha = Math.max(0, 1 - (now - note.targetTimeS) * 4);
+      ctx.globalAlpha = easeOutCubic(clamp01(1 - (now - note.targetTimeS) / NOTE_FADE_S));
       ctx.fillStyle = '#ffffff';
     }
     else if (note.hit === 2) {
-      ctx.globalAlpha = Math.max(0, 1 - (now - note.targetTimeS - WINDOW.ok) * 4);
+      ctx.globalAlpha = easeOutCubic(clamp01(1 - (now - note.targetTimeS - WINDOW.ok) / NOTE_FADE_S));
       ctx.fillStyle = '#663333';
     }
     else {
@@ -119,8 +131,8 @@ export function render(
   // Last judgement popup.
   if (feedback) {
     const age = now - feedback.timeS;
-    if (age < 0.6) {
-      ctx.globalAlpha = Math.max(0, 1 - age / 0.6);
+    if (age < JUDGEMENT_FADE_S) {
+      ctx.globalAlpha = easeOutCubic(clamp01(1 - age / JUDGEMENT_FADE_S));
       ctx.fillStyle = JUDGEMENT_COLORS[feedback.hit];
       ctx.font = 'bold 28px system-ui';
       ctx.textAlign = 'center';
