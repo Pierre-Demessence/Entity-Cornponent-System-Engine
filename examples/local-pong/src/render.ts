@@ -1,15 +1,16 @@
 import type { GameState } from './game';
 
-import { Player, PositionDef, SizeDef } from './components';
+import { Canvas2DRenderer } from '@pierre/ecs/modules/render-canvas2d';
+
+import { Player } from './components';
 import { COURT_MARGIN, SCREEN_H, SCREEN_W, WINNING_SCORE } from './game';
 
 const BACKGROUND = '#081119';
 const COURT = '#e7edf6';
-const LEFT_PADDLE = '#7bdff2';
-const RIGHT_PADDLE = '#f7a072';
-const BALL = '#f4f7fb';
 const MUTED = '#91a4ba';
 const OVERLAY = 'rgba(8, 17, 25, 0.82)';
+
+const renderer = new Canvas2DRenderer();
 
 function label(owner: typeof Player.Left | typeof Player.Right): string {
   return owner === Player.Left ? 'Player 1' : 'Player 2';
@@ -18,9 +19,11 @@ function label(owner: typeof Player.Left | typeof Player.Right): string {
 export function render(ctx2d: CanvasRenderingContext2D, state: GameState): void {
   ctx2d.clearRect(0, 0, SCREEN_W, SCREEN_H);
 
+  // Background
   ctx2d.fillStyle = BACKGROUND;
   ctx2d.fillRect(0, 0, SCREEN_W, SCREEN_H);
 
+  // Court decorations
   ctx2d.strokeStyle = COURT;
   ctx2d.lineWidth = 3;
   ctx2d.strokeRect(COURT_MARGIN, COURT_MARGIN, SCREEN_W - COURT_MARGIN * 2, SCREEN_H - COURT_MARGIN * 2);
@@ -37,6 +40,7 @@ export function render(ctx2d: CanvasRenderingContext2D, state: GameState): void 
   ctx2d.strokeStyle = 'rgba(231, 237, 246, 0.35)';
   ctx2d.stroke();
 
+  // HUD — player labels and scores
   ctx2d.fillStyle = MUTED;
   ctx2d.font = '600 18px Georgia, serif';
   ctx2d.textAlign = 'center';
@@ -48,40 +52,10 @@ export function render(ctx2d: CanvasRenderingContext2D, state: GameState): void 
   ctx2d.fillText(String(state.scores.left), SCREEN_W * 0.4, 94);
   ctx2d.fillText(String(state.scores.right), SCREEN_W * 0.6, 94);
 
-  const posStore = state.world.getStore(PositionDef);
-  const sizeStore = state.world.getStore(SizeDef);
+  // Game entities — rendered by the engine
+  renderer.render({ ctx2d, world: state.world });
 
-  const leftId = state.paddleIds.left;
-  const rightId = state.paddleIds.right;
-  const ballId = state.ballId;
-
-  if (leftId != null) {
-    const pos = posStore.get(leftId);
-    const size = sizeStore.get(leftId);
-    if (pos && size) {
-      ctx2d.fillStyle = LEFT_PADDLE;
-      ctx2d.fillRect(pos.x, pos.y, size.w, size.h);
-    }
-  }
-
-  if (rightId != null) {
-    const pos = posStore.get(rightId);
-    const size = sizeStore.get(rightId);
-    if (pos && size) {
-      ctx2d.fillStyle = RIGHT_PADDLE;
-      ctx2d.fillRect(pos.x, pos.y, size.w, size.h);
-    }
-  }
-
-  if (ballId != null) {
-    const pos = posStore.get(ballId);
-    const size = sizeStore.get(ballId);
-    if (pos && size) {
-      ctx2d.fillStyle = BALL;
-      ctx2d.fillRect(pos.x, pos.y, size.w, size.h);
-    }
-  }
-
+  // Game-over overlay (on top of entities)
   if (!state.winner)
     return;
 

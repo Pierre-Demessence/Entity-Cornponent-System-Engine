@@ -20,3 +20,7 @@ export {
   type Renderable,
   RenderableDef,
 } from './renderable';
+export {
+  type ScreenSpace,
+  ScreenSpaceDef,
+} from './screen-space';

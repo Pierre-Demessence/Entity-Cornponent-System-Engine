@@ -13,6 +13,7 @@ import {
   Player,
 
   PositionDef,
+  RenderableDef,
   SizeDef,
   VelocityDef,
 } from './components';
@@ -64,6 +65,7 @@ export function makeWorld(): EcsWorld {
   world.registerComponent(PositionDef);
   world.registerComponent(VelocityDef);
   world.registerComponent(SizeDef);
+  world.registerComponent(RenderableDef);
   world.registerComponent(PaddleDef);
   world.registerComponent(BallDef);
   world.registerTag(PaddleTag);
@@ -91,6 +93,12 @@ export function spawnPaddle(state: GameState, owner: PlayerId): EntityId {
   state.world.getStore(VelocityDef).set(id, { vx: 0, vy: 0 });
   state.world.getStore(SizeDef).set(id, { h: PADDLE_H, w: PADDLE_W });
   state.world.getStore(PaddleDef).set(id, { owner });
+  state.world.getStore(RenderableDef).set(id, {
+    fill: owner === Player.Left ? '#7bdff2' : '#f7a072',
+    h: PADDLE_H,
+    kind: 'rect',
+    w: PADDLE_W,
+  });
   state.world.getTag(PaddleTag).add(id);
   return id;
 }
@@ -106,6 +114,12 @@ export function spawnBall(state: GameState): EntityId {
   state.world.getStore(BallDef).set(id, {
     launchSpeed: BALL_LAUNCH_SPEED,
     speedStep: BALL_SPEED_STEP,
+  });
+  state.world.getStore(RenderableDef).set(id, {
+    fill: '#f4f7fb',
+    h: BALL_SIZE,
+    kind: 'rect',
+    w: BALL_SIZE,
   });
   state.world.getTag(BallTag).add(id);
   return id;

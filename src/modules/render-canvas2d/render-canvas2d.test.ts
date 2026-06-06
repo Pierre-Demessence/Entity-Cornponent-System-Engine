@@ -9,6 +9,7 @@ import { Canvas2DRenderer } from './canvas2d-renderer';
 import { OpacityDef } from './opacity';
 import { RenderOrderDef } from './render-order';
 import { RenderableDef } from './renderable';
+import { ScreenSpaceDef } from './screen-space';
 
 type Call
   = | { op: 'fillRect'; x: number; y: number; w: number; h: number; fillStyle: string }
@@ -1092,6 +1093,98 @@ describe('canvas2DRenderer camera view + cull', () => {
     renderer.render({ ctx2d: rec.ctx2d, view: { x: 0, y: 0 }, world });
     expect(drawCalls(rec.calls)).toEqual([
       { fillStyle: '#fff', h: 10, op: 'fillRect', w: 10, x: 100, y: 10 },
+    ]);
+  });
+});
+
+describe('canvas2DRenderer screen-space overlay', () => {
+  let world: EcsWorld;
+  let renderer: Canvas2DRenderer;
+
+  beforeEach(() => {
+    world = new EcsWorld();
+    world.registerComponent(PositionDef);
+    world.registerComponent(RenderableDef);
+    world.registerComponent(ScreenSpaceDef);
+    renderer = new Canvas2DRenderer();
+  });
+
+  it('draws a screen-space entity without camera transform', () => {
+    const id = world.createEntity();
+    world.getStore(PositionDef).set(id, { x: 50, y: 60 });
+    world.getStore(RenderableDef).set(id, { fill: '#f00', h: 10, kind: 'rect', w: 20 });
+    world.getStore(ScreenSpaceDef).set(id, { value: true });
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, world });
+    expect(drawCalls(rec.calls)).toEqual([
+      { fillStyle: '#f00', h: 10, op: 'fillRect', w: 20, x: 50, y: 60 },
+    ]);
+  });
+
+  it('draws screen-space entities in pixel coords even with a camera view', () => {
+    const id = world.createEntity();
+    world.getStore(PositionDef).set(id, { x: 200, y: 100 });
+    world.getStore(RenderableDef).set(id, { fill: '#0f0', h: 10, kind: 'rect', w: 10 });
+    world.getStore(ScreenSpaceDef).set(id, { value: true });
+    const rec = makeRecorder();
+    // Camera at (500, 500) — world pass translates by -500; overlay must ignore that.
+    renderer.render({ ctx2d: rec.ctx2d, view: { x: 500, y: 500 }, world });
+    // The rect should appear at {200, 100}, not {−300, −400}.
+    expect(drawCalls(rec.calls)).toEqual([
+      { fillStyle: '#0f0', h: 10, op: 'fillRect', w: 10, x: 200, y: 100 },
+    ]);
+  });
+
+  it('keeps world-space entity in world pass and screen-space in overlay pass', () => {
+    const ws = world.createEntity();
+    world.getStore(PositionDef).set(ws, { x: 30, y: 40 });
+    world.getStore(RenderableDef).set(ws, { fill: '#aaa', h: 10, kind: 'rect', w: 10 });
+    const ss = world.createEntity();
+    world.getStore(PositionDef).set(ss, { x: 300, y: 20 });
+    world.getStore(RenderableDef).set(ss, { fill: '#f00', h: 10, kind: 'rect', w: 10 });
+    world.getStore(ScreenSpaceDef).set(ss, { value: true });
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, view: { x: 0, y: 0 }, world });
+    expect(drawCalls(rec.calls)).toEqual([
+      { fillStyle: '#aaa', h: 10, op: 'fillRect', w: 10, x: 30, y: 40 },
+      { fillStyle: '#f00', h: 10, op: 'fillRect', w: 10, x: 300, y: 20 },
+    ]);
+  });
+
+  it('sorts screen-space entities by RenderOrderDef', () => {
+    world.registerComponent(RenderOrderDef);
+    const back = world.createEntity();
+    world.getStore(PositionDef).set(back, { x: 0, y: 0 });
+    world.getStore(RenderableDef).set(back, { fill: '#888', h: 10, kind: 'rect', w: 10 });
+    world.getStore(ScreenSpaceDef).set(back, { value: true });
+    world.getStore(RenderOrderDef).set(back, { value: 0 });
+    const front = world.createEntity();
+    world.getStore(PositionDef).set(front, { x: 0, y: 0 });
+    world.getStore(RenderableDef).set(front, { fill: '#fff', h: 10, kind: 'rect', w: 10 });
+    world.getStore(ScreenSpaceDef).set(front, { value: true });
+    world.getStore(RenderOrderDef).set(front, { value: 1 });
+    const rec = makeRecorder();
+    renderer.render({ ctx2d: rec.ctx2d, world });
+    const dc = drawCalls(rec.calls);
+    expect(dc).toHaveLength(2);
+    expect(dc[0]!.fillStyle).toBe('#888');
+    expect(dc[1]!.fillStyle).toBe('#fff');
+  });
+
+  it('skips overlay pass when no entity has ScreenSpaceDef', () => {
+    // Don't register ScreenSpaceDef — overlay pass should be a no-op.
+    const w = new EcsWorld();
+    w.registerComponent(PositionDef);
+    w.registerComponent(RenderableDef);
+    const r = new Canvas2DRenderer();
+    const id = w.createEntity();
+    w.getStore(PositionDef).set(id, { x: 10, y: 10 });
+    w.getStore(RenderableDef).set(id, { fill: '#fff', h: 10, kind: 'rect', w: 10 });
+    const rec = makeRecorder();
+    r.render({ ctx2d: rec.ctx2d, world: w });
+    // Single draw call, no extra save/restore from overlay pass.
+    expect(drawCalls(rec.calls)).toEqual([
+      { fillStyle: '#fff', h: 10, op: 'fillRect', w: 10, x: 10, y: 10 },
     ]);
   });
 });
