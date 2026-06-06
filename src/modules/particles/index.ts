@@ -1,0 +1,17 @@
+export {
+  burst,
+  type BurstConfig,
+  type EmissionShape,
+  makeParticleEmitterSystem,
+  makeParticleSystem,
+  type Particle,
+  ParticleDef,
+  type ParticleEmitter,
+  ParticleEmitterDef,
+  type ParticleEmitterSystemOptions,
+  type ParticleEmitterTickCtx,
+  type ParticleSystemOptions,
+  ParticleTag,
+  type ParticleTickCtx,
+  type Range,
+} from './particles';

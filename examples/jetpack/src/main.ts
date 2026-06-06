@@ -3,6 +3,7 @@ import type { GameState, JetpackAction } from './game';
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider, Pointer, PointerProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
+import { makeParticleSystem } from '@pierre/ecs/modules/particles';
 import { makeSpawner } from '@pierre/ecs/modules/spawner';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
@@ -66,6 +67,7 @@ export function start(container: HTMLElement): () => void {
     .add(motionSystem)
     .add(playerBoundsSystem)
     .add(recycleSystem)
+    .add(makeParticleSystem<GameState>({ runAfter: ['motion'] }))
     .add(makeLifetimeSystem<GameState>({ runAfter: ['motion'] }))
     .add(collisionSystem)
     .add(scoreSystem);

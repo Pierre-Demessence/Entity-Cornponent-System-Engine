@@ -3,8 +3,10 @@ import type { InputState } from '@pierre/ecs/modules/input';
 import type { HashGrid2D } from '@pierre/ecs/modules/spatial';
 
 import { EcsWorld } from '@pierre/ecs';
+import { ParticleDef, ParticleTag } from '@pierre/ecs/modules/particles';
 import { OpacityDef, RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
 import { cellOfPoint } from '@pierre/ecs/modules/spatial';
+import { ScaleDef } from '@pierre/ecs/modules/transform';
 
 import {
   BulletTag,
@@ -78,10 +80,13 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(RenderableDef);
   w.registerComponent(RenderOrderDef);
   w.registerComponent(OpacityDef);
+  w.registerComponent(ScaleDef);
+  w.registerComponent(ParticleDef);
   w.registerTag(ShipTag);
   w.registerTag(RockTag);
   w.registerTag(BulletTag);
   w.registerTag(ThrustFlameTag);
+  w.registerTag(ParticleTag);
   return w;
 }
 

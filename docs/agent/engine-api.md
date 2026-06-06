@@ -276,6 +276,23 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`VelocityIntegrationOptions`** _(interface)_ — —
 - **`VelocityIntegrationTickCtx`** _(interface)_ — —
 
+### `@pierre/ecs/modules/particles`
+- **`burst`** _(fn)_ — Spawn `config.count` particles in one shot and return their entity ids. Each particle carries `PositionDef`, `VelocityDef`, `LifetimeDef`...
+- **`BurstConfig`** _(interface)_ — Configuration for burst (and the per-emission config of an emitter).
+- **`EmissionShape`** _(type)_ — Emission region: a point, or a circle / ring of `radius` around `position`.
+- **`makeParticleEmitterSystem`** _(fn)_ — Drive every ParticleEmitterDef: each tick advances its `spawner` and fires a burst (centred on the emitter's current `config.position`) o...
+- **`makeParticleSystem`** _(fn)_ — Advance over-lifetime particle animation each tick: applies gravity and damping to velocity, and writes `OpacityDef` / `ScaleDef` / `Rota...
+- **`Particle`** _(interface)_ — Per-particle runtime fields the makeParticleSystem reads to drive over-lifetime animation. Flat primitives so it embeds in a `simpleCompo...
+- **`ParticleDef`** _(const)_ — —
+- **`ParticleEmitter`** _(interface)_ — A continuous particle source: emits `config` on each `spawner` interval.
+- **`ParticleEmitterDef`** _(const)_ — Runtime-only component (holds live `Spawner` / config callbacks, so it is not serializable — emitters are re-created on load, like any ot...
+- **`ParticleEmitterSystemOptions`** _(interface)_ — —
+- **`ParticleEmitterTickCtx`** _(interface)_ — —
+- **`ParticleSystemOptions`** _(interface)_ — —
+- **`ParticleTag`** _(const)_ — Tag attached to every particle this module spawns.
+- **`ParticleTickCtx`** _(interface)_ — —
+- **`Range`** _(type)_ — Inclusive `[min, max]` range sampled uniformly per particle.
+
 ### `@pierre/ecs/modules/pathfinding`
 - **`findPath`** _(fn)_ — A* pathfinding on an abstract 2D grid. Returns the ordered waypoints **excluding** the start and **including** the goal, or `null` if unr...
 - **`FindPathOptions`** _(interface)_ — —

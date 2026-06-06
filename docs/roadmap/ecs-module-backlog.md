@@ -33,7 +33,7 @@ considered and rejected".
     - [`modules/audio` V1 — ✅ shipped 2026-04-23](#modulesaudio-v1---shipped-2026-04-23)
     - [`modules/audio` V2 — deferred](#modulesaudio-v2--deferred)
     - [`modules/animation` — partially shipped (easing + tween 2026-07-18; sprite-frame + skeletal deferred)](#modulesanimation--partially-shipped-easing--tween-2026-07-18-sprite-frame--skeletal-deferred)
-    - [`modules/particles` — deferred](#modulesparticles--deferred)
+    - [`modules/particles` — ✅ shipped 2026-07-18](#modulesparticles---shipped-2026-07-18)
     - [`modules/ui` — speculative](#modulesui--speculative)
     - [`modules/render-dom` V1 — ✅ shipped 2026-04-23](#modulesrender-dom-v1---shipped-2026-04-23)
     - [`modules/render-dom` V2 — deferred](#modulesrender-dom-v2--deferred)
@@ -444,29 +444,33 @@ sprite-animation slice once a second lands.
 
 </details>
 
-### `modules/particles` — deferred
+### `modules/particles` — ✅ shipped (2026-07-18)
 
-**Scope.** `ParticleEmitterDef` + emitter system that spawns
-short-lived entities rendered via the existing `RenderableDef`
-variants.
+**Shipped** canon-complete (Godot `CPUParticles2D` + `ParticleProcessMaterial`,
+Unity `ParticleSystem`, Phaser/Pixi): a one-shot `burst(world, config)` (radial /
+cone / circle / ring emission), a continuous `ParticleEmitterDef` +
+`makeParticleEmitterSystem` (cadence via `Spawner`), and `makeParticleSystem`
+for over-lifetime **fade / shrink / spin / gravity / damping**@[`particles/particles.ts`](../../src/modules/particles/particles.ts).
+No special renderer — particles are `RenderableDef` rects moved by `motion`,
+reaped by `lifetime`. Composes `lifetime` + `timer` + `easing` + `math` + `rng`
+(+ `spawner` for emitters) + `render-canvas2d` (`Opacity`/`Scale`/`Rotation`).
+Built canon-first — the over-life curves (fade/shrink/spin/forces) are canon that
+**no consumer had yet**.
 
 <details>
-<summary>Details</summary>
+<summary>Consumers + still-deferred</summary>
 
-**Probable shape.** `ParticleEmitterDef { rate, lifetimeMs, velocity, … }`
+**Migrated (3 real hand-rollers + 1 adopter).** space-invaders, frogger, and
+jetpack each hand-rolled a `spawnParticle` + radial `burst`/`explode` — all
+migrated to `burst` (+ `fadeOut`). asteroids (no prior particles) **adopted** a
+fading + shrinking rock-kill debris burst as new juice.
 
-- emitter system that spawns short-lived entities (likely consumes
-`modules/lifetime`). Rendered via `modules/render-canvas2d` using
-existing `RenderableDef` variants — no special particle renderer in v1.
+> **Correction:** ledger B8 listed asteroids as a 4th hand-roller — it had **no**
+> particle system (it splits rocks into smaller rocks). Real hand-rollers = 3
+> (space-invaders, frogger, jetpack); asteroids is an adopter.
 
-**Trigger — MET (2026-07-15).** Four consumers hand-roll a
-`spawnParticle` + radial `burst()` (frogger, jetpack, space-invaders,
-asteroids — engine-gap-ledger B8). TTL already ships
-(`modules/lifetime`), so the remaining gap is the emitter/burst helper.
-Ready to build; not yet scheduled.
-
-**Canon.** Unity `ParticleSystem`, Godot `GPUParticles2D`, Phaser
-`ParticleEmitter`.
+**Still deferred.** Sub-emitters / trails / particle-collision (Godot/Unity
+advanced); sprite-kind particles beyond rects. Add when a consumer needs them.
 
 </details>
 
@@ -1210,7 +1214,7 @@ When any of the below becomes true, open a plan for the matching module.
 | ✅ **SHIPPED 2026-07-16** — cooldown / grace timer (3 poll/trigger consumers) | `modules/cooldown` (+ `modules/timer` core) |
 | **MET** — discrete grid movement in 3 consumers | `modules/grid-movement` |
 | **MET** — follow/carrier attach in 3 consumers | `modules/attach` |
-| **MET** — FX bursts in 4 consumers | `modules/particles` |
+| ✅ **SHIPPED 2026-07-18** — FX bursts (3 hand-rollers + 1 adopter) | `modules/particles` |
 | ✅ **SHIPPED 2026-07-18** — renderer camera-consume + off-screen cull (rpg, tilemap) | `modules/camera` V2 |
 | **MET** — screen-space HUD/overlay in 2 consumers | `RenderableDef` V3 overlay |
 | **MET** — 2nd authored tile-grid (auto-spawn) | `modules/tilemap` |

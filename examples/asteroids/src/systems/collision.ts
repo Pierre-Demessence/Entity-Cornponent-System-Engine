@@ -3,6 +3,7 @@ import type { EntityId, SchedulableSystem } from '@pierre/ecs';
 import type { GameState } from '../game';
 
 import { circleVsCircle, makeTriggerSystem } from '@pierre/ecs/modules/collision';
+import { burst } from '@pierre/ecs/modules/particles';
 
 import {
   BulletTag,
@@ -98,6 +99,17 @@ function makeCollisionSystem(): SchedulableSystem<GameState> {
         const spec = ROCK_TIERS[tier]!;
         const pos = posStore.get(rockId)!;
         ctx.score += spec.score;
+        // Debris burst: a fading, shrinking radial spray scaled to the rock.
+        burst(ctx.world, {
+          colors: ['#cfd8dc', '#9a9a9a', '#7a8a8a'],
+          count: 8 + spec.spawnChildren * 4,
+          fadeOut: true,
+          lifetimeMs: [320, 620],
+          position: { x: pos.x, y: pos.y },
+          shrink: true,
+          size: [2, 4],
+          speed: [60, 220],
+        });
         despawn(ctx, rockId);
         despawn(ctx, bulletId);
         if (spec.spawnChildren > 0 && spec.childTier >= 0) {

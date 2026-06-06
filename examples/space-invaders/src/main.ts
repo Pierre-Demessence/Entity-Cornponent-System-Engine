@@ -4,6 +4,7 @@ import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { makeCooldownSystem } from '@pierre/ecs/modules/cooldown';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
+import { makeParticleSystem } from '@pierre/ecs/modules/particles';
 import { makeSpawner } from '@pierre/ecs/modules/spawner';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
@@ -75,6 +76,7 @@ export function start(container: HTMLElement): () => void {
     .add(motionSystem)
     .add(collisionSystem)
     .add(recycleSystem)
+    .add(makeParticleSystem<GameState>({ runAfter: ['motion'] }))
     .add(makeLifetimeSystem<GameState>({ runAfter: ['motion'] }))
     .add(waveSystem);
 

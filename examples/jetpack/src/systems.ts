@@ -5,6 +5,7 @@ import type { GameState } from './game';
 import { aabbVsAabb } from '@pierre/ecs/modules/collision';
 import { clamp } from '@pierre/ecs/modules/math';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
+import { ParticleTag as ParticlesTag } from '@pierre/ecs/modules/particles';
 import { tickSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
@@ -136,6 +137,11 @@ export const recycleSystem: SchedulableSystem<GameState> = {
         ctx.world.queueDestroy(id);
     }
     for (const id of ctx.world.getTag(ParticleTag)) {
+      const pos = posStore.get(id);
+      if (pos && (pos.x > SCREEN_W + 40 || pos.x < -40 || pos.y > FLOOR_Y + 60))
+        ctx.world.queueDestroy(id);
+    }
+    for (const id of ctx.world.getTag(ParticlesTag)) {
       const pos = posStore.get(id);
       if (pos && (pos.x > SCREEN_W + 40 || pos.x < -40 || pos.y > FLOOR_Y + 60))
         ctx.world.queueDestroy(id);

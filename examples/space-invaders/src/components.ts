@@ -3,6 +3,7 @@ import type { ComponentDef, TagDef } from '@pierre/ecs';
 import { simpleComponent } from '@pierre/ecs';
 
 export {
+  OpacityDef,
   RenderableDef,
   RenderOrderDef,
 } from '@pierre/ecs/modules/render-canvas2d';
@@ -52,4 +53,3 @@ export const RocketTag: TagDef = { name: 'rocket' };
 export const BombTag: TagDef = { name: 'bomb' };
 export const MothershipTag: TagDef = { name: 'mothership' };
 export const BunkerTag: TagDef = { name: 'bunkerBrick' };
-export const ParticleTag: TagDef = { name: 'particleBody' };

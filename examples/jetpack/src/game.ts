@@ -5,6 +5,8 @@ import type { Spawner } from '@pierre/ecs/modules/spawner';
 import { EcsWorld } from '@pierre/ecs';
 import { LifetimeDef, makeLifetime } from '@pierre/ecs/modules/lifetime';
 import { clamp01, inverseLerp, lerp } from '@pierre/ecs/modules/math';
+import { burst, ParticleDef, ParticleTag as ParticlesTag } from '@pierre/ecs/modules/particles';
+import { OpacityDef } from '@pierre/ecs/modules/render-canvas2d';
 import { resetSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
@@ -72,9 +74,12 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(LifetimeDef);
   w.registerComponent(RenderableDef);
   w.registerComponent(RenderOrderDef);
+  w.registerComponent(ParticleDef);
+  w.registerComponent(OpacityDef);
   w.registerTag(PlayerTag);
   w.registerTag(ObstacleTag);
   w.registerTag(ParticleTag);
+  w.registerTag(ParticlesTag);
   return w;
 }
 
@@ -184,20 +189,16 @@ export function spawnParticle(
 }
 
 export function explode(state: GameState, x: number, y: number): void {
-  for (let i = 0; i < 26; i++) {
-    const angle = (Math.PI * 2 * i) / 26 + Math.random() * 0.4;
-    const speed = 120 + Math.random() * 280;
-    spawnParticle(
-      state,
-      x,
-      y,
-      Math.cos(angle) * speed,
-      Math.sin(angle) * speed,
-      500 + Math.random() * 400,
-      Math.random() < 0.5 ? '#ff7b00' : '#ffd23f',
-      4 + Math.random() * 4,
-    );
-  }
+  burst(state.world, {
+    colors: ['#ff7b00', '#ffd23f'],
+    count: 26,
+    fadeOut: true,
+    lifetimeMs: [500, 900],
+    position: { x, y },
+    renderOrder: 28,
+    size: [4, 8],
+    speed: [120, 400],
+  });
 }
 
 /** Obstacle cadence tightens as the run speeds up, with per-spawn jitter. */

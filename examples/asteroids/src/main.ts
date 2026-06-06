@@ -5,6 +5,7 @@ import { makeCooldownSystem } from '@pierre/ecs/modules/cooldown';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
+import { makeParticleSystem } from '@pierre/ecs/modules/particles';
 import { HashGrid2D, makeGridSyncOnMove } from '@pierre/ecs/modules/spatial';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
@@ -55,6 +56,7 @@ export function start(container: HTMLElement): () => void {
     .add(cooldownSystem)
     .add(inputSystem)
     .add(motionSystem)
+    .add(makeParticleSystem<GameState>({ runAfter: ['movement'] }))
     .add(lifetimeSystem)
     .add(collisionSystem)
     .add(thrustFlameSystem);

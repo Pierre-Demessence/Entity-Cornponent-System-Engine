@@ -4,7 +4,9 @@ import type { InputState } from '@pierre/ecs/modules/input';
 import type { ObstacleKind } from './components';
 
 import { EcsWorld } from '@pierre/ecs';
-import { LifetimeDef, makeLifetime } from '@pierre/ecs/modules/lifetime';
+import { LifetimeDef } from '@pierre/ecs/modules/lifetime';
+import { burst as particleBurst, ParticleDef, ParticleTag } from '@pierre/ecs/modules/particles';
+import { OpacityDef } from '@pierre/ecs/modules/render-canvas2d';
 
 import {
   FrogTag,
@@ -136,8 +138,11 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(LifetimeDef);
   w.registerComponent(RenderableDef);
   w.registerComponent(RenderOrderDef);
+  w.registerComponent(ParticleDef);
+  w.registerComponent(OpacityDef);
   w.registerTag(FrogTag);
   w.registerTag(ObstacleTag);
+  w.registerTag(ParticleTag);
   return w;
 }
 
@@ -229,30 +234,7 @@ export function spawnLanes(state: GameState): void {
   }
 }
 
-export function spawnParticle(
-  state: GameState,
-  x: number,
-  y: number,
-  vx: number,
-  vy: number,
-  lifeMs: number,
-  fill: string,
-  size: number,
-): void {
-  const id = state.world.createEntity();
-  state.world.getStore(PositionDef).set(id, { x, y });
-  state.world.getStore(VelocityDef).set(id, { vx, vy });
-  state.world.getStore(LifetimeDef).set(id, makeLifetime(lifeMs));
-  state.world.getStore(RenderableDef).set(id, {
-    anchor: 'center',
-    fill,
-    h: size,
-    kind: 'rect',
-    w: size,
-  });
-  state.world.getStore(RenderOrderDef).set(id, { value: 28 });
-}
-
+/** Spray a radial debris burst (fading out) at `(x, y)`. */
 export function burst(
   state: GameState,
   x: number,
@@ -260,20 +242,16 @@ export function burst(
   count: number,
   colors: string[],
 ): void {
-  for (let i = 0; i < count; i++) {
-    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
-    const speed = 50 + Math.random() * 200;
-    spawnParticle(
-      state,
-      x,
-      y,
-      Math.cos(angle) * speed,
-      Math.sin(angle) * speed,
-      350 + Math.random() * 320,
-      colors[Math.floor(Math.random() * colors.length)],
-      3 + Math.random() * 4,
-    );
-  }
+  particleBurst(state.world, {
+    colors,
+    count,
+    fadeOut: true,
+    lifetimeMs: [350, 670],
+    position: { x, y },
+    renderOrder: 28,
+    size: [3, 7],
+    speed: [50, 250],
+  });
 }
 
 export function frogCenter(state: GameState): { x: number; y: number } {

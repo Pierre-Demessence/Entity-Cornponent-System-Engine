@@ -4,7 +4,8 @@ import type { Spawner } from '@pierre/ecs/modules/spawner';
 
 import { EcsWorld } from '@pierre/ecs';
 import { CooldownDef, makeCooldown } from '@pierre/ecs/modules/cooldown';
-import { LifetimeDef, makeLifetime } from '@pierre/ecs/modules/lifetime';
+import { LifetimeDef } from '@pierre/ecs/modules/lifetime';
+import { burst, ParticleDef, ParticleTag } from '@pierre/ecs/modules/particles';
 import { resetSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
@@ -14,6 +15,7 @@ import {
   BunkerDef,
   BunkerTag,
   MothershipTag,
+  OpacityDef,
   PlayerTag,
   PositionDef,
   RenderableDef,
@@ -110,12 +112,15 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(LifetimeDef);
   w.registerComponent(RenderableDef);
   w.registerComponent(RenderOrderDef);
+  w.registerComponent(ParticleDef);
+  w.registerComponent(OpacityDef);
   w.registerTag(PlayerTag);
   w.registerTag(AlienTag);
   w.registerTag(RocketTag);
   w.registerTag(BombTag);
   w.registerTag(MothershipTag);
   w.registerTag(BunkerTag);
+  w.registerTag(ParticleTag);
   return w;
 }
 
@@ -257,30 +262,7 @@ export function spawnMothership(state: GameState): void {
   state.world.getTag(MothershipTag).add(id);
 }
 
-export function spawnParticle(
-  state: GameState,
-  x: number,
-  y: number,
-  vx: number,
-  vy: number,
-  lifeMs: number,
-  fill: string,
-  size: number,
-): void {
-  const id = state.world.createEntity();
-  state.world.getStore(PositionDef).set(id, { x, y });
-  state.world.getStore(VelocityDef).set(id, { vx, vy });
-  state.world.getStore(LifetimeDef).set(id, makeLifetime(lifeMs));
-  state.world.getStore(RenderableDef).set(id, {
-    anchor: 'center',
-    fill,
-    h: size,
-    kind: 'rect',
-    w: size,
-  });
-  state.world.getStore(RenderOrderDef).set(id, { value: 28 });
-}
-
+/** Spray a debris burst (radial, fading out) at an explosion site. */
 export function explode(
   state: GameState,
   x: number,
@@ -288,20 +270,16 @@ export function explode(
   count: number,
   colors: string[],
 ): void {
-  for (let i = 0; i < count; i++) {
-    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
-    const speed = 60 + Math.random() * 220;
-    spawnParticle(
-      state,
-      x,
-      y,
-      Math.cos(angle) * speed,
-      Math.sin(angle) * speed,
-      360 + Math.random() * 360,
-      colors[Math.floor(Math.random() * colors.length)],
-      3 + Math.random() * 4,
-    );
-  }
+  burst(state.world, {
+    colors,
+    count,
+    fadeOut: true,
+    lifetimeMs: [360, 720],
+    position: { x, y },
+    renderOrder: 28,
+    size: [3, 7],
+    speed: [60, 280],
+  });
 }
 
 export function startWave(state: GameState): void {
