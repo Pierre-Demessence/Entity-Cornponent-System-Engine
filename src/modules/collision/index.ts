@@ -3,7 +3,10 @@ export {
   aabbVsAabb,
   aabbVsAabbSwept,
   aabbVsCircle,
+  bounceOffAabb,
+  type BounceResult,
   circleVsCircle,
+  reflect,
   type SweptHit,
   type Vec2,
 } from './narrowphase';

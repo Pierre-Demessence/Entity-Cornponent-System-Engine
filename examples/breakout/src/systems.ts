@@ -2,6 +2,7 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from './game';
 
+import { bounceOffAabb } from '@pierre/ecs/modules/collision';
 import { clamp } from '@pierre/ecs/modules/math';
 import { makeVelocityIntegrationSystem, scaleToSpeed } from '@pierre/ecs/modules/motion';
 
@@ -156,27 +157,22 @@ export const brickCollisionSystem: SchedulableSystem<GameState> = {
     const posStore = ctx.world.getStore(PositionDef);
     const brickStore = ctx.world.getStore(BrickDef);
 
+    const ballAabb = { h: BALL_R * 2, w: BALL_R * 2, x: pos.x - BALL_R, y: pos.y - BALL_R };
+
     for (const id of ctx.world.getTag(BrickTag)) {
       const brick = brickStore.get(id);
       const bp = posStore.get(id);
       if (!brick || !bp)
         continue;
 
-      const cx = bp.x + BRICK_W / 2;
-      const cy = bp.y + BRICK_H / 2;
-      const overlapX = BALL_R + BRICK_W / 2 - Math.abs(pos.x - cx);
-      const overlapY = BALL_R + BRICK_H / 2 - Math.abs(pos.y - cy);
-      if (overlapX <= 0 || overlapY <= 0)
+      const r = bounceOffAabb(ballAabb, { x: vel.vx, y: vel.vy }, { h: BRICK_H, w: BRICK_W, x: bp.x, y: bp.y });
+      if (!r)
         continue;
 
-      if (overlapX < overlapY) {
-        pos.x += pos.x < cx ? -overlapX : overlapX;
-        vel.vx = pos.x < cx ? -Math.abs(vel.vx) : Math.abs(vel.vx);
-      }
-      else {
-        pos.y += pos.y < cy ? -overlapY : overlapY;
-        vel.vy = pos.y < cy ? -Math.abs(vel.vy) : Math.abs(vel.vy);
-      }
+      pos.x += r.pushOut.x;
+      pos.y += r.pushOut.y;
+      vel.vx = r.velocity.x;
+      vel.vy = r.velocity.y;
 
       ctx.world.queueDestroy(id);
       ctx.bricksLeft -= 1;
