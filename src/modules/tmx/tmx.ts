@@ -43,6 +43,8 @@ export interface ParseTmxOptions {
 
 /** A single image-based tileset cut into a uniform grid. */
 export interface TmxTileset {
+  /** Tileset name. */
+  name: string;
   /** Number of tile columns in the sheet (derived if not declared). */
   columns: number;
   /** Global id of this tileset's first tile (first tile id is 1). */
@@ -63,6 +65,208 @@ export interface TmxTileset {
   tileWidth: number;
 }
 
+/** Result of resolving a global tile ID against a map's tilesets. */
+export interface ResolvedTile {
+  /** Local tile ID within the tileset (0-based). */
+  localId: number;
+  /** The tileset this tile belongs to. */
+  tileset: TmxTileset;
+}
+
+/**
+ * Resolve a global tile ID to its owning tileset and local tile index.
+ * Returns `undefined` when `gid` is 0 (empty cell) or doesn't belong to
+ * any tileset.
+ */
+export function resolveGid(map: TmxMap, gid: number): ResolvedTile | undefined {
+  if (gid === 0)
+    return undefined;
+  // Tilesets are ordered by ascending firstgid
+  for (let i = map.tilesets.length - 1; i >= 0; i--) {
+    const ts = map.tilesets[i]!;
+    if (gid >= ts.firstgid)
+      return { localId: gid - ts.firstgid, tileset: ts };
+  }
+  return undefined;
+}
+
+// ── Object layers ─────────────────────────────────────────────────────
+
+/** A TMX object group (object layer). */
+export interface TmxObjectGroup {
+  name: string;
+  /** Hex color used to display objects in Tiled. */
+  color?: string;
+  /** Draw order: 'index' (file order) or 'topdown' (by y-coordinate). */
+  draworder: 'index' | 'topdown';
+  /** Objects in this group. */
+  objects: TmxObject[];
+  /** Horizontal offset in pixels. */
+  offsetX: number;
+  /** Vertical offset in pixels. */
+  offsetY: number;
+  /** Opacity from 0 to 1. */
+  opacity: number;
+  /** Custom properties. */
+  properties?: TmxProperties;
+  /** Whether the layer is shown. */
+  visible: boolean;
+}
+
+/** Text label attached to an object (since Tiled 1.0). */
+export interface TmxText {
+  bold: boolean;
+  color: string;
+  fontfamily: string;
+  halign: 'center' | 'justify' | 'left' | 'right';
+  italic: boolean;
+  kerning: boolean;
+  pixelsize: number;
+  strikeout: boolean;
+  /** The text content. */
+  text: string;
+  underline: boolean;
+  valign: 'bottom' | 'center' | 'top';
+  wrap: boolean;
+}
+
+/** A single object in an object group. */
+export interface TmxObject {
+  /** Unique ID. */
+  id: number;
+  /** Object name. */
+  name: string;
+  /** True when the object is an ellipse-shaped region. */
+  ellipse?: boolean;
+  /** Reference to a global tile ID (tile objects). */
+  gid?: number;
+  /** Height in pixels. */
+  height: number;
+  /** Polygon vertices, relative to (x, y). */
+  polygon?: readonly { x: number; y: number }[];
+  /** Polyline vertices, relative to (x, y). */
+  polyline?: readonly { x: number; y: number }[];
+  /** Custom properties. */
+  properties?: TmxProperties;
+  /** Rotation in degrees clockwise. */
+  rotation: number;
+  /** Text label (text objects). */
+  text?: TmxText;
+  /** Object class/type. */
+  type: string;
+  /** Whether the object is visible. */
+  visible: boolean;
+  /** Width in pixels. */
+  width: number;
+  /** X coordinate in pixels. */
+  x: number;
+  /** Y coordinate in pixels. */
+  y: number;
+}
+
+function parseText(tag: string): TmxText {
+  return {
+    bold: (readAttr(tag, 'bold') ?? '0') !== '0',
+    color: readAttr(tag, 'color') ?? '#000000',
+    fontfamily: readAttr(tag, 'fontfamily') ?? 'sans-serif',
+    halign: (readAttr(tag, 'halign') ?? 'left') as TmxText['halign'],
+    italic: (readAttr(tag, 'italic') ?? '0') !== '0',
+    kerning: (readAttr(tag, 'kerning') ?? '1') !== '0',
+    pixelsize: Number(readAttr(tag, 'pixelsize') ?? '16'),
+    strikeout: (readAttr(tag, 'strikeout') ?? '0') !== '0',
+    text: '',
+    underline: (readAttr(tag, 'underline') ?? '0') !== '0',
+    valign: (readAttr(tag, 'valign') ?? 'top') as TmxText['valign'],
+    wrap: (readAttr(tag, 'wrap') ?? '0') !== '0',
+  };
+}
+
+function parsePoints(attr: string | undefined): { x: number; y: number }[] {
+  if (!attr)
+    return [];
+  return attr.split(' ').map((p) => {
+    const [x, y] = p.split(',');
+    return { x: Number(x), y: Number(y) };
+  });
+}
+
+function parseObject(tag: string, inner: string): TmxObject {
+  const hasEllipse = /<ellipse\b/.test(inner);
+  const hasPoint = /<point\b/.test(inner);
+  const polygonMatch = inner.match(/<polygon\b[^>]+points="([^"]*)"/);
+  const polylineMatch = inner.match(/<polyline\b[^>]+points="([^"]*)"/);
+  const textMatch = inner.match(/<text\b([^>]*)>([\s\S]*?)<\/text>/);
+  const propsMatch = inner.match(/<properties>([\s\S]*?)<\/properties>/);
+
+  const text = textMatch ? { ...parseText(textMatch[1]!), text: textMatch[2]?.trim() ?? '' } : undefined;
+  const obj: TmxObject = {
+    id: Number(readAttr(tag, 'id') ?? '0'),
+    name: readAttr(tag, 'name') ?? '',
+    ellipse: hasEllipse || undefined,
+    gid: Number(readAttr(tag, 'gid') ?? '0') || undefined,
+    height: Number(readAttr(tag, 'height') ?? '0'),
+    polygon: polygonMatch ? parsePoints(polygonMatch[1]) : undefined,
+    polyline: polylineMatch ? parsePoints(polylineMatch[1]) : undefined,
+    properties: propsMatch ? parseProperties(propsMatch[1]!) : undefined,
+    rotation: Number(readAttr(tag, 'rotation') ?? '0'),
+    text,
+    type: readAttr(tag, 'type') ?? readAttr(tag, 'class') ?? '',
+    visible: (readAttr(tag, 'visible') ?? '1') !== '0',
+    width: Number(readAttr(tag, 'width') ?? '0'),
+    x: Number(readAttr(tag, 'x') ?? '0'),
+    y: Number(readAttr(tag, 'y') ?? '0'),
+  };
+  return hasPoint ? { ...obj, ellipse: undefined, height: 0, width: 0 } : obj;
+}
+
+function parseObjectGroup(tag: string, inner: string): TmxObjectGroup {
+  const objects: TmxObject[] = [];
+  // Match both <object ... /> (self-closing) and <object ...>...</object>
+  for (const m of inner.matchAll(/<object\b([^>]+?)(?:\/>|>([\s\S]*?)<\/object>)/g))
+    objects.push(parseObject(m[1]!, m[2] ?? ''));
+
+  const propsMatch = inner.match(/<properties>([\s\S]*?)<\/properties>/);
+  return {
+    name: readAttr(tag, 'name') ?? '',
+    color: readAttr(tag, 'color'),
+    draworder: (readAttr(tag, 'draworder') ?? 'topdown') as 'index' | 'topdown',
+    objects,
+    offsetX: Number(readAttr(tag, 'offsetx') ?? '0'),
+    offsetY: Number(readAttr(tag, 'offsety') ?? '0'),
+    opacity: Number(readAttr(tag, 'opacity') ?? '1'),
+    properties: propsMatch ? parseProperties(propsMatch[1]!) : undefined,
+    visible: (readAttr(tag, 'visible') ?? '1') !== '0',
+  };
+}
+
+// ── Properties ─────────────────────────────────────────────────────────
+
+/** A single custom property. */
+export interface TmxProperty {
+  name: string;
+  type: 'bool' | 'color' | 'file' | 'float' | 'int' | 'object' | 'string';
+  value: string;
+}
+
+/** Map of property name to property value. */
+export type TmxProperties = Record<string, TmxProperty>;
+
+function parseProperties(inner: string): TmxProperties {
+  const props: TmxProperties = {};
+  for (const m of inner.matchAll(/<property\b([^>]*?)\/>/g)) {
+    const tag = m[1]!;
+    const name = readAttr(tag, 'name') ?? '';
+    if (!name)
+      continue;
+    props[name] = {
+      name,
+      type: (readAttr(tag, 'type') ?? 'string') as TmxProperty['type'],
+      value: readAttr(tag, 'value') ?? '',
+    };
+  }
+  return props;
+}
+
 /** One tile layer: a row-major grid of (flag-masked) global tile ids. */
 export interface TmxLayer {
   name: string;
@@ -74,16 +278,27 @@ export interface TmxLayer {
   /** Row-major global tile ids; `0` marks an empty cell. */
   gids: Uint32Array;
   height: number;
+  /** Horizontal offset in pixels. Defaults to 0. */
+  offsetX: number;
+  /** Vertical offset in pixels. Defaults to 0. */
+  offsetY: number;
+  /** Opacity from 0 to 1. Defaults to 1. */
+  opacity: number;
+  /** Whether the layer is shown. Defaults to true. */
+  visible: boolean;
   width: number;
 }
 
-/** A parsed TMX map: grid metrics, its tileset, and ordered tile layers. */
+/** A parsed TMX map: grid metrics, tilesets, and ordered tile layers. */
 export interface TmxMap {
   height: number;
   /** Layers in file order (bottom-most first). */
   layers: TmxLayer[];
+  /** Object groups in file order. */
+  objectGroups: TmxObjectGroup[];
   tileHeight: number;
-  tileset: TmxTileset;
+  /** Tilesets ordered by increasing `firstgid`. */
+  tilesets: TmxTileset[];
   tileWidth: number;
   width: number;
 }
@@ -120,6 +335,14 @@ function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
 }
 
 async function inflateZlib(bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+  return decompress(bytes, 'deflate');
+}
+
+async function inflateGzip(bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+  return decompress(bytes, 'gzip');
+}
+
+async function decompress(bytes: Uint8Array<ArrayBuffer>, format: 'deflate' | 'gzip'): Promise<Uint8Array<ArrayBuffer>> {
   if (typeof DecompressionStream === 'undefined')
     throw new TypeError('tmx: DecompressionStream is not available in this environment');
   const source: ReadableStream<BufferSource> = new ReadableStream({
@@ -128,7 +351,7 @@ async function inflateZlib(bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<A
       controller.close();
     },
   });
-  const stream = source.pipeThrough(new DecompressionStream('deflate'));
+  const stream = source.pipeThrough(new DecompressionStream(format));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
@@ -198,8 +421,10 @@ function buildTileset(tilesetTag: string, imageScope: string, firstgid: number):
   const columns = declaredColumns !== undefined
     ? Number(declaredColumns)
     : Math.floor((imageWidth - margin + spacing) / (tileWidth + spacing));
+  const name = readAttr(tilesetTag, 'name') ?? '';
 
   return {
+    name,
     columns,
     firstgid,
     imageHeight,
@@ -212,33 +437,38 @@ function buildTileset(tilesetTag: string, imageScope: string, firstgid: number):
   };
 }
 
-function parseTileset(xml: string, options: ParseTmxOptions): TmxTileset {
+function parseTilesets(xml: string, options: ParseTmxOptions): TmxTileset[] {
   const tags = [...xml.matchAll(/<tileset\b[^>]*>/g)];
   if (tags.length === 0)
     throw new Error('tmx: no <tileset> element found');
-  if (tags.length > 1)
-    throw new Error('tmx: multiple tilesets are not supported');
-  const tilesetTag = tags[0]![0];
-  const firstgid = readNumberAttr(tilesetTag, 'firstgid', '<tileset>');
 
-  const source = readAttr(tilesetTag, 'source');
-  if (source !== undefined) {
-    const tsx = options.tilesets?.[source];
-    if (tsx === undefined)
-      throw new Error(`tmx: external tileset '${source}' not provided (pass it via parseTmx options.tilesets)`);
-    const tsxTag = tsx.match(/<tileset\b[^>]*>/);
-    if (!tsxTag)
-      throw new Error(`tmx: external tileset '${source}' has no <tileset> element`);
-    return buildTileset(tsxTag[0], tsx, firstgid);
-  }
+  return tags.map((t) => {
+    const tilesetTag = t[0];
+    const firstgid = readNumberAttr(tilesetTag, 'firstgid', '<tileset>');
 
-  return buildTileset(tilesetTag, xml, firstgid);
+    const source = readAttr(tilesetTag, 'source');
+    if (source !== undefined) {
+      const tsx = options.tilesets?.[source];
+      if (tsx === undefined)
+        throw new Error(`tmx: external tileset '${source}' not provided (pass it via parseTmx options.tilesets)`);
+      const tsxTag = tsx.match(/<tileset\b[^>]*>/);
+      if (!tsxTag)
+        throw new Error(`tmx: external tileset '${source}' has no <tileset> element`);
+      return buildTileset(tsxTag[0], tsx, firstgid);
+    }
+
+    return buildTileset(tilesetTag, xml, firstgid);
+  });
 }
 
 async function parseLayer(tag: string, inner: string): Promise<TmxLayer> {
   const name = readAttr(tag, 'name') ?? '';
   const width = readNumberAttr(tag, 'width', `layer '${name}'`);
   const height = readNumberAttr(tag, 'height', `layer '${name}'`);
+  const opacity = Number(readAttr(tag, 'opacity') ?? '1');
+  const visible = (readAttr(tag, 'visible') ?? '1') !== '0';
+  const offsetX = Number(readAttr(tag, 'offsetx') ?? '0');
+  const offsetY = Number(readAttr(tag, 'offsety') ?? '0');
 
   const dataMatch = inner.match(/<data\b([^>]*)>([\s\S]*?)<\/data>/);
   if (!dataMatch)
@@ -252,16 +482,19 @@ async function parseLayer(tag: string, inner: string): Promise<TmxLayer> {
   }
   else if (encoding === 'base64') {
     const compression = readAttr(dataAttrs!, 'compression');
-    if (compression !== 'zlib')
-      throw new Error(`tmx: layer '${name}' uses unsupported compression '${compression ?? '(none)'}' (only zlib)`);
-    raw = bytesToRawGids(await inflateZlib(base64ToBytes(payload!)));
+    if (compression !== 'zlib' && compression !== 'gzip')
+      throw new Error(`tmx: layer '${name}' uses unsupported compression '${compression ?? '(none)'}' (only zlib and gzip)`);
+    const inflated = compression === 'gzip'
+      ? await inflateGzip(base64ToBytes(payload!))
+      : await inflateZlib(base64ToBytes(payload!));
+    raw = bytesToRawGids(inflated);
   }
   else {
     throw new Error(`tmx: layer '${name}' uses unsupported encoding '${encoding ?? '(none)'}' (only csv or base64)`);
   }
 
   const { flags, gids } = splitGidFlags(raw);
-  return { name, flags, gids, height, width };
+  return { name, flags, gids, height, offsetX, offsetY, opacity, visible, width };
 }
 
 /**
@@ -285,21 +518,22 @@ export async function parseTmx(xml: string, options: ParseTmxOptions = {}): Prom
   if (readAttr(mapTag, 'infinite') === '1')
     throw new Error('tmx: infinite maps are not supported');
 
-  const unsupportedLayer = xml.match(/<(objectgroup|imagelayer|group)\b/);
-  if (unsupportedLayer)
-    throw new Error(`tmx: '<${unsupportedLayer[1]}>' layers are not supported (only tile <layer>)`);
-
-  const tileset = parseTileset(xml, options);
+  const tilesets = parseTilesets(xml, options);
 
   const layers: TmxLayer[] = [];
   for (const match of xml.matchAll(/<layer\b([^>]*)>([\s\S]*?)<\/layer>/g))
     layers.push(await parseLayer(match[1]!, match[2]!));
 
+  const objectGroups: TmxObjectGroup[] = [];
+  for (const match of xml.matchAll(/<objectgroup\b([^>]*)>([\s\S]*?)<\/objectgroup>/g))
+    objectGroups.push(parseObjectGroup(match[1]!, match[2]!));
+
   return {
     height: readNumberAttr(mapTag, 'height', '<map>'),
     layers,
+    objectGroups,
     tileHeight: readNumberAttr(mapTag, 'tileheight', '<map>'),
-    tileset,
+    tilesets,
     tileWidth: readNumberAttr(mapTag, 'tilewidth', '<map>'),
     width: readNumberAttr(mapTag, 'width', '<map>'),
   };

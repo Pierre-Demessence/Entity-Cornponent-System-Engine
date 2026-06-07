@@ -48,7 +48,7 @@ function buildAtlas(map: TmxMap, image: HTMLImageElement): TextureAtlasRegistry 
         continue;
       const key = String(gid);
       if (frames[key] === undefined)
-        frames[key] = gidToFrame(gid, map.tileset);
+        frames[key] = gidToFrame(gid, map.tilesets[0]);
     }
   }
   return new TextureAtlasRegistry().add(ATLAS_NAME, image, frames);

@@ -404,12 +404,19 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`gidToFrame`** _(fn)_ — Resolves a global tile id to its source rectangle within the tileset image. The id must already have flip flags masked off (as produced b...
 - **`parseTmx`** _(fn)_ — Parses a TMX document into grid metrics, a single tileset, and ordered tile layers. Async because layer payloads are inflated via `Decomp...
 - **`ParseTmxOptions`** _(interface)_ — Options controlling how parseTmx resolves external resources.
+- **`ResolvedTile`** _(interface)_ — Result of resolving a global tile ID against a map's tilesets.
+- **`resolveGid`** _(fn)_ — Resolve a global tile ID to its owning tileset and local tile index. Returns `undefined` when `gid` is 0 (empty cell) or doesn't belong t...
 - **`TMX_FLIP_D`** _(const)_ — TmxLayer.flags bit: tile is transposed across its main diagonal.
 - **`TMX_FLIP_H`** _(const)_ — TmxLayer.flags bit: tile is mirrored horizontally.
 - **`TMX_FLIP_V`** _(const)_ — TmxLayer.flags bit: tile is mirrored vertically.
 - **`TmxFrame`** _(interface)_ — A source rectangle within the tileset image, in pixels.
 - **`TmxLayer`** _(interface)_ — One tile layer: a row-major grid of (flag-masked) global tile ids.
-- **`TmxMap`** _(interface)_ — A parsed TMX map: grid metrics, its tileset, and ordered tile layers.
+- **`TmxMap`** _(interface)_ — A parsed TMX map: grid metrics, tilesets, and ordered tile layers.
+- **`TmxObject`** _(interface)_ — A single object in an object group.
+- **`TmxObjectGroup`** _(interface)_ — A TMX object group (object layer).
+- **`TmxProperties`** _(type)_ — Map of property name to property value.
+- **`TmxProperty`** _(interface)_ — A single custom property.
+- **`TmxText`** _(interface)_ — Text label attached to an object (since Tiled 1.0).
 - **`TmxTileset`** _(interface)_ — A single image-based tileset cut into a uniform grid.
 
 ### `@pierre/ecs/modules/transform`

@@ -32,7 +32,7 @@ export async function loadMap(
       if (gid === 0)
         continue;
       const key = String(gid);
-      frames[key] ??= gidToFrame(gid, map.tileset);
+      frames[key] ??= gidToFrame(gid, map.tilesets[0]);
     }
   }
   return { atlas: new TextureAtlasRegistry().add(MAP_ATLAS, image, frames), map };

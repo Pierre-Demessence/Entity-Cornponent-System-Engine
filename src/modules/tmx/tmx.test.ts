@@ -55,11 +55,12 @@ describe('parseTmx', () => {
     expect(map.height).toBe(2);
     expect(map.tileWidth).toBe(16);
     expect(map.tileHeight).toBe(16);
-    expect(map.tileset.firstgid).toBe(1);
-    expect(map.tileset.columns).toBe(3);
-    expect(map.tileset.spacing).toBe(1);
-    expect(map.tileset.margin).toBe(2);
-    expect(map.tileset.imageSource).toBe('sheet.png');
+    expect(map.tilesets).toHaveLength(1);
+    expect(map.tilesets[0]!.firstgid).toBe(1);
+    expect(map.tilesets[0]!.columns).toBe(3);
+    expect(map.tilesets[0]!.spacing).toBe(1);
+    expect(map.tilesets[0]!.margin).toBe(2);
+    expect(map.tilesets[0]!.imageSource).toBe('sheet.png');
     expect(map.layers).toHaveLength(1);
     expect([...map.layers[0]!.gids]).toEqual([1, 2, 3, 4]);
   });
@@ -99,7 +100,7 @@ describe('parseTmx', () => {
       .replace(' columns="3"', '');
     const map = await parseTmx(xml);
     // (53 - 2 + 1) / (16 + 1) = 52/17 = 3.05 → floor 3
-    expect(map.tileset.columns).toBe(3);
+    expect(map.tilesets[0]!.columns).toBe(3);
   });
 
   it('throws on a non-orthogonal map', async () => {
@@ -112,20 +113,94 @@ describe('parseTmx', () => {
     await expect(parseTmx(xml)).rejects.toThrow(/infinite/);
   });
 
-  it('throws on an object/image/group layer', async () => {
-    const xml = (await buildTmx([[1]])).replace(
-      '</map>',
-      '<objectgroup name="spawns"></objectgroup>\n</map>',
-    );
-    await expect(parseTmx(xml)).rejects.toThrow(/objectgroup/);
+  it('parses object groups with objects of various shapes', async () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+      <map version="1.10" orientation="orthogonal" width="10" height="10" tilewidth="16" tileheight="16">
+        <tileset firstgid="1" name="sheet" tilewidth="16" tileheight="16">
+          <image source="sheet.png" width="16" height="16"/>
+        </tileset>
+        <objectgroup id="1" name="spawns" draworder="topdown">
+          <object id="1" name="player" x="100" y="200" width="32" height="32"/>
+          <object id="2" x="50" y="60">
+            <ellipse/>
+          </object>
+          <object id="3" x="10" y="20">
+            <point/>
+          </object>
+          <object id="4" x="0" y="0">
+            <polygon points="0,0 16,0 8,16"/>
+          </object>
+          <object id="5" x="0" y="0">
+            <polyline points="0,0 32,0 32,32"/>
+          </object>
+          <object id="6" gid="5" x="300" y="400" width="16" height="16"/>
+          <object id="7" name="label" x="100" y="50" width="200" height="30">
+            <text fontfamily="serif" pixelsize="14" bold="1" color="#ff0000" halign="center">Hello World</text>
+          </object>
+        </objectgroup>
+      </map>`;
+    const map = await parseTmx(xml);
+    expect(map.objectGroups).toHaveLength(1);
+    const og = map.objectGroups[0]!;
+    expect(og.name).toBe('spawns');
+    expect(og.draworder).toBe('topdown');
+    expect(og.objects).toHaveLength(7);
+
+    const [player, ellipse, point, polygon, polyline, tile, text] = og.objects;
+    expect(player!.name).toBe('player');
+    expect(player!.width).toBe(32);
+
+    expect(ellipse!.ellipse).toBe(true);
+
+    expect(point!.width).toBe(0);
+    expect(point!.height).toBe(0);
+
+    expect(polygon!.polygon).toEqual([{ x: 0, y: 0 }, { x: 16, y: 0 }, { x: 8, y: 16 }]);
+    expect(polyline!.polyline).toEqual([{ x: 0, y: 0 }, { x: 32, y: 0 }, { x: 32, y: 32 }]);
+
+    expect(tile!.gid).toBe(5);
+
+    expect(text!.text).toBeDefined();
+    expect(text!.text!.fontfamily).toBe('serif');
+    expect(text!.text!.text).toBe('Hello World');
+    expect(text!.text!.bold).toBe(true);
   });
 
-  it('throws on multiple tilesets', async () => {
+  it('parses custom properties on objects', async () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+      <map version="1.10" orientation="orthogonal" width="10" height="10" tilewidth="16" tileheight="16">
+        <tileset firstgid="1" name="sheet" tilewidth="16" tileheight="16">
+          <image source="sheet.png" width="16" height="16"/>
+        </tileset>
+        <objectgroup name="props">
+          <object id="1" name="npc" x="100" y="200">
+            <properties>
+              <property name="dialogue" value="Greetings, traveler."/>
+              <property name="hostile" type="bool" value="true"/>
+              <property name="level" type="int" value="5"/>
+            </properties>
+          </object>
+        </objectgroup>
+      </map>`;
+    const map = await parseTmx(xml);
+    const obj = map.objectGroups[0]!.objects[0]!;
+    expect(obj.properties).toBeDefined();
+    expect(obj.properties!.dialogue!.value).toBe('Greetings, traveler.');
+    expect(obj.properties!.hostile!.value).toBe('true');
+    expect(obj.properties!.hostile!.type).toBe('bool');
+    expect(obj.properties!.level!.value).toBe('5');
+    expect(obj.properties!.level!.type).toBe('int');
+  });
+
+  it('parses multiple tilesets', async () => {
     const xml = (await buildTmx([[1]])).replace(
       '</tileset>',
-      '</tileset>\n<tileset firstgid="99" tilewidth="16" tileheight="16"><image source="b.png" width="16" height="16"/></tileset>',
+      '</tileset>\n<tileset firstgid="99" name="extra" tilewidth="16" tileheight="16"><image source="b.png" width="16" height="16"/></tileset>',
     );
-    await expect(parseTmx(xml)).rejects.toThrow(/multiple tilesets/);
+    const map = await parseTmx(xml);
+    expect(map.tilesets).toHaveLength(2);
+    expect(map.tilesets[1]!.firstgid).toBe(99);
+    expect(map.tilesets[1]!.name).toBe('extra');
   });
 
   it('throws when an external .tsx tileset is referenced but not provided', async () => {
@@ -149,10 +224,10 @@ describe('parseTmx', () => {
         <image source="sheet.png" width="50" height="50"/>
       </tileset>`;
     const map = await parseTmx(xml, { tilesets: { 'ext.tsx': tsx } });
-    expect(map.tileset.firstgid).toBe(5);
-    expect(map.tileset.columns).toBe(3);
-    expect(map.tileset.spacing).toBe(1);
-    expect(map.tileset.imageSource).toBe('sheet.png');
+    expect(map.tilesets[0]!.firstgid).toBe(5);
+    expect(map.tilesets[0]!.columns).toBe(3);
+    expect(map.tilesets[0]!.spacing).toBe(1);
+    expect(map.tilesets[0]!.imageSource).toBe('sheet.png');
     expect([...map.layers[0]!.gids]).toEqual([5, 6, 7, 8]);
   });
 
@@ -174,8 +249,40 @@ describe('parseTmx', () => {
     await expect(parseTmx(xml)).rejects.toThrow(/encoding/);
   });
 
-  it('throws on a non-zlib layer compression', async () => {
-    const xml = (await buildTmx([[1]])).replace('compression="zlib"', 'compression="gzip"');
+  it('supports gzip layer compression', async () => {
+    // Build raw bytes, compress with gzip, base64-encode
+    const gids = [1, 0, 0, 0];
+    const bytes = new Uint8Array(gids.length * 4);
+    const view = new DataView(bytes.buffer);
+    gids.forEach((gid, i) => view.setUint32(i * 4, gid >>> 0, true));
+    const source = new ReadableStream<BufferSource>({
+      start(controller) {
+        controller.enqueue(bytes);
+        controller.close();
+      },
+    });
+    const compressed = new Uint8Array(
+      await new Response(source.pipeThrough(new CompressionStream('gzip'))).arrayBuffer(),
+    );
+    let binary = '';
+    for (const byte of compressed) binary += String.fromCharCode(byte);
+    const b64 = btoa(binary);
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+      <map version="1.10" orientation="orthogonal" width="2" height="2" tilewidth="16" tileheight="16">
+        <tileset firstgid="1" name="sheet" tilewidth="16" tileheight="16">
+          <image source="sheet.png" width="16" height="16"/>
+        </tileset>
+        <layer id="1" name="l" width="2" height="2">
+          <data encoding="base64" compression="gzip">${b64}</data>
+        </layer>
+      </map>`;
+    const map = await parseTmx(xml);
+    expect([...map.layers[0]!.gids]).toEqual([1, 0, 0, 0]);
+  });
+
+  it('throws on an unsupported layer compression', async () => {
+    const xml = (await buildTmx([[1]])).replace('compression="zlib"', 'compression="zstd"');
     await expect(parseTmx(xml)).rejects.toThrow(/compression/);
   });
 });
