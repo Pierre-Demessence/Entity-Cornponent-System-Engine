@@ -1,6 +1,7 @@
 import type { AsteroidsAction, AsteroidsEvent, GameState } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
+import { makeAttachSystem } from '@pierre/ecs/modules/attach';
 import { makeCooldownSystem } from '@pierre/ecs/modules/cooldown';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
@@ -59,6 +60,7 @@ export function start(container: HTMLElement): () => void {
     .add(makeParticleSystem<GameState>({ runAfter: ['movement'] }))
     .add(lifetimeSystem)
     .add(collisionSystem)
+    .add(makeAttachSystem<GameState>({ runAfter: ['movement'] }))
     .add(thrustFlameSystem);
   const tickSource = new FixedIntervalTickSource(LOGIC_TICK_MS);
 

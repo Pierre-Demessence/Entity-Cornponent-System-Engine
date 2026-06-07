@@ -121,6 +121,13 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`jsonAsset`** _(fn)_ — —
 - **`textAsset`** _(fn)_ — —
 
+### `@pierre/ecs/modules/attach`
+- **`Attach`** _(interface)_ — Component data: which entity to follow and how.
+- **`AttachDef`** _(const)_ — —
+- **`AttachSystemOptions`** _(interface)_ — —
+- **`AttachTickCtx`** _(interface)_ — Minimal tick context required by the attach system.
+- **`makeAttachSystem`** _(fn)_ — Build a system that syncs attached entities to their parents each tick. For each entity carrying AttachDef: - `inheritVelocity` — adds `p...
+
 ### `@pierre/ecs/modules/audio`
 - **`AudioOneShot`** _(interface)_ — —
 - **`AudioQueue`** _(class)_ — —

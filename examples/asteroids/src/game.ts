@@ -3,6 +3,7 @@ import type { InputState } from '@pierre/ecs/modules/input';
 import type { ContinuousHashGrid2D } from '@pierre/ecs/modules/spatial';
 
 import { EcsWorld } from '@pierre/ecs';
+import { AttachDef } from '@pierre/ecs/modules/attach';
 import { ParticleDef, ParticleTag } from '@pierre/ecs/modules/particles';
 import { OpacityDef, RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
 import { ScaleDef } from '@pierre/ecs/modules/transform';
@@ -77,6 +78,7 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(OpacityDef);
   w.registerComponent(ScaleDef);
   w.registerComponent(ParticleDef);
+  w.registerComponent(AttachDef);
   w.registerTag(ShipTag);
   w.registerTag(RockTag);
   w.registerTag(BulletTag);
@@ -126,6 +128,7 @@ export function spawnShip(state: GameState): EntityId {
   });
   state.world.getStore(RenderOrderDef).set(flameId, { value: 9 });
   state.world.getStore(OpacityDef).set(flameId, { value: 0 });
+  state.world.getStore(AttachDef).set(flameId, { parent: id, snapPosition: true, snapRotation: true });
   state.world.getTag(ThrustFlameTag).add(flameId);
 
   return id;
