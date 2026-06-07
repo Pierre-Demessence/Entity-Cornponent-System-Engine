@@ -224,16 +224,24 @@ export class ComponentStore<T> implements Iterable<[EntityId, T]> {
 
 /** Boolean-only store — tracks entity presence without associated data. Supports dirty-tracking. */
 export class TagStore implements Iterable<EntityId> {
+  private readonly addHandlers: Array<(id: EntityId) => void> = [];
+  private readonly deleteHandlers: Array<(id: EntityId) => void> = [];
   private readonly dirty = new Set<EntityId>();
   private readonly set = new Set<EntityId>();
 
   add(id: EntityId): this {
     this.set.add(id);
     this.dirty.add(id);
+    for (const fn of this.addHandlers) fn(id);
     return this;
   }
 
   clear(): void {
+    // Emit delete for every tracked entity before clearing — consumers that
+    // subscribed to 'delete' can react before the set is emptied.
+    for (const id of this.set) {
+      for (const fn of this.deleteHandlers) fn(id);
+    }
     this.set.clear();
     this.dirty.clear();
   }
@@ -242,8 +250,10 @@ export class TagStore implements Iterable<EntityId> {
 
   delete(id: EntityId): boolean {
     const ok = this.set.delete(id);
-    if (ok)
+    if (ok) {
       this.dirty.add(id);
+      for (const fn of this.deleteHandlers) fn(id);
+    }
     return ok;
   }
 
@@ -262,7 +272,35 @@ export class TagStore implements Iterable<EntityId> {
   hasChanges(): boolean { return this.dirty.size > 0; }
 
   isDirty(id: EntityId): boolean { return this.dirty.has(id); }
+
   get size(): number { return this.set.size; }
+
+  /**
+   * Subscribe to tag presence changes. Returns an unsubscribe function.
+   *
+   * - `'add'` — fires after every `add(id)` call (including during
+   *   deserialization and template spawn).
+   * - `'delete'` — fires after every `delete(id)` call and for every
+   *   tracked entity during `clear()`.
+   */
+  subscribe(event: 'add', fn: (id: EntityId) => void): () => void;
+  subscribe(event: 'delete', fn: (id: EntityId) => void): () => void;
+  subscribe(event: 'add' | 'delete', fn: (id: EntityId) => void): () => void {
+    if (event === 'add') {
+      this.addHandlers.push(fn);
+      return () => {
+        const idx = this.addHandlers.indexOf(fn);
+        if (idx !== -1)
+          this.addHandlers.splice(idx, 1);
+      };
+    }
+    this.deleteHandlers.push(fn);
+    return () => {
+      const idx = this.deleteHandlers.indexOf(fn);
+      if (idx !== -1)
+        this.deleteHandlers.splice(idx, 1);
+    };
+  }
 
   [Symbol.iterator](): SetIterator<EntityId> { return this.set[Symbol.iterator](); }
 

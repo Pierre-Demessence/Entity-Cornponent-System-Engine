@@ -304,6 +304,14 @@ export class EcsWorld {
     const store = new TagStore();
     this.tagRegistry.push({ def, store });
     this.tagByName.set(def.name, store);
+
+    store.subscribe('add', (id) => {
+      this.lifecycle.emit({ id, tag: def.name, type: 'TagAdded' });
+    });
+    store.subscribe('delete', (id) => {
+      this.lifecycle.emit({ id, tag: def.name, type: 'TagRemoved' });
+    });
+
     return store;
   }
 

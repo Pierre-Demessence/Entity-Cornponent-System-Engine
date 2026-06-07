@@ -641,4 +641,84 @@ describe('ecsWorld', () => {
       expect(events.map(e => e.type)).toEqual(['ComponentRemoved', 'ComponentAdded']);
     });
   });
+
+  describe('tag lifecycle events', () => {
+    it('emits TagAdded when a tag is added via spawn template', () => {
+      const w = new EcsWorld();
+      w.registerTag(FlagTag);
+
+      const events: { type: string; tag?: string }[] = [];
+      w.lifecycle.on('TagAdded', e => events.push(e));
+
+      w.spawn({ name: 'test', components: {}, tags: ['flag'] });
+      w.lifecycle.flush();
+
+      expect(events).toHaveLength(1);
+      expect(events[0]).toMatchObject({ tag: 'flag', type: 'TagAdded' });
+    });
+
+    it('emits TagRemoved when a tag is removed directly', () => {
+      const w = new EcsWorld();
+      const store = w.registerTag(FlagTag);
+      const id = w.createEntity();
+      store.add(id); // direct add — TagAdded fires but we clear before subscribing
+      w.lifecycle.clear();
+
+      const events: { type: string; tag?: string }[] = [];
+      w.lifecycle.on('TagRemoved', e => events.push(e));
+
+      store.delete(id);
+      w.lifecycle.flush();
+
+      expect(events).toHaveLength(1);
+      expect(events[0]).toMatchObject({ id, tag: 'flag', type: 'TagRemoved' });
+    });
+
+    it('emits TagRemoved when tags are deleted individually', () => {
+      const w = new EcsWorld();
+      const store = w.registerTag(FlagTag);
+      store.add(1);
+      store.add(2);
+      store.add(3);
+      w.lifecycle.clear(); // drop the TagAdded events from the adds above
+
+      const events: { id: number; tag?: string; type: string }[] = [];
+      w.lifecycle.on('TagRemoved', e => events.push(e));
+
+      store.delete(1);
+      store.delete(2);
+      store.delete(3);
+      w.lifecycle.flush();
+
+      expect(events.filter(e => e.tag === 'flag')).toHaveLength(3);
+    });
+
+    it('does not emit TagRemoved when delete returns false (id not present)', () => {
+      const w = new EcsWorld();
+      const store = w.registerTag(FlagTag);
+
+      const events: { type: string }[] = [];
+      w.lifecycle.on('TagRemoved', e => events.push(e));
+
+      store.delete(999); // not present
+      w.lifecycle.flush();
+
+      expect(events).toHaveLength(0);
+    });
+
+    it('emits both TagAdded and EntityCreated during spawn', () => {
+      const w = new EcsWorld();
+      w.registerTag(FlagTag);
+
+      const events: { id: number; tag?: string; type: string }[] = [];
+      w.lifecycle.on('EntityCreated', e => events.push(e));
+      w.lifecycle.on('TagAdded', e => events.push(e));
+
+      const eid = w.spawn({ name: 'hero', components: {}, tags: ['flag'] });
+      w.lifecycle.flush();
+
+      expect(events.some(e => e.type === 'EntityCreated' && e.id === eid)).toBe(true);
+      expect(events.some(e => e.type === 'TagAdded' && e.id === eid && e.tag === 'flag')).toBe(true);
+    });
+  });
 });

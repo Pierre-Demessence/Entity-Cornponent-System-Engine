@@ -14,4 +14,6 @@ export type LifecycleEvent
   = | { type: 'EntityCreated'; id: EntityId }
     | { type: 'EntityDestroyed'; id: EntityId }
     | { type: 'ComponentAdded'; id: EntityId; component: string; value: unknown }
-    | { type: 'ComponentRemoved'; id: EntityId; component: string };
+    | { type: 'ComponentRemoved'; id: EntityId; component: string }
+    | { type: 'TagAdded'; id: EntityId; tag: string }
+    | { type: 'TagRemoved'; id: EntityId; tag: string };
