@@ -28,7 +28,7 @@ unmodified `@pierre/ecs`.
 | 4 | Jetpack Joyride | 2011 | [link](https://20_games_challenge.gitlab.io/games/jetpack/) | ✅ done (`jetpack`) |
 | 5 | Space Invaders | 1978 | [link](https://20_games_challenge.gitlab.io/games/invaders/) | ✅ done (`space-invaders`) |
 | 6 | Frogger | 1981 | [link](https://20_games_challenge.gitlab.io/games/frogger/) | ✅ done (`frogger`) |
-| 7 | River Raid | 1982 | [link](https://20_games_challenge.gitlab.io/games/river_raid/) | ⬜ |
+| 7 | River Raid | 1982 | [link](https://20_games_challenge.gitlab.io/games/river_raid/) | ✅ done (`river-raid`) |
 | 8 | Asteroids | 1979 | [link](https://20_games_challenge.gitlab.io/games/asteroids/) | ✅ done (`asteroids`) |
 | 9 | Spacewar! | 1979 | [link](https://20_games_challenge.gitlab.io/games/spacewar/) | ⬜ |
 | 10 | Indy 500 | 1979 | [link](https://20_games_challenge.gitlab.io/games/indy/) | ⬜ |

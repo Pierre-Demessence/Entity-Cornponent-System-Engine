@@ -19,6 +19,7 @@
     "@pierre/ecs-example-platformer": "*",
     "@pierre/ecs-example-platformer-3d": "*",
     "@pierre/ecs-example-rhythm": "*",
+    "@pierre/ecs-example-river-raid": "*",
     "@pierre/ecs-example-rpg": "*",
     "@pierre/ecs-example-snake": "*",
     "@pierre/ecs-example-solitaire": "*",
