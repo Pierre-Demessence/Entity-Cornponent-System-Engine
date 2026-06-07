@@ -2,9 +2,13 @@ import { TMX_FLIP_D, TMX_FLIP_H, TMX_FLIP_V } from '@pierre/ecs/modules/tmx';
 
 /**
  * A tile's flip flags resolved to the canvas transform the renderer applies
- * about an entity's position: `translate(x, y) → rotate(angle) → scale(sx, sy)`.
- * Tiles must therefore be positioned at their centre with `anchor: 'center'`
- * so the flip/rotation pivots in place.
+ * about a centre-anchored sprite: `translate(x, y) → rotate(angle) →
+ * scale(sx, sy)`. Centre-anchoring is required so the pivot is in the
+ * middle of the tile.
+ *
+ * Only the full 8-orientation D4 dihedral group needs this helper. For the
+ * common H/V-only case, {@link spawnTilemap} sets `flipH` / `flipV` directly
+ * on the `RenderableDef` and no extra transform components are needed.
  */
 export interface TileTransform {
   angle: number;
@@ -31,7 +35,14 @@ const TABLE: readonly TileTransform[] = [
 
 const FLAG_MASK = TMX_FLIP_H | TMX_FLIP_V | TMX_FLIP_D;
 
-/** Resolves a per-tile flip-flag bitfield to its render transform. */
+/**
+ * Resolves a per-tile flip-flag bitfield (`TmxLayer.flags[i]`) to the
+ * canvas render transform that reproduces Tiled's flip/rotate behaviour
+ * for a centre-anchored sprite.
+ *
+ * Callers register `RotationDef` and `ScaleDef` stores and apply the
+ * result in {@link SpawnTilemapOptions.onTile}.
+ */
 export function tileTransform(flag: number): TileTransform {
   return TABLE[flag & FLAG_MASK]!;
 }

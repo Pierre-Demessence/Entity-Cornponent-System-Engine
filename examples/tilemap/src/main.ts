@@ -1,4 +1,5 @@
 import type { Camera } from '@pierre/ecs/modules/camera';
+import type { TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
 import type { TmxMap } from '@pierre/ecs/modules/tmx';
 
 import { EcsWorld } from '@pierre/ecs';
@@ -10,8 +11,8 @@ import {
   RenderableDef,
   RenderOrderDef,
 } from '@pierre/ecs/modules/render-canvas2d';
-import { TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
-import { gidToFrame, parseTmx, TMX_FLIP_H, TMX_FLIP_V } from '@pierre/ecs/modules/tmx';
+import { buildTilemapAtlas, spawnTilemap } from '@pierre/ecs/modules/tilemap';
+import { parseTmx } from '@pierre/ecs/modules/tmx';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
 // `?url` makes Vite fingerprint and emit these assets, returning their final
@@ -41,49 +42,11 @@ function makeWorld(): EcsWorld {
 }
 
 function buildAtlas(map: TmxMap, image: HTMLImageElement): TextureAtlasRegistry {
-  const frames: Record<string, { h: number; w: number; x: number; y: number }> = {};
-  for (const layer of map.layers) {
-    for (const gid of layer.gids) {
-      if (gid === 0)
-        continue;
-      const key = String(gid);
-      if (frames[key] === undefined)
-        frames[key] = gidToFrame(gid, map.tilesets[0]);
-    }
-  }
-  return new TextureAtlasRegistry().add(ATLAS_NAME, image, frames);
+  return buildTilemapAtlas({ name: ATLAS_NAME, image, map });
 }
 
 function spawnTiles(world: EcsWorld, map: TmxMap): number {
-  const positions = world.getStore(PositionDef);
-  const renderables = world.getStore(RenderableDef);
-  const orders = world.getStore(RenderOrderDef);
-  let count = 0;
-  map.layers.forEach((layer, layerIndex) => {
-    for (let i = 0; i < layer.gids.length; i++) {
-      const gid = layer.gids[i]!;
-      if (gid === 0)
-        continue;
-      const flags = layer.flags[i]!;
-      const col = i % layer.width;
-      const row = Math.floor(i / layer.width);
-      const id = world.createEntity();
-      positions.set(id, { x: col * map.tileWidth, y: row * map.tileHeight });
-      renderables.set(id, {
-        anchor: 'top-left',
-        atlas: ATLAS_NAME,
-        dh: map.tileHeight,
-        dw: map.tileWidth,
-        flipH: (flags & TMX_FLIP_H) !== 0 || undefined,
-        flipV: (flags & TMX_FLIP_V) !== 0 || undefined,
-        frame: String(gid),
-        kind: 'sprite',
-      });
-      orders.set(id, { value: layerIndex });
-      count++;
-    }
-  });
-  return count;
+  return spawnTilemap({ atlas: ATLAS_NAME, map, world });
 }
 
 /**
