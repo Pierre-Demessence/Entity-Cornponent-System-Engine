@@ -233,6 +233,7 @@ async function renderExample(id: ExampleId): Promise<void> {
           <button class="button" id="backToLanding" type="button">Back to landing</button>
         </div>
         <div id="exampleStage" class="stage-root"></div>
+        <button class="fullscreen-button" id="fullscreenToggle" type="button" title="Toggle fullscreen (F)" aria-label="Toggle fullscreen">⛶</button>
       </section>
       <p class="stage-note">Tip: each example has its own hash URL, so you can deep-link straight to a specific prototype.</p>
     </main>
@@ -244,6 +245,40 @@ async function renderExample(id: ExampleId): Promise<void> {
     throw new Error('Hub stage failed to render');
 
   backButton.addEventListener('click', () => setRoute(null));
+
+  const fullscreenButton = appRoot.querySelector<HTMLButtonElement>('#fullscreenToggle');
+  const stageShell = appRoot.querySelector<HTMLElement>('.stage-shell');
+  if (fullscreenButton && stageShell) {
+    const toggleFullscreen = () => {
+      if (document.fullscreenElement) {
+        void document.exitFullscreen();
+      }
+      else {
+        void stageShell.requestFullscreen();
+      }
+    };
+
+    fullscreenButton.addEventListener('click', toggleFullscreen);
+
+    const handleFullscreenChange = () => {
+      fullscreenButton.textContent = document.fullscreenElement ? '⛷' : '⛶';
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'f' || event.key === 'F') {
+        toggleFullscreen();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+
+    const prevTeardown = currentTeardown;
+    currentTeardown = () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      window.removeEventListener('keydown', handleKey);
+      prevTeardown?.();
+    };
+  }
 
   try {
     const module = await spec.load();
