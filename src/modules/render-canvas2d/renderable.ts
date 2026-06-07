@@ -76,6 +76,10 @@ export type Renderable
     dh?: number;
     anchor?: RectAnchor;
     blendMode?: GlobalCompositeOperation;
+    /** Mirror horizontally around the anchor point. */
+    flipH?: boolean;
+    /** Mirror vertically around the anchor point. */
+    flipV?: boolean;
   };
 
 function assertNonNegative(value: number, label: string): number {
@@ -193,12 +197,16 @@ function validate(raw: unknown, label: string): Renderable {
     };
   }
   if (kind === 'sprite') {
+    const flipH = obj.flipH === undefined ? undefined : asBoolean(obj.flipH, `${label}.flipH`);
+    const flipV = obj.flipV === undefined ? undefined : asBoolean(obj.flipV, `${label}.flipV`);
     return {
       anchor: parseAnchor(obj.anchor, `${label}.anchor`),
       atlas: asString(obj.atlas, `${label}.atlas`),
       blendMode,
       dh: optNonNegNumber(obj.dh, `${label}.dh`),
       dw: optNonNegNumber(obj.dw, `${label}.dw`),
+      flipH,
+      flipV,
       frame: asString(obj.frame, `${label}.frame`),
       kind: 'sprite',
     };
@@ -260,6 +268,8 @@ function serialize(value: Renderable): unknown {
         blendMode: value.blendMode,
         dh: value.dh,
         dw: value.dw,
+        flipH: value.flipH,
+        flipV: value.flipV,
         frame: value.frame,
         kind: 'sprite',
       };

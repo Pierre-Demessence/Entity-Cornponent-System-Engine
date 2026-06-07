@@ -196,10 +196,11 @@ genuine gap is a camera-independent overlay layer for HUD/score/chrome
 and full-screen panels (engine-gap-ledger; audit A7). Two consumers
 (local-pong, snake).
 
-**GID flip bits — MET (2026-07-15).** `modules/tmx` already unpacks
-flip/rotation flags via `splitGidFlags`, but the sprite renderer draws
-tiles unflipped (tilemap, rpg — engine-gap-ledger). Honour them in the
-sprite-frame draw path.
+**GID flip bits — ✅ shipped (2026-06-07).** Added `flipH`/`flipV` to the
+`Renderable` sprite variant + flip transform in `Canvas2DRenderer`
+(`ctx2d.save/translate/scale/restore` for H/V; diagonal transpose remains
+via `RotationDef`+`ScaleDef` as the RPG example already does). Tilemap
+example wired `TmxLayer.flags` → `Renderable.flipH`/`flipV`.
 
 </details>
 

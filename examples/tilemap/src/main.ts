@@ -11,7 +11,7 @@ import {
   RenderOrderDef,
 } from '@pierre/ecs/modules/render-canvas2d';
 import { TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
-import { gidToFrame, parseTmx } from '@pierre/ecs/modules/tmx';
+import { gidToFrame, parseTmx, TMX_FLIP_H, TMX_FLIP_V } from '@pierre/ecs/modules/tmx';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
 // `?url` makes Vite fingerprint and emit these assets, returning their final
@@ -64,6 +64,7 @@ function spawnTiles(world: EcsWorld, map: TmxMap): number {
       const gid = layer.gids[i]!;
       if (gid === 0)
         continue;
+      const flags = layer.flags[i]!;
       const col = i % layer.width;
       const row = Math.floor(i / layer.width);
       const id = world.createEntity();
@@ -73,6 +74,8 @@ function spawnTiles(world: EcsWorld, map: TmxMap): number {
         atlas: ATLAS_NAME,
         dh: map.tileHeight,
         dw: map.tileWidth,
+        flipH: (flags & TMX_FLIP_H) !== 0 || undefined,
+        flipV: (flags & TMX_FLIP_V) !== 0 || undefined,
         frame: String(gid),
         kind: 'sprite',
       });

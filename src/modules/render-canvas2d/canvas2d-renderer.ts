@@ -375,10 +375,27 @@ function drawShape(
         return;
       const dw = r.dw ?? f.sw;
       const dh = r.dh ?? f.sh;
-      const anchor = r.anchor ?? 'center';
-      const ox = anchor === 'center' ? originX - dw / 2 : originX;
-      const oy = anchor === 'center' ? originY - dh / 2 : originY;
-      ctx2d.drawImage(f.image, f.sx, f.sy, f.sw, f.sh, ox, oy, dw, dh);
+      const flipH = r.flipH === true;
+      const flipV = r.flipV === true;
+      if (flipH || flipV) {
+        const anchor = r.anchor ?? 'center';
+        // Flip around the anchor point. For centre anchor the half-extent
+        // keeps the sprite centred; for top-left the full extent shifts the
+        // draw origin so the flipped sprite occupies the same world rect.
+        const ax = anchor === 'center' ? -dw / 2 : (flipH ? -dw : 0);
+        const ay = anchor === 'center' ? -dh / 2 : (flipV ? -dh : 0);
+        ctx2d.save();
+        ctx2d.translate(originX, originY);
+        ctx2d.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+        ctx2d.drawImage(f.image, f.sx, f.sy, f.sw, f.sh, ax, ay, dw, dh);
+        ctx2d.restore();
+      }
+      else {
+        const anchor = r.anchor ?? 'center';
+        const ox = anchor === 'center' ? originX - dw / 2 : originX;
+        const oy = anchor === 'center' ? originY - dh / 2 : originY;
+        ctx2d.drawImage(f.image, f.sx, f.sy, f.sw, f.sh, ox, oy, dw, dh);
+      }
     }
   }
 }
