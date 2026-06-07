@@ -1,8 +1,13 @@
-import type { EntityId, TagDef } from '@pierre/ecs';
+import type { TagDef } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
 import type { Canvas2DRenderContext } from '@pierre/ecs/modules/render-canvas2d';
 
 import { EcsWorld } from '@pierre/ecs';
+import {
+  makeSpriteAnimation,
+  makeSpriteAnimationSystem,
+  SpriteAnimationDef,
+} from '@pierre/ecs/modules/animation';
 import { AssetLoader, imageAsset, textAsset } from '@pierre/ecs/modules/asset-loader';
 import { CameraDef, cameraToView, makeCamera, makeFollowCameraSystem } from '@pierre/ecs/modules/camera';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
@@ -22,7 +27,8 @@ import mapSheetUrl from '../../assets/kenney_tiny-dungeon/Tilemap/tilemap.png?ur
 // URLs; the text/images are then fetched at runtime through AssetLoader.
 import packedUrl from '../../assets/kenney_tiny-dungeon/Tilemap/tilemap_packed.png?url';
 import panelUrl from '../../assets/kenney_ui-pack/PNG/Grey/Default/button_rectangle_depth_border.png?url';
-import { addCharAtlas, CHAR_ATLAS, findNpcPlacements, NPC_DIALOGUES, PLAYER_SPRITE } from './characters';
+import tinyCharsUrl from '../../assets/tiny-16-basic/characters.png?url';
+import { addCharAtlas, addTinyCharAtlas, findNpcPlacements, NPC_DIALOGUES, TINY_CHAR_ATLAS, TINY_DIRECTION_FRAMES } from './characters';
 import { DialogueBox } from './dialogue';
 import { buildCollision, loadMap, spawnTiles } from './map';
 
@@ -86,6 +92,7 @@ function makeWorld(): EcsWorld {
   world.registerComponent(ScaleDef);
   world.registerComponent(RotationDef);
   world.registerComponent(CameraDef);
+  world.registerComponent(SpriteAnimationDef);
   world.registerTag(PlayerTag);
   world.registerTag(CameraTag);
   return world;
@@ -128,10 +135,11 @@ export function start(container: HTMLElement): () => void {
 
   void (async () => {
     try {
-      const [tmxText, mapImage, packedImage] = await Promise.all([
+      const [tmxText, mapImage, packedImage, tinyCharsImage] = await Promise.all([
         assetLoader.load(textAsset(tmxUrl), { signal: abort.signal }),
         assetLoader.load(imageAsset(mapSheetUrl), { signal: abort.signal }),
         assetLoader.load(imageAsset(packedUrl), { signal: abort.signal }),
+        assetLoader.load(imageAsset(tinyCharsUrl), { signal: abort.signal }),
       ]);
       if (disposed)
         return;
@@ -140,6 +148,7 @@ export function start(container: HTMLElement): () => void {
       if (disposed)
         return;
       addCharAtlas(atlas, packedImage);
+      addTinyCharAtlas(atlas, tinyCharsImage);
 
       const world = makeWorld();
       const tileCount = spawnTiles(world, map);
@@ -151,21 +160,6 @@ export function start(container: HTMLElement): () => void {
       const positions = world.getStore(PositionDef);
       const renderables = world.getStore(RenderableDef);
       const orders = world.getStore(RenderOrderDef);
-
-      const spawnSprite = (sprite: number, cx: number, cy: number): EntityId => {
-        const id = world.createEntity();
-        positions.set(id, { x: cx, y: cy });
-        renderables.set(id, {
-          anchor: 'center',
-          atlas: CHAR_ATLAS,
-          dh: TILE,
-          dw: TILE,
-          frame: String(sprite),
-          kind: 'sprite',
-        });
-        orders.set(id, { value: RENDER_LAYER });
-        return id;
-      };
 
       const isSolid = (px: number, py: number): boolean => {
         if (px < 0 || py < 0 || px >= mapW || py >= mapH)
@@ -181,8 +175,24 @@ export function start(container: HTMLElement): () => void {
         && !isSolid(cx + PLAYER_HALF, cy + PLAYER_HALF);
 
       const spawn = findSpawn(collision, canStand);
-      const playerId = spawnSprite(PLAYER_SPRITE, spawn.x, spawn.y);
+
+      // Spawn animated player with the tiny-16-basic character sheet.
+      const playerId = world.createEntity();
+      const animStore = world.getStore(SpriteAnimationDef);
+      positions.set(playerId, { x: spawn.x, y: spawn.y });
+      renderables.set(playerId, {
+        anchor: 'center',
+        atlas: TINY_CHAR_ATLAS,
+        dh: TILE,
+        dw: TILE,
+        frame: '0', // initial — animation system overwrites
+        kind: 'sprite',
+      });
+      orders.set(playerId, { value: RENDER_LAYER });
+      animStore.set(playerId, makeSpriteAnimation(TINY_DIRECTION_FRAMES.down, 8));
       world.getTag(PlayerTag).add(playerId);
+
+      const animSystem = makeSpriteAnimationSystem<{ dtMs: number; world: typeof world }>();
 
       // NPCs reuse characters already painted into the Objects layer: each is an
       // invisible interaction point centred on its baked tile.
@@ -246,6 +256,7 @@ export function start(container: HTMLElement): () => void {
         + `${tileCount.toLocaleString()} tiles · WASD/arrows to move · Space/E to talk`;
 
       let last = performance.now();
+      let currentDir: 'down' | 'left' | 'right' | 'up' = 'down';
       const frame = (now: number): void => {
         if (disposed)
           return;
@@ -275,9 +286,31 @@ export function start(container: HTMLElement): () => void {
               pos.x += dx;
             if (canStand(pos.x, pos.y + dy))
               pos.y += dy;
+
+            // Walking — play the directional animation.
+            const dir: 'down' | 'left' | 'right' | 'up'
+              = dy > 0 ? 'down' : dy < 0 ? 'up' : dx > 0 ? 'right' : 'left';
+            currentDir = dir;
+            const current = animStore.get(playerId);
+            const targetFrames = TINY_DIRECTION_FRAMES[dir];
+            if (!current || current.frames[0] !== targetFrames[0]) {
+              animStore.set(playerId, makeSpriteAnimation(targetFrames, 8));
+            }
+          }
+          else {
+            // Standing — show the middle frame and pause animation.
+            const standingFrame = TINY_DIRECTION_FRAMES[currentDir][1];
+            const r = renderables.get(playerId)!;
+            if (r.frame !== standingFrame) {
+              renderables.set(playerId, { ...r, frame: standingFrame });
+            }
+            if (animStore.has(playerId)) {
+              animStore.delete(playerId);
+            }
           }
         }
 
+        animSystem.run({ dtMs: dt * 1000, world });
         followCamera.run({ dtMs: dt * 1000, world });
         const cam = world.getStore(CameraDef).get(cameraId)!;
         const view = cameraToView(cam);

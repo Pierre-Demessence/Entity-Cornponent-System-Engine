@@ -99,6 +99,16 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 
 ## Modules
 
+### `@pierre/ecs/modules/animation`
+- **`currentFrame`** _(fn)_ — The frame name at the animation's current position.
+- **`makeSpriteAnimation`** _(fn)_ — Create a SpriteAnimation that cycles through `frames` at `fps`. Starts at frame 0. Defaults to `loop = true`.
+- **`makeSpriteAnimationSystem`** _(fn)_ — Build a schedulable system that advances every SpriteAnimationDef and writes the current frame name into the entity's `RenderableDef`. Th...
+- **`SpriteAnimation`** _(interface)_ — Ordered frame names (atlas frame keys) cycled at `fps` frames per second.
+- **`SpriteAnimationDef`** _(const)_ — —
+- **`SpriteAnimationSystemOptions`** _(interface)_ — —
+- **`SpriteAnimationTickCtx`** _(interface)_ — —
+- **`tickSpriteAnimation`** _(fn)_ — Advance the animation by `dtMs`, mutating it in place.
+
 ### `@pierre/ecs/modules/asset-loader`
 - **`arrayBufferAsset`** _(fn)_ — —
 - **`AssetBatchLoadOptions`** _(interface)_ — —

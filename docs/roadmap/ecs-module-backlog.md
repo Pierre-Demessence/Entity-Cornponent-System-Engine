@@ -32,7 +32,7 @@ considered and rejected".
   - [Standard engine modules](#standard-engine-modules)
     - [`modules/audio` V1 — ✅ shipped 2026-04-23](#modulesaudio-v1---shipped-2026-04-23)
     - [`modules/audio` V2 — deferred](#modulesaudio-v2--deferred)
-    - [`modules/animation` — partially shipped (easing + tween 2026-07-18; sprite-frame + skeletal deferred)](#modulesanimation--partially-shipped-easing--tween-2026-07-18-sprite-frame--skeletal-deferred)
+    - [`modules/animation` — partially shipped (easing + tween 2026-07-18; sprite-frame 2026-06-07; skeletal deferred)](#modulesanimation--partially-shipped-easing--tween-2026-07-18-sprite-frame-2026-06-07-skeletal-deferred)
     - [`modules/particles` — ✅ shipped 2026-07-18](#modulesparticles---shipped-2026-07-18)
     - [`modules/ui` — speculative](#modulesui--speculative)
     - [`modules/render-dom` V1 — ✅ shipped 2026-04-23](#modulesrender-dom-v1---shipped-2026-04-23)
@@ -413,14 +413,29 @@ Phaser `SoundManager`, Bevy `bevy_audio`.
 
 </details>
 
-### `modules/animation` — partially shipped (easing + tween 2026-07-18; sprite-frame + skeletal deferred)
+### `modules/animation` — partially shipped (easing + tween 2026-07-18; sprite-frame 2026-06-07; skeletal deferred)
 
 **Scope.** Sprite-frame animation, tweens, and (much later) skeletal /
 2D rig animation — three separate sub-modules. The **tween + easing** slice
-shipped 2026-07-18; sprite-frame and skeletal remain deferred.
+shipped 2026-07-18; **sprite-frame** shipped 2026-06-07; skeletal remains
+deferred.
 
 <details>
 <summary>Details</summary>
+
+**Shipped (2026-06-07) — sprite-frame animation.** `modules/animation`@[`animation/sprite-animation.ts`](../../src/modules/animation/sprite-animation.ts)
+is the `SpriteAnimation` **value primitive** + `SpriteAnimationDef` ECS component
++ `makeSpriteAnimationSystem` (follows the `Cooldown`/`Lifetime` pattern):
+`makeSpriteAnimation(frames, fps, loop?)` / `tickSpriteAnimation(anim, dtMs)` /
+`currentFrame(anim)`. The system auto-advances every `SpriteAnimationDef` and
+writes `currentFrame(anim)` into the entity's `RenderableDef.frame`. Built
+canon-first (unanimous universal — Godot `AnimatedSprite2D`, Unity `Animator`,
+Phaser animations, PixiJS `AnimatedSprite`, Bevy `bevy_animation`). First
+consumer: `examples/rpg` (4-directional walk animation).
+
+**Still deferred.** A **clip registry** (named animation clips shared across
+entities, lookup by key, playback control) — add when a second consumer proves
+the shape. **Skeletal / 2D rigs** — much later.
 
 **Shipped (2026-07-18) — easing + tween.** `modules/easing`@[`easing/easing.ts`](../../src/modules/easing/easing.ts)
 is the full Robert Penner curve set (31 fns: linear + quad/cubic/quart/quint/

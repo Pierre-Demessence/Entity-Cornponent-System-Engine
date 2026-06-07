@@ -2,6 +2,8 @@ import type { TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
 import type { TmxMap } from '@pierre/ecs/modules/tmx';
 
 export const CHAR_ATLAS = 'chars';
+/** Atlas key for the tiny-16-basic character sheet. */
+export const TINY_CHAR_ATLAS = 'tiny-chars';
 
 /** Columns in `tilemap_packed.png` (16px tiles, no spacing/margin). */
 const PACKED_COLS = 12;
@@ -16,6 +18,44 @@ export function charFrame(index: number): { h: number; w: number; x: number; y: 
     y: Math.floor(index / PACKED_COLS) * TILE,
   };
 }
+
+// ── tiny-16-basic characters.png layout ──
+// 12 columns × 8 rows of 16×16 tiles. 8 characters arranged 4 wide × 2 tall.
+// Each character occupies 3 columns × 4 rows (down, left, right, up).
+const TINY_COLS = 12;
+
+/** Register a character's 12 frames from the tiny-16-basic sheet. */
+export function addTinyCharAtlas(
+  registry: TextureAtlasRegistry,
+  image: HTMLImageElement,
+  charIndex = 0,
+): void {
+  const charCol = charIndex % 4;
+  const charRow = Math.floor(charIndex / 4);
+  const baseCol = charCol * 3;
+  const baseRow = charRow * 4;
+  const frames: Record<string, { h: number; w: number; x: number; y: number }> = {};
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 3; col++) {
+      const tileIndex = (baseRow + row) * TINY_COLS + (baseCol + col);
+      frames[String(tileIndex)] = {
+        h: TILE,
+        w: TILE,
+        x: ((baseCol + col) % TINY_COLS) * TILE,
+        y: (baseRow + row) * TILE,
+      };
+    }
+  }
+  registry.add(TINY_CHAR_ATLAS, image, frames);
+}
+
+/** 3-frame sequence for each cardinal direction (character 0). */
+export const TINY_DIRECTION_FRAMES: Record<'down' | 'left' | 'right' | 'up', string[]> = {
+  down: ['0', '1', '2'],
+  left: ['12', '13', '14'],
+  right: ['24', '25', '26'],
+  up: ['36', '37', '38'],
+};
 
 /** Packed-sheet tile index for the player avatar. */
 export const PLAYER_SPRITE = 100;
