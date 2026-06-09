@@ -1,6 +1,6 @@
 import type { ComponentDef } from '#index';
 
-import { asArray, asNumber, asObject, asString } from '#validation';
+import { asArray, asBoolean, asNumber, asObject, asString } from '#validation';
 
 /**
  * Discriminated union of drawable shapes the default Canvas2D renderer
