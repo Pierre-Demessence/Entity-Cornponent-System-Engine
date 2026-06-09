@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -131,6 +131,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: '20 Games Challenge #7: vertically-scrolling jet fighter up a procedurally-generated river with variable-width banks, branching streams, bridges as level checkpoints, enemy boats/helicopters/jets, fuel depots, and a draining fuel gauge.',
     title: 'River Raid',
     load: () => import('@pierre/ecs-example-river-raid/src/main.ts'),
+  },
+  {
+    id: 'spacewar',
+    controls: 'P1: A/D rotate, W thrust, S fire  |  P2: ← → rotate, ↑ thrust, ↓ fire  |  R restart',
+    summary: '20 Games Challenge #9: two-player local space duel with star gravity, screen wrapping, torpedoes, and particles — the very first video game.',
+    title: 'Spacewar!',
+    load: () => import('@pierre/ecs-example-spacewar/src/main.ts'),
   },
 ];
 
