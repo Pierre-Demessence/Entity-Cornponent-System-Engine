@@ -42,3 +42,7 @@ export const HeldTag: TagDef = { name: 'held' };
 export const PlateTag: TagDef = { name: 'plate' };
 /** The sliding door (a collider that moves up when the plate is pressed). */
 export const DoorTag: TagDef = { name: 'door' };
+/** Floor slabs — hidden when the tiled floor model is shown. */
+export const FloorTag: TagDef = { name: 'floor' };
+/** Perimeter wall slabs — hidden when the tiled wall models are shown. */
+export const WallTag: TagDef = { name: 'wall' };

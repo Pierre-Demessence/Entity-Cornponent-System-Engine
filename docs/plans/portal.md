@@ -1,11 +1,10 @@
 # Portal — 20 Games Challenge #27 (real 3D)
 
-Status: **in progress — M1–M5 done** (FPS controller + room + respawn; portal
-gun placement; teleport + momentum redirect + collision carving; see-through
-portal rendering; companion cube + plate + door + win). **M6 (polish + hub +
-checklist + ledger + review) is next.** M1–M3 verified working by Pierre
-(2026-06-10); M4–M5 await his visual check. Static checks (tsc + eslint + vite
-build) green.
+Status: **in progress — M1–M5 done + render polish, all verified by Pierre
+(2026-06-10) and committed.** **M7 (textured 3D models, GLB) is the current
+goal** — M7.1–M7.5 + perimeter walls (M7.6a) done & building, awaiting Pierre's
+visual check; M6 wrap-up (hub + checklist + ledger + review) follows. Static
+checks (tsc + eslint + vite build) green.
 
 Out of order (we're at #9 `spacewar`); Pierre asked to skip straight to #27
 ([challenge page](https://20_games_challenge.gitlab.io/games/portal/)).
@@ -173,6 +172,26 @@ This is the **2nd 3D consumer**, so it directly un-defers the ledger's deferred
 - **`HashGrid3D` / 3D broadphase** — *probably NOT* exercised (one small room →
   brute-force is fine). Won't claim it as a consumer unless the build proves it.
 
+## Model format decision
+
+Kenney ships each pack in **OBJ, FBX, and GLB**. We support **GLB (glTF 2.0
+binary) first**, and likely only that:
+
+- **GLB — chosen.** Self-contained single binary (geometry + PBR materials +
+  textures + skeletal animation in one file), the modern Khronos standard with
+  the **best-maintained three.js loader** (`GLTFLoader` in
+  `three/examples/jsm`). Handles the animated blocky character *and* the static
+  props with one code path. No sidecar `.mtl`/texture files to wire up.
+- **OBJ — no.** Geometry only; needs `OBJLoader` + `MTLLoader` + external
+  texture images, and has **no skeletal animation** (a problem for the
+  character).
+- **FBX — no.** `FBXLoader` supports animation but the format is proprietary
+  and the loader is heavier/fussier; GLB covers the same ground more cleanly.
+
+So: a single `loadGltf(url)` helper over `GLTFLoader`, loading `.glb`. If a
+second 3D example later needs the same, it's a candidate `modules/asset-3d`
+(local-first for now).
+
 ## Milestones (each independently testable)
 
 - **M1 ✅ done** — three.js room (two floor slabs + central hole + walls) + FPS
@@ -182,22 +201,53 @@ This is the **2nd 3D consumer**, so it directly un-defers the ledger's deferred
 - **M3 ✅ done** — **teleport** through portals + momentum redirect + look
   reorientation + collision carving at the openings + momentum-preserving air
   control. (Verified working by Pierre.)
-- **M4 ✅ done (awaiting Pierre's visual check)** — **see-through** portals via
+- **M4 ✅ done (verified by Pierre)** — **see-through** portals via
   render-to-texture: per portal, a virtual camera `T·cam` renders the scene to a
   target with a world-space clip plane at the destination, sampled onto the
-  portal quad by screen-space UV. One level deep (no recursion/self-capture);
-  portals hidden during the RTT passes. Stencil + oblique-near-plane was the
-  planned route; RTT + clip-plane is the more robust blind implementation and
-  the documented fallback.
-- **M5 ✅ done (awaiting Pierre's visual check)** — **companion cube** grab/drop
+  portal quad by screen-space UV. Polished into **single-frame depth-2
+  recursion** (portal-in-portal is itself see-through) framed by unlit **rim
+  rings**; targets stay linear with one final sRGB encode (nested levels don't
+  wash to white). Stencil + oblique-near-plane was the planned route; RTT +
+  clip-plane proved the more robust path.
+- **M5 ✅ done (verified by Pierre)** — **companion cube** grab/drop
   (`E`), full dynamics, teleports with you when carried, solid to the player
-  when resting; **pressure plate** (player or cube) drives a **sliding door**;
-  reach the exit past the door to **win** (overlay + `R` restart); cube
+  when resting; a **clone** renders it emerging from the destination portal
+  while carried through; held cube is **wall-clamped** (but allowed through a
+  portal opening); **pressure plate** (player or cube) drives a **sliding
+  door**; reach the exit past the door to **win** (overlay + `R` restart); cube
   respawns on fall. Level reshaped: side-B dividing wall + doorway, plate, exit
   alcove; exit-side wall made non-portal-able so you can't skip the puzzle.
-- **M6** — polish (held-cube wall clamp, portal rims, HUD), validation, hub +
-  checklist, ledger gap rows, **remove the dev-only `__portal` debug hook**.
-  ← **next**
+- **M7 — textured 3D models (new goal, IN PROGRESS).** Replace the flat
+  primitive look with Kenney models. **Format: glTF binary (`.glb`) — see
+  [Model format decision](#model-format-decision).** Build a small
+  `GLTFLoader`-based model loader local to the example; swap the box/capsule
+  meshes for loaded models, keeping the ECS AABBs as the colliders (visual
+  mesh decoupled from the physics box). All chosen models from the
+  [`kenney_prototype-kit`](../../examples/assets/kenney_prototype-kit) (shared
+  `colormap.png` palette) except the character. **Implementation order is
+  simplest → hardest** (single objects before tiled surfaces):
+  - **M7.1 Character ✅** — `character-a.glb` for the player body (seen through
+    portals).
+  - **M7.2 Cube ✅** — `crate.glb` (single object + its portal clone).
+  - **M7.3 Pressure plate ✅** — `button-floor-square.glb` (single object); tints
+    green while powered (cube/player on the plate).
+  - **M7.4 Door ✅ (panel)** — `door-sliding-double-round.glb` (the sliding panel;
+    replaces the first-cut `door-sliding.glb`). The static `wall-doorway-round.glb`
+    frame is folded into M7.6 (it tiles with the dividing wall).
+  - **M7.5 Floor ✅** — `floor-thick.glb` **tiled** across the two floor slabs (one
+    `InstancedMesh`, 192 tiles; floor slab boxes hidden via `FloorTag`).
+  - **M7.6 Walls — perimeter ✅, rest in progress.** `wall.glb` **tiled** around the
+    four interior perimeter faces (one `InstancedMesh`, 384 tiles, per-tile Y-rotation
+    to face inward; wall boxes hidden via `WallTag`). **Remaining:**
+    `wall-corner.glb` at the 4 corners, tiling the dividing wall at the doorway, the
+    `wall-doorway-round.glb` frame, and the ceiling. (Hardest: tiling + corners over
+    the arbitrary-sized AABB walls; the AABBs stay as the colliders, tiles are
+    purely visual.)
+  - **M7.7 Portal gun** — [`kenney_blaster-kit_2.1`](../../examples/assets/kenney_blaster-kit_2.1)
+    viewmodel in front of the camera (last).
+- **M6 (wrap-up, after M7)** — hub registration + 20-games checklist tick,
+  engine-gap-ledger rows (the 3D-sibling gaps this surfaces), **remove the
+  dev-only `__portal` debug hook**, peer review.
 
 ## Validation
 

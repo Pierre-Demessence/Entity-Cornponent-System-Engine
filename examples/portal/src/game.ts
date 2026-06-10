@@ -7,6 +7,7 @@ import {
   CubeTag,
   DoorTag,
   DynamicBodyTag,
+  FloorTag,
   GroundedDef,
   HeldTag,
   PlateTag,
@@ -16,6 +17,7 @@ import {
   ShapeAabb3DDef,
   StaticBodyTag,
   Velocity3DDef,
+  WallTag,
 } from './components';
 
 // Physics (world units ≈ meters; +Y is up).
@@ -133,6 +135,8 @@ export function makeWorld(): EcsWorld {
   world.registerTag(HeldTag);
   world.registerTag(PlateTag);
   world.registerTag(DoorTag);
+  world.registerTag(FloorTag);
+  world.registerTag(WallTag);
   return world;
 }
 
@@ -211,16 +215,20 @@ function buildLevel(state: GameState): void {
   const wallY = wallH / 2;
 
   // Floor: two slabs with a gap at X ∈ [-2, 2]. Tops sit at Y = 0.
-  spawnStatic(state, -6, -0.5, 0, 8, 1, 12); // side A
-  spawnStatic(state, 6, -0.5, 0, 8, 1, 12); // side B
+  const floorA = spawnStatic(state, -6, -0.5, 0, 8, 1, 12); // side A
+  const floorB = spawnStatic(state, 6, -0.5, 0, 8, 1, 12); // side B
+  state.world.getTag(FloorTag).add(floorA);
+  state.world.getTag(FloorTag).add(floorB);
 
   // Perimeter walls (1 thick). Left/back/front are portal-able; the right
   // (exit-side) wall is NOT, so you can't portal straight into the exit and
   // skip the puzzle.
-  spawnStatic(state, -10.5, wallY, 0, 1, wallH, 12, true); // left (+X face)
-  spawnStatic(state, 10.5, wallY, 0, 1, wallH, 12, false); // right (-X face, exit side)
-  spawnStatic(state, 0, wallY, -6.5, 22, wallH, 1, true); // back (+Z face)
-  spawnStatic(state, 0, wallY, 6.5, 22, wallH, 1, true); // front (-Z face)
+  const wallL = spawnStatic(state, -10.5, wallY, 0, 1, wallH, 12, true); // left (+X face)
+  const wallR = spawnStatic(state, 10.5, wallY, 0, 1, wallH, 12, false); // right (-X face, exit side)
+  const wallB = spawnStatic(state, 0, wallY, -6.5, 22, wallH, 1, true); // back (+Z face)
+  const wallF = spawnStatic(state, 0, wallY, 6.5, 22, wallH, 1, true); // front (-Z face)
+  for (const id of [wallL, wallR, wallB, wallF])
+    state.world.getTag(WallTag).add(id);
 
   // Ceiling.
   spawnStatic(state, 0, wallH + 0.5, 0, 22, 1, 14);

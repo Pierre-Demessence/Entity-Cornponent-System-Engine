@@ -3,16 +3,27 @@ import type { EntityId, TagDef } from '@pierre/ecs';
 import type { GameState, Portal } from './game';
 
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
+import characterUrl from '../../assets/kenney_blocky-characters_20/Models/GLB format/character-a.glb?url';
+import characterTexUrl from '../../assets/kenney_blocky-characters_20/Models/GLB format/Textures/texture-a.png?url';
+import buttonUrl from '../../assets/kenney_prototype-kit/Models/GLB format/button-floor-square.glb?url';
+import crateUrl from '../../assets/kenney_prototype-kit/Models/GLB format/crate.glb?url';
+import doorUrl from '../../assets/kenney_prototype-kit/Models/GLB format/door-sliding-double-round.glb?url';
+import floorUrl from '../../assets/kenney_prototype-kit/Models/GLB format/floor-thick.glb?url';
+import colormapUrl from '../../assets/kenney_prototype-kit/Models/GLB format/Textures/colormap.png?url';
+import wallUrl from '../../assets/kenney_prototype-kit/Models/GLB format/wall.glb?url';
 import {
   CubeTag,
   DoorTag,
+  FloorTag,
   PlateTag,
   Position3DDef,
   ShapeAabb3DDef,
   StaticBodyTag,
+  WallTag,
 } from './components';
-import { PLAYER_EYE, PLAYER_H, PORTAL_H, PORTAL_W } from './game';
+import { CUBE_SIZE, DOOR_D, DOOR_H, DOOR_W, PLATE_D, PLATE_POS, PLATE_W, PLAYER_EYE, PLAYER_H, PORTAL_H, PORTAL_W } from './game';
 import { transformPoint } from './systems/portal-math';
 
 export interface Renderer3D {
@@ -121,6 +132,36 @@ function makePortalMaterial(color: number): THREE.ShaderMaterial {
 }
 
 /**
+ * Recenter a loaded model on its bounding box and scale it (non-uniformly) to
+ * fill a `w × h × d` box, returning a wrapper whose origin is that box centre.
+ */
+function fitModelToBox(model: THREE.Object3D, w: number, h: number, d: number): THREE.Group {
+  const box = new THREE.Box3().setFromObject(model);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  model.position.sub(center);
+  const wrapper = new THREE.Group();
+  wrapper.add(model);
+  wrapper.scale.set(w / (size.x || 1), h / (size.y || 1), d / (size.z || 1));
+  return wrapper;
+}
+
+/** Dispose every geometry/material/texture under a loaded model. */
+function disposeModel(root: THREE.Object3D): void {
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh)
+      return;
+    mesh.geometry.dispose();
+    for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+      const mat = m as THREE.MeshStandardMaterial;
+      mat.map?.dispose();
+      mat.dispose();
+    }
+  });
+}
+
+/**
  * three.js adapter, first-person. ECS is the source of truth: every frame we
  * mirror each static + cube body's `Position3D`/`ShapeAabb3D` into a derived
  * `THREE.Mesh`, and place the camera at the player's eye, oriented by
@@ -220,10 +261,191 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   playerBody.visible = false;
   scene.add(playerBody);
 
+  // Swap the capsule placeholder for the Kenney blocky character once it loads.
+  // The GLB references its texture by an external relative URI, so a
+  // LoadingManager URL modifier redirects that to the Vite-bundled texture.
+  let characterModel: THREE.Object3D | null = null;
+  let doorModel: THREE.Object3D | null = null;
+  let crateModel: THREE.Object3D | null = null;
+  let crateCloneModel: THREE.Object3D | null = null;
+  let plateModel: THREE.Object3D | null = null;
+  const plateMats: THREE.MeshStandardMaterial[] = [];
+  let floorTiles: THREE.InstancedMesh | null = null;
+  let wallTiles: THREE.InstancedMesh | null = null;
+  let disposed = false;
+  // One manager/loader for every Kenney GLB; each GLB references its texture by
+  // a relative URI, so redirect those to the Vite-bundled asset URLs.
+  const kenneyManager = new THREE.LoadingManager();
+  kenneyManager.setURLModifier((url) => {
+    if (url.includes('texture-a.png'))
+      return characterTexUrl;
+    if (url.includes('colormap.png'))
+      return colormapUrl;
+    return url;
+  });
+  const gltfLoader = new GLTFLoader(kenneyManager);
+  gltfLoader.load(
+    characterUrl,
+    (gltf) => {
+      if (disposed)
+        return;
+      const model = gltf.scene;
+      const size = new THREE.Vector3();
+      new THREE.Box3().setFromObject(model).getSize(size);
+      model.scale.setScalar(PLAYER_H / (size.y || 1));
+      const scaledBox = new THREE.Box3().setFromObject(model);
+      model.position.y = -PLAYER_H / 2 - scaledBox.min.y; // feet to the AABB bottom
+      model.rotation.y = Math.PI; // face the look direction (-Z); flip if wrong
+      playerBody.remove(bodyCapsule, bodyNose);
+      bodyGeo.dispose();
+      noseGeo.dispose();
+      bodyMat.dispose();
+      noseMat.dispose();
+      playerBody.add(model);
+      characterModel = model;
+    },
+    undefined,
+    err => console.warn('Portal: failed to load character model', err),
+  );
+  gltfLoader.load(
+    doorUrl,
+    (gltf) => {
+      if (disposed)
+        return;
+      doorModel = fitModelToBox(gltf.scene, DOOR_W, DOOR_H, DOOR_D);
+      scene.add(doorModel);
+    },
+    undefined,
+    err => console.warn('Portal: failed to load door model', err),
+  );
+  gltfLoader.load(
+    crateUrl,
+    (gltf) => {
+      if (disposed)
+        return;
+      const cloneSource = gltf.scene.clone();
+      crateModel = fitModelToBox(gltf.scene, CUBE_SIZE, CUBE_SIZE, CUBE_SIZE);
+      crateModel.visible = false;
+      scene.add(crateModel);
+      crateCloneModel = fitModelToBox(cloneSource, CUBE_SIZE, CUBE_SIZE, CUBE_SIZE);
+      crateCloneModel.visible = false;
+      scene.add(crateCloneModel);
+    },
+    undefined,
+    err => console.warn('Portal: failed to load crate model', err),
+  );
+  gltfLoader.load(
+    buttonUrl,
+    (gltf) => {
+      if (disposed)
+        return;
+      plateModel = fitModelToBox(gltf.scene, PLATE_W, 0.25, PLATE_D);
+      plateModel.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (!mesh.isMesh)
+          return;
+        for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material])
+          plateMats.push(m as THREE.MeshStandardMaterial);
+      });
+      scene.add(plateModel);
+    },
+    undefined,
+    err => console.warn('Portal: failed to load plate model', err),
+  );
+  gltfLoader.load(
+    floorUrl,
+    (gltf) => {
+      if (disposed)
+        return;
+      gltf.scene.updateMatrixWorld(true);
+      let geo: THREE.BufferGeometry | null = null;
+      let mat: THREE.Material | null = null;
+      gltf.scene.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (!mesh.isMesh || geo)
+          return;
+        geo = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
+        mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      });
+      if (!geo || !mat)
+        return;
+      // 1×1 tiles cover each 8×12 slab; one InstancedMesh = one draw call.
+      const cells: Array<[number, number]> = [];
+      for (const [x0, x1] of [[-10, -2], [2, 10]] as const) {
+        for (let gx = x0 + 0.5; gx < x1; gx += 1) {
+          for (let gz = -5.5; gz < 6; gz += 1)
+            cells.push([gx, gz]);
+        }
+      }
+      floorTiles = new THREE.InstancedMesh(geo, mat, cells.length);
+      const tm = new THREE.Matrix4();
+      cells.forEach(([gx, gz], i) => {
+        tm.makeTranslation(gx, -0.2, gz); // tile top (y=0.2 local) sits at floor y=0
+        floorTiles!.setMatrixAt(i, tm);
+      });
+      floorTiles.instanceMatrix.needsUpdate = true;
+      floorTiles.frustumCulled = false;
+      scene.add(floorTiles);
+    },
+    undefined,
+    err => console.warn('Portal: failed to load floor model', err),
+  );
+  gltfLoader.load(
+    wallUrl,
+    (gltf) => {
+      if (disposed)
+        return;
+      gltf.scene.updateMatrixWorld(true);
+      let geo: THREE.BufferGeometry | null = null;
+      let mat: THREE.Material | null = null;
+      gltf.scene.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (!mesh.isMesh || geo)
+          return;
+        geo = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
+        mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      });
+      if (!geo || !mat)
+        return;
+      // wall.glb is a 1×1 panel, 0.2 thick, front face toward +X. Tile each
+      // interior wall face, rotating about Y so the front points into the room.
+      // Offset 0.1 along the inward normal so the panel front sits flush with
+      // the collider's interior face.
+      const yAxis = new THREE.Vector3(0, 1, 0);
+      const q = new THREE.Quaternion();
+      const p = new THREE.Vector3();
+      const one = new THREE.Vector3(1, 1, 1);
+      const tiles: THREE.Matrix4[] = [];
+      const push = (x: number, y: number, z: number, rotY: number) => {
+        q.setFromAxisAngle(yAxis, rotY);
+        p.set(x, y, z);
+        tiles.push(new THREE.Matrix4().compose(p, q, one));
+      };
+      for (let y = 0; y < 6; y += 1) {
+        for (let z = -5.5; z < 6; z += 1) {
+          push(-10.1, y, z, 0); // left wall → faces +X
+          push(10.1, y, z, Math.PI); // right wall → faces -X
+        }
+        for (let x = -9.5; x < 10; x += 1) {
+          push(x, y, -6.1, -Math.PI / 2); // back wall → faces +Z
+          push(x, y, 6.1, Math.PI / 2); // front wall → faces -Z
+        }
+      }
+      wallTiles = new THREE.InstancedMesh(geo, mat, tiles.length);
+      tiles.forEach((m, i) => wallTiles!.setMatrixAt(i, m));
+      wallTiles.instanceMatrix.needsUpdate = true;
+      wallTiles.frustumCulled = false;
+      scene.add(wallTiles);
+    },
+    undefined,
+    err => console.warn('Portal: failed to load wall model', err),
+  );
+
   // Cube "ghost" rendered emerging from the destination portal while the held
   // cube straddles the source, so pushing the cube into a portal shows it
   // coming out the other side (its real far half is hidden behind the window).
   const cubeClone = new THREE.Mesh(unitBox, cubeMat);
+  cubeClone.scale.setScalar(CUBE_SIZE);
   cubeClone.visible = false;
   cubeClone.frustumCulled = false;
   scene.add(cubeClone);
@@ -332,7 +554,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
    * cube is straddling the source portal's opening. Returns whether it should
    * be shown for this pass.
    */
-  function placeCubeClone(state: GameState, src: Portal, dst: Portal): boolean {
+  function placeCubeClone(state: GameState, src: Portal, dst: Portal, target: THREE.Object3D): boolean {
     if (state.cubeId == null)
       return false;
     const cp = state.world.getStore(Position3DDef).get(state.cubeId);
@@ -349,8 +571,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     if (Math.abs(lz) > 1.2 || Math.abs(lx) > PORTAL_W / 2 + ca.w || Math.abs(ly) > PORTAL_H / 2 + ca.h)
       return false;
     const tp = transformPoint(cp, src, dst);
-    cubeClone.position.set(tp.x, tp.y, tp.z);
-    cubeClone.scale.set(ca.w, ca.h, ca.d);
+    target.position.set(tp.x, tp.y, tp.z);
     return true;
   }
 
@@ -373,6 +594,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   return {
     domElement: renderer.domElement,
     dispose() {
+      disposed = true;
       for (const mesh of meshes.values())
         scene.remove(mesh);
       meshes.clear();
@@ -391,10 +613,31 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       ringGeo.dispose();
       blueRingMat.dispose();
       orangeRingMat.dispose();
-      bodyGeo.dispose();
-      noseGeo.dispose();
-      bodyMat.dispose();
-      noseMat.dispose();
+      if (characterModel) {
+        disposeModel(characterModel);
+      }
+      else {
+        bodyGeo.dispose();
+        noseGeo.dispose();
+        bodyMat.dispose();
+        noseMat.dispose();
+      }
+      if (doorModel)
+        disposeModel(doorModel);
+      if (crateModel)
+        disposeModel(crateModel);
+      if (crateCloneModel)
+        disposeModel(crateCloneModel);
+      if (plateModel)
+        disposeModel(plateModel);
+      if (floorTiles) {
+        floorTiles.geometry.dispose();
+        (floorTiles.material as THREE.Material).dispose();
+      }
+      if (wallTiles) {
+        wallTiles.geometry.dispose();
+        (wallTiles.material as THREE.Material).dispose();
+      }
       rtBlue.dispose();
       rtBlue2.dispose();
       rtOrange.dispose();
@@ -410,6 +653,41 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       syncTag(state, CubeTag, cubeMat);
       syncTag(state, StaticBodyTag, staticMat);
       reapUntouched();
+
+      // Swap the door box for the loaded sliding-door model (slides with it).
+      if (doorModel && state.doorId != null) {
+        const dp = state.world.getStore(Position3DDef).get(state.doorId);
+        if (dp)
+          doorModel.position.set(dp.x, dp.y, dp.z);
+        const doorMesh = meshes.get(state.doorId);
+        if (doorMesh)
+          doorMesh.visible = false;
+      }
+
+      // Swap the cube box for the loaded crate model (follows the cube).
+      if (crateModel && state.cubeId != null) {
+        const cp = state.world.getStore(Position3DDef).get(state.cubeId);
+        if (cp) {
+          crateModel.position.set(cp.x, cp.y, cp.z);
+          crateModel.visible = true;
+        }
+        const cubeMesh = meshes.get(state.cubeId);
+        if (cubeMesh)
+          cubeMesh.visible = false;
+      }
+
+      // Swap the plate box for the floor-button model; depress + tint it green
+      // while powered.
+      if (plateModel) {
+        plateModel.position.set(PLATE_POS.x, 0.125 - (state.platePressed ? 0.05 : 0), PLATE_POS.z);
+        for (const mat of plateMats)
+          mat.color.setHex(state.platePressed ? 0x49D17A : 0xFFFFFF);
+        for (const id of state.world.getTag(PlateTag)) {
+          const m = meshes.get(id);
+          if (m)
+            m.visible = false;
+        }
+      }
       placePortal(bluePortal, state.portals.blue);
       placePortal(orangePortal, state.portals.orange);
       placeRing(blueRing, state.portals.blue);
@@ -418,10 +696,28 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       updatePlayerBody(state);
       camera.updateMatrixWorld();
 
+      // Hide the floor slab boxes once the tiled floor is shown.
+      if (floorTiles) {
+        for (const id of state.world.getTag(FloorTag)) {
+          const m = meshes.get(id);
+          if (m)
+            m.visible = false;
+        }
+      }
+      // Hide the perimeter wall boxes once the tiled walls are shown.
+      if (wallTiles) {
+        for (const id of state.world.getTag(WallTag)) {
+          const m = meshes.get(id);
+          if (m)
+            m.visible = false;
+        }
+      }
+
       const { blue, orange } = state.portals;
       if (blue && orange) {
         playerBody.visible = true;
-        const cubeMesh = state.cubeId == null ? undefined : meshes.get(state.cubeId);
+        const cubeVisual: THREE.Object3D | undefined = crateModel ?? (state.cubeId == null ? undefined : meshes.get(state.cubeId));
+        const cloneVisual: THREE.Object3D = crateCloneModel ?? cubeClone;
         // Fills write LINEAR into the targets (encode once on the canvas), or
         // nested recursion levels compound the sRGB encode and wash to white.
         blueMat.uniforms.uEncode.value = 0;
@@ -438,13 +734,13 @@ export function makeRenderer(width: number, height: number): Renderer3D {
         renderToTarget(rtBlue2, camM2, orange);
         blueMat.uniforms.uTextured.value = 1; // near: shows the deeper level
         blueMat.uniforms.uTex.value = rtBlue2.texture;
-        const cloneInBlue = placeCubeClone(state, blue, orange);
-        cubeClone.visible = cloneInBlue;
-        if (cloneInBlue && cubeMesh)
-          cubeMesh.visible = false;
+        const cloneInBlue = placeCubeClone(state, blue, orange, cloneVisual);
+        cloneVisual.visible = cloneInBlue;
+        if (cloneInBlue && cubeVisual)
+          cubeVisual.visible = false;
         renderToTarget(rtBlue, camM1, orange);
-        if (cubeMesh)
-          cubeMesh.visible = true;
+        if (cubeVisual)
+          cubeVisual.visible = true;
 
         // --- Orange's chain (views out of blue). ---
         portalTransform(orange, blue, viewXform);
@@ -456,16 +752,16 @@ export function makeRenderer(width: number, height: number): Renderer3D {
         renderToTarget(rtOrange2, camM2, blue);
         orangeMat.uniforms.uTextured.value = 1;
         orangeMat.uniforms.uTex.value = rtOrange2.texture;
-        const cloneInOrange = placeCubeClone(state, orange, blue);
-        cubeClone.visible = cloneInOrange;
-        if (cloneInOrange && cubeMesh)
-          cubeMesh.visible = false;
+        const cloneInOrange = placeCubeClone(state, orange, blue, cloneVisual);
+        cloneVisual.visible = cloneInOrange;
+        if (cloneInOrange && cubeVisual)
+          cubeVisual.visible = false;
         renderToTarget(rtOrange, camM1, blue);
-        if (cubeMesh)
-          cubeMesh.visible = true;
+        if (cubeVisual)
+          cubeVisual.visible = true;
 
         // --- Main pass: both fills textured with their near targets, encoded. ---
-        cubeClone.visible = false;
+        cloneVisual.visible = false;
         bluePortal.visible = true;
         orangePortal.visible = true;
         blueMat.uniforms.uEncode.value = 1;
