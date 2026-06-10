@@ -13,6 +13,7 @@ import {
   StaticBodyTag,
 } from './components';
 import { PLAYER_EYE, PLAYER_H, PORTAL_H, PORTAL_W } from './game';
+import { transformPoint } from './systems/portal-math';
 
 export interface Renderer3D {
   domElement: HTMLCanvasElement;
@@ -80,6 +81,7 @@ const PORTAL_FRAG = `
   uniform sampler2D uTex;
   uniform vec3 uColor;
   uniform float uTextured;
+  uniform float uEncode;
   varying vec4 vClip;
   varying vec2 vLocal;
   vec3 linearToSRGB(vec3 c) {
@@ -95,7 +97,12 @@ const PORTAL_FRAG = `
       vec2 uv = (vClip.xy / vClip.w) * 0.5 + 0.5;
       base = texture2D(uTex, uv).rgb;
     }
-    gl_FragColor = vec4(linearToSRGB(mix(base, uColor, rim)), 1.0);
+    vec3 col = mix(base, uColor, rim);
+    // Encode to sRGB only on the final canvas pass; render targets stay linear
+    // so nested portal sampling doesn't compound the encode (which whitens out).
+    if (uEncode > 0.5)
+      col = linearToSRGB(col);
+    gl_FragColor = vec4(col, 1.0);
   }
 `;
 
@@ -106,6 +113,7 @@ function makePortalMaterial(color: number): THREE.ShaderMaterial {
     vertexShader: PORTAL_VERT,
     uniforms: {
       uColor: { value: new THREE.Color(color) },
+      uEncode: { value: 1 },
       uTex: { value: null },
       uTextured: { value: 0 },
     },
@@ -160,6 +168,21 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   orangePortal.frustumCulled = false;
   scene.add(bluePortal, orangePortal);
 
+  // Portal rims — thin unlit rings shown in BOTH the main and portal (RTT)
+  // passes. The see-through fill is hidden during RTT (it would occlude the
+  // view), so the rings are what make the other portal visible *through* a
+  // portal, and make a body crossing a portal enter a ring rather than a wall.
+  const ringGeo = new THREE.RingGeometry(0.4, 0.5, 48);
+  const blueRingMat = new THREE.MeshBasicMaterial({ color: 0x6CC4FF, side: THREE.DoubleSide });
+  const orangeRingMat = new THREE.MeshBasicMaterial({ color: 0xFFB066, side: THREE.DoubleSide });
+  const blueRing = new THREE.Mesh(ringGeo, blueRingMat);
+  const orangeRing = new THREE.Mesh(ringGeo, orangeRingMat);
+  blueRing.visible = false;
+  orangeRing.visible = false;
+  blueRing.frustumCulled = false;
+  orangeRing.frustumCulled = false;
+  scene.add(blueRing, orangeRing);
+
   // See-through plumbing: a virtual camera + one render target per portal.
   const dpr = renderer.getPixelRatio();
   const makeTarget = (): THREE.WebGLRenderTarget =>
@@ -167,13 +190,20 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       magFilter: THREE.LinearFilter,
       minFilter: THREE.LinearFilter,
     });
+  // Two targets per portal for a fixed 2-level, SINGLE-FRAME recursion (near +
+  // deep). Single-frame (not temporal/ping-pong) so moving doesn't smear old
+  // frames into the recursion.
   const rtBlue = makeTarget();
+  const rtBlue2 = makeTarget();
   const rtOrange = makeTarget();
+  const rtOrange2 = makeTarget();
   const virtualCam = new THREE.PerspectiveCamera();
   virtualCam.matrixAutoUpdate = false;
   virtualCam.matrixWorldAutoUpdate = false;
   const clipPlane = new THREE.Plane();
   const viewXform = new THREE.Matrix4();
+  const camM1 = new THREE.Matrix4();
+  const camM2 = new THREE.Matrix4();
   const noClip: THREE.Plane[] = [];
 
   // Simple player body — shown only in the portal (RTT) passes so you can see
@@ -189,6 +219,14 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   playerBody.add(bodyCapsule, bodyNose);
   playerBody.visible = false;
   scene.add(playerBody);
+
+  // Cube "ghost" rendered emerging from the destination portal while the held
+  // cube straddles the source, so pushing the cube into a portal shows it
+  // coming out the other side (its real far half is hidden behind the window).
+  const cubeClone = new THREE.Mesh(unitBox, cubeMat);
+  cubeClone.visible = false;
+  cubeClone.frustumCulled = false;
+  scene.add(cubeClone);
 
   const meshes = new Map<EntityId, THREE.Mesh>();
   const touched = new Set<EntityId>();
@@ -269,15 +307,60 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     mesh.scale.set(PORTAL_W, PORTAL_H, 1);
   }
 
-  function renderPortalView(rt: THREE.WebGLRenderTarget, src: Portal, dst: Portal): void {
-    portalTransform(src, dst, viewXform);
-    virtualCam.matrixWorld.multiplyMatrices(viewXform, camera.matrixWorld);
-    virtualCam.matrixWorldInverse.copy(virtualCam.matrixWorld).invert();
+  function placeRing(mesh: THREE.Mesh, portal: Portal | null): void {
+    if (!portal) {
+      mesh.visible = false;
+      return;
+    }
+    mesh.visible = true;
+    // Nudge a touch further off the wall than the fill so the frame reads clean.
+    mesh.position.set(
+      portal.center.x + portal.normal.x * 0.02,
+      portal.center.y + portal.normal.y * 0.02,
+      portal.center.z + portal.normal.z * 0.02,
+    );
+    vRight.set(portal.right.x, portal.right.y, portal.right.z);
+    vUp.set(portal.up.x, portal.up.y, portal.up.z);
+    vNormal.set(portal.normal.x, portal.normal.y, portal.normal.z);
+    portalBasis.makeBasis(vRight, vUp, vNormal);
+    mesh.quaternion.setFromRotationMatrix(portalBasis);
+    mesh.scale.set(PORTAL_W, PORTAL_H, 1);
+  }
+
+  /**
+   * Position the cube clone at the cube's image through `src → dst` when the
+   * cube is straddling the source portal's opening. Returns whether it should
+   * be shown for this pass.
+   */
+  function placeCubeClone(state: GameState, src: Portal, dst: Portal): boolean {
+    if (state.cubeId == null)
+      return false;
+    const cp = state.world.getStore(Position3DDef).get(state.cubeId);
+    const ca = state.world.getStore(ShapeAabb3DDef).get(state.cubeId);
+    if (!cp || !ca)
+      return false;
+    const dx = cp.x - src.center.x;
+    const dy = cp.y - src.center.y;
+    const dz = cp.z - src.center.z;
+    const lx = dx * src.right.x + dy * src.right.y + dz * src.right.z;
+    const ly = dx * src.up.x + dy * src.up.y + dz * src.up.z;
+    const lz = dx * src.normal.x + dy * src.normal.y + dz * src.normal.z;
+    // Near the plane and roughly in front of the opening.
+    if (Math.abs(lz) > 1.2 || Math.abs(lx) > PORTAL_W / 2 + ca.w || Math.abs(ly) > PORTAL_H / 2 + ca.h)
+      return false;
+    const tp = transformPoint(cp, src, dst);
+    cubeClone.position.set(tp.x, tp.y, tp.z);
+    cubeClone.scale.set(ca.w, ca.h, ca.d);
+    return true;
+  }
+
+  function renderToTarget(rt: THREE.WebGLRenderTarget, camMatrix: THREE.Matrix4, dst: Portal): void {
+    virtualCam.matrixWorld.copy(camMatrix);
+    virtualCam.matrixWorldInverse.copy(camMatrix).invert();
     virtualCam.projectionMatrix.copy(camera.projectionMatrix);
     virtualCam.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
     // Clip everything behind the destination portal so its host wall and the
-    // void beyond don't occlude the view out of it. (If the view shows the wall
-    // instead of the room, flip this normal.)
+    // void beyond don't occlude the view out of it.
     clipPlane.setFromNormalAndCoplanarPoint(
       _axN.set(dst.normal.x, dst.normal.y, dst.normal.z),
       _axR.set(dst.center.x, dst.center.y, dst.center.z),
@@ -295,6 +378,8 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       meshes.clear();
       scene.remove(bluePortal, orangePortal);
       scene.remove(playerBody);
+      scene.remove(cubeClone);
+      scene.remove(blueRing, orangeRing);
       unitBox.dispose();
       staticMat.dispose();
       cubeMat.dispose();
@@ -303,12 +388,17 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       portalGeo.dispose();
       blueMat.dispose();
       orangeMat.dispose();
+      ringGeo.dispose();
+      blueRingMat.dispose();
+      orangeRingMat.dispose();
       bodyGeo.dispose();
       noseGeo.dispose();
       bodyMat.dispose();
       noseMat.dispose();
       rtBlue.dispose();
+      rtBlue2.dispose();
       rtOrange.dispose();
+      rtOrange2.dispose();
       renderer.dispose();
     },
     render(state) {
@@ -322,27 +412,72 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       reapUntouched();
       placePortal(bluePortal, state.portals.blue);
       placePortal(orangePortal, state.portals.orange);
+      placeRing(blueRing, state.portals.blue);
+      placeRing(orangeRing, state.portals.orange);
       updateCamera(state);
       updatePlayerBody(state);
       camera.updateMatrixWorld();
 
       const { blue, orange } = state.portals;
       if (blue && orange) {
-        // Render each portal's see-through view with the portal quads hidden,
-        // but the player body shown so you can see yourself through the pair.
-        bluePortal.visible = false;
-        orangePortal.visible = false;
         playerBody.visible = true;
-        renderPortalView(rtBlue, blue, orange);
-        renderPortalView(rtOrange, orange, blue);
+        const cubeMesh = state.cubeId == null ? undefined : meshes.get(state.cubeId);
+        // Fills write LINEAR into the targets (encode once on the canvas), or
+        // nested recursion levels compound the sRGB encode and wash to white.
+        blueMat.uniforms.uEncode.value = 0;
+        orangeMat.uniforms.uEncode.value = 0;
+
+        // --- Blue's chain (views out of orange), deepest level first. Each
+        // level's camera is one more portal-hop back; clip stays at orange. ---
+        portalTransform(blue, orange, viewXform);
+        camM1.multiplyMatrices(viewXform, camera.matrixWorld);
+        camM2.multiplyMatrices(viewXform, camM1);
+        orangePortal.visible = false; // destination sits at the virtual camera
+        bluePortal.visible = true;
+        blueMat.uniforms.uTextured.value = 0; // deepest: flat (end of the hall)
+        renderToTarget(rtBlue2, camM2, orange);
+        blueMat.uniforms.uTextured.value = 1; // near: shows the deeper level
+        blueMat.uniforms.uTex.value = rtBlue2.texture;
+        const cloneInBlue = placeCubeClone(state, blue, orange);
+        cubeClone.visible = cloneInBlue;
+        if (cloneInBlue && cubeMesh)
+          cubeMesh.visible = false;
+        renderToTarget(rtBlue, camM1, orange);
+        if (cubeMesh)
+          cubeMesh.visible = true;
+
+        // --- Orange's chain (views out of blue). ---
+        portalTransform(orange, blue, viewXform);
+        camM1.multiplyMatrices(viewXform, camera.matrixWorld);
+        camM2.multiplyMatrices(viewXform, camM1);
+        bluePortal.visible = false;
+        orangePortal.visible = true;
+        orangeMat.uniforms.uTextured.value = 0;
+        renderToTarget(rtOrange2, camM2, blue);
+        orangeMat.uniforms.uTextured.value = 1;
+        orangeMat.uniforms.uTex.value = rtOrange2.texture;
+        const cloneInOrange = placeCubeClone(state, orange, blue);
+        cubeClone.visible = cloneInOrange;
+        if (cloneInOrange && cubeMesh)
+          cubeMesh.visible = false;
+        renderToTarget(rtOrange, camM1, blue);
+        if (cubeMesh)
+          cubeMesh.visible = true;
+
+        // --- Main pass: both fills textured with their near targets, encoded. ---
+        cubeClone.visible = false;
         bluePortal.visible = true;
         orangePortal.visible = true;
+        blueMat.uniforms.uEncode.value = 1;
         blueMat.uniforms.uTextured.value = 1;
         blueMat.uniforms.uTex.value = rtBlue.texture;
+        orangeMat.uniforms.uEncode.value = 1;
         orangeMat.uniforms.uTextured.value = 1;
         orangeMat.uniforms.uTex.value = rtOrange.texture;
       }
       else {
+        blueMat.uniforms.uEncode.value = 1;
+        orangeMat.uniforms.uEncode.value = 1;
         blueMat.uniforms.uTextured.value = 0;
         orangeMat.uniforms.uTextured.value = 0;
       }
@@ -358,8 +493,12 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       const r = renderer.getPixelRatio();
-      rtBlue.setSize(Math.floor(w * r), Math.floor(h * r));
-      rtOrange.setSize(Math.floor(w * r), Math.floor(h * r));
+      const tw = Math.floor(w * r);
+      const th = Math.floor(h * r);
+      rtBlue.setSize(tw, th);
+      rtBlue2.setSize(tw, th);
+      rtOrange.setSize(tw, th);
+      rtOrange2.setSize(tw, th);
     },
   };
 }

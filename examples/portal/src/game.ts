@@ -37,7 +37,7 @@ export const PLAYER_EYE = 0.6;
 export const PLAYER_SPAWN = { x: -6, y: 3, z: 0 };
 
 // Companion cube.
-export const CUBE_SIZE = 1;
+export const CUBE_SIZE = 0.8;
 export const CUBE_SPAWN = { x: -4, y: 2, z: 2.5 };
 
 // Cube carry.

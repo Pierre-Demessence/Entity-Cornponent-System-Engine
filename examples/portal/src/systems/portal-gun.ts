@@ -10,7 +10,7 @@ import {
   PORTAL_SURFACE_OFFSET,
   PORTAL_W,
 } from '../game';
-import { forwardVec } from './portal-math';
+import { forwardVec, rayAabb } from './portal-math';
 
 type Axis = 'x' | 'y' | 'z';
 const AXES: readonly Axis[] = ['x', 'y', 'z'];
@@ -67,7 +67,7 @@ function nearestSurface(ctx: GameState, origin: Vec3, dir: Vec3): SurfaceHit | n
     if (!c || !a)
       continue;
     const half: Vec3 = { x: a.w / 2, y: a.h / 2, z: a.d / 2 };
-    const entry = rayAabbEntry(origin, dir, c, half);
+    const entry = rayAabb(origin, dir, c, half);
     if (!entry || entry.t >= bestT)
       continue;
     bestT = entry.t;
@@ -85,37 +85,6 @@ function nearestSurface(ctx: GameState, origin: Vec3, dir: Vec3): SurfaceHit | n
     };
   }
   return best;
-}
-
-/** Slab method: entry t (>0) + the axis of the entry face, or null. */
-function rayAabbEntry(o: Vec3, d: Vec3, c: Vec3, half: Vec3): { axis: Axis; t: number } | null {
-  let tmin = -Infinity;
-  let tmax = Infinity;
-  let axis: Axis = 'x';
-  for (const a of AXES) {
-    const lo = c[a] - half[a];
-    const hi = c[a] + half[a];
-    if (Math.abs(d[a]) < 1e-8) {
-      if (o[a] < lo || o[a] > hi)
-        return null;
-      continue;
-    }
-    let t1 = (lo - o[a]) / d[a];
-    let t2 = (hi - o[a]) / d[a];
-    if (t1 > t2)
-      [t1, t2] = [t2, t1];
-    if (t1 > tmin) {
-      tmin = t1;
-      axis = a;
-    }
-    if (t2 < tmax)
-      tmax = t2;
-    if (tmin > tmax)
-      return null;
-  }
-  if (tmin <= 1e-4)
-    return null; // origin inside/behind the box
-  return { axis, t: tmin };
 }
 
 /** Snap a portal onto the hit face; null if the face can't hold it. */
