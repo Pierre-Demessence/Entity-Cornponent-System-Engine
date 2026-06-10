@@ -214,9 +214,11 @@ function buildLevel(state: GameState): void {
   const wallH = 6;
   const wallY = wallH / 2;
 
-  // Floor: two slabs with a gap at X ∈ [-2, 2]. Tops sit at Y = 0.
-  const floorA = spawnStatic(state, -6, -0.5, 0, 8, 1, 12); // side A
-  const floorB = spawnStatic(state, 6, -0.5, 0, 8, 1, 12); // side B
+  // Floor: two slabs with a gap at X ∈ [-2, 2]. Tops sit at Y = 0. Portal-able,
+  // so you can shoot portals onto the floor and fall through (the portal system
+  // handles any surface orientation).
+  const floorA = spawnStatic(state, -6, -0.5, 0, 8, 1, 12, true); // side A
+  const floorB = spawnStatic(state, 6, -0.5, 0, 8, 1, 12, true); // side B
   state.world.getTag(FloorTag).add(floorA);
   state.world.getTag(FloorTag).add(floorB);
 
@@ -230,8 +232,8 @@ function buildLevel(state: GameState): void {
   for (const id of [wallL, wallR, wallB, wallF])
     state.world.getTag(WallTag).add(id);
 
-  // Ceiling.
-  spawnStatic(state, 0, wallH + 0.5, 0, 22, 1, 14);
+  // Ceiling (portal-able, so you can fling through floor ↔ ceiling pairs).
+  spawnStatic(state, 0, wallH + 0.5, 0, 22, 1, 14, true);
 
   // Side-B dividing wall at x=DOOR_X with a central doorway (the door fills it).
   // Two full-height side segments + a header above the doorway. Not portal-able.
