@@ -5,6 +5,8 @@ import type { GameState, Portal } from './game';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
+import blasterUrl from '../../assets/kenney_blaster-kit_2.1/Models/GLB format/blaster-l.glb?url';
+import blasterTexUrl from '../../assets/kenney_blaster-kit_2.1/Models/GLB format/Textures/colormap.png?url';
 import characterUrl from '../../assets/kenney_blocky-characters_20/Models/GLB format/character-a.glb?url';
 import characterTexUrl from '../../assets/kenney_blocky-characters_20/Models/GLB format/Textures/texture-a.png?url';
 import buttonUrl from '../../assets/kenney_prototype-kit/Models/GLB format/button-floor-square.glb?url';
@@ -23,7 +25,7 @@ import {
   StaticBodyTag,
   WallTag,
 } from './components';
-import { CUBE_SIZE, DOOR_D, DOOR_H, DOOR_W, PLATE_D, PLATE_POS, PLATE_W, PLAYER_EYE, PLAYER_H, PORTAL_H, PORTAL_W } from './game';
+import { CUBE_SIZE, DOOR_D, DOOR_H, DOOR_W, DOOR_X, PLATE_D, PLATE_POS, PLATE_W, PLAYER_EYE, PLAYER_H, PORTAL_H, PORTAL_W } from './game';
 import { transformPoint } from './systems/portal-math';
 
 export interface Renderer3D {
@@ -178,6 +180,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
 
   const camera = new THREE.PerspectiveCamera(75, width / height, 0.05, 200);
   camera.rotation.order = 'YXZ';
+  scene.add(camera); // so the first-person gun viewmodel (a camera child) renders
 
   scene.add(new THREE.AmbientLight(0xFFFFFF, 0.6));
   const keyLight = new THREE.DirectionalLight(0xFFFFFF, 0.85);
@@ -272,6 +275,8 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   const plateMats: THREE.MeshStandardMaterial[] = [];
   let floorTiles: THREE.InstancedMesh | null = null;
   let wallTiles: THREE.InstancedMesh | null = null;
+  let viewGun: THREE.Object3D | null = null;
+  let worldGun: THREE.Object3D | null = null;
   let disposed = false;
   // One manager/loader for every Kenney GLB; each GLB references its texture by
   // a relative URI, so redirect those to the Vite-bundled asset URLs.
@@ -407,29 +412,59 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       });
       if (!geo || !mat)
         return;
-      // wall.glb is a 1×1 panel, 0.2 thick, front face toward +X. Tile each
-      // interior wall face, rotating about Y so the front points into the room.
-      // Offset 0.1 along the inward normal so the panel front sits flush with
-      // the collider's interior face.
+      // wall.glb is a 1×1 panel, 0.2 thick, front face toward +X. tileRegion
+      // lays panels over a flat rectangular wall face, rotating about Y so the
+      // front points into the room and scaling so a whole number of panels
+      // fills the region exactly (the panel front sits flush with the face).
       const yAxis = new THREE.Vector3(0, 1, 0);
       const q = new THREE.Quaternion();
       const p = new THREE.Vector3();
-      const one = new THREE.Vector3(1, 1, 1);
+      const s = new THREE.Vector3();
       const tiles: THREE.Matrix4[] = [];
-      const push = (x: number, y: number, z: number, rotY: number) => {
+      // faceAxis = the wall-normal axis; dir = ±1 along it (pointing into the
+      // room). u0..u1 = the along-wall span (Z when faceAxis is 'x', else X);
+      // y0..y1 = the height span.
+      const tileRegion = (
+        faceAxis: 'x' | 'z',
+        facePos: number,
+        dir: 1 | -1,
+        u0: number,
+        u1: number,
+        y0: number,
+        y1: number,
+      ) => {
+        const cols = Math.max(1, Math.round(u1 - u0));
+        const rows = Math.max(1, Math.round(y1 - y0));
+        const tw = (u1 - u0) / cols;
+        const th = (y1 - y0) / rows;
+        const rotY = faceAxis === 'x'
+          ? (dir > 0 ? 0 : Math.PI)
+          : (dir > 0 ? -Math.PI / 2 : Math.PI / 2);
         q.setFromAxisAngle(yAxis, rotY);
-        p.set(x, y, z);
-        tiles.push(new THREE.Matrix4().compose(p, q, one));
+        s.set(1, th, tw); // local Z = panel width → u; local Y = height
+        for (let r = 0; r < rows; r += 1) {
+          for (let c = 0; c < cols; c += 1) {
+            const u = u0 + (c + 0.5) * tw;
+            const yy = y0 + r * th; // panel origin is its bottom edge
+            if (faceAxis === 'x')
+              p.set(facePos - dir * 0.1, yy, u);
+            else
+              p.set(u, yy, facePos - dir * 0.1);
+            tiles.push(new THREE.Matrix4().compose(p, q, s));
+          }
+        }
       };
-      for (let y = 0; y < 6; y += 1) {
-        for (let z = -5.5; z < 6; z += 1) {
-          push(-10.1, y, z, 0); // left wall → faces +X
-          push(10.1, y, z, Math.PI); // right wall → faces -X
-        }
-        for (let x = -9.5; x < 10; x += 1) {
-          push(x, y, -6.1, -Math.PI / 2); // back wall → faces +Z
-          push(x, y, 6.1, Math.PI / 2); // front wall → faces -Z
-        }
+      // Perimeter interior faces.
+      tileRegion('x', -10, 1, -6, 6, 0, 6); // left → faces +X
+      tileRegion('x', 10, -1, -6, 6, 0, 6); // right → faces -X
+      tileRegion('z', -6, 1, -10, 10, 0, 6); // back → faces +Z
+      tileRegion('z', 6, -1, -10, 10, 0, 6); // front → faces -Z
+      // Dividing wall (0.5 thick) at x=DOOR_X: tile both faces around the
+      // doorway opening (the door panel fills the gap).
+      for (const [fx, dir] of [[DOOR_X - 0.25, -1], [DOOR_X + 0.25, 1]] as const) {
+        tileRegion('x', fx, dir, -6, -1.5, 0, 6); // left of doorway
+        tileRegion('x', fx, dir, 1.5, 6, 0, 6); // right of doorway
+        tileRegion('x', fx, dir, -1.5, 1.5, DOOR_H, 6); // header above doorway
       }
       wallTiles = new THREE.InstancedMesh(geo, mat, tiles.length);
       tiles.forEach((m, i) => wallTiles!.setMatrixAt(i, m));
@@ -439,6 +474,38 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     },
     undefined,
     err => console.warn('Portal: failed to load wall model', err),
+  );
+
+  // Portal gun: one chunky blaster shown two ways — a first-person viewmodel
+  // (child of the camera, drawn in the main pass only) and a world copy in the
+  // character's hands (child of playerBody, so you see yourself holding it
+  // through portals). The blaster kit ships its OWN colormap.png, so it needs a
+  // separate loader — the shared one routes colormap.png to the prototype-kit
+  // palette.
+  const blasterManager = new THREE.LoadingManager();
+  blasterManager.setURLModifier(url => (url.includes('colormap.png') ? blasterTexUrl : url));
+  new GLTFLoader(blasterManager).load(
+    blasterUrl,
+    (gltf) => {
+      if (disposed)
+        return;
+      const gun = gltf.scene;
+      const held = gun.clone(); // clone before applying viewmodel transforms
+      // Viewmodel: barrel points -Z (model local) = camera forward; nudge it
+      // right/down so it sits in the lower-right like a typical FPS viewmodel.
+      gun.scale.setScalar(1.2);
+      gun.position.set(0.22, -0.2, -0.45);
+      camera.add(gun);
+      viewGun = gun;
+      // World copy in the character's right hand (the character faces -Z, so
+      // the gun's -Z barrel points the same way the player looks).
+      held.scale.setScalar(1.2);
+      held.position.set(0.28, 0.15, -0.4);
+      playerBody.add(held);
+      worldGun = held;
+    },
+    undefined,
+    err => console.warn('Portal: failed to load blaster model', err),
   );
 
   // Cube "ghost" rendered emerging from the destination portal while the held
@@ -638,6 +705,10 @@ export function makeRenderer(width: number, height: number): Renderer3D {
         wallTiles.geometry.dispose();
         (wallTiles.material as THREE.Material).dispose();
       }
+      if (viewGun)
+        disposeModel(viewGun);
+      if (worldGun)
+        disposeModel(worldGun);
       rtBlue.dispose();
       rtBlue2.dispose();
       rtOrange.dispose();
@@ -716,6 +787,8 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       const { blue, orange } = state.portals;
       if (blue && orange) {
         playerBody.visible = true;
+        if (viewGun)
+          viewGun.visible = false; // viewmodel never appears inside portal views
         const cubeVisual: THREE.Object3D | undefined = crateModel ?? (state.cubeId == null ? undefined : meshes.get(state.cubeId));
         const cloneVisual: THREE.Object3D = crateCloneModel ?? cubeClone;
         // Fills write LINEAR into the targets (encode once on the canvas), or
@@ -780,6 +853,8 @@ export function makeRenderer(width: number, height: number): Renderer3D {
 
       // First-person main pass: hide our own body so we're not inside it.
       playerBody.visible = false;
+      if (viewGun)
+        viewGun.visible = true;
       renderer.clippingPlanes = noClip;
       renderer.setRenderTarget(null);
       renderer.render(scene, camera);

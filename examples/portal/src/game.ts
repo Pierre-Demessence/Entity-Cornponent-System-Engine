@@ -235,9 +235,12 @@ function buildLevel(state: GameState): void {
 
   // Side-B dividing wall at x=DOOR_X with a central doorway (the door fills it).
   // Two full-height side segments + a header above the doorway. Not portal-able.
-  spawnStatic(state, DOOR_X, wallY, -3.75, 0.5, wallH, 4.5); // left of doorway
-  spawnStatic(state, DOOR_X, wallY, 3.75, 0.5, wallH, 4.5); // right of doorway
-  spawnStatic(state, DOOR_X, (DOOR_H + wallH) / 2, 0, 0.5, wallH - DOOR_H, DOOR_D); // header
+  // Tagged WallTag so the tiled wall hides their boxes (else they z-fight).
+  const divL = spawnStatic(state, DOOR_X, wallY, -3.75, 0.5, wallH, 4.5); // left of doorway
+  const divR = spawnStatic(state, DOOR_X, wallY, 3.75, 0.5, wallH, 4.5); // right of doorway
+  const divH = spawnStatic(state, DOOR_X, (DOOR_H + wallH) / 2, 0, 0.5, wallH - DOOR_H, DOOR_D); // header
+  for (const id of [divL, divR, divH])
+    state.world.getTag(WallTag).add(id);
 
   spawnPlate(state);
   state.doorId = spawnDoor(state);

@@ -2,9 +2,11 @@
 
 Status: **in progress — M1–M5 done + render polish, all verified by Pierre
 (2026-06-10) and committed.** **M7 (textured 3D models, GLB) is the current
-goal** — M7.1–M7.5 + perimeter walls (M7.6a) done & building, awaiting Pierre's
-visual check; M6 wrap-up (hub + checklist + ledger + review) follows. Static
-checks (tsc + eslint + vite build) green.
+goal** — M7.1–M7.7 all done & building (character, cube, plate, door, floor,
+perimeter + dividing walls, portal gun); awaiting Pierre's visual check. Only
+`wall-corner.glb` corners + the ceiling box remain optional polish. M6 wrap-up
+(hub + checklist + ledger + review) follows. Static checks (tsc + eslint + vite
+build) green.
 
 Out of order (we're at #9 `spacewar`); Pierre asked to skip straight to #27
 ([challenge page](https://20_games_challenge.gitlab.io/games/portal/)).
@@ -236,15 +238,19 @@ second 3D example later needs the same, it's a candidate `modules/asset-3d`
     frame is folded into M7.6 (it tiles with the dividing wall).
   - **M7.5 Floor ✅** — `floor-thick.glb` **tiled** across the two floor slabs (one
     `InstancedMesh`, 192 tiles; floor slab boxes hidden via `FloorTag`).
-  - **M7.6 Walls — perimeter ✅, rest in progress.** `wall.glb` **tiled** around the
-    four interior perimeter faces (one `InstancedMesh`, 384 tiles, per-tile Y-rotation
-    to face inward; wall boxes hidden via `WallTag`). **Remaining:**
-    `wall-corner.glb` at the 4 corners, tiling the dividing wall at the doorway, the
-    `wall-doorway-round.glb` frame, and the ceiling. (Hardest: tiling + corners over
-    the arbitrary-sized AABB walls; the AABBs stay as the colliders, tiles are
-    purely visual.)
-  - **M7.7 Portal gun** — [`kenney_blaster-kit_2.1`](../../examples/assets/kenney_blaster-kit_2.1)
-    viewmodel in front of the camera (last).
+  - **M7.6 Walls — perimeter + dividing wall ✅, corners/ceiling TODO.** `wall.glb`
+    **tiled** over the four interior perimeter faces *and* both faces of the
+    dividing wall around the doorway opening, via a `tileRegion()` helper that
+    scales panels so a whole number fills each region exactly (one `InstancedMesh`,
+    ~522 tiles; wall boxes hidden via `WallTag`). The `wall-doorway-round.glb` frame
+    was **dropped**: it's a 2-wide × 1-tall tile with a small arch, a bad fit for our
+    3-wide × 3.2-tall opening — the tiled opening edges read clean instead.
+    *Remaining:* `wall-corner.glb` at the 4 corners and the ceiling (still a box).
+  - **M7.7 Portal gun ✅** — [`blaster-r.glb`](../../examples/assets/kenney_blaster-kit_2.1)
+    shown two ways: a first-person **viewmodel** (child of the camera, drawn only in
+    the main pass) **and** a world copy in the **character's hands** (child of
+    `playerBody`, so you see yourself holding it through portals). Loaded via a
+    dedicated `LoadingManager` (the blaster ships its own `colormap.png`).
 - **M6 (wrap-up, after M7)** — hub registration + 20-games checklist tick,
   engine-gap-ledger rows (the 3D-sibling gaps this surfaces), **remove the
   dev-only `__portal` debug hook**, peer review.
