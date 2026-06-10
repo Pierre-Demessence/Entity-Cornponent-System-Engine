@@ -48,7 +48,7 @@ unmodified `@pierre/ecs`.
 | 24 | Doom | 1993 | [link](https://20_games_challenge.gitlab.io/games/doom/) | ⬜ |
 | 25 | Mario Kart | 1992 | [link](https://20_games_challenge.gitlab.io/games/mario_kart/) | ⬜ |
 | 26 | Minecraft | 2009 | [link](https://20_games_challenge.gitlab.io/games/minecraft/) | ⬜ |
-| 27 | Portal | 2007 | [link](https://20_games_challenge.gitlab.io/games/portal/) | ⬜ |
+| 27 | Portal | 2007 | [link](https://20_games_challenge.gitlab.io/games/portal/) | ✅ |
 
 > The challenge page also lists an extended catalogue beyond these (Chrome
 > Dinosaur, Tetris, Zelda, …). We'll extend this table once the curated list
