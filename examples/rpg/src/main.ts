@@ -301,7 +301,7 @@ export function start(container: HTMLElement): () => void {
             // Standing — show the middle frame and pause animation.
             const standingFrame = TINY_DIRECTION_FRAMES[currentDir][1];
             const r = renderables.get(playerId)!;
-            if (r.frame !== standingFrame) {
+            if (r.kind === 'sprite' && r.frame !== standingFrame) {
               renderables.set(playerId, { ...r, frame: standingFrame });
             }
             if (animStore.has(playerId)) {
