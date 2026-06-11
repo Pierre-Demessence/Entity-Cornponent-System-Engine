@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -138,6 +138,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: '20 Games Challenge #9: two-player local space duel with star gravity, screen wrapping, torpedoes, and particles — the very first video game.',
     title: 'Spacewar!',
     load: () => import('@pierre/ecs-example-spacewar/src/main.ts'),
+  },
+  {
+    id: 'doom',
+    controls: 'Click to capture · WASD move · Space jump · LMB fire · 1/2 weapon · R restart',
+    summary: '20 Games Challenge #24: first-person arena shooter — a 3D controller with verticality (stairs + a moving elevator), billboard-sprite enemies with line-of-sight AI, hitscan + projectile weapons, a health/ammo HUD, and pickups.',
+    title: 'Doom',
+    load: () => import('@pierre/ecs-example-doom/src/main.ts'),
   },
 ];
 

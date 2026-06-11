@@ -45,7 +45,7 @@ unmodified `@pierre/ecs`.
 | 21 | Super Monkey Ball | 2001 | [link](https://20_games_challenge.gitlab.io/games/monkeyball/) | ⬜ |
 | 22 | Star Fox | 1993 | [link](https://20_games_challenge.gitlab.io/games/star_fox/) | ⬜ |
 | 23 | Crash Bandicoot | 1996 | [link](https://20_games_challenge.gitlab.io/games/crash/) | ⬜ |
-| 24 | Doom | 1993 | [link](https://20_games_challenge.gitlab.io/games/doom/) | ⬜ |
+| 24 | Doom | 1993 | [link](https://20_games_challenge.gitlab.io/games/doom/) | ✅ done (`doom`) |
 | 25 | Mario Kart | 1992 | [link](https://20_games_challenge.gitlab.io/games/mario_kart/) | ⬜ |
 | 26 | Minecraft | 2009 | [link](https://20_games_challenge.gitlab.io/games/minecraft/) | ⬜ |
 | 27 | Portal | 2007 | [link](https://20_games_challenge.gitlab.io/games/portal/) | ✅ |
