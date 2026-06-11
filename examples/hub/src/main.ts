@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -145,6 +145,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: '20 Games Challenge #24: first-person arena shooter — a 3D controller with verticality (stairs + a moving elevator), billboard-sprite enemies with line-of-sight AI, hitscan + projectile weapons, a health/ammo HUD, and pickups.',
     title: 'Doom',
     load: () => import('@pierre/ecs-example-doom/src/main.ts'),
+  },
+  {
+    id: 'portal',
+    controls: 'Click to capture · WASD move · Space jump · E grab/drop · LMB/RMB portals · R restart',
+    summary: '20 Games Challenge #27: real 3D portals — recursive see-through rendering, momentum-preserving teleport, floor/ceiling portals, a companion cube, and a pressure-plate door.',
+    title: 'Portal',
+    load: () => import('@pierre/ecs-example-portal/src/main.ts'),
   },
 ];
 

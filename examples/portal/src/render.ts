@@ -245,6 +245,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   virtualCam.matrixAutoUpdate = false;
   virtualCam.matrixWorldAutoUpdate = false;
   const clipPlane = new THREE.Plane();
+  const oneClip: THREE.Plane[] = [clipPlane]; // reused each RTT pass (avoids a per-pass array alloc)
   const viewXform = new THREE.Matrix4();
   const camM1 = new THREE.Matrix4();
   const camM2 = new THREE.Matrix4();
@@ -653,7 +654,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       _axN.set(dst.normal.x, dst.normal.y, dst.normal.z),
       _axR.set(dst.center.x, dst.center.y, dst.center.z),
     );
-    renderer.clippingPlanes = [clipPlane];
+    renderer.clippingPlanes = oneClip;
     renderer.setRenderTarget(rt);
     renderer.render(scene, virtualCam);
   }
@@ -699,11 +700,15 @@ export function makeRenderer(width: number, height: number): Renderer3D {
         disposeModel(plateModel);
       if (floorTiles) {
         floorTiles.geometry.dispose();
-        (floorTiles.material as THREE.Material).dispose();
+        const m = floorTiles.material as THREE.MeshStandardMaterial;
+        m.map?.dispose();
+        m.dispose();
       }
       if (wallTiles) {
         wallTiles.geometry.dispose();
-        (wallTiles.material as THREE.Material).dispose();
+        const m = wallTiles.material as THREE.MeshStandardMaterial;
+        m.map?.dispose();
+        m.dispose();
       }
       if (viewGun)
         disposeModel(viewGun);

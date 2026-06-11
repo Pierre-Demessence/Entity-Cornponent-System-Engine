@@ -95,13 +95,6 @@ export function start(container: HTMLElement): () => void {
 
   resetGame(state);
 
-  if (import.meta.env.DEV) {
-    (window as unknown as { __portal?: unknown }).__portal = {
-      state,
-      playerPos: () => (state.playerId == null ? null : state.world.getStore(Position3DDef).get(state.playerId)),
-    };
-  }
-
   // Pointer lock: click to capture the cursor, then mouse drives yaw + pitch.
   const requestLock = (): void => {
     // Newer browsers return a promise that rejects if the gesture is denied;

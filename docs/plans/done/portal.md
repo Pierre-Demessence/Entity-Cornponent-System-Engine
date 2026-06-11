@@ -1,12 +1,14 @@
 # Portal — 20 Games Challenge #27 (real 3D)
 
-Status: **in progress — M1–M5 done + render polish, all verified by Pierre
-(2026-06-10) and committed.** **M7 (textured 3D models, GLB) is the current
-goal** — M7.1–M7.7 all done & building (character, cube, plate, door, floor,
-perimeter + dividing walls, portal gun); awaiting Pierre's visual check. Only
-`wall-corner.glb` corners + the ceiling box remain optional polish. M6 wrap-up
-(hub + checklist + ledger + review) follows. Static checks (tsc + eslint + vite
-build) green.
+Status: **complete — M1–M7 + M6 wrap-up all done.** FPS controller, portal gun,
+recursive see-through rendering, momentum teleport, floor/ceiling portals,
+companion cube, plate + door, win, respawn; textured Kenney GLB models
+(character, cube, plate, door, tiled floor + walls, gun viewmodel). Verified by
+Pierre (2026-06-10). M6 wrap-up done: registered in the hub, #27 ticked,
+engine-gap rows added (Doom later bumped the shared 3D rows to 3 consumers),
+dev-only `__portal` hook removed, peer-reviewed (PASS). Only `wall-corner.glb`
+corners + the ceiling box remain optional polish. Static checks (tsc + eslint +
+vite build) green.
 
 Out of order (we're at #9 `spacewar`); Pierre asked to skip straight to #27
 ([challenge page](https://20_games_challenge.gitlab.io/games/portal/)).
@@ -29,31 +31,31 @@ the hard part is the see-through portal renderer.
 
 ## Goals (from Pierre's spec)
 
-- [ ] **3D FPS character controller**: pointer-lock mouse-look (yaw + clamped
+- [x] **3D FPS character controller**: pointer-lock mouse-look (yaw + clamped
       pitch), WASD move, run, jump, limited air control, terminal velocity.
-- [ ] **Portal gun**, orange + blue: fire to place a portal where the crosshair
+- [x] **Portal gun**, orange + blue: fire to place a portal where the crosshair
       hits a *portal-able* surface; placement snaps within the surface and away
       from edges / the other portal. Firing a colour replaces that colour's
       portal **only on a valid placement** — an invalid shot leaves the existing
       one open.
-- [ ] **See through** portals (recursive, depth-capped) **and move through**
+- [x] **See through** portals (recursive, depth-capped) **and move through**
       them — teleport conserves momentum, redirected by the portal-pair
       orientation ("speedy thing goes in, speedy thing comes out"); the
       see-through view and the teleport use the **same** transform.
-- [ ] **Companion cube**: grab + drop; full dynamic physics; teleports through
+- [x] **Companion cube**: grab + drop; full dynamic physics; teleports through
       portals like the player; can rest on the plate.
-- [ ] **Pressure plate + locked door**: the door is open while the player **or**
+- [x] **Pressure plate + locked door**: the door is open while the player **or**
       the cube rests on the plate, and closes when the plate clears. (Cube-on-
       plate is the intended solution so the player can walk through.)
-- [ ] **Level**: a rectangular room whose floor is split by a **central hole**
+- [x] **Level**: a rectangular room whose floor is split by a **central hole**
       into two halves. Player + cube start on side A; plate + door (+ the exit
       beyond it) are on side B. Solve it by placing one portal on a wall on
       side A and one on a wall across the gap on side B, carrying the cube
       through, dropping it on the plate, and walking through the opened door.
-- [ ] **Fall in the hole → respawn**: player and cube each respawn at their own
+- [x] **Fall in the hole → respawn**: player and cube each respawn at their own
       start position.
-- [ ] **Win**: reach beyond the opened door.
-- [ ] Register in the [hub](../../examples/hub/) + tick
+- [x] **Win**: reach beyond the opened door.
+- [x] Register in the [hub](../../examples/hub/) + tick
       [twenty-games-challenge.md](../roadmap/twenty-games-challenge.md) #27.
 
 **Stretch (optional):** portal-rim shader/particles; the "cake is a lie" nod.
