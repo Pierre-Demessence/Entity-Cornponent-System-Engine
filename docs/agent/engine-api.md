@@ -386,6 +386,13 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`SpawnerOptions`** _(interface)_ — Options for makeSpawner.
 - **`tickSpawner`** _(fn)_ — Advance the spawner by `dtMs`, invoking `emit` once per elapsed interval. Overshoot carries into the next cycle. A non-positive interval ...
 
+### `@pierre/ecs/modules/stats`
+- **`drawStatsOverlay`** _(fn)_ — Draws a stats.js-style overlay (numeric readout + frame-time sparkline) for `render` into `ctx2d`, in screen-pixel space. Self-contained ...
+- **`FrameStats`** _(class)_ — —
+- **`FrameStatsOptions`** _(interface)_ — Headless frame-timing collector: feed it the measured duration of each frame (or logic tick) and read back current/min/max/avg frame time...
+- **`StatsOverlayOptions`** _(interface)_ — Visual configuration for drawStatsOverlay.
+- **`TimedTickSource`** _(class)_ — Wraps a TickSource so each downstream tick's **wall-clock cost** is measured and fed into a FrameStats. Use it to time work whose tick so...
+
 ### `@pierre/ecs/modules/texture-atlas`
 - **`AtlasFrame`** _(interface)_ — A single sub-texture rectangle within an atlas image, in source-image pixel coordinates.
 - **`ParsedAtlas`** _(interface)_ — Result of parsing a TexturePacker / Kenney "Generic XML" atlas: the referenced image path plus a map of frame name → source rectangle.
