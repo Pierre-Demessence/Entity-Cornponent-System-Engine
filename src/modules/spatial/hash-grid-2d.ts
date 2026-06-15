@@ -6,10 +6,6 @@ interface Pos {
   readonly y: number;
 }
 
-function key(x: number, y: number): string {
-  return `${x},${y}`;
-}
-
 /**
  * Grid-based spatial index mapping integer `(x, y)` cells to sets of
  * entity IDs. Implements {@link SpatialStructure} with `TPos = {x, y}`.
@@ -20,28 +16,41 @@ function key(x: number, y: number): string {
  *
  * Exposes the interface methods (`queryAt`/`queryRect`/`queryNear`/etc.)
  * plus grid-specific extras (`getAt`, `findAt`, `findFirstAt`, `getInRect`,
- * integer `add(id, x, y)` overloads) that exploit the backing `Map<string, Set>`.
- * The extras are honest about the structure — they aren't part of the
+ * integer `add(id, x, y)` overloads). Cells live in a nested numeric
+ * `Map<y, Map<x, Set>>` (row-major). Numeric keys avoid the per-access
+ * string a flat `Map<string, Set>` would allocate on every cell touch —
+ * this index is read for every cell of every broadphase query, so that
+ * string churn dominated CPU and GC at high entity counts. The extras are
+ * honest about the structure — they aren't part of the
  * {@link SpatialStructure} contract.
  */
 export class HashGrid2D implements SpatialStructure<Pos> {
-  private cells = new Map<string, Set<EntityId>>();
+  private rows = new Map<number, Map<number, Set<EntityId>>>();
 
   // -- SpatialStructure<Pos> interface ------------------------------------
 
   add(id: EntityId, posOrX: Pos | number, y?: number): void {
     const [x, yy] = typeof posOrX === 'number' ? [posOrX, y!] : [posOrX.x, posOrX.y];
-    const k = key(x, yy);
-    let set = this.cells.get(k);
+    let row = this.rows.get(yy);
+    if (!row) {
+      row = new Map();
+      this.rows.set(yy, row);
+    }
+    let set = row.get(x);
     if (!set) {
       set = new Set();
-      this.cells.set(k, set);
+      row.set(x, set);
     }
     set.add(id);
   }
 
+  /** The id Set at cell `(x, y)`, or `undefined` when the cell is empty. */
+  private cellAt(x: number, y: number): Set<EntityId> | undefined {
+    return this.rows.get(y)?.get(x);
+  }
+
   clear(): void {
-    this.cells.clear();
+    this.rows.clear();
   }
 
   /**
@@ -52,7 +61,7 @@ export class HashGrid2D implements SpatialStructure<Pos> {
    * keeping the spatial index itself domain-neutral.
    */
   findAt(x: number, y: number, predicate: (id: EntityId) => boolean): EntityId[] {
-    const cell = this.cells.get(key(x, y));
+    const cell = this.cellAt(x, y);
     if (!cell)
       return [];
     const result: EntityId[] = [];
@@ -70,7 +79,7 @@ export class HashGrid2D implements SpatialStructure<Pos> {
    * preference should use `findAt` and sort the result.
    */
   findFirstAt(x: number, y: number, predicate: (id: EntityId) => boolean): EntityId | undefined {
-    const cell = this.cells.get(key(x, y));
+    const cell = this.cellAt(x, y);
     if (!cell)
       return undefined;
     for (const id of cell) {
@@ -87,7 +96,7 @@ export class HashGrid2D implements SpatialStructure<Pos> {
    * {@link queryAt} when writing backend-agnostic code.
    */
   getAt(x: number, y: number): ReadonlySet<EntityId> | undefined {
-    return this.cells.get(key(x, y));
+    return this.cellAt(x, y);
   }
 
   /** Collect all entity IDs within an axis-aligned rectangle (inclusive bounds) as an array. */
@@ -114,9 +123,7 @@ export class HashGrid2D implements SpatialStructure<Pos> {
       newXX = (toOrOldY as Pos).x;
       newYY = (toOrOldY as Pos).y;
     }
-    const oldK = key(oldX, oldY);
-    const newK = key(newXX, newYY);
-    if (oldK === newK)
+    if (oldX === newXX && oldY === newYY)
       return;
     this.remove(id, oldX, oldY);
     this.add(id, newXX, newYY);
@@ -125,7 +132,7 @@ export class HashGrid2D implements SpatialStructure<Pos> {
   // -- Grid-specific ergonomics (NOT part of SpatialStructure) -----------
 
   * queryAt(pos: Pos): Iterable<EntityId> {
-    const cell = this.cells.get(key(pos.x, pos.y));
+    const cell = this.cellAt(pos.x, pos.y);
     if (!cell)
       return;
     for (const id of cell) yield id;
@@ -137,12 +144,15 @@ export class HashGrid2D implements SpatialStructure<Pos> {
     const r = Math.ceil(radius);
     const r2 = radius * radius;
     for (let y = pos.y - r; y <= pos.y + r; y++) {
+      const row = this.rows.get(y);
+      if (!row)
+        continue;
       for (let x = pos.x - r; x <= pos.x + r; x++) {
         const dx = x - pos.x;
         const dy = y - pos.y;
         if (dx * dx + dy * dy > r2)
           continue;
-        const set = this.cells.get(key(x, y));
+        const set = row.get(x);
         if (!set)
           continue;
         for (const id of set) yield id;
@@ -152,8 +162,11 @@ export class HashGrid2D implements SpatialStructure<Pos> {
 
   * queryRect(min: Pos, max: Pos): Iterable<EntityId> {
     for (let y = min.y; y <= max.y; y++) {
+      const row = this.rows.get(y);
+      if (!row)
+        continue;
       for (let x = min.x; x <= max.x; x++) {
-        const set = this.cells.get(key(x, y));
+        const set = row.get(x);
         if (!set)
           continue;
         for (const id of set) yield id;
@@ -163,12 +176,17 @@ export class HashGrid2D implements SpatialStructure<Pos> {
 
   remove(id: EntityId, posOrX: Pos | number, y?: number): void {
     const [x, yy] = typeof posOrX === 'number' ? [posOrX, y!] : [posOrX.x, posOrX.y];
-    const k = key(x, yy);
-    const set = this.cells.get(k);
+    const row = this.rows.get(yy);
+    if (!row)
+      return;
+    const set = row.get(x);
     if (!set)
       return;
     set.delete(id);
-    if (set.size === 0)
-      this.cells.delete(k);
+    if (set.size === 0) {
+      row.delete(x);
+      if (row.size === 0)
+        this.rows.delete(yy);
+    }
   }
 }
