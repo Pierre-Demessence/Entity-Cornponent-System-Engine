@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -152,6 +152,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: '20 Games Challenge #27: real 3D portals — recursive see-through rendering, momentum-preserving teleport, floor/ceiling portals, a companion cube, and a pressure-plate door.',
     title: 'Portal',
     load: () => import('@pierre/ecs-example-portal/src/main.ts'),
+  },
+  {
+    id: 'starfighter',
+    controls: 'W/S throttle · A/D roll · move reticle to steer · LMB/Space fire · R reset',
+    summary: 'Third-person space flight: No-Man\'s-Sky-style aim-to-steer attitude control (quaternion orientation, rate-based turns), throttle-only motion, a banking chase camera, and shoot-the-drone targets — proves the camera rig is neither yaw-only nor first-person-locked.',
+    title: 'Starfighter',
+    load: () => import('@pierre/ecs-example-starfighter/src/main.ts'),
   },
 ];
 

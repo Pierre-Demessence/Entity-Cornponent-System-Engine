@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Starfighter — @pierre/ecs example</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: #05070d;
+      color: #eee;
+      font-family: system-ui, sans-serif;
+    }
+
+    body {
+      display: block;
+    }
+
+    #root {
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import { start } from './src/main.ts';
+    const teardown = start(document.getElementById('root'));
+    window.addEventListener('beforeunload', teardown);
+  </script>
+</body>
+
+</html>
