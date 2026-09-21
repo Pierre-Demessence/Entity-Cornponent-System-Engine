@@ -7,7 +7,7 @@ prototype, which needs to draw Kenney art instead of vector shapes.
 ## Promotion rationale
 
 - **Sprite primitive** — Path C (universal canon). Listed explicitly in
-  [`extending-the-engine.md`](../extending-the-engine.md): present in
+  [`extending-the-engine.md`](../../extending-the-engine.md): present in
   Pixi, Phaser, Unity, Godot, Bevy, LÖVE with the same shape. Ships even
   with one consumer.
 - **TexturePacker XML parser** — Path B (canon format, one real

@@ -47,10 +47,10 @@ enemies + AI, a projectile weapon, damage/health/death, pickups, and the HUD.
 
 Doom would be the **3rd 3D consumer** (after `platformer-3d` and `portal`). The
 3D primitives all three share are already logged as gaps in the
-[engine-gap ledger](../roadmap/engine-gap-ledger.md): 3D transforms, the 3D AABB
+[engine-gap ledger](../../roadmap/engine-gap-ledger.md): 3D transforms, the 3D AABB
 body solver, the 3D renderer + entity→mesh sync, pointer-lock mouse-look,
 ray-vs-AABB, and Vec3 math. With a 3rd consumer they clear the rule-of-three,
-and [`AGENTS.md`](../../AGENTS.md) leans **canon-complete over incremental**.
+and [`AGENTS.md`](../../../AGENTS.md) leans **canon-complete over incremental**.
 
 Two ways to proceed:
 
@@ -156,7 +156,7 @@ models if you prefer.
   **HUD** (DOM): a health bar + the current weapon's ammo count.
 - **M6 — polish + wrap-up.** Tune AI/damage/feel; register in the
   [hub](../../examples/hub/); tick #24 in
-  [twenty-games-challenge.md](../roadmap/twenty-games-challenge.md); add the new
+  [twenty-games-challenge.md](../../twenty-games-challenge.md); add the new
   engine-gap rows (3rd 3D consumer + any Doom-specific gaps: billboarding, AI
   seek/LoS, projectile, damage/health, pickups, step-up/elevator); peer review;
   move this plan to `docs/plans/done/`.

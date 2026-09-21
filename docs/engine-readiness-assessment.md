@@ -260,19 +260,10 @@ deciding early. It is already a de-facto consumer cluster with four
 duplicated implementations — the exact failure mode the gap ledger was
 written to catch.
 
-## Documentation drift found during this pass
+## Related open work
 
-`docs/roadmap/ecs-module-backlog.md` described `modules/tilemap` as
-**deferred** ("ready to build; not yet scheduled"). The module shipped
-**2026-06-07** (`353052c`) with its own plan
-([`plans/done/tilemap-module.md`](plans/done/tilemap-module.md)), tests,
-and two adopting consumers — `examples/rpg/src/map.ts` and
-`examples/tilemap/src/main.ts` both call `spawnTilemap` /
-`buildTilemapAtlas` / `buildCollisionGrid`.
-
-The original entry conflated two things: the **spawn + collision-grid
-helpers** (shipped) and the **batched tilemap renderable** (`TilemapDef`
-plus a renderer pass that avoids per-cell entities — still unbuilt;
-`TilemapDef` appears only in prose, never in source). The backlog now
-splits them into a shipped entry and a `V2` deferral, matching the
-V1/V2 convention used for `modules/camera` and `modules/pathfinding`.
+The batched tilemap renderable — `TilemapDef` plus a renderer pass that avoids
+per-cell entities — is **unbuilt**. `TilemapDef` appears only in prose, never in
+`src/`; `spawnTilemap` / `buildTilemapAtlas` / `buildCollisionGrid` are the
+shipped half. Tracked as `modules/tilemap` V2 in the
+[module backlog](roadmap/ecs-module-backlog.md).

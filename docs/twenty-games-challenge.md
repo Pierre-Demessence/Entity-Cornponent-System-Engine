@@ -3,7 +3,7 @@
 Tracks our pass through the [20 Games Challenge](https://20_games_challenge.gitlab.io/)
 game list. We build the games **in the order they appear on the
 [List of Games](https://20_games_challenge.gitlab.io/games/) page**, one at a
-time, each as a standalone example under [`examples/`](../../examples/) built on
+time, each as a standalone example under [`examples/`](../examples/) built on
 unmodified `@pierre/ecs`.
 
 ## How we work this list
@@ -14,8 +14,8 @@ unmodified `@pierre/ecs`.
   pick up only the ones that are genuinely interesting or that exercise a new
   engine surface.
 - Each game follows the existing example conventions: own Vite app +
-  `package.json`, registered in the [hub](../../examples/hub/). Engine gaps it
-  surfaces go in the [engine gap ledger](engine-gap-ledger.md).
+  `package.json`, registered in the [hub](../examples/hub/). Engine gaps it
+  surfaces go in the [engine gap ledger](roadmap/engine-gap-ledger.md).
 - Tick the checkbox here when a game lands.
 
 ## Game list (in order)

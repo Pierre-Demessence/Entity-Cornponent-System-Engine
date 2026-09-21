@@ -20,9 +20,9 @@ default — gated on "the modules are 2D" when the engine's *core* is
 dimension-neutral and [`examples/platformer-3d`](../../examples/platformer-3d/)
 already proves three.js 3D works here. A **real 3D Portal is the more valuable
 build**: it's the **second 3D consumer** after `platformer-3d`, which is exactly
-what un-defers the 3D rows the [gap ledger](../roadmap/engine-gap-ledger.md)
+what un-defers the 3D rows the [gap ledger](../../roadmap/engine-gap-ledger.md)
 currently parks as *"3D siblings (speculative)"* (`Position3D`/`Velocity3D`,
-`HashGrid3D`). Per [extending-the-engine.md](../extending-the-engine.md), examples
+`HashGrid3D`). Per [extending-the-engine.md](../../extending-the-engine.md), examples
 are built **local-first** and surface gaps; missing modules are the *output*, not
 a prerequisite.
 
@@ -56,7 +56,7 @@ the hard part is the see-through portal renderer.
       start position.
 - [x] **Win**: reach beyond the opened door.
 - [x] Register in the [hub](../../examples/hub/) + tick
-      [twenty-games-challenge.md](../roadmap/twenty-games-challenge.md) #27.
+      [twenty-games-challenge.md](../../twenty-games-challenge.md) #27.
 
 **Stretch (optional):** portal-rim shader/particles; the "cake is a lie" nod.
 

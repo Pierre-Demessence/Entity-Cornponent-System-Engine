@@ -40,9 +40,10 @@ documents itself in its source folder
 End-to-end prototypes that exercise the engine in different genres. Each
 subfolder of [`../examples/`](../examples/) is one runnable example; see
 [`../examples/README.md`](../examples/README.md) for the guided tour and
-the [prototype roadmap](roadmap/prototype-games-roadmap.md) for what each
-one proves. Engine gaps these prototypes surface are tracked in the
-[engine gap ledger](roadmap/engine-gap-ledger.md).
+the [20 Games Challenge](twenty-games-challenge.md) for what each one
+proves. Engine gaps these prototypes surface are tracked in the
+[engine gap ledger](roadmap/engine-gap-ledger.md), and the closed rows of
+past triage passes are frozen under [archived/audits/](archived/audits/).
 
 ## Contributing
 
@@ -51,10 +52,17 @@ one proves. Engine gaps these prototypes surface are tracked in the
 
 ## Roadmap
 
-- [Core-Engine Roadmap](roadmap/core-engine-roadmap.md) - core-engine internals (component stores, queries, scheduler, hooks)
-- [ECS Module Backlog](roadmap/ecs-module-backlog.md) - shipped, deferred, speculative, declined modules
-- [Game AI Landscape](roadmap/game-ai-landscape.md) - map of game-AI concepts (decision, navigation, perception, …) with engine-commonness and this engine's status
-- [Prototype Games Roadmap](roadmap/prototype-games-roadmap.md) - ladder of small games validating the engine
+Open work only — no document here records shipped modules.
+
+- [Core-Engine Roadmap](roadmap/core-engine-roadmap.md) - open core-engine internals (component stores, queries, scheduler, hooks)
+- [ECS Module Backlog](roadmap/ecs-module-backlog.md) - open module work: deferred and speculative
+- [Non-goals](roadmap/non-goals.md) - declined and superseded decisions, with the reason
+- [Engine Gap Ledger](roadmap/engine-gap-ledger.md) - inbox of raw gaps from the examples, awaiting triage
+
+Reference material (not status docs):
+
+- [Game AI Landscape](game-ai-landscape.md) - map of game-AI concepts (decision, navigation, perception, …) with engine-commonness and this engine's status
+- [20 Games Challenge](twenty-games-challenge.md) - the ladder of small games built next
 
 ## Plans
 

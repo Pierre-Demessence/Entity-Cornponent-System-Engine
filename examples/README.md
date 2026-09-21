@@ -10,9 +10,9 @@ bug and the example is on hold until the bug is fixed.
 Each subfolder of this directory is one runnable example. Open the folder
 to read its code; what each one proves (the engine assumption it breaks)
 is tracked by rung in the
-[prototype roadmap](../docs/roadmap/prototype-games-roadmap.md), and the
-[20 Games Challenge](https://20_games_challenge.gitlab.io/) entries are
-tracked in the [challenge roadmap](../docs/roadmap/twenty-games-challenge.md).
+[20 Games Challenge ladder](../docs/twenty-games-challenge.md), which
+follows the [20 Games Challenge](https://20_games_challenge.gitlab.io/)
+game list in order.
 
 Engine gaps surfaced while building these examples are recorded centrally
 in the [engine gap ledger](../docs/roadmap/engine-gap-ledger.md).

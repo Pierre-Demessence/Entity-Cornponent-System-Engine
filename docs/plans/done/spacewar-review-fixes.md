@@ -41,7 +41,7 @@ plan tracks the fixes, the missing spec item (sound), and the ledger updates.
 - [x] Browser: SFX wired (3 clips bundle + load; AudioContext resumes on key
   press). Audible output not machine-verifiable headless.
 
-## Ledger updates ([engine-gap-ledger.md](../roadmap/engine-gap-ledger.md))
+## Ledger updates ([engine-gap-ledger.md](../../roadmap/engine-gap-ledger.md))
 
 - [x] **Two-player / player-slot abstraction** (B19): add spacewar as the 2nd
   consumer (dual-cited: engine `createInput` + spacewar `PlayerSlot` record).

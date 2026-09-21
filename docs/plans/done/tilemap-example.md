@@ -34,7 +34,7 @@ movement, no map transition, no input, no camera panning.
 ## Approach — two phases (decided)
 
 The concern splits across two promotion paths
-([docs/extending-the-engine.md](../extending-the-engine.md)):
+([extending-the-engine.md](../../extending-the-engine.md)):
 
 - **Pure TMX parser** (`xml → tileset metadata + GID arrays`) is **Path B**
   (well-known external format; canon does the rule-of-three's job). Ships

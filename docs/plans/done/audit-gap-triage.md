@@ -1,8 +1,8 @@
 # All-examples audit → backlog triage
 
 Reconcile the freshly-merged
-[engine-gap-ledger](../roadmap/engine-gap-ledger.md) open rows against
-[ecs-module-backlog](../roadmap/ecs-module-backlog.md): for each gap,
+[engine-gap-ledger](../../roadmap/engine-gap-ledger.md) open rows against
+[ecs-module-backlog](../../roadmap/ecs-module-backlog.md): for each gap,
 **promote** (into a backlog entry, recording the now-met trigger), mark
 **resolved** (already shipped + consumers migrated), or **reject** (with
 rationale). Then flip each ledger row's **Status**.

@@ -61,7 +61,7 @@ capability map across all modules, use [`engine-api.md`](engine-api.md).
 - [`docs/extending-the-engine.md`](../extending-the-engine.md) — the sliding-scale promotion rule, layering principles, tradeoffs, prior art
 - [`docs/roadmap/core-engine-roadmap.md`](../roadmap/core-engine-roadmap.md) — open core-internals work
 - [`docs/roadmap/ecs-module-backlog.md`](../roadmap/ecs-module-backlog.md) — open module work
-- [`docs/roadmap/prototype-games-roadmap.md`](../roadmap/prototype-games-roadmap.md) — proof-via-prototypes ladder
+- [`docs/twenty-games-challenge.md`](../twenty-games-challenge.md) — proof-via-prototypes ladder
 - `docs/<primitive>.md` — per-primitive docs (component-store, event-bus, query, scheduler, spatial-structure, template, tick, world)
 
 ## Invariants

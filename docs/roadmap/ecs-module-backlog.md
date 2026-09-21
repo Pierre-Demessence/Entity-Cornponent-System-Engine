@@ -1,235 +1,84 @@
 # ECS Module Backlog
 
-Companion to
-[core-engine-roadmap.md](core-engine-roadmap.md) and
-[prototype-games-roadmap.md](prototype-games-roadmap.md). Captures modules
-surfaced by
-[../plans/done/ecs-2d-engine-modules.md](../plans/done/ecs-2d-engine-modules.md)
-that did not ship, plus the standard module set any mature engine
-eventually grows. Nothing here is scheduled; each entry is either
-explicitly deferred, explicitly speculative, or explicitly "we have
-considered and rejected".
+**Open module work only.** An entry here is a module (or a slice of one) that
+does not exist yet. Nothing in this file is scheduled — each entry records a
+*shape* and the *trigger* that would justify building it.
 
-## Table of contents
+Shipped work does not live here. Once a module ships it is described by
+`src/`, dated by `git log`, and explained by its `plans/done/` plan or its
+`src/modules/<name>/README.md`. A status doc that also lists finished work is
+a cache of `git log` that nothing invalidates, so it drifts.
 
-- [ECS Module Backlog](#ecs-module-backlog)
-  - [Table of contents](#table-of-contents)
-  - [Conventions](#conventions)
-    - [Status vocabulary](#status-vocabulary)
-    - [Shape vs Scope](#shape-vs-scope)
-    - [Version suffixes (V1 / V2 / …)](#version-suffixes-v1--v2--)
-    - [Engine extension rule-book](#engine-extension-rule-book)
-  - [Deferred 2D modules](#deferred-2d-modules)
-    - [`modules/camera` V1 — ✅ shipped 2026-04-21](#modulescamera-v1---shipped-2026-04-21)
-    - [`modules/camera` V2 — ✅ shipped 2026-07-18](#modulescamera-v2---shipped-2026-07-18)
-    - [`RenderableDef` extensions V2 — ✅ shipped 2026-04-22](#renderabledef-extensions-v2---shipped-2026-04-22)
-    - [`RenderableDef` extensions V3 — deferred](#renderabledef-extensions-v3--deferred)
-    - [`ContinuousHashGrid2D(cellSize)` — ✅ shipped 2026-06-07](#continuoushashgrid2dcellsize---shipped-2026-06-07)
-    - [`modules/input` event-mode variant — deferred](#modulesinput-event-mode-variant--deferred)
-    - [`modules/input` — pure `projectPointer` export — ✅ shipped 2026-07-18](#modulesinput--pure-projectpointer-export---shipped-2026-07-18)
-  - [3D siblings — speculative](#3d-siblings--speculative)
-  - [Rigid-body physics — speculative](#rigid-body-physics--speculative)
-  - [Standard engine modules](#standard-engine-modules)
-    - [`modules/audio` V1 — ✅ shipped 2026-04-23](#modulesaudio-v1---shipped-2026-04-23)
-    - [`modules/audio` V2 — deferred](#modulesaudio-v2--deferred)
-    - [`modules/animation` — partially shipped (easing + tween 2026-07-18; sprite-frame 2026-06-07; skeletal deferred)](#modulesanimation--partially-shipped-easing--tween-2026-07-18-sprite-frame-2026-06-07-skeletal-deferred)
-    - [`modules/particles` — ✅ shipped 2026-07-18](#modulesparticles---shipped-2026-07-18)
-    - [`modules/ui` — speculative](#modulesui--speculative)
-    - [`modules/render-dom` V1 — ✅ shipped 2026-04-23](#modulesrender-dom-v1---shipped-2026-04-23)
-    - [`modules/render-dom` V2 — deferred](#modulesrender-dom-v2--deferred)
-    - [`modules/scene-transition` V1 — ✅ shipped 2026-04-23](#modulesscene-transition-v1---shipped-2026-04-23)
-    - [`modules/scene` V2 — deferred](#modulesscene-v2--deferred)
-    - [`modules/save` V1 — ✅ shipped 2026-04-23](#modulessave-v1---shipped-2026-04-23)
-    - [`modules/save` V2 — deferred](#modulessave-v2--deferred)
-    - [`modules/asset-loader` V1 — ✅ shipped 2026-04-24](#modulesasset-loader-v1---shipped-2026-04-24)
-    - [`modules/asset-loader` V2 — deferred](#modulesasset-loader-v2--deferred)
-    - [`modules/tmx` V1 — ✅ shipped 2026-04-24](#modulestmx-v1---shipped-2026-04-24)
-    - [`modules/tilemap` — ✅ shipped 2026-06-07](#modulestilemap---shipped-2026-06-07)
-    - [`modules/tilemap` V2 — batched renderable (deferred)](#modulestilemap-v2--batched-renderable-deferred)
-    - [`modules/pathfinding` V1 — ✅ shipped 2026-04-22](#modulespathfinding-v1---shipped-2026-04-22)
-    - [`modules/pathfinding` V2 — deferred](#modulespathfinding-v2--deferred)
-    - [`modules/grid-based` V1 — ✅ shipped 2026-04-23](#modulesgrid-based-v1---shipped-2026-04-23)
-    - [`modules/grid-based` V2 — deferred](#modulesgrid-based-v2--deferred)
-    - [`modules/debug` — deferred](#modulesdebug--deferred)
-    - [`modules/ai` — speculative](#modulesai--speculative)
-    - [`modules/networking` — speculative](#modulesnetworking--speculative)
-    - [Local-multiplayer player-slot / input-owner helper — speculative](#local-multiplayer-player-slot--input-owner-helper--speculative)
-  - [Gameplay \& utility modules — from the examples audit (2026-07-15)](#gameplay--utility-modules--from-the-examples-audit-2026-07-15)
-    - [`modules/collision` V2 — reflection response — ✅ shipped 2026-06-06](#modulescollision-v2--reflection-response---shipped-2026-06-06)
-    - [`modules/motion` — vector util (normalize / set-speed) — ✅ shipped 2026-07-15](#modulesmotion--vector-util-normalize--set-speed---shipped-2026-07-15)
-    - [`modules/math` — ✅ shipped 2026-07-18](#modulesmath---shipped-2026-07-18)
-    - [`modules/timer` — ✅ shipped 2026-07-16](#modulestimer---shipped-2026-07-16)
-    - [`modules/spawner` — ✅ shipped 2026-07-17](#modulesspawner---shipped-2026-07-17)
-    - [`modules/cooldown` — ✅ shipped 2026-07-16](#modulescooldown---shipped-2026-07-16)
-    - [`modules/grid-movement` — deferred](#modulesgrid-movement--deferred)
-    - [`modules/rng` — ✅ shipped 2026-07-15](#modulesrng---shipped-2026-07-15)
-    - [`modules/attach` — ✅ shipped 2026-06-07](#modulesattach---shipped-2026-06-07)
-    - [`modules/rhythm` — speculative](#modulesrhythm--speculative)
-    - [App-host mount / teardown helper — speculative](#app-host-mount--teardown-helper--speculative)
-  - [Non-goals (declined)](#non-goals-declined)
-  - [Promotion triggers — summary](#promotion-triggers--summary)
+Related:
+
+- [core-engine-roadmap.md](core-engine-roadmap.md) — open core-internals work
+- [non-goals.md](non-goals.md) — declined and superseded (terminal, not
+  deferred)
+- [engine-gap-ledger.md](engine-gap-ledger.md) — raw gaps from the examples,
+  awaiting triage
+- [../archived/prototype-games-roadmap.md](../archived/prototype-games-roadmap.md)
+  — proof-via-prototypes ladder
 
 ## Conventions
 
 ### Status vocabulary
 
-- **✅ Shipped** — module is live in `@pierre/ecs` or an app, with at
-  least one real consumer.
 - **Deferred** — planned shape is clear; waiting on a concrete trigger
   (consumer, pain, or prototype).
 - **Speculative** — shape is sketched but would only exist if a specific
   class of game is attempted.
-- **Declined** — we have considered and rejected; rationale recorded to
-  prevent re-litigating.
 
-### Shape vs Scope
+Two more statuses exist but are not backlog states, so they live elsewhere:
+**Shipped** (the module exists — `src/` + `git log`) and **Declined** /
+**Superseded** (terminal — [non-goals.md](non-goals.md)).
 
-Each entry opens with a one-liner labelled either **Shape** or **Scope**:
+### Entry shape
 
-- **Shape** — used only for ✅-shipped entries where the API is pinned.
-  One line with concrete types / function signatures.
-- **Scope** — used for everything else (deferred, speculative,
-  declined). One or two lines describing what the module would cover.
-  When a sketched API exists it shows up inside the details as
-  "Probable shape".
+Each entry opens with a **Scope** one-liner and carries a **Trigger** — the
+concrete event that would justify building it. When a sketched API exists it
+appears inside the details as **Probable shape**. Canon (what other engines
+do) is cited where it exists; novel shapes need internal consumers instead.
 
 ### Version suffixes (V1 / V2 / …)
 
 When a module ships but parts of its originally-imagined scope are
-deliberately left out, the shipped slice becomes **V1** and a sibling
-**V2** entry captures what was deferred. Each further round of deferral
-increments: V3, V4, etc. Keeps the "this is done" and "there's more to
-do" signals separate without rewriting history.
+deliberately left out, the shipped slice becomes **V1** and a sibling **V2**
+entry captures what was left. Each further round increments: V3, V4. This
+keeps shipped work out of the file while the open remainder stays visible.
 
 ### Engine extension rule-book
 
 Every entry follows the same sliding-scale rule: a module ships once its
 *shape* is proven, where internal consumers and external canon are
-interchangeable evidence — unanimous universal canon needs **0**
-consumers, solid canon **1**, and a novel/opinionated shape **2** (the
-genuine rule of three). Nothing ships speculatively. See
-[https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/docs/extending-the-engine.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/docs/extending-the-engine.md)
-for the full rule-book and guardrails.
+interchangeable evidence — unanimous universal canon needs **0** consumers,
+solid canon **1**, and a novel/opinionated shape **2** (the genuine rule of
+three). Nothing ships speculatively. See
+[extending-the-engine.md](../extending-the-engine.md) for the full rule-book
+and guardrails.
 
 ---
 
 ## Deferred 2D modules
 
-### `modules/camera` V1 — ✅ shipped 2026-04-21
-
-See
-[src/modules/camera/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/camera/README.md)
-and plan
-[../plans/done/ecs-camera-module.md](../plans/done/ecs-camera-module.md).
-
-### `modules/camera` V2 — ✅ shipped (2026-07-18)
-
-**Shipped** canon-complete Godot `Camera2D` parity (minus rotation): zoom,
-offset, limits (bounds clamp), follow smoothing + drag-margin deadzone,
-zoom-aware `worldToView`/`viewToWorld`, `cameraViewRect`, `cameraToView`,
-`clampCameraToLimits`, `makeCamera`@[`camera/camera.ts`](../../src/modules/camera/camera.ts).
-The renderer gained an optional `view` transform + off-screen view-rect cull
-(`Canvas2DRenderContext.view`@[`render-canvas2d/canvas2d-renderer.ts`](../../src/modules/render-canvas2d/canvas2d-renderer.ts)),
-**decoupled** — it consumes a plain `{x,y,zoom?}` and never imports `camera`
-(drive it via `cameraToView(cam)`). Migrated rpg (smooth follow + limits, drops
-its hand-rolled offset clamp + manual `translate`; the live per-entity **cull**
-consumer) and tilemap (adopts `CameraDef` for pan/zoom; bakes the static
-10k-tile map to one offscreen bitmap drawn through the camera transform — the
-canonical static-tilemap technique, seam-free at fractional zoom; mouse-pick via
-the zoom-aware `viewToWorld`). Built canon-first per
-[extending-the-engine](../extending-the-engine.md#canon-complete-by-default),
-not consumer-gated.
-
-<details>
-<summary>Still deferred (post-V2)</summary>
-
-- **Rotation** — Godot `Camera2D.rotation`. A rotated view needs a full affine
-  transform + a conservative rotated-AABB cull, and 2D top-down/platformers
-  rarely rotate the camera. Add when a consumer needs it.
-- **Parallax layers** — a layer/scroll-factor model; its own follow-up.
-- **Pixel/tile helpers** — stay in app code (DOM/canvas-specific).
-- snake ↔ `render-canvas2d`: the `view`/zoom hook now exists; snake just needs
-  to adopt a `CameraDef` zoom instead of baking the cells→pixels scale into
-  every renderable.
-
-</details>
-
-### `RenderableDef` extensions V2 — ✅ shipped 2026-04-22
-
-See
-[src/modules/render-canvas2d/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/render-canvas2d/README.md)
-and plan
-[../plans/done/render-canvas2d-v2.md](../plans/done/render-canvas2d-v2.md).
-
 ### `RenderableDef` extensions V3 — deferred
 
-**Scope.** What remains of the original V3 list: **Canvas filters**
-(`ctx.filter`). Everything else has shipped — the sprite/texture variant,
-GID flip bits (including diagonal transpose, via the tilemap module's
-`tileTransform`), and the screen-space overlay pass. The batched tilemap
-renderable moved out to `modules/tilemap` V2.
+**Scope.** The last item of the original V3 list: **Canvas filters**
+(`ctx.filter`) — blur, drop-shadow and similar post-processing.
 
-<details>
-<summary>Shipped + still deferred</summary>
-
-**Sprite / texture variant — ✅ shipped.** `RenderableDef` carries the
-sprite variant and `Canvas2DRenderer` draws it with `drawImage` against
-atlas-frame source rects@[`canvas2d-renderer.ts`](../../src/modules/render-canvas2d/canvas2d-renderer.ts),
-resolved through the `SpriteFrameSource` / `ResolvedSpriteFrame` contract
-and `modules/texture-atlas`. Consumers: `examples/tilemap`,
-`examples/rpg`, and `modules/tilemap` itself.
-
-**GID flip bits — ✅ shipped 2026-06-07.** Added `flipH`/`flipV` to the
-`Renderable` sprite variant plus the flip transform in `Canvas2DRenderer`
-(`ctx2d.save/translate/scale/restore` for H/V). The tilemap example wired
-`TmxLayer.flags` → `Renderable.flipH`/`flipV`.
-
-**Screen-space overlay pass — ✅ shipped 2026-06-06.** `ScreenSpaceDef`
-marks entities for screen-pixel rendering, and `Canvas2DRenderer` runs a
-two-pass loop: world pass (through the camera `view`) then overlay pass
-(pixel coords, sorted by `RenderOrderDef`). local-pong migrated; snake
-can't cleanly adopt (its grid-coord `PositionDef` conflicts with the
-pixel-space renderer).
-
-**Tilemap variant.** Tracked as `modules/tilemap` V2 (batched
-renderable) — that entry owns the whole feature, renderer pass included.
-Novel-shape rule applies: wait for an authored tile grid where per-cell
-entities measurably hurt. Snake's cell-based rendering currently goes
-through `rect`.
-
-**Canvas filters (`ctx.filter`) — still deferred.** Wait for a consumer.
-Blur, drop-shadow and similar post-processing effects are rarely used in
-practice; wait for a concrete request.
-
-**Snake ↔ `modules/render-canvas2d` migration — still deferred.**
-Separately tracked under `modules/camera` V2 — the `view`/zoom hook now
-exists, so snake needs to adopt a `CameraDef` zoom instead of baking the
-cells→pixels scale into every renderable by hand.
-
-</details>
-
-### `ContinuousHashGrid2D(cellSize)` — ✅ shipped 2026-06-07
-
-**Shape.** `new ContinuousHashGrid2D(cellSize)`@[`continuous-hash-grid-2d.ts`](../../src/modules/spatial/continuous-hash-grid-2d.ts)
-— a `HashGrid2D` wrapper that accepts continuous `{x, y}` world positions
-and projects them to integer cell keys internally via `cellOfPoint`. Pairs
-with `makeGridSyncOnMove({ grid, cellSize })` so a hand-held grid keeps
-up with velocity-integrated motion.
-
-**Consumers.** Five: `examples/asteroids`@[`main.ts:44`](../../examples/asteroids/src/main.ts),
-`examples/boids`@[`main.ts:38`](../../examples/boids/src/main.ts),
-`examples/platformer`@[`main.ts:45`](../../examples/platformer/src/main.ts),
-`examples/spacewar`@[`main.ts:50`](../../examples/spacewar/src/main.ts),
-and `examples/top-down-shooter`@[`main.ts:87`](../../examples/top-down-shooter/src/main.ts).
-All replaced hand-rolled `cellOf` projection plus manual `grid.add(...)`.
+**Trigger.** A concrete request. These effects are rarely used in practice.
 
 <details>
 <summary>Details</summary>
 
-**Why it shipped.** The "explicit and debuggable composition" argument for
-leaving the projection in app code lost to five consumers writing the
-identical wrapper. Platformer keeps `cellsForAabb` for multi-cell AABB
-indexing via the underlying `.grid`.
+Two related items are *not* here: the sprite/texture variant and GID flip
+bits shipped, and the batched tilemap renderable is tracked as
+`modules/tilemap` V2 (that entry owns the whole feature, renderer pass
+included).
+
+**Snake ↔ `modules/render-canvas2d` migration — also still open.** The
+`view`/zoom hook exists, so snake needs to adopt a `CameraDef` zoom instead
+of baking the `cells → pixels` scale into every renderable by hand. Tracked
+with the camera V3 entry.
 
 </details>
 
@@ -242,79 +91,54 @@ keypress = single turn), complementary to the shipped poll-on-tick
 <details>
 <summary>Details</summary>
 
-**Probable shape.** An `EventInput<TAction>` that wraps
-`InputProvider`, applies the same `InputMap`, and dispatches to a
-subscriber callback on the keydown edge.
+**Probable shape.** An `EventInput<TAction>` that wraps `InputProvider`,
+applies the same `InputMap`, and dispatches to a subscriber callback on the
+keydown edge.
 
-**Trigger.** A second turn-based consumer of `@pierre/ecs` appears,
-OR a deliberate decision to design event-mode proactively to unblock
-the roguelike migration.
+**Trigger.** A second turn-based consumer of `@pierre/ecs` appears, OR a
+deliberate decision to design event-mode proactively to unblock the
+roguelike migration.
 
-**Rationale.** The shipped `createInput` (M5) is calibrated for
-real-time games (snake / asteroids / platformer): poll-based,
-flat-action enum, `KeyboardEvent.code` (layout-independent, no
-modifier awareness). The roguelike's input is event-driven (keydown
-emits the turn-action immediately), action-with-payload (move dx/dy),
-and uses `KeyboardEvent.key` (so `>` for descend works as Shift+Period
-on a US layout without explicit modifier tracking). Forcing the
-roguelike onto the current `createInput` either produces glue code
-that fights the engine model (split move into 4 directional actions,
-manually combine `ShiftLeft`+`Period` for `>`, run a tick loop just
-to poll), or settles for using `KeyboardProvider` only and bringing
-the entire mapping layer back in-app — which saves ~5 lines and is
-not a real win.
-
-The honest split is: `createInput` for real-time, `EventInput` for
-turn-based. Promote per the engine's ≥2-real-consumer rule. Until
-then, the roguelike keeps its existing `src/ui/input.ts` mapping
-layer and DOM listeners — those are the right shape for that game.
+**Rationale.** The shipped `createInput` is calibrated for real-time games
+(snake / asteroids / platformer): poll-based, flat-action enum,
+`KeyboardEvent.code` (layout-independent, no modifier awareness). The
+roguelike's input is event-driven (keydown emits the turn-action
+immediately), action-with-payload (move dx/dy), and uses `KeyboardEvent.key`
+(so `>` for descend works as Shift+Period on a US layout without explicit
+modifier tracking). Forcing the roguelike onto `createInput` either produces
+glue code that fights the engine model (split move into 4 directional
+actions, manually combine `ShiftLeft`+`Period` for `>`, run a tick loop just
+to poll), or settles for using `KeyboardProvider` only and bringing the
+entire mapping layer back in-app — which saves ~5 lines and is not a real
+win. The honest split is `createInput` for real-time, `EventInput` for
+turn-based. Until then, the roguelike keeps its existing `src/ui/input.ts`
+mapping layer and DOM listeners — the right shape for that game.
 
 </details>
 
----
+### `modules/camera` V3 — rotation + parallax layers — deferred
 
-### `modules/input` — pure `projectPointer` export — ✅ shipped (2026-07-18)
-
-**Shipped.** Promoted the module-private `defaultProject` to an exported pure
-`projectPointer(ev, target) => { x, y }`@[`pointer-provider.ts`](../../src/modules/input/pointer-provider.ts)
-— the DPI-aware client→backing-pixel projection (scales the CSS-space offset by
-`canvas.width / rect.width` for a canvas-like target, raw local offset
-otherwise). `PointerProvider` still uses it as its default `project`, so the
-provider surface is unchanged. breakout@[`main.ts`](../../examples/breakout/src/main.ts)
-and solitaire@[`main.ts`](../../examples/solitaire/src/main.ts) replaced their
-verbatim event-time copies with the one fn. tilemap (custom viewport project)
-and space-invaders (no-DPI half-screen) don't fit, as noted in B9.
+**Scope.** Two things V2 deliberately left out of the canon-complete 2D
+camera: **rotation** (Godot `Camera2D.rotation`) and **parallax layers** (a
+layer / scroll-factor model).
 
 <details>
-<summary>Original analysis (pre-build) — shipped as planned</summary>
+<summary>Details</summary>
 
-**Trigger — MET (2 consumers, dual-cited 2026-07-15).** The projection
-logic ships, but only as the **module-private** `defaultProject`@
-`src/modules/input/pointer-provider.ts:140`; the public surface is
-`PointerProvider`, a stateful, tick-read `InputProvider` that owns its
-listeners and exposes `state.x/y`. breakout
-(`examples/breakout/src/main.ts:103`) and solitaire
-(`examples/solitaire/src/main.ts:146`) project at **event-time** inside
-click/move handlers and replicate `defaultProject`'s
-`(clientX/Y − rect) × (canvas.width / rect.width)` math verbatim — they
-cannot adopt the provider without a timing/architecture change
-(engine-gap-ledger B9). This is a **Build** (export a pure fn), not a
-mechanical adoption.
+**Rotation.** A rotated view needs a full affine transform plus a
+*conservative* rotated-AABB cull — the shipped cull is axis-aligned. 2D
+top-down and platform games rarely rotate the camera, so this waits.
 
-**Probable shape.** Lift `defaultProject` to an exported
-`projectPointer(ev: { clientX: number; clientY: number }, target:
-HTMLCanvasElement) => { x: number; y: number }` and have
-`PointerProvider` call it internally. No new component; the provider's
-surface is unchanged.
+**Parallax.** Its own follow-up shape rather than a camera flag: a layer list
+with per-layer scroll factors, which the renderer would consume alongside
+`view`.
 
-**Non-fits (verified).** tilemap (`examples/tilemap/src/main.ts:119`)
-layers zoom/pan on top → custom viewport project; space-invaders
-(`examples/space-invaders/src/main.ts:115`) does no DPI scaling (a
-half-screen decision). Neither would consume the helper.
+**Related open item — snake's `CameraDef` adoption.** The V2 `view`/zoom hook
+exists; snake still bakes the `cells → pixels` scale into every renderable by
+hand instead of adopting a camera zoom.
 
-**Canon.** Every canvas game with mouse/touch input needs the same
-client→backing-store transform; exposing it as a pure fn is the minimal
-shared surface (vs. forcing the stateful provider on event-driven UIs).
+**Pixel/tile helpers** stay in app code (DOM/canvas-specific) — also
+deliberate, but not deferred work.
 
 </details>
 
@@ -323,16 +147,16 @@ shared surface (vs. forcing the stateful provider on event-driven UIs).
 ## 3D siblings — speculative
 
 **Scope.** Parallel 3D-dimension modules (transform, motion, collision,
-kinematics, render-webgl/webgpu, camera-3d) that ship alongside the 2D
-stack rather than replacing it.
+kinematics, render-webgl/webgpu, camera-3d) that ship alongside the 2D stack
+rather than replacing it.
 
 <details>
 <summary>Details</summary>
 
-Forward-looking per the 2D-vs-3D strategy in the shipped plan: when 3D
-lands, dimension-sensitive modules ship as **parallel siblings**, not
-extensions or renames (Godot / flecs model). All entries below exist
-only if a 3D prototype is attempted, and none is scheduled.
+Forward-looking per the 2D-vs-3D strategy in the shipped plan: when 3D lands,
+dimension-sensitive modules ship as **parallel siblings**, not extensions or
+renames (Godot / flecs model). All entries below exist only if a 3D prototype
+is attempted, and none is scheduled.
 
 | Module | Shape | Canon |
 |---|---|---|
@@ -344,19 +168,22 @@ only if a 3D prototype is attempted, and none is scheduled.
 | `modules/render-webgpu` | Same interface, WebGPU backend | Bevy WGPU, three.js WebGPU renderer |
 | `modules/camera-3d` | Perspective + orthographic projection, frustum, view matrix | Bevy `Camera3dBundle`, Unity `Camera` |
 
-**Trigger for the whole group.** A scoped 3D prototype (matches
-[prototype-games-roadmap.md](prototype-games-roadmap.md)'s ladder — 3D
-platformer or similar). Until then, the 2D stack is the only stack.
+**Trigger for the whole group.** A scoped 3D prototype (matches the
+[prototype ladder](../archived/prototype-games-roadmap.md) — 3D platformer or
+similar). Until then, the 2D stack is the only stack. The gap ledger records
+**4 consumers already duplicating** a 3D solver and a 3D entity↔mesh sync
+(platformer-3d, portal, doom, starfighter), so this group is the largest
+de-facto demand cluster in the file.
 
 **Rules (re-affirmed from the shipped plan).**
 
-- Do not add `z` to `PositionDef`. Breaks `HashGrid2D`, every query, and
-  the 2D contract.
+- Do not add `z` to `PositionDef`. Breaks `HashGrid2D`, every query, and the
+  2D contract.
 - Do not preemptively rename `PositionDef` → `Position2DDef`. Retroactive
   rename only if mixed 2D/3D games prove it ambiguous.
-- `SpatialStructure<TPos>` already generic in core — a future
-  `HashGrid3D` ships as another backend with zero core change. That's
-  why spatial is dimension-agnostic and isn't duplicated above.
+- `SpatialStructure<TPos>` already generic in core — a future `HashGrid3D`
+  ships as another backend with zero core change. That's why spatial is
+  dimension-agnostic and isn't duplicated above.
 
 </details>
 
@@ -365,26 +192,24 @@ platformer or similar). Until then, the 2D stack is the only stack.
 ## Rigid-body physics — speculative
 
 **Scope.** Full rigid-body simulation (mass, restitution, constraints,
-continuous collision across many dynamic bodies) distinct from the
-shipped arcade `modules/kinematics`.
+continuous collision across many dynamic bodies) distinct from the shipped
+arcade `modules/kinematics`.
 
 <details>
 <summary>Details</summary>
 
 **Probable shape.** Either roll our own (AABB-only, minimal) or adapt
 `planck.js` / `rapier-js`. Integrates with `SpatialStructure` via a
-physics-appropriate backend (BVH / SweepAndPrune). Distinct from the
-shipped arcade `modules/kinematics`, which covers platformers,
-top-down action, and twin-stick shooters.
+physics-appropriate backend (BVH / SweepAndPrune).
 
 **Trigger.** A prototype that arcade physics genuinely cannot handle —
-typical examples: stacking crates with realistic settle, rope / chain,
-jointed ragdoll, soft-body, vehicles with suspension.
+stacking crates with realistic settle, rope / chain, jointed ragdoll,
+soft-body, vehicles with suspension.
 
 **Rationale for deferral.** Arcade covers platformers, top-down action,
-twin-stick shooters, and puzzle-physics-lite. Full physics is a large
-ongoing commitment (authoring tools, debug viz, determinism tuning) and
-should not be spent without a game design that demands it.
+twin-stick shooters, and puzzle-physics-lite. Full physics is a large ongoing
+commitment (authoring tools, debug viz, determinism tuning) and should not be
+spent without a game design that demands it.
 
 </details>
 
@@ -392,308 +217,151 @@ should not be spent without a game design that demands it.
 
 ## Standard engine modules
 
-Every mature engine eventually ships these. Listed with scope sketches
-so "what would this even look like" is not a greenfield question when
-the time comes.
-
-### `modules/audio` V1 — ✅ shipped 2026-04-23
-
-See
-[src/modules/audio/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/audio/README.md)
-and plan
-[../plans/done/audio-module.md](../plans/done/audio-module.md).
+Every mature engine eventually ships these. Listed with scope sketches so
+"what would this even look like" is not a greenfield question when the time
+comes.
 
 ### `modules/audio` V2 — deferred
 
-**Scope.** Audio features deliberately excluded from V1: spatial
-listener modeling, event adapters for bus-driven one-shots, and clip
-loading orchestration with `modules/asset-loader`.
+**Scope.** Audio features deliberately excluded from V1: spatial listener
+modeling, event adapters for bus-driven one-shots, and clip loading
+orchestration with `modules/asset-loader`.
 
 <details>
 <summary>Details</summary>
 
-**Status.** V1 now ships reusable primitives in
-`@pierre/ecs/modules/audio`: `AudioSourceDef`, `AudioQueue`,
-`makeAudioSystem`, and `WebAudioProvider` with channel volume control.
+**Trigger.** A second consumer needs listener-aware playback or shared event
+wiring conventions, OR asset loading lands and two apps need the same
+clip-binding flow.
 
-**Trigger.** A second consumer needs listener-aware playback or shared
-event wiring conventions, OR asset loading lands and two apps need the
-same clip-binding flow.
-
-**Canon.** Unity `AudioSource` / `AudioListener`, Godot `AudioStream*`,
-Phaser `SoundManager`, Bevy `bevy_audio`.
+**Canon.** Unity `AudioSource` / `AudioListener`, Godot `AudioStream*`, Phaser
+`SoundManager`, Bevy `bevy_audio`.
 
 </details>
 
-### `modules/animation` — partially shipped (easing + tween 2026-07-18; sprite-frame 2026-06-07; skeletal deferred)
+### `modules/animation` V2 — deferred
 
-**Scope.** Sprite-frame animation, tweens, and (much later) skeletal /
-2D rig animation — three separate sub-modules. The **tween + easing** slice
-shipped 2026-07-18; **sprite-frame** shipped 2026-06-07; skeletal remains
-deferred.
+**Scope.** What V1 left out: a **clip registry** (named animation clips shared
+across entities, lookup by key, playback control) and, much later, **skeletal
+/ 2D rig** animation.
 
 <details>
 <summary>Details</summary>
 
-**Shipped (2026-06-07) — sprite-frame animation.** `modules/animation`@[`animation/sprite-animation.ts`](../../src/modules/animation/sprite-animation.ts)
-is the `SpriteAnimation` **value primitive** + `SpriteAnimationDef` ECS component
-+ `makeSpriteAnimationSystem` (follows the `Cooldown`/`Lifetime` pattern):
-`makeSpriteAnimation(frames, fps, loop?)` / `tickSpriteAnimation(anim, dtMs)` /
-`currentFrame(anim)`. The system auto-advances every `SpriteAnimationDef` and
-writes `currentFrame(anim)` into the entity's `RenderableDef.frame`. Built
-canon-first (unanimous universal — Godot `AnimatedSprite2D`, Unity `Animator`,
-Phaser animations, PixiJS `AnimatedSprite`, Bevy `bevy_animation`). First
-consumer: `examples/rpg` (4-directional walk animation).
+**Trigger (clip registry).** A second consumer needing shared named clips. V1
+ships the per-entity `SpriteAnimationDef` only.
 
-**Still deferred.** A **clip registry** (named animation clips shared across
-entities, lookup by key, playback control) — add when a second consumer proves
-the shape. **Skeletal / 2D rigs** — much later.
+**Trigger (skeletal).** Much later; a second consumer must request it (likely
+alongside a 3D prototype).
 
-**Shipped (2026-07-18) — easing + tween.** `modules/easing`@[`easing/easing.ts`](../../src/modules/easing/easing.ts)
-is the full Robert Penner curve set (31 fns: linear + quad/cubic/quart/quint/
-sine/expo/circ/back/elastic/bounce × in/out/inOut), a zero-dep math-tier leaf.
-`modules/tween`@[`tween/tween.ts`](../../src/modules/tween/tween.ts) is the
-`Tween` **value primitive** (`makeTween`/`tickTween`/`tweenValue`/`tweenDone`/
-`resetTween`) composing `Timer` (time) + `Easing` (curve) + `math.lerp` (value).
-Built canon-first — 6 consumers hand-rolled linear interp for lack of easing
-curves. **`TweenDef` ECS component deferred**: no consumer animates via a
-component (they read `tweenValue` inline), and the ECS-wrapper shape isn't
-single-canon (Godot node vs DOTween fluent chain). rhythm migrated its fade-outs
-to `easeOutCubic`@[`rhythm/render.ts`](../../examples/rhythm/src/render.ts).
-
-**Still deferred.**
-
-- **Sprite animation** — `SpriteAnimationDef { frames, fps, loop }` +
-  frame-advance system tied to an `AnimationFrameTickSource`.
-- **Skeletal / 2D rigs** — much later; a second consumer must request
-  it (likely with a 3D prototype).
-
-**Trigger (sprite-frame).** `examples/rpg` is the first sprite-animation
-consumer (idle→walk→attack frame cycling — engine-gap-ledger B18); ship the
-sprite-animation slice once a second lands.
-
-**Canon.** Unity `Animator`, Godot `AnimationPlayer` / `Tween`, Bevy
-`bevy_animation`, GSAP (tweens).
-
-</details>
-
-### `modules/particles` — ✅ shipped (2026-07-18)
-
-**Shipped** canon-complete (Godot `CPUParticles2D` + `ParticleProcessMaterial`,
-Unity `ParticleSystem`, Phaser/Pixi): a one-shot `burst(world, config)` (radial /
-cone / circle / ring emission), a continuous `ParticleEmitterDef` +
-`makeParticleEmitterSystem` (cadence via `Spawner`), and `makeParticleSystem`
-for over-lifetime **fade / shrink / spin / gravity / damping**@[`particles/particles.ts`](../../src/modules/particles/particles.ts).
-No special renderer — particles are `RenderableDef` rects moved by `motion`,
-reaped by `lifetime`. Composes `lifetime` + `timer` + `easing` + `math` + `rng`
-(+ `spawner` for emitters) + `render-canvas2d` (`Opacity`/`Scale`/`Rotation`).
-Built canon-first — the over-life curves (fade/shrink/spin/forces) are canon that
-**no consumer had yet**.
-
-<details>
-<summary>Consumers + still-deferred</summary>
-
-**Migrated (3 real hand-rollers + 1 adopter).** space-invaders, frogger, and
-jetpack each hand-rolled a `spawnParticle` + radial `burst`/`explode` — all
-migrated to `burst` (+ `fadeOut`). asteroids (no prior particles) **adopted** a
-fading + shrinking rock-kill debris burst as new juice.
-
-> **Correction:** ledger B8 listed asteroids as a 4th hand-roller — it had **no**
-> particle system (it splits rocks into smaller rocks). Real hand-rollers = 3
-> (space-invaders, frogger, jetpack); asteroids is an adopter.
-
-**Still deferred.** Sub-emitters / trails / particle-collision (Godot/Unity
-advanced); sprite-kind particles beyond rects. Add when a consumer needs them.
+**Also open — `TweenDef` ECS component.** No consumer animates via a component
+(they read `tweenValue` inline), and the ECS-wrapper shape isn't single-canon
+(Godot node vs DOTween fluent chain). Ships only if a consumer wants the
+component form.
 
 </details>
 
 ### `modules/ui` — speculative
 
-**Scope.** Game-facing UI as ECS — in-world HUDs, damage numbers,
-inventory widgets — distinct from `modules/render-canvas2d` and from
-app-layer DOM UI.
+**Scope.** Game-facing UI as ECS — in-world HUDs, damage numbers, inventory
+widgets — distinct from `modules/render-canvas2d` and from app-layer DOM UI.
 
 <details>
 <summary>Details</summary>
 
 **Trigger.** A second prototype that needs in-game UI widgets. Today the
-roguelike's UI is DOM + app code; snake/asteroids/platformer use the
-canvas directly. If a prototype ships world-space HUDs, start planning.
+roguelike's UI is DOM + app code; snake/asteroids/platformer use the canvas
+directly. If a prototype ships world-space HUDs, start planning. The
+capability assessment ranks UI as the **most frequently missing surface**
+across the five commercial-scale targets.
 
-**Rationale for speculative.** ECS-UI is controversial; some engines
-(Bevy) do it, others (Unity UGUI, Godot `Control`) keep UI on a
-dedicated scene graph. Picking a side speculatively is waste.
+**Rationale for speculative.** ECS-UI is controversial; some engines (Bevy) do
+it, others (Unity UGUI, Godot `Control`) keep UI on a dedicated scene graph.
+Picking a side speculatively is waste.
 
 **Canon.** Bevy `bevy_ui`, flecs UI addons.
 
 </details>
 
-### `modules/render-dom` V1 — ✅ shipped 2026-04-23
-
-See
-[src/modules/render-dom/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/render-dom/README.md)
-and plan
-[../plans/done/render-dom-module.md](../plans/done/render-dom-module.md).
-
 ### `modules/render-dom` V2 — deferred
 
-**Scope.** Follow-ups intentionally excluded from V1: event-driven DOM
-updates via lifecycle hooks and higher-level zone/container reparenting
-helpers.
+**Scope.** Follow-ups intentionally excluded from V1: event-driven DOM updates
+via lifecycle hooks and higher-level zone/container reparenting helpers.
 
 <details>
 <summary>Details</summary>
-
-**Status.** V1 now ships reusable DOM scaffolding in
-`@pierre/ecs/modules/render-dom`: `DomRenderableDef`, `DomRenderer`,
-stable `data-entity-id` mapping, orphan cleanup, render-order support,
-and per-entity reconcile hooks.
 
 **Trigger.** A second DOM-heavy consumer proving a shared shape for
 event-driven updates or container/zone policies.
 
-**Canon.** React reconcilers, Pixi display-list ownership patterns,
-Phaser container parenting, custom DOM render loops in card/deckbuilder
-web games.
+**Canon.** React reconcilers, Pixi display-list ownership patterns, Phaser
+container parenting, custom DOM render loops in card/deckbuilder web games.
 
 </details>
 
-### `modules/scene-transition` V1 — ✅ shipped 2026-04-23
-
-See
-[src/modules/scene-transition/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/scene-transition/README.md)
-and plan
-[../plans/done/ecs-bootstrap-top6-modules.md](../plans/done/ecs-bootstrap-top6-modules.md).
-
 ### `modules/scene` V2 — deferred
 
-**Scope.** Full scene-stack orchestration: bundle-a-world-with-content,
-scene push/pop, pause/modal layers, and optional transition effects.
+**Scope.** Full scene-stack orchestration: bundle-a-world-with-content, scene
+push/pop, pause/modal layers, and optional transition effects.
 
 <details>
 <summary>Details</summary>
 
-**Status.** V1 now ships the minimal scene-transition slice in
-`@pierre/ecs/modules/scene-transition`: tick-boundary transition queue
-(`SceneTransitionQueue`) plus `transferEntities` helper. Roguelike
-consumes this for descend-time world swap scheduling and cross-world
-item transfer while keeping game-specific level generation and event
-semantics in app code.
-
-**Trigger.** A second game needing full scene stack semantics (push/pop
-modal scenes, separate pause/options scenes, or authored scene lifecycle
-policies).
+**Trigger.** A second game needing full scene stack semantics (push/pop modal
+scenes, separate pause/options scenes, or authored scene lifecycle policies).
+V1 ships only the tick-boundary transition queue (`SceneTransitionQueue`) plus
+`transferEntities`.
 
 **Canon.** Unity `SceneManager`, Godot scenes, Bevy `States`.
 
 </details>
 
-### `modules/save` V1 — ✅ shipped 2026-04-23
-
-See
-[src/modules/save/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/save/README.md)
-and plan
-[../plans/done/ecs-bootstrap-top6-modules.md](../plans/done/ecs-bootstrap-top6-modules.md).
-
 ### `modules/save` V2 — deferred
 
 **Scope.** Higher-level save orchestration not in V1: shared slot-policy
-conventions, cross-game metadata schemas, and optional app-payload
-composition helpers layered above world serialization.
+conventions, cross-game metadata schemas, and optional app-payload composition
+helpers layered above world serialization.
 
 <details>
 <summary>Details</summary>
 
-**Status.** V1 now ships migration and storage primitives in
-`@pierre/ecs/modules/save`: `MigrationRegistry`, integrity envelopes,
-backup rotation, orphan recovery, and IndexedDB/localStorage backends.
-Roguelike persistence now consumes these engine primitives while keeping
-its game-specific blob shape and slot/UI semantics in app code.
-
 **Trigger.** Second consumer that needs a shared slot-policy or metadata
-convention beyond low-level persistence primitives.
+convention beyond the low-level persistence primitives.
 
-**Canon.** Unity `JsonUtility` + custom save systems, Godot
-`ResourceSaver`, Bevy `bevy_save` (community), Phaser scene-data
-serialization.
+**Canon.** Unity `JsonUtility` + custom save systems, Godot `ResourceSaver`,
+Bevy `bevy_save` (community), Phaser scene-data serialization.
 
 </details>
-
-### `modules/asset-loader` V1 — ✅ shipped 2026-04-24
-
-See
-[src/modules/asset-loader/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/asset-loader/README.md)
-and plan
-[../plans/done/asset-loader-module.md](../plans/done/asset-loader-module.md).
 
 ### `modules/asset-loader` V2 — deferred
 
-**Scope.** Higher-level workflows intentionally excluded from V1:
-manifest grouping, weighted per-byte progress, and optional dev-time
-hot reload hooks.
+**Scope.** Higher-level workflows intentionally excluded from V1: manifest
+grouping, weighted per-byte progress, and optional dev-time hot reload hooks.
 
 <details>
 <summary>Details</summary>
 
-**Status.** V1 now ships `AssetLoader` with typed handles for image,
-audio-buffer, json, text, array-buffer, and font-face loading, plus
-URL-keyed cache, in-flight dedupe, and batch progress callbacks.
-Top-down-shooter migrated from ad-hoc audio fetch/decode caching to
-this module.
+**Trigger.** A second consumer needing grouped manifests, byte-level progress
+semantics, or automatic dev-time asset refresh.
 
-**Trigger.** A second consumer needing grouped manifests, byte-level
-progress semantics, or automatic dev-time asset refresh.
-
-**Canon.** Unity `Addressables`, Godot `ResourceLoader`, Phaser
-`LoaderPlugin`, Bevy `AssetServer`.
+**Canon.** Unity `Addressables`, Godot `ResourceLoader`, Phaser `LoaderPlugin`,
+Bevy `AssetServer`.
 
 </details>
 
-### `modules/tmx` V1 — ✅ shipped 2026-04-24
+### `modules/tilemap` V2 — batched renderable — deferred
 
-**Scope.** Pure, DOM-free parser for [Tiled](https://www.mapeditor.org/)
-`.tmx` maps — orthogonal, single image-based tileset, `base64`+`zlib`
-tile data — plus `gidToFrame` for tileset source-rect lookup. Promoted
-on canon (the TMX format) plus its first consumer,
-[`examples/tilemap`](../../examples/tilemap/), the first
-sprite / texture-atlas consumer. See
-[src/modules/tmx/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/tmx/README.md).
-
-This ships the **load/parse** half only. The tile→ECS glue (one sprite
-entity per cell, layered via `RenderOrderDef`) stayed in the example
-until `modules/tilemap` promoted it (next entry). A batched tilemap
-*renderable* that avoids per-tile entities is the distinct
-second-consumer concern, tracked as `modules/tilemap` V2 below.
-
-### `modules/tilemap` — ✅ shipped 2026-06-07
-
-**Shape.** `buildTilemapAtlas({ map, image, name }) =>
-TextureAtlasRegistry`,
-`spawnTilemap({ world, map, atlas, onTile?, anchor? }) => number`,
-`buildCollisionGrid(map, { floorGids, walkablePropGids }) =>
-CollisionGrid`, `tileTransform(flags) => { angle, sx, sy }`@[`tilemap/`](../../src/modules/tilemap/).
-
-**Consumers.** `examples/rpg`@[`map.ts`](../../examples/rpg/src/map.ts)
-(atlas + collision grid + `spawnTilemap` with a per-tile `onTile`
-transform hook) and `examples/tilemap`@[`main.ts`](../../examples/tilemap/src/main.ts)
-(atlas + `spawnTilemap`). Both replaced hand-rolled tile→entity
-auto-spawn and collision-layer derivation.
-
-Plan: [../plans/done/tilemap-module.md](../plans/done/tilemap-module.md).
-
-### `modules/tilemap` V2 — batched renderable (deferred)
-
-**Scope.** `TilemapDef { widthTiles, heightTiles, tileW, tileH, data }`
-plus a matching renderer pass, so a whole layer draws in one batched pass
-instead of one entity per cell.
+**Scope.** `TilemapDef { widthTiles, heightTiles, tileW, tileH, data }` plus a
+matching renderer pass, so a whole layer draws in one batched pass instead of
+one entity per cell.
 
 <details>
 <summary>Details</summary>
 
-**Rationale.** V1 spawns a sprite entity per non-empty tile — proven
-correct at ~10k entities (`examples/tilemap`) but wasteful in entity
-count, query cost, and draw calls. A batched renderable is the canonical
-fix (Unity `Tilemap`, Godot `TileMap`, Phaser `Tilemap`).
+**Rationale.** V1 spawns a sprite entity per non-empty tile — proven correct
+at ~10k entities (`examples/tilemap`) but wasteful in entity count, query
+cost, and draw calls. A batched renderable is the canonical fix (Unity
+`Tilemap`, Godot `TileMap`, Phaser `Tilemap`).
 
 **Probable shape.** `TilemapDef { widthTiles, heightTiles, tileW, tileH, data }`
 with a matching renderer pass. Distinct from the roguelike's `GameMap`
@@ -701,50 +369,35 @@ with a matching renderer pass. Distinct from the roguelike's `GameMap`
 entities, not tiles).
 
 **Trigger.** A prototype whose authored tile grid is large enough that
-per-cell entities measurably hurt. `examples/tilemap` already bakes its
-static ~10k-tile map to one offscreen bitmap — the consumer-side
-workaround this would replace. Current platformer uses
-procedurally-placed AABB platforms, so it doesn't qualify.
+per-cell entities measurably hurt. `examples/tilemap` already bakes its static
+~10k-tile map to one offscreen bitmap — the consumer-side workaround this
+would replace. Current platformer uses procedurally-placed AABB platforms, so
+it doesn't qualify.
 
-**Canon.** Unity `Tilemap`, Godot `TileMap`, Phaser `Tilemap`, with Tiled
-as the external authoring tool (`modules/tmx` already parses it).
+**Canon.** Unity `Tilemap`, Godot `TileMap`, Phaser `Tilemap`, with Tiled as
+the external authoring tool (`modules/tmx` already parses it).
 
 </details>
 
-### `modules/pathfinding` V1 — ✅ shipped 2026-04-22
-
-See
-[src/modules/pathfinding/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/pathfinding/README.md)
-and plan
-[../plans/done/pathfinding-module.md](../plans/done/pathfinding-module.md).
-
 ### `modules/pathfinding` V2 — deferred
 
-**Scope.** Additional algorithms (JPS, flow fields, bidirectional,
-D\* Lite) and A\* optimizations (path smoothing, binary-heap
-open-set) that V1 intentionally omits.
+**Scope.** Additional algorithms (JPS, flow fields, bidirectional, D\* Lite)
+and A\* optimizations (path smoothing, binary-heap open-set) that V1
+intentionally omits.
 
 <details>
 <summary>Details</summary>
 
-**Trigger.** Each sub-feature promotes on its own ≥2-consumer rule.
-Likely first movers: a strategy prototype with many simultaneous
-pathers (flow fields), or profile evidence that the linear-scan
-open-set is the bottleneck on a real-world map (binary heap).
+**Trigger.** Each sub-feature promotes on its own ≥2-consumer rule. Likely
+first movers: a strategy prototype with many simultaneous pathers (flow
+fields), or profile evidence that the linear-scan open-set is the bottleneck
+on a real-world map (binary heap).
 
-**Rationale for deferral.** None of the deferred features pay for
-themselves at rogue-scale (80×60 grids, single-pather-per-turn
-workloads). A\* with linear open-set returns in well under a
-millisecond on these maps.
+**Rationale for deferral.** None of the deferred features pay for themselves
+at rogue-scale (80×60 grids, single-pather-per-turn workloads). A\* with
+linear open-set returns in well under a millisecond on these maps.
 
 </details>
-
-### `modules/grid-based` V1 — ✅ shipped 2026-04-23
-
-See
-[src/modules/grid-based/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/grid-based/README.md)
-and plan
-[../plans/done/ecs-bootstrap-top6-modules.md](../plans/done/ecs-bootstrap-top6-modules.md).
 
 ### `modules/grid-based` V2 — deferred
 
@@ -755,12 +408,8 @@ outputs.
 <details>
 <summary>Details</summary>
 
-**Status.** V1 ships recursive-shadowcasting field-of-view plus
-Bresenham-based line-of-sight in `@pierre/ecs/modules/grid-based`, and
-the roguelike migrated to it.
-
-**Trigger.** Second consumer needing an algorithm outside V1's shape —
-for example stealth cones, faction-shared sight masks, or permissive FOV
+**Trigger.** Second consumer needing an algorithm outside V1's shape — for
+example stealth cones, faction-shared sight masks, or permissive FOV
 tradeoffs.
 
 **Canon.** Unity NavMesh `Raycast`, Godot `RayCast2D` + `VisibleOnScreen`,
@@ -771,201 +420,152 @@ first-class primitive separate from pathing.
 
 ### `modules/debug` — deferred
 
-**Scope.** In-game debug overlays — gizmos, entity inspector,
-frame-time graphs, system-timing breakdown — dev-build only.
+**Scope.** In-game debug overlays — gizmos, entity inspector, frame-time
+graphs, system-timing breakdown — dev-build only.
 
 <details>
 <summary>Details</summary>
 
-**Probable shape.** Gizmo rendering (show AABBs, show spatial grid,
-show FOV cones), a live entity inspector, frame-time / tick-time
-graphs, system-timing breakdown. Tree-shaken out of production
-builds.
+**Probable shape.** Gizmo rendering (show AABBs, show spatial grid, show FOV
+cones), a live entity inspector, frame-time / tick-time graphs, system-timing
+breakdown. Tree-shaken out of production builds.
 
-**Trigger.** Enough friction debugging existing prototypes that a
-one-off `drawDebug` call inside `Canvas2DRenderer` is no longer enough.
-Platformer's static-collision overlay already lives in the example —
-when a second consumer wants a similar toggle, it promotes.
+**Trigger.** Enough friction debugging existing prototypes that a one-off
+`drawDebug` call inside `Canvas2DRenderer` is no longer enough. Platformer's
+static-collision overlay already lives in the example — when a second
+consumer wants a similar toggle, it promotes.
 
-**Canon.** Unity `Gizmos` / `Debug.DrawRay`, Godot `Debug` tab,
-`dat.gui` / `lil-gui` (DOM-based), Tracy / Optick for native engines.
+**Canon.** Unity `Gizmos` / `Debug.DrawRay`, Godot `Debug` tab, `dat.gui` /
+`lil-gui` (DOM-based), Tracy / Optick for native engines.
 
 </details>
 
-### `modules/steering` — ✅ shipped (2026-09-20)
+### `modules/steering` V2 — deferred
 
-**Shipped** the canon-strong slice of AI — Reynolds (1987) steering
-behaviours — split off from the contested `modules/ai` bundle below.
-Pure `Vec2` functions returning a steering *force* (`desired − velocity`):
-`seek` / `flee` / `arrive` / `pursue` / `evade` / `wander` + the flocking
-trio `separation` / `alignment` / `cohesion`, plus `combine` (weighted
-sum → truncate to `maxForce`) and `truncate`@[`steering/steering.ts`](../../src/modules/steering/steering.ts).
-Depends only on `modules/motion` (`normalize` / `scaleToSpeed` / `Vec2`),
-the documented cross-module dep (same pattern as `collision → math`).
-Built **canon-first** per
-[extending-the-engine](../extending-the-engine.md#canon-complete-by-default):
-steering behaviours are unanimous universal canon (Unity, Godot, Unreal,
-every boids demo), so the canon-complete set ships on one exercising
-consumer. First consumer: [`examples/boids`](../../examples/boids/) — 140
-boids driven purely by composed steering (flocking + cursor-flee +
-food-arrive + wander), neighbours from `ContinuousHashGrid2D.queryNear`.
+**Scope.** The rest of Reynolds' behaviour set not shipped in V1:
+**obstacle-avoidance**, **wall-following**, and **path-following**.
 
 <details>
-<summary>Non-fits + still-deferred</summary>
+<summary>Details</summary>
 
-**Constant-speed seek stays on `motion`.** top-down-shooter
-`enemy-steer.ts` and doom `ai.ts` chase both **set** `velocity = dir ×
-speed` — the degenerate desired-velocity form already covered by
-`motion`'s `scaleToSpeed`. Force-migrating them would change feel
-(smoothed approach vs instant point-at-target) with no win, so they were
-**not** migrated. Steering's value is the *composed / smoothed* motion,
-not the snap case.
+**Trigger.** A consumer needing avoidance or path-following. Each promotes on
+its own ≥2-consumer rule.
 
-**Velocity type.** Steering speaks generic `Vec2 {x, y}`; the engine's
-`VelocityDef` is `{vx, vy}`. Consumers adapt at the call boundary
-(`{ x: vel.vx, y: vel.vy }`) rather than steering coupling to a component.
+**Also open — an ECS component wrapper** (`SteeringAgentDef` + system). No
+consumer wants the component form yet; the pure-function surface is the proven
+shape.
 
-**Still deferred.** Obstacle-avoidance / wall-following / path-following
-(Reynolds' remaining set) — add when a consumer needs them. An ECS
-component wrapper (`SteeringAgentDef` + system) — no consumer wants the
-component form yet; the pure-function surface is the proven shape.
+**Canon.** Reynolds (1987) steering behaviours; Unity / Unreal / Godot
+navigation-avoidance layers.
 
 </details>
 
-### `modules/fsm` — ✅ shipped (2026-09-20)
+### `modules/fsm` V2 — deferred
 
-**Shipped** the finite-state-machine slice of AI. Tiny value primitive:
-`Fsm<TKey> { current, elapsedMs }` + `makeFsm` + `tickFsm(fsm, states,
-ctx, dtMs)`, with per-state `{ onEnter?, onExit?, update → nextKey |
-null }`@[`fsm/fsm.ts`](../../src/modules/fsm/fsm.ts). Zero dependencies,
-not a component (the `states` map holds closures — like `modules/timer`,
-the value goes wherever the app wants). Transition model (A) per-state
-`update`-returns-next was chosen over table-driven guards.
-
-**Consumer evidence (honest count).** FSM has **no canon** — no single
-library API is standard — so the rule of three applies. The genuine
-strong consumer is [`examples/stealth-guard`](../../examples/stealth-guard/):
-a 5-state guard brain (patrol → suspicious → chase → search → return)
-that exercises the *full* surface — `onEnter`/`onExit` (reset search
-target, pick nearest waypoint), `elapsedMs` time-in-state (confirm /
-forget / search timeouts), and composes `modules/steering` in `chase`.
-That is **1** full-surface consumer, so this ships slightly ahead of the
-strict 2-consumer bar; the surface is minimal (5 symbols) and trivially
-demotable, and doom is a fitting second (below). Flagged rather than
-buried.
+**Scope.** State-machine features not shipped in V1: **hierarchical / nested
+states (HSM)**, **parallel and history states**, and an **`FsmDef`** ECS
+component wrapper.
 
 <details>
-<summary>doom as 2nd consumer + still-deferred</summary>
+<summary>Details</summary>
 
-**doom `ai.ts` — clean fit, migration deferred.** doom's enemy AI
-(idle/chase/attack) maps onto the `update`-returns-next subset (no
-`onEnter`/`onExit` needed) — a **behaviour-preserving** refactor, not a
-feel-changer, so it's a legitimate confirming 2nd consumer (unlike the
-steering non-fit). Deferred because doom is a complex, playtest-owned 3D
-example and the migration is a real `AiDef` schema change
-(`mode: number` → `current: string` + `elapsedMs`); left to a deliberate
-pass rather than bundled here.
+**Trigger.** A consumer whose state graph actually needs nesting or
+parallelism — none does yet. Each feature promotes on its own ≥2-consumer
+rule.
 
-**Still deferred.** Hierarchical/nested states (HSM), parallel/history
-states, an `FsmDef` ECS-component wrapper — none has a consumer. The BT /
-GOAP siblings stay speculative (see `modules/ai`).
+**Also open — the doom migration.** doom's enemy AI (idle/chase/attack) maps
+onto the `update`-returns-next subset and would be a behaviour-preserving
+second consumer. Deferred because doom is a complex, playtest-owned 3D example
+and the migration is a real `AiDef` schema change (`mode: number` →
+`current: string` + `elapsedMs`) — left to a deliberate pass.
+
+**Canon.** Harel statecharts, Unity Animator sub-state machines, Godot
+`AnimationNodeStateMachine` nesting.
 
 </details>
 
-### `modules/behavior-tree` — ✅ shipped (2026-09-21)
+### `modules/behavior-tree` V2 — deferred
 
-**Shipped** the "more advanced than FSM" AI slice: a reactive behaviour
-tree of pure node functions. `BtStatus = 'success' | 'failure' |
-'running'`, `BtNode<TCtx> = (ctx) => BtStatus`, and the builders
-`sequence` (AND), `selector` (OR/fallback), `inverter`, `condition`,
-`action`@[`behavior-tree/bt.ts`](../../src/modules/behavior-tree/bt.ts).
-Zero deps, ECS-decoupled. **Reactive/stateless** design (A): the tree
-re-ticks from the root each frame so priorities stay live; per-agent
-memory lives on a **blackboard** on `ctx`, so one shared tree drives many
-agents (same pattern as `fsm`'s `ctx.activeGuard`). Canon: Unreal Behavior
-Tree + Blackboard, behaviortree.cpp.
-
-**Consumer.** [`examples/critters`](../../examples/critters/) — needs-driven
-creatures ticking one shared BT (`selector` of prioritised needs:
-flee threat > eat when hungry > sleep when tired > wander), per-critter
-blackboard (hunger/energy/targetFood), leaf actions driving velocity via
-`modules/steering`. Exercises the full surface including the `running`
-short-circuit (multi-tick "travel to food" holds the branch until arrival,
-then the `sequence` proceeds to `eat`) — the case an FSM can't express
-without a transition tangle.
+**Scope.** Decorators not shipped in V1: **`parallel`**, **`cooldown`**, and
+**`repeat` / `repeatUntil`**, plus a **stateful** (remembered running-child)
+tree variant.
 
 <details>
-<summary>Still deferred</summary>
+<summary>Details</summary>
 
-`parallel`, `cooldown`, `repeat`/`repeatUntil` decorators — less-universal;
-add when a consumer needs one. A stateful (remembered running-child)
-variant — the reactive re-tick covered every critter behaviour, so no
-consumer wants it yet.
+**Trigger.** A consumer needing one of them. The reactive re-tick covered
+every critter behaviour in `examples/critters`, so no consumer wants the
+stateful variant yet.
+
+**Canon.** Unreal Behavior Tree decorators (`Loop`, `TimeLimit`, `Cooldown`).
 
 </details>
 
-### `modules/goap` — ✅ shipped (2026-09-21)
+### `modules/goap` V2 — deferred
 
-**Shipped** the planning slice of AI: a pure A\* goal-oriented action
-planner. `WorldState = Record<string, boolean>` (flat facts; missing =
-false), `GoapAction { name, cost, preconditions, effects }`, and
-`plan(actions, initial, goal) => GoapAction[] | null`@[`goap/goap.ts`](../../src/modules/goap/goap.ts).
-A\* over symbolic states (node = state hashed by truthy keys, edge =
-applicable action, heuristic = unsatisfied goal facts). Zero deps,
-ECS-decoupled. **Execution + replanning stay in the consumer** (map
-`action.name` → a runtime behaviour, replan on failure) — the pure `plan()`
-is the shipped surface; no plan-runner (game-specific). Canon: F.E.A.R. /
-Halo GOAP papers.
-
-**Consumer.** [`examples/woodcutter`](../../examples/woodcutter/) — workers
-plan `GetAxe → GoToTree{i} → ChopTree{i} → GoToStore → DropWood`; once a
-worker holds the axe the planner drops `GetAxe` (precondition no longer
-holds) — the "same goal, different plan" moment. Tree contention is a
-**planning** concern: per-tree `tree{i}Free` facts + distance-based
-`GoToTree{i}` cost make the planner prefer the nearest *free* tree, and a
-`ChopTree{i}` failure (tree taken first) triggers a **replan** onto
-another tree.
+**Scope.** Planner features not shipped in V1: a **heap open-set**, a shipped
+**plan-runner**, and **cost / typed non-boolean facts**.
 
 <details>
-<summary>Still deferred</summary>
+<summary>Details</summary>
 
-Own A\* (not `modules/pathfinding`'s grid A\*) because it searches abstract
-world-states, not a grid. A heap open-set (the linear scan is fine at
-GOAP scale), a shipped plan-runner, and cost/typed non-boolean facts — add
-when a consumer needs them.
+**Trigger.** Each promotes on its own ≥2-consumer rule. V1 deliberately ships
+only the pure `plan()` — execution and replanning stay in the consumer because
+mapping `action.name` → a runtime behaviour is game-specific. The linear-scan
+open-set is fine at GOAP scale.
+
+**Canon.** F.E.A.R. / Halo GOAP papers; typed-fact planners (SHOP2
+preconditions).
 
 </details>
 
-### `modules/ai` — speculative (Utility AI / HTN; FSM/BT/GOAP/steering shipped)
+### `modules/particles` V2 — deferred
+
+**Scope.** Advanced particle features deliberately excluded from V1:
+**sub-emitters**, **trails**, **particle-collision**, and **sprite-kind**
+particles beyond rects.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** A consumer needing one — each promotes on its own ≥2-consumer
+rule.
+
+**Canon.** Godot `CPUParticles2D` advanced properties, Unity `ParticleSystem`
+sub-emitters + collision module.
+
+</details>
+
+### `modules/ai` — speculative
 
 **Scope.** What's left of the AI-decision family after `modules/steering`
-(movement), `modules/fsm`, `modules/behavior-tree`, and `modules/goap`
-each shipped as their own modules: **Utility AI** (score each candidate
-action 0–1, pick the max) and **HTN** (hierarchical task-network planning).
+(movement), `modules/fsm`, `modules/behavior-tree`, and `modules/goap` each
+shipped as their own modules: **Utility AI** (score each candidate action 0–1,
+pick the max) and **HTN** (hierarchical task-network planning).
 
 <details>
 <summary>Details</summary>
 
 **Trigger.** Utility AI — a prototype whose choices are *fuzzy trade-offs*
-(the Sims-style "how much do I want each option right now") rather than
-strict priorities (BT) or discrete states (FSM); it's a small, reusable
-scorer and the likely next AI pick. HTN — a prototype needing authored
-task decomposition beyond GOAP's emergent search.
+(the Sims-style "how much do I want each option right now") rather than strict
+priorities (BT) or discrete states (FSM); it's a small, reusable scorer and the
+likely next AI pick. HTN — a prototype needing authored task decomposition
+beyond GOAP's emergent search.
 
-**Rationale for speculative.** No current prototype needs either, and
-neither has a single canonical API. Utility AI is the lighter, more
-broadly useful of the two.
+**Rationale for speculative.** No current prototype needs either, and neither
+has a single canonical API. Utility AI is the lighter, more broadly useful of
+the two.
 
-**Canon.** Utility AI: Dave Mark's *Behavioral Mathematics* / "infinite
-axis" utility systems, The Sims. HTN: SHOP2, Guerrilla's *Horizon* HTN.
+**Canon.** Utility AI: Dave Mark's *Behavioral Mathematics* / "infinite axis"
+utility systems, The Sims. HTN: SHOP2, Guerrilla's *Horizon* HTN.
 
 </details>
 
 ### `modules/networking` — speculative
 
-**Scope.** Client-authority / server-authority replication, delta
-compression, lockstep / rollback — layered on top of `EcsWorld.lifecycle`
-events and `modules/save` serialization.
+**Scope.** Client-authority / server-authority replication, delta compression,
+lockstep / rollback — layered on top of `EcsWorld.lifecycle` events and
+`modules/save` serialization.
 
 <details>
 <summary>Details</summary>
@@ -974,10 +574,9 @@ events and `modules/save` serialization.
 multi-input belongs under the player-slot helper below, not here —
 `modules/networking` is for cross-machine sync.
 
-**Rationale for speculative.** Long-horizon. Network code touches every
-layer (input, physics determinism, scene transitions, persistence) and
-is the wrong thing to design without a real game shape forcing the
-constraints.
+**Rationale for speculative.** Long-horizon. Network code touches every layer
+(input, physics determinism, scene transitions, persistence) and is the wrong
+thing to design without a real game shape forcing the constraints.
 
 **Canon.** Bevy `bevy_replicon`, Photon, Mirror (Unity), Source engine
 networking model.
@@ -986,299 +585,77 @@ networking model.
 
 ### Local-multiplayer player-slot / input-owner helper — speculative
 
-**Scope.** A small helper for stable local player identity and
-routing input to the entity each player controls.
+**Scope.** A small helper for stable local player identity and routing input
+to the entity each player controls.
 
 <details>
 <summary>Details</summary>
 
-**Trigger.** A second local-multiplayer example beyond local-pong
-(engine-gap-ledger B19). Two `createInput`s already work for two players;
-only the slot abstraction is missing. Pong kept player identity as the
-app-level union `'left' | 'right'`, which was correct for that single
-consumer. Don't design from one data point — wait for a second.
+**Trigger.** A second local-multiplayer example beyond local-pong. Two
+`createInput`s already work for two players (local-pong, spacewar); only the
+slot abstraction is missing. Pong kept player identity as the app-level union
+`'left' | 'right'` — correct for that single consumer. Don't design from one
+data point — wait for a second.
 
 **Probable shape.** `PlayerSlotDef { slotId: number }` paired with an
-`InputOwnerDef { slotId: number }` so a system can route per-slot
-actions from `createInput` to the controlled entity. Slot count and
-mapping stays app-defined.
+`InputOwnerDef { slotId: number }` so a system can route per-slot actions from
+`createInput` to the controlled entity. Slot count and mapping stay
+app-defined.
 
-**Canon.** Unity `PlayerInput` + `PlayerInputManager`, Unreal local
-player index, Godot `InputMap` action sets.
+**Canon.** Unity `PlayerInput` + `PlayerInputManager`, Unreal local player
+index, Godot `InputMap` action sets.
 
 </details>
 
 ---
 
-## Gameplay & utility modules — from the examples audit (2026-07-15)
+## Gameplay & utility modules — from the examples audit
 
-Promoted from the [engine-gap-ledger](engine-gap-ledger.md) triage pass
-(audit findings folded into the ledger). Each entry is **Deferred** with
-its consumer tally noted; several have already cleared their promotion
-trigger ("MET") and are ready-to-build candidates. Nothing here is
-scheduled — promotion records a backlog home and a met bar, it does not
-authorise a build.
-
-### `modules/collision` V2 — reflection response — ✅ shipped 2026-06-06
-
-**Shape.** `reflect(v, normal)` — reflect a velocity off a **unit-length**
-normal — plus `bounceOffAabb(mover, vel, obstacle)`, an AABB overlap
-resolver returning MTV push-out plus the reflected velocity@[`narrowphase.ts`](../../src/modules/collision/narrowphase.ts).
-
-**Consumer.** `examples/breakout`@[`systems.ts:168`](../../examples/breakout/src/systems.ts)
-replaced its hand-rolled centre-distance overlap with `bounceOffAabb`.
-
-<details>
-<summary>Details</summary>
-
-**Shipped shape vs. the sketch.** The planned
-`resolveReflect(aabb, circle | aabb) => { dx, dy, nx, ny }` landed as two
-smaller pieces: a pure `reflect` plus an AABB-specific `bounceOffAabb`.
-No separate circle resolver — the circle case composes the shipped
-overlap tests (`aabbVsCircle` / `circleVsCircle`) with `reflect`.
-
-**Non-adopters (verified).** local-pong keeps `Math.abs` for its
-axis-aligned wall bounce (simpler for that case); frogger does not bounce
-at all.
-
-**Canon.** Arcade bounce in Phaser `Arcade.Physics` (`bounce`), Unity 2D
-`PhysicsMaterial2D` bounciness, classic Breakout/Pong reflection.
-
-</details>
-
-### `modules/motion` — vector util (normalize / set-speed) — ✅ shipped 2026-07-15
-
-Shipped `normalize` + `scaleToSpeed`@
-[src/modules/motion/vec.ts](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/motion/vec.ts);
-see [src/modules/motion/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/motion/README.md#vector-helpers)
-and plan [../plans/done/modules-motion-vec.md](../plans/done/modules-motion-vec.md).
-Migrated breakout + top-down-shooter (Local→Engine migration #5).
-
-### `modules/math` — ✅ shipped (2026-07-18)
-
-**Shipped as `modules/math`, reshaped from the boundary-inset row below.**
-A dual-side check killed the boundary-inset framing: none of the
-size-aware clampers route their clamped entity through
-`makeVelocityIntegrationSystem`, so a boundary-mode extension would have
-**0** consumers. Shipped instead as a pure scalar module —
-`clamp`/`clamp01`/`lerp`/`inverseLerp`/`remap`/`smoothstep`/`wrap`/
-`pingPong`/`lerpAngle`/`degToRad`/`radToDeg`/`approximately`@[`math/math.ts`](../../src/modules/math/math.ts)
-— a module (not core; core stays ECS-structural), with `modules/collision`
-documenting the one cross-module dep (closest-point `clamp`, the
-`cooldown`→`timer` pattern). 8 example clamp sites migrated (local-pong &
-rpg drop private `clamp`s), the #7 spawner ramps refactored to
-`lerp`/`remap`. `moveToward`→motion/`vec` (vector form); `sign` native.
-The original boundary-inset analysis is kept below as the reshape record.
-
-### `modules/motion` — boundary inset / per-entity size — superseded (2026-07-18)
-
-**Scope.** Extending `VelocityIntegrationBoundary`'s `clamp` mode so it can
-pin to an inset range (`[inset, width − inset]`) or a per-entity
-half-extent, instead of only the raw playfield point range.
-
-**Status — superseded, not pursued.** The size/margin-aware clampers that
-motivated it now clamp directly with `modules/math`'s `clamp`
-(`clamp(value, half, width − half)`) rather than routing a clamp through the
-velocity integrator. An `inset` / `halfExtentOf` option on `boundary` would
-express nothing `clamp` does not, so the extension is dropped rather than
-deferred. The shipped `clamp` mode (`integrateBoundary`@`src/modules/motion/motion.ts:51`,
-`Bounds = { width, height }`@:7) keeps pinning the origin point to
-`[0, width] × [0, height]`, which the full-playfield clampers (asteroids,
-top-down-shooter) adopt as-is.
-
-**Canon.** Every paddle/player-confine in arcade engines clamps to the
-sprite extent, not the raw playfield edge (Pong, Breakout, Arkanoid,
-Space Invaders cannon rails) — which is why `clamp` is the right home for it
-rather than a new boundary mode.
-
-<details>
-<summary>Reshape record (original analysis)</summary>
-
-**Trigger — MET (4 consumers).** The shipped `clamp` mode
-(`integrateBoundary`@`src/modules/motion/motion.ts:51`, `Bounds =
-{ width, height }`@:7) pins the entity's **origin point** to
-`[0, width] × [0, height]` — there is no inset or per-entity size. Full-
-playfield clampers (asteroids, top-down-shooter) adopt it as-is, but
-size/margin-aware clampers hand-roll their own bounded clamp: breakout
-paddle (`[half, width−half]`), frogger, local-pong paddles, and
-space-invaders cannon all need the sprite's half-width subtracted
-(engine-gap-ledger B4 split, 2026-07-15).
-
-**Probable shape (not taken).** Add an optional `inset?: number` (uniform)
-or `halfExtentOf?: (e) => { x, y }` to the `clamp` branch of
-`VelocityIntegrationBoundary`@`motion.ts:15`; the wrap branch is
-unaffected. Rejected: the dual-sided check found **0** consumers routing a
-size-aware clamp through the integrator, so `modules/math`'s pure `clamp`
-shipped instead.
-
-</details>
-
-### `modules/timer` — ✅ shipped (2026-07-16)
-
-**Scope.** A Bevy-style `Timer` **value primitive** (not an ECS component):
-the shared countdown core that `lifetime`, `cooldown`, and (future)
-`spawner` embed.
-
-<details>
-<summary>Details</summary>
-
-**Shipped.** `Timer { remainingMs, durationMs, mode, justFinished }` with
-`mode: 'once' | 'repeating'`; pure functions `makeTimer`/`tickTimer`/
-`finished`/`justFinished`/`fraction`/`restart`@[`timer/timer.ts`](../../src/modules/timer/timer.ts).
-`timerSchema` is a flat `SimpleSchema<Timer>` so any module can wrap it in
-a `simpleComponent` (lifetime, cooldown both do).
-
-**Why a value, not a `TimerDef` component.** A single `TimerDef` would let
-an entity hold only one timer — but a bullet needs a lifetime AND an enemy
-needs an i-frame cooldown on the *same* entity slot pattern. Shipping
-`Timer` as an embeddable value lets each consumer module define its own
-flat component (`LifetimeDef`, `CooldownDef`) that shares the timing core
-without colliding. (Bevy's `Timer`/`Stopwatch` split is the precedent.)
-
-**Consumers.** `modules/lifetime` (`Lifetime = Timer`, once-mode),
-`modules/cooldown` (`Cooldown = Timer`, once-mode poll/trigger). `spawner`
-(#7) will use repeating-mode.
-
-</details>
-
-### `modules/spawner` — ✅ shipped (2026-07-17)
-
-**Scope.** A value-object `Spawner` + `tickSpawner` that emits on a
-cadence, with the next interval supplied by an app callback (so
-difficulty-ramp and jitter live in game code, not an engine knob).
-
-<details>
-<summary>Details</summary>
-
-**Trigger — MET (4 consumers).** flappy, jetpack, space-invaders, and
-top-down-shooter each hand-rolled "emit an entity every T ms, where T
-lerps with difficulty" (engine-gap-ledger B2). jetpack's `bulletTimerMs`
-auto-emitter (re-homed from the original cooldown scope) landed here too.
-
-**Shipped shape.** A **value object**, not a `SpawnerDef` component:
-`Spawner { remainingMs; nextIntervalMs(): number; active?(): boolean }`
-built via `makeSpawner(nextIntervalMs, { active? })`. `tickSpawner(s,
-dtMs, emit)` drains the accumulator and fires `emit` on each boundary
-crossing (drain-all within a tick, overshoot carried). `resetSpawner(s,
-remainingMs?)` re-seeds. The component route was rejected: each
-consumer's *next interval* is a live function of game state (elapsed,
-scroll speed, wave) and is cleanest as a closure, while the *what* to
-spawn stays app-defined in the `emit` callback. A per-interval provider
-absorbs ramp + jitter with no engine-side `rampPerSec`; the optional
-`active` gate covers jetpack's thrust-gated bullet stream (holds at 0
-while closed, fires immediately on reopen). See
-[`spawner/README.md`](../../src/modules/spawner/README.md) for the
-"Relationship to modules/timer" rationale.
-
-**Canon.** Unity coroutine spawners / `InvokeRepeating`, Godot `Timer`
-nodes, Phaser `time.addEvent({ loop })`.
-
-</details>
-
-### `modules/cooldown` — ✅ shipped (2026-07-16)
-
-**Scope.** A `CooldownDef` per-entity component + auto-decrement system
-covering fire-rate gating and invulnerability/grace i-frames.
-
-<details>
-<summary>Details</summary>
-
-**Shipped.** `Cooldown = Timer` (once-mode) wrapped as `CooldownDef`@[`cooldown/cooldown.ts`](../../src/modules/cooldown/cooldown.ts);
-`makeCooldown(durationMs)` starts **ready** (remainingMs=0); `ready(c)`
-predicate + `trigger(c, durationMs?)` reset; `makeCooldownSystem<TCtx>()`
-ticks every `CooldownDef` each frame.
-
-**Shape correction vs. the original deferred note.** The proposed shape
-was right (`{ remainingMs, durationMs }` + `makeCooldownSystem` + `ready`/
-`trigger`), but it's now built on the shared `Timer` value and ships as a
-**per-entity component** — cites `modules/lifetime`'s component precedent
-(same-author bias acknowledged). 3 adopters, all poll-`ready()`/`trigger()`
-once-mode: asteroids fire@[`input.ts`](../../examples/asteroids/src/systems/input.ts),
-top-down-shooter fire@[`input.ts`](../../examples/top-down-shooter/src/systems/input.ts),
-space-invaders i-frames@[`systems.ts`](../../examples/space-invaders/src/systems.ts).
-jetpack's `bulletTimerMs` is a repeating auto-emitter → **moved to
-`modules/spawner`** (#7), not a cooldown.
-
-**Canon.** Unity ability cooldowns, Godot `Timer` one-shots, fighting-
-game i-frame windows.
-
-</details>
+Promoted from the [engine-gap-ledger](engine-gap-ledger.md) triage pass; the
+closed rows of that pass are archived in
+[../archived/audits/2026-09-21-example-gap-audit.md](../archived/audits/2026-09-21-example-gap-audit.md).
+Each entry is **Deferred** with its consumer tally noted; some have already
+cleared their promotion trigger ("MET") and are ready-to-build candidates.
+Nothing here is scheduled — promotion records a backlog home and a met bar, it
+does not authorise a build.
 
 ### `modules/grid-movement` — deferred
 
-**Scope.** Discrete grid/tile movement: step-on-tick, snap-to-cell,
-occupancy query, and a 180°-reversal guard. Distinct from the shipped
-`modules/grid-based` (which is FOV / line-of-sight only, **not**
-movement).
+**Scope.** Discrete grid/tile movement: step-on-tick, snap-to-cell, occupancy
+query, and a 180°-reversal guard. Distinct from `modules/grid-based` (which is
+FOV / line-of-sight only, **not** movement).
 
 <details>
 <summary>Details</summary>
 
-**Trigger — MET (3 consumers).** snake, frogger, and rpg each hand-roll
-discrete cell stepping + snapping (engine-gap-ledger B7).
+**Trigger.** A fourth consumer converging on the shape below. The original
+"MET (3 consumers)" tally (snake, frogger, rpg — audit B7) did not survive the
+dual-cited pass: snake has body-shift + reversal guard + spatial occupancy,
+frogger has row-based hopping + water/road semantics, and rpg uses free pixel
+movement with walkability checks. Three consumers, three shapes.
 
 **Probable shape.** `GridPositionDef { col, row }` + a step system that
 advances by a queued direction on a movement tick, snapping continuous
-position to cell centres, with an occupancy lookup and an opposite-
-direction reversal guard (snake's classic constraint).
+position to cell centres, with an occupancy lookup and an opposite-direction
+reversal guard (snake's classic constraint).
 
-**Canon.** Godot `TileMap` cell coords + grid-snap movement, roguelike
-grid step, classic Snake/Sokoban/Pac-Man movement.
-
-</details>
-
-### `modules/rng` — ✅ shipped 2026-07-15
-
-See
-[src/modules/rng/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/rng/README.md)
-and plan
-[../plans/done/modules-rng.md](../plans/done/modules-rng.md).
-
-### `modules/attach` — ✅ shipped 2026-06-07
-
-**Shape.** `AttachDef` — which entity to follow, plus `snapPosition` /
-`snapRotation` flags — with a `makeAttachSystem({ runAfter })` factory and
-an `inheritVelocity` option@[`attach/`](../../src/modules/attach/).
-
-**Consumers.** `examples/asteroids`@[`main.ts:63`](../../examples/asteroids/src/main.ts)
-(thrust flame follows the ship's position and rotation; its flame system
-reduced to an opacity toggle) and `examples/spacewar`@[`main.ts:5`](../../examples/spacewar/src/main.ts).
-
-<details>
-<summary>Details</summary>
-
-**Shipped shape vs. the sketch.** The planned
-`AttachDef { to, mode: 'carry' | 'follow', offset? }` landed as
-`snapPosition` / `snapRotation` flags plus `inheritVelocity` rather than a
-`mode` discriminant — one component covering both the follow (track
-position/rotation) and carrier (inherit a velocity contribution) cases.
-
-**Relation to the declined hierarchy item.** This *re-opens* the
-"Entity hierarchy / parenting" Non-goal in its lighter form — see that
-entry. Full recursive N-level propagation stays declined.
-
-**Not yet exercised.** The carrier / `inheritVelocity` path has no
-confirmed adopter: the original rider motivation (frogger's moving log)
-is unverified as migrated, and space-invaders had no active attach
-pattern.
-
-**Canon.** Godot `RemoteTransform2D`, Unity simple follow scripts /
-`ParentConstraint`, moving-platform rider patterns in every 2D platformer.
+**Canon.** Godot `TileMap` cell coords + grid-snap movement, roguelike grid
+step, classic Snake/Sokoban/Pac-Man movement.
 
 </details>
 
 ### `modules/rhythm` — speculative
 
-**Scope.** A rhythm-game timing stack: audio-clock `TickSource`,
-hit-window judgement, lookahead/absolute-time spawn scheduling, a
-timestamped input queue, and latency compensation.
+**Scope.** A rhythm-game timing stack: audio-clock `TickSource`, hit-window
+judgement, lookahead/absolute-time spawn scheduling, a timestamped input
+queue, and latency compensation.
 
 <details>
 <summary>Details</summary>
 
-**Trigger.** A second rhythm/timing prototype beyond `examples/rhythm`
-(engine-gap-ledger B21). Genre-specific but real and cleanly built; one
-consumer is not enough to pin a reusable shape.
+**Trigger.** A second rhythm/timing prototype beyond `examples/rhythm` (audit
+B21). Genre-specific but real and cleanly built; one consumer is not enough to
+pin a reusable shape.
 
 **Canon.** Friday Night Funkin' engine, osu! timing, Rhythm Doctor
 calibration, Web Audio `AudioContext.currentTime` scheduling patterns.
@@ -1287,98 +664,19 @@ calibration, Web Audio `AudioContext.currentTime` scheduling patterns.
 
 ### App-host mount / teardown helper — speculative
 
-**Scope.** A thin `start(container) => Teardown` contract with a
-lazy-load race guard (stale-load token / CAS) for mount → cleanup →
-async-load → teardown orchestration.
+**Scope.** A thin `start(container) => Teardown` contract with a lazy-load
+race guard (stale-load token / CAS) for mount → cleanup → async-load →
+teardown orchestration.
 
 <details>
 <summary>Details</summary>
 
 **Trigger.** A second app-host beyond `examples/hub` (every example
-re-implements `start`/teardown — engine-gap-ledger hub note). Low
-priority; the per-example `start` boilerplate is small.
+re-implements `start`/teardown). Low priority; the per-example `start`
+boilerplate is small.
 
-**Canon.** SPA mount/unmount lifecycles, micro-frontend `mount`/
-`unmount` contracts (single-spa), React root `createRoot`/`unmount`.
-
-</details>
-
----
-
-## Non-goals (declined)
-
-Items deliberately rejected, not just deferred — recorded so future
-"should we build X?" questions have an answer.
-
-<details>
-<summary>Entity hierarchy / parenting (full transform propagation)</summary>
-
-Bevy-style `Parent(Entity)` / `Children` with recursive transform
-propagation.
-
-**Still declined — full version only.** General N-level transform
-propagation bakes a cost (dirty tracking, cyclic-reference guards,
-lifetime cascade rules) into every game whether or not it uses it.
-
-**Narrowed (2026-07-15).** The *lightweight* follow/carrier slice —
-"entity B inherits entity A's per-tick delta, or tracks its pos/rot" —
-is no longer declined: it reached 3 consumers (frogger rider, asteroids
-thrust-flame, space-invaders follower) and promoted to the deferred
-`modules/attach` entry above. That covers the real demand without the
-full propagation machinery. The full recursive-hierarchy version stays
-declined until a prototype genuinely needs deep parent chains.
-
-</details>
-
-<details>
-<summary>Scoring / lives / game-over scaffold</summary>
-
-A shared score / lives / game-over-state module.
-
-**Declined (2026-07-15).** Surfaced in nearly every example
-(engine-gap-ledger B14), but it is *content*, not engine: each game's
-scoring rules, life count, and game-over semantics differ and live
-naturally in app state. The engine already ships the primitives these
-need (`EventBus` for score events, `modules/save` for high scores). No
-reusable shape to extract.
-
-</details>
-
-<details>
-<summary>Visual editor / inspector as part of the engine</summary>
-
-Unity / Unreal / Godot editor as core engine feature.
-
-**Declined.** This is a code-first engine. A dev-mode inspector panel
-belongs in `modules/debug` (scope: diagnose, not author). Persistent
-authoring lives in content files + code, per the established
-content-registration pattern.
-
-</details>
-
-<details>
-<summary>Generic asset pipeline / build plugin</summary>
-
-Texture packer, audio compressor, atlas builder integrated with the
-build system.
-
-**Declined.** Vite covers the current scale. If a game ships large
-asset volumes, point it at an external tool (TexturePacker, ffmpeg)
-invoked by a `package.json` script — no engine involvement needed.
-
-</details>
-
-<details>
-<summary>Multi-threading / worker-based parallelism</summary>
-
-Rayon-style parallel system execution.
-
-**Declined for now.** JavaScript's cooperative concurrency model and
-the single-threaded-per-context reality mean workers require
-explicit `structuredClone` across boundaries. For the games this
-engine targets (roguelike + 2D prototypes), single-threaded is plenty.
-Revisit if a prototype ships that's genuinely CPU-bound on the main
-thread.
+**Canon.** SPA mount/unmount lifecycles, micro-frontend `mount`/`unmount`
+contracts (single-spa), React root `createRoot`/`unmount`.
 
 </details>
 
@@ -1386,46 +684,39 @@ thread.
 
 ## Promotion triggers — summary
 
-When any of the below becomes true, open a plan for the matching module.
+Open signals only. When any of the below becomes true, open a plan for the
+matching module. Shipped triggers are removed rather than marked done — a
+signal's absence from this table means it already produced a module.
 
 | Signal | Unblocks |
 |---|---|
-| Scrolling prototype with zoom / clamping / parallax, or snake migration | `modules/camera` V2 (also unblocks snake ↔ render-canvas2d) |
-| Asset-loader lands + sprite-rendering prototype | `RenderableDef` sprite/texture variant (V3) |
+| Scrolling prototype needing camera rotation, or a parallax layer model | `modules/camera` V3 |
+| Concrete request for `ctx.filter` post-processing | `RenderableDef` extensions V3 (Canvas filters) |
+| A second turn-based consumer | `modules/input` event-mode variant |
 | 3D prototype scoped | All 3D sibling modules |
 | Stacking / ragdoll / vehicle prototype | Rigid-body physics |
 | Spatialized playback or shared bus-driven audio events in a second consumer | `modules/audio` V2 |
-| ✅ **SHIPPED 2026-07-18** — tween / easing canon (6 consumers hand-rolled linear) | `modules/easing` + `modules/tween` (split from `modules/animation`) |
-| Sprite-frame animation in a 2nd prototype | `modules/animation` (sprite-frame slice) |
+| Second consumer needing shared named animation clips | `modules/animation` V2 (clip registry) |
 | Second app with multiple runtime worlds and full scene stack needs | `modules/scene` V2 |
 | Second app needing shared slot metadata/policy conventions | `modules/save` V2 |
-| Asset volume exceeds Vite import comfort | `modules/asset-loader` |
+| Asset volume exceeds Vite import comfort | `modules/asset-loader` V2 |
 | Flow-field / many-pather prototype | `modules/pathfinding` V2 |
 | Stealth / line-of-sight prototype needing non-V1 algorithms | `modules/grid-based` V2 |
 | Second debug-overlay consumer | `modules/debug` |
-| ✅ **SHIPPED 2026-09-20** — steering-behaviours canon (Reynolds; boids consumer) | `modules/steering` (split from `modules/ai`) |
-| ✅ **SHIPPED 2026-09-20** — FSM (stealth-guard 5-state; doom fitting 2nd) | `modules/fsm` (split from `modules/ai`) |
-| ✅ **SHIPPED 2026-09-21** — behaviour tree (critters needs-driven BT) | `modules/behavior-tree` (split from `modules/ai`) |
-| ✅ **SHIPPED 2026-09-21** — GOAP planning (woodcutter, per-tree contention) | `modules/goap` (split from `modules/ai`) |
+| Prototype needing obstacle-avoidance or path-following | `modules/steering` V2 |
+| Prototype needing nested / parallel states | `modules/fsm` V2 |
+| Prototype needing BT decorators, or a deliberate doom AI migration | `modules/behavior-tree` V2 / the doom migration |
+| Prototype needing a GOAP plan-runner or typed facts | `modules/goap` V2 |
+| Prototype needing sub-emitters, trails or particle-collision | `modules/particles` V2 |
 | Prototype with fuzzy trade-off choices (utility scoring) or authored task decomposition (HTN) | `modules/ai` (Utility AI / HTN) |
 | Scoped multiplayer prototype | `modules/networking` |
 | Second local-multiplayer example beyond local-pong | Local-multiplayer player-slot helper |
-| ✅ **SHIPPED 2026-06-07** — continuous→cell projection (5 consumers) | `ContinuousHashGrid2D` |
-| ✅ **SHIPPED 2026-06-06** — bounce/reflection response (breakout) | `modules/collision` V2 (reflection) |
-| ✅ **SHIPPED 2026-07-18** — scalar math: clamp + interpolation (9 consumers) | `modules/math` |
-| ✅ **SHIPPED 2026-07-17** — timed spawn cadence (4 consumers) | `modules/spawner` |
-| ✅ **SHIPPED 2026-07-16** — cooldown / grace timer (3 poll/trigger consumers) | `modules/cooldown` (+ `modules/timer` core) |
-| **MET** — discrete grid movement in 3 consumers | `modules/grid-movement` |
-| ✅ **SHIPPED 2026-06-07** — follow/carrier attach (asteroids, spacewar) | `modules/attach` |
-| ✅ **SHIPPED 2026-07-18** — FX bursts (3 hand-rollers + 1 adopter) | `modules/particles` |
-| ✅ **SHIPPED 2026-07-18** — renderer camera-consume + off-screen cull (rpg, tilemap) | `modules/camera` V2 |
-| ✅ **SHIPPED 2026-06-06** — screen-space overlay pass (local-pong) | `ScreenSpaceDef` (`RenderableDef` V3) |
-| ✅ **SHIPPED 2026-06-07** — auto-spawn + collision-grid (rpg, tilemap) | `modules/tilemap` |
-| Authored tile grid where per-cell entities measurably hurt | `modules/tilemap` V2 (batched renderable) |
+| A prototype whose authored tile grid makes per-cell entities measurably hurt | `modules/tilemap` V2 (batched renderable) |
+| Fourth consumer converging on discrete grid movement | `modules/grid-movement` |
 | Rhythm/timing prototype beyond `examples/rhythm` | `modules/rhythm` (speculative) |
 | Second app-host beyond `examples/hub` | App-host helper (speculative) |
+| Prototype needing in-game UI widgets | `modules/ui` |
 
-Every promotion still runs through the engine extension rule-book
-(the sliding-scale evidence rule) — this table just
-catalogs the
-likely first signals.
+Every promotion still runs through the engine extension rule-book (the
+sliding-scale evidence rule) — this table just catalogs the likely first
+signals.

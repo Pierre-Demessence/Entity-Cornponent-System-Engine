@@ -1,6 +1,7 @@
 # Entity-ID Remapping on Import (A11) — deferred
 
-Original audit entry: [ecs-engine-audit.md §A11](done/ecs-engine-audit.md#a11-entity-id-remapping-on-importnot-pursued).
+Original audit entry: `ecs-engine-audit.md` §A11 — a plan from the
+Roguelike monorepo, not ported into this repo.
 
 ## Problem
 
@@ -45,7 +46,7 @@ reference-carrying component.
 ## Why Deferred
 
 Audit (2026-04-17) validated against the
-[prototype-games-roadmap ladder](../roadmap/prototype-games-roadmap.md):
+[prototype ladder](../archived/prototype-games-roadmap.md):
 none of the planned prototypes (Snake, Asteroids, platformer, 3D game,
 networked pong) need cross-world entity merging. Each spawns a fresh world.
 
@@ -69,5 +70,6 @@ Building the full remap infrastructure without a driver risks:
 
 ## Related
 
-- [docs/plans/done/ecs-engine-audit.md](done/ecs-engine-audit.md) — original entry (§A11).
-- [docs/roadmap/prototype-games-roadmap.md](../roadmap/prototype-games-roadmap.md) — prototype ladder used to validate no current driver exists.
+- `docs/plans/done/ecs-engine-audit.md` — original entry (§A11); lives in the
+  Roguelike monorepo, not ported here.
+- [docs/archived/prototype-games-roadmap.md](../archived/prototype-games-roadmap.md) — prototype ladder used to validate no current driver exists.

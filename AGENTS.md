@@ -119,5 +119,6 @@ whenever you add, remove, or rename a public export — a drift test fails
 - [`docs/README.md`](docs/README.md) — full docs map
 - [`docs/extending-the-engine.md`](docs/extending-the-engine.md) — promotion paths + layering principles + tradeoffs
 - [`docs/roadmap/core-engine-roadmap.md`](docs/roadmap/core-engine-roadmap.md) — open core-internals work
-- [`docs/roadmap/ecs-module-backlog.md`](docs/roadmap/ecs-module-backlog.md) — open module work
-- [`docs/roadmap/prototype-games-roadmap.md`](docs/roadmap/prototype-games-roadmap.md) — proof-via-prototypes ladder
+- [`docs/roadmap/ecs-module-backlog.md`](docs/roadmap/ecs-module-backlog.md) — open module work (shipped modules are not listed; `src/` + `git log` are the record)
+- [`docs/roadmap/non-goals.md`](docs/roadmap/non-goals.md) — declined and superseded decisions, with the reason
+- [`docs/twenty-games-challenge.md`](docs/twenty-games-challenge.md) — ladder of small games built next (the older proof-via-prototypes ladder is archived at [`docs/archived/prototype-games-roadmap.md`](docs/archived/prototype-games-roadmap.md))

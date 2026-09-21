@@ -5,7 +5,7 @@ but everything usually filed under game AI. For each: a plain one-liner,
 how common it is **built into engines**, and this engine's status.
 
 This is a reference for deciding what to build next; the concrete module
-plan lives in the [ECS module backlog](ecs-module-backlog.md) (see the
+plan lives in the [ECS module backlog](roadmap/ecs-module-backlog.md) (see the
 `modules/steering`, `modules/fsm`, `modules/behavior-tree`, and
 `modules/ai` entries).
 
