@@ -53,6 +53,7 @@ one proves. Engine gaps these prototypes surface are tracked in the
 
 - [Core-Engine Roadmap](roadmap/core-engine-roadmap.md) - core-engine internals (component stores, queries, scheduler, hooks)
 - [ECS Module Backlog](roadmap/ecs-module-backlog.md) - shipped, deferred, speculative, declined modules
+- [Game AI Landscape](roadmap/game-ai-landscape.md) - map of game-AI concepts (decision, navigation, perception, …) with engine-commonness and this engine's status
 - [Prototype Games Roadmap](roadmap/prototype-games-roadmap.md) - ladder of small games validating the engine
 
 ## Plans

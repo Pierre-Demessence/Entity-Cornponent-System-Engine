@@ -883,29 +883,60 @@ consumer wants it yet.
 
 </details>
 
-### `modules/ai` — speculative (GOAP only; steering/FSM/BT split off above)
+### `modules/goap` — ✅ shipped (2026-09-21)
 
-**Scope.** The remaining generalized AI *decision* driver — GOAP
-(goal-oriented action planning) — after `modules/steering` (movement),
-`modules/fsm`, and `modules/behavior-tree` shipped as their own modules.
-Distinct from any single game's bespoke AI string-tag.
+**Shipped** the planning slice of AI: a pure A\* goal-oriented action
+planner. `WorldState = Record<string, boolean>` (flat facts; missing =
+false), `GoapAction { name, cost, preconditions, effects }`, and
+`plan(actions, initial, goal) => GoapAction[] | null`@[`goap/goap.ts`](../../src/modules/goap/goap.ts).
+A\* over symbolic states (node = state hashed by truthy keys, edge =
+applicable action, heuristic = unsatisfied goal facts). Zero deps,
+ECS-decoupled. **Execution + replanning stay in the consumer** (map
+`action.name` → a runtime behaviour, replan on failure) — the pure `plan()`
+is the shipped surface; no plan-runner (game-specific). Canon: F.E.A.R. /
+Halo GOAP papers.
+
+**Consumer.** [`examples/woodcutter`](../../examples/woodcutter/) — workers
+plan `GetAxe → GoToTree{i} → ChopTree{i} → GoToStore → DropWood`; once a
+worker holds the axe the planner drops `GetAxe` (precondition no longer
+holds) — the "same goal, different plan" moment. Tree contention is a
+**planning** concern: per-tree `tree{i}Free` facts + distance-based
+`GoToTree{i}` cost make the planner prefer the nearest *free* tree, and a
+`ChopTree{i}` failure (tree taken first) triggers a **replan** onto
+another tree.
+
+<details>
+<summary>Still deferred</summary>
+
+Own A\* (not `modules/pathfinding`'s grid A\*) because it searches abstract
+world-states, not a grid. A heap open-set (the linear scan is fine at
+GOAP scale), a shipped plan-runner, and cost/typed non-boolean facts — add
+when a consumer needs them.
+
+</details>
+
+### `modules/ai` — speculative (Utility AI / HTN; FSM/BT/GOAP/steering shipped)
+
+**Scope.** What's left of the AI-decision family after `modules/steering`
+(movement), `modules/fsm`, `modules/behavior-tree`, and `modules/goap`
+each shipped as their own modules: **Utility AI** (score each candidate
+action 0–1, pick the max) and **HTN** (hierarchical task-network planning).
 
 <details>
 <summary>Details</summary>
 
-**Trigger.** A prototype whose AI needs *planning* — actions with
-preconditions/effects and an A\* planner that sequences them to satisfy a
-goal (F.E.A.R.-style). The reactive BT and FSM cover reactive/hierarchical
-behaviour; GOAP is the next step only when a game needs emergent
-multi-step plans the designer didn't hand-author.
+**Trigger.** Utility AI — a prototype whose choices are *fuzzy trade-offs*
+(the Sims-style "how much do I want each option right now") rather than
+strict priorities (BT) or discrete states (FSM); it's a small, reusable
+scorer and the likely next AI pick. HTN — a prototype needing authored
+task decomposition beyond GOAP's emergent search.
 
-**Rationale for speculative.** GOAP is heavier and more contested than
-FSM/BT (few engines ship it in core), and none of the current prototypes
-needs planning. `modules/pathfinding` already ships the A\* the planner
-would reuse.
+**Rationale for speculative.** No current prototype needs either, and
+neither has a single canonical API. Utility AI is the lighter, more
+broadly useful of the two.
 
-**Canon.** Halo / F.E.A.R. GOAP papers, `goap` community libs; the FSM
-and BT canon now live in their own shipped modules.
+**Canon.** Utility AI: Dave Mark's *Behavioral Mathematics* / "infinite
+axis" utility systems, The Sims. HTN: SHOP2, Guerrilla's *Horizon* HTN.
 
 </details>
 
@@ -1336,7 +1367,8 @@ When any of the below becomes true, open a plan for the matching module.
 | ✅ **SHIPPED 2026-09-20** — steering-behaviours canon (Reynolds; boids consumer) | `modules/steering` (split from `modules/ai`) |
 | ✅ **SHIPPED 2026-09-20** — FSM (stealth-guard 5-state; doom fitting 2nd) | `modules/fsm` (split from `modules/ai`) |
 | ✅ **SHIPPED 2026-09-21** — behaviour tree (critters needs-driven BT) | `modules/behavior-tree` (split from `modules/ai`) |
-| Prototype needing GOAP-style planning (preconditions/effects + A\*) | `modules/ai` (GOAP) |
+| ✅ **SHIPPED 2026-09-21** — GOAP planning (woodcutter, per-tree contention) | `modules/goap` (split from `modules/ai`) |
+| Prototype with fuzzy trade-off choices (utility scoring) or authored task decomposition (HTN) | `modules/ai` (Utility AI / HTN) |
 | Scoped multiplayer prototype | `modules/networking` |
 | Second local-multiplayer example beyond local-pong | Local-multiplayer player-slot helper |
 | **MET** — 3rd continuous→cell projection consumer | `ContinuousHashGrid2D` |

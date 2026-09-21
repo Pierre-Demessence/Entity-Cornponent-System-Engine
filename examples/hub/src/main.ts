@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids' | 'stealth-guard' | 'critters';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids' | 'stealth-guard' | 'critters' | 'woodcutter';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -180,6 +180,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'Behaviour-tree playground: critters each tick the same reactive BT (selector of prioritised needs — flee threat > eat when hungry > sleep when tired > wander), with a per-critter blackboard and steering-driven movement. Shows why a BT beats an FSM for layered priorities.',
     title: 'Critters (behaviour tree)',
     load: () => import('@pierre/ecs-example-critters/src/main.ts'),
+  },
+  {
+    id: 'woodcutter',
+    controls: 'Watch — no input',
+    summary: 'GOAP planning playground: workers are given actions (get axe / chop / deliver) with preconditions/effects and a goal; an A* planner sequences them. After the first log a worker keeps its axe, so the planner drops the GetAxe step — the same goal, a different plan.',
+    title: 'Woodcutter (GOAP)',
+    load: () => import('@pierre/ecs-example-woodcutter/src/main.ts'),
   },
 ];
 
