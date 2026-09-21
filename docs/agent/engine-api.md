@@ -393,6 +393,23 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`StatsOverlayOptions`** _(interface)_ — Visual configuration for drawStatsOverlay.
 - **`TimedTickSource`** _(class)_ — Wraps a TickSource so each downstream tick's **wall-clock cost** is measured and fed into a FrameStats. Use it to time work whose tick so...
 
+### `@pierre/ecs/modules/steering`
+- **`alignment`** _(fn)_ — Steer to match the average heading of neighbours.
+- **`arrive`** _(fn)_ — Seek `target`, but scale desired speed down linearly inside `slowRadius` so the agent decelerates and settles instead of orbiting.
+- **`cohesion`** _(fn)_ — Steer toward the average position (centre of mass) of neighbours.
+- **`combine`** _(fn)_ — Weighted sum of steering forces, truncated to `maxForce`.
+- **`evade`** _(fn)_ — Flee where a moving threat *will be*, leading it by its velocity.
+- **`flee`** _(fn)_ — Steer directly away from `target` at full speed.
+- **`Neighbor`** _(interface)_ — A neighbour as steering sees it: a plain position + velocity pair. Deliberately ECS-decoupled — the caller builds these from whatever sto...
+- **`pursue`** _(fn)_ — Seek where a moving target *will be*, leading it by its velocity.
+- **`seek`** _(fn)_ — Steer toward `target` at full speed.
+- **`separation`** _(fn)_ — Steer away from crowding, weighted by inverse distance (closer = stronger).
+- **`truncate`** _(fn)_ — Clamp a vector's magnitude to `max`, preserving direction.
+- **`wander`** _(fn)_ — Reynolds wander: jitter an angle each tick, project a point on a circle ahead of the agent's heading, and steer toward it. Produces smoot...
+- **`WanderParams`** _(interface)_ — —
+- **`WanderState`** _(interface)_ — Per-agent wander state: the current offset angle on the wander circle.
+- **`WeightedForce`** _(interface)_ — One steering force with a blend weight, consumed by combine.
+
 ### `@pierre/ecs/modules/texture-atlas`
 - **`AtlasFrame`** _(interface)_ — A single sub-texture rectangle within an atlas image, in source-image pixel coordinates.
 - **`ParsedAtlas`** _(interface)_ — Result of parsing a TexturePacker / Kenney "Generic XML" atlas: the referenced image path plus a map of frame name → source rectangle.

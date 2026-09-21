@@ -771,11 +771,53 @@ when a second consumer wants a similar toggle, it promotes.
 
 </details>
 
-### `modules/ai` — speculative
+### `modules/steering` — ✅ shipped (2026-09-20)
 
-**Scope.** Generalized AI driver components — behavior trees, finite
+**Shipped** the canon-strong slice of AI — Reynolds (1987) steering
+behaviours — split off from the contested `modules/ai` bundle below.
+Pure `Vec2` functions returning a steering *force* (`desired − velocity`):
+`seek` / `flee` / `arrive` / `pursue` / `evade` / `wander` + the flocking
+trio `separation` / `alignment` / `cohesion`, plus `combine` (weighted
+sum → truncate to `maxForce`) and `truncate`@[`steering/steering.ts`](../../src/modules/steering/steering.ts).
+Depends only on `modules/motion` (`normalize` / `scaleToSpeed` / `Vec2`),
+the documented cross-module dep (same pattern as `collision → math`).
+Built **canon-first** per
+[extending-the-engine](../extending-the-engine.md#canon-complete-by-default):
+steering behaviours are unanimous universal canon (Unity, Godot, Unreal,
+every boids demo), so the canon-complete set ships on one exercising
+consumer. First consumer: [`examples/boids`](../../examples/boids/) — 140
+boids driven purely by composed steering (flocking + cursor-flee +
+food-arrive + wander), neighbours from `ContinuousHashGrid2D.queryNear`.
+
+<details>
+<summary>Non-fits + still-deferred</summary>
+
+**Constant-speed seek stays on `motion`.** top-down-shooter
+`enemy-steer.ts` and doom `ai.ts` chase both **set** `velocity = dir ×
+speed` — the degenerate desired-velocity form already covered by
+`motion`'s `scaleToSpeed`. Force-migrating them would change feel
+(smoothed approach vs instant point-at-target) with no win, so they were
+**not** migrated. Steering's value is the *composed / smoothed* motion,
+not the snap case.
+
+**Velocity type.** Steering speaks generic `Vec2 {x, y}`; the engine's
+`VelocityDef` is `{vx, vy}`. Consumers adapt at the call boundary
+(`{ x: vel.vx, y: vel.vy }`) rather than steering coupling to a component.
+
+**Still deferred.** Obstacle-avoidance / wall-following / path-following
+(Reynolds' remaining set) — add when a consumer needs them. An ECS
+component wrapper (`SteeringAgentDef` + system) — no consumer wants the
+component form yet; the pure-function surface is the proven shape.
+
+</details>
+
+### `modules/ai` — speculative (FSM / BT / GOAP; steering split off above)
+
+**Scope.** Generalized AI *decision* drivers — behavior trees, finite
 state machines, GOAP — as selectable components, each with its own
-tick system. Distinct from any single game's bespoke AI string-tag.
+tick system. Distinct from any single game's bespoke AI string-tag, and
+distinct from the now-shipped `modules/steering` (which is *movement*,
+not decision-making).
 
 <details>
 <summary>Details</summary>
@@ -790,12 +832,16 @@ through a shared registry per kind.
 and card-battler (AI intent) — engine-gap-ledger B17. That is 2, but the
 shapes diverge (real-time steering vs turn intent) and there is no canon
 to lean on, so it stays speculative pending convergent evidence — the
-genuine rule of three.
+genuine rule of three. **FSM is the likely next pick** — doom `ai.ts`
+already ships a 3-state idle/chase/attack FSM, so a stealth/patrol PoC
+whose "chase" state runs a `modules/steering` behaviour gives the second
+FSM consumer.
 
-**Rationale for speculative.** AI architecture is a contested space —
-Unity ships none in core (asset-store dependent), Bevy ships none, Godot
-ships an FSM via `AnimationTree` only. Picking a side speculatively is
-waste.
+**Rationale for speculative.** AI *decision* architecture is a contested
+space — Unity ships none in core (asset-store dependent), Bevy ships
+none, Godot ships an FSM via `AnimationTree` only. Picking a side
+speculatively is waste. (Steering was the exception: it *has* canon, so
+it shipped — see above.)
 
 **Canon.** Unreal `Behavior Tree` + `Blackboard`, Godot `LimboAI`
 (community), Halo / F.E.A.R. GOAP papers, behaviortree.cpp.
@@ -1226,6 +1272,7 @@ When any of the below becomes true, open a plan for the matching module.
 | Flow-field / many-pather prototype | `modules/pathfinding` V2 |
 | Stealth / line-of-sight prototype needing non-V1 algorithms | `modules/grid-based` V2 |
 | Second debug-overlay consumer | `modules/debug` |
+| ✅ **SHIPPED 2026-09-20** — steering-behaviours canon (Reynolds; boids consumer) | `modules/steering` (split from `modules/ai`) |
 | Second prototype with non-trivial AI (BT / FSM / GOAP) | `modules/ai` |
 | Scoped multiplayer prototype | `modules/networking` |
 | Second local-multiplayer example beyond local-pong | Local-multiplayer player-slot helper |

@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -159,6 +159,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'Third-person space flight: No-Man\'s-Sky-style aim-to-steer attitude control (quaternion orientation, rate-based turns), throttle-only motion, a banking chase camera, and shoot-the-drone targets — proves the camera rig is neither yaw-only nor first-person-locked.',
     title: 'Starfighter',
     load: () => import('@pierre/ecs-example-starfighter/src/main.ts'),
+  },
+  {
+    id: 'boids',
+    controls: 'Move the cursor to scatter the flock',
+    summary: 'Steering-behaviours playground: 140 boids driven purely by composed Reynolds steering — separation / alignment / cohesion + wander + cursor-flee + food-arrive, neighbours from a spatial hash grid.',
+    title: 'Boids (steering)',
+    load: () => import('@pierre/ecs-example-boids/src/main.ts'),
   },
 ];
 
