@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids' | 'stealth-guard';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids' | 'stealth-guard' | 'critters';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -173,6 +173,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'FSM playground: guards run a 5-state finite state machine (patrol → suspicious → chase → search → return) driven by a vision cone + line-of-sight; the chase state composes modules/steering. Sneak past without entering a cone.',
     title: 'Stealth Guard (FSM)',
     load: () => import('@pierre/ecs-example-stealth-guard/src/main.ts'),
+  },
+  {
+    id: 'critters',
+    controls: 'Move the cursor to scare the critters',
+    summary: 'Behaviour-tree playground: critters each tick the same reactive BT (selector of prioritised needs — flee threat > eat when hungry > sleep when tired > wander), with a per-critter blackboard and steering-driven movement. Shows why a BT beats an FSM for layered priorities.',
+    title: 'Critters (behaviour tree)',
+    load: () => import('@pierre/ecs-example-critters/src/main.ts'),
   },
 ];
 

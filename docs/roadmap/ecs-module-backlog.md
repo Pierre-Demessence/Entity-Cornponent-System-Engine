@@ -851,40 +851,61 @@ GOAP siblings stay speculative (see `modules/ai`).
 
 </details>
 
-### `modules/ai` — speculative (FSM / BT / GOAP; steering split off above)
+### `modules/behavior-tree` — ✅ shipped (2026-09-21)
 
-**Scope.** Generalized AI *decision* drivers — behavior trees, finite
-state machines, GOAP — as selectable components, each with its own
-tick system. Distinct from any single game's bespoke AI string-tag, and
-distinct from the now-shipped `modules/steering` (which is *movement*,
-not decision-making).
+**Shipped** the "more advanced than FSM" AI slice: a reactive behaviour
+tree of pure node functions. `BtStatus = 'success' | 'failure' |
+'running'`, `BtNode<TCtx> = (ctx) => BtStatus`, and the builders
+`sequence` (AND), `selector` (OR/fallback), `inverter`, `condition`,
+`action`@[`behavior-tree/bt.ts`](../../src/modules/behavior-tree/bt.ts).
+Zero deps, ECS-decoupled. **Reactive/stateless** design (A): the tree
+re-ticks from the root each frame so priorities stay live; per-agent
+memory lives on a **blackboard** on `ctx`, so one shared tree drives many
+agents (same pattern as `fsm`'s `ctx.activeGuard`). Canon: Unreal Behavior
+Tree + Blackboard, behaviortree.cpp.
+
+**Consumer.** [`examples/critters`](../../examples/critters/) — needs-driven
+creatures ticking one shared BT (`selector` of prioritised needs:
+flee threat > eat when hungry > sleep when tired > wander), per-critter
+blackboard (hunger/energy/targetFood), leaf actions driving velocity via
+`modules/steering`. Exercises the full surface including the `running`
+short-circuit (multi-tick "travel to food" holds the branch until arrival,
+then the `sequence` proceeds to `eat`) — the case an FSM can't express
+without a transition tangle.
+
+<details>
+<summary>Still deferred</summary>
+
+`parallel`, `cooldown`, `repeat`/`repeatUntil` decorators — less-universal;
+add when a consumer needs one. A stateful (remembered running-child)
+variant — the reactive re-tick covered every critter behaviour, so no
+consumer wants it yet.
+
+</details>
+
+### `modules/ai` — speculative (GOAP only; steering/FSM/BT split off above)
+
+**Scope.** The remaining generalized AI *decision* driver — GOAP
+(goal-oriented action planning) — after `modules/steering` (movement),
+`modules/fsm`, and `modules/behavior-tree` shipped as their own modules.
+Distinct from any single game's bespoke AI string-tag.
 
 <details>
 <summary>Details</summary>
 
-**Probable shape.** Three sibling components, each with a paired
-system: `BehaviorTreeDef`, `FsmDef`, `GoapDef`. Apps pick one (or
-compose), and game-specific actions / conditions / leaf nodes register
-through a shared registry per kind.
+**Trigger.** A prototype whose AI needs *planning* — actions with
+preconditions/effects and an A\* planner that sequences them to satisfy a
+goal (F.E.A.R.-style). The reactive BT and FSM cover reactive/hierarchical
+behaviour; GOAP is the next step only when a game needs emergent
+multi-step plans the designer didn't hand-author.
 
-**Trigger.** A second prototype whose AI clearly outgrows ad-hoc
-`if`-trees. Recorded consumers: top-down-shooter (constant-speed seek)
-and card-battler (AI intent) — engine-gap-ledger B17. That is 2, but the
-shapes diverge (real-time steering vs turn intent) and there is no canon
-to lean on, so it stays speculative pending convergent evidence — the
-genuine rule of three. **FSM is the likely next pick** — doom `ai.ts`
-already ships a 3-state idle/chase/attack FSM, so a stealth/patrol PoC
-whose "chase" state runs a `modules/steering` behaviour gives the second
-FSM consumer.
+**Rationale for speculative.** GOAP is heavier and more contested than
+FSM/BT (few engines ship it in core), and none of the current prototypes
+needs planning. `modules/pathfinding` already ships the A\* the planner
+would reuse.
 
-**Rationale for speculative.** AI *decision* architecture is a contested
-space — Unity ships none in core (asset-store dependent), Bevy ships
-none, Godot ships an FSM via `AnimationTree` only. Picking a side
-speculatively is waste. (Steering was the exception: it *has* canon, so
-it shipped — see above.)
-
-**Canon.** Unreal `Behavior Tree` + `Blackboard`, Godot `LimboAI`
-(community), Halo / F.E.A.R. GOAP papers, behaviortree.cpp.
+**Canon.** Halo / F.E.A.R. GOAP papers, `goap` community libs; the FSM
+and BT canon now live in their own shipped modules.
 
 </details>
 
@@ -1314,7 +1335,8 @@ When any of the below becomes true, open a plan for the matching module.
 | Second debug-overlay consumer | `modules/debug` |
 | ✅ **SHIPPED 2026-09-20** — steering-behaviours canon (Reynolds; boids consumer) | `modules/steering` (split from `modules/ai`) |
 | ✅ **SHIPPED 2026-09-20** — FSM (stealth-guard 5-state; doom fitting 2nd) | `modules/fsm` (split from `modules/ai`) |
-| Second prototype with non-trivial AI (BT / GOAP) | `modules/ai` |
+| ✅ **SHIPPED 2026-09-21** — behaviour tree (critters needs-driven BT) | `modules/behavior-tree` (split from `modules/ai`) |
+| Prototype needing GOAP-style planning (preconditions/effects + A\*) | `modules/ai` (GOAP) |
 | Scoped multiplayer prototype | `modules/networking` |
 | Second local-multiplayer example beyond local-pong | Local-multiplayer player-slot helper |
 | **MET** — 3rd continuous→cell projection consumer | `ContinuousHashGrid2D` |

@@ -13,6 +13,7 @@
     "@pierre/ecs-example-boids": "*",
     "@pierre/ecs-example-breakout": "*",
     "@pierre/ecs-example-card-battler": "*",
+    "@pierre/ecs-example-critters": "*",
     "@pierre/ecs-example-doom": "*",
     "@pierre/ecs-example-flappy": "*",
     "@pierre/ecs-example-frogger": "*",
