@@ -228,6 +228,13 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`Easing`** _(type)_ — Maps normalized time `t ∈ [0, 1]` to eased progress (may overshoot for back/elastic).
 - **`linear`** _(const)_ — Identity — constant-speed interpolation.
 
+### `@pierre/ecs/modules/fsm`
+- **`Fsm`** _(interface)_ — A finite-state machine's runtime value: the state it's in and how long it has been there. Deliberately tiny and serialisable — the *behav...
+- **`FsmState`** _(interface)_ — One state's behaviour. `update` returns the next state key to transition, or `null` to stay. `onEnter` / `onExit` fire on transition boun...
+- **`FsmStates`** _(type)_ — The full state table: every key maps to its behaviour.
+- **`makeFsm`** _(fn)_ — A machine starting in `initial` with zero time-in-state.
+- **`tickFsm`** _(fn)_ — Advance a machine by one tick: accumulate time-in-state, run the current state's `update`, and on a returned key transition — run the old...
+
 ### `@pierre/ecs/modules/grid-based`
 - **`bresenhamLine`** _(fn)_ — —
 - **`computeFieldOfView`** _(fn)_ — Compute field-of-view tiles using recursive shadowcasting over 8 octants. Returns the visible tile coordinates for the current cast, incl...

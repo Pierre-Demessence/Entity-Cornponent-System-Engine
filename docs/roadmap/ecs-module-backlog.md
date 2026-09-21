@@ -811,6 +811,46 @@ component form yet; the pure-function surface is the proven shape.
 
 </details>
 
+### `modules/fsm` — ✅ shipped (2026-09-20)
+
+**Shipped** the finite-state-machine slice of AI. Tiny value primitive:
+`Fsm<TKey> { current, elapsedMs }` + `makeFsm` + `tickFsm(fsm, states,
+ctx, dtMs)`, with per-state `{ onEnter?, onExit?, update → nextKey |
+null }`@[`fsm/fsm.ts`](../../src/modules/fsm/fsm.ts). Zero dependencies,
+not a component (the `states` map holds closures — like `modules/timer`,
+the value goes wherever the app wants). Transition model (A) per-state
+`update`-returns-next was chosen over table-driven guards.
+
+**Consumer evidence (honest count).** FSM has **no canon** — no single
+library API is standard — so the rule of three applies. The genuine
+strong consumer is [`examples/stealth-guard`](../../examples/stealth-guard/):
+a 5-state guard brain (patrol → suspicious → chase → search → return)
+that exercises the *full* surface — `onEnter`/`onExit` (reset search
+target, pick nearest waypoint), `elapsedMs` time-in-state (confirm /
+forget / search timeouts), and composes `modules/steering` in `chase`.
+That is **1** full-surface consumer, so this ships slightly ahead of the
+strict 2-consumer bar; the surface is minimal (5 symbols) and trivially
+demotable, and doom is a fitting second (below). Flagged rather than
+buried.
+
+<details>
+<summary>doom as 2nd consumer + still-deferred</summary>
+
+**doom `ai.ts` — clean fit, migration deferred.** doom's enemy AI
+(idle/chase/attack) maps onto the `update`-returns-next subset (no
+`onEnter`/`onExit` needed) — a **behaviour-preserving** refactor, not a
+feel-changer, so it's a legitimate confirming 2nd consumer (unlike the
+steering non-fit). Deferred because doom is a complex, playtest-owned 3D
+example and the migration is a real `AiDef` schema change
+(`mode: number` → `current: string` + `elapsedMs`); left to a deliberate
+pass rather than bundled here.
+
+**Still deferred.** Hierarchical/nested states (HSM), parallel/history
+states, an `FsmDef` ECS-component wrapper — none has a consumer. The BT /
+GOAP siblings stay speculative (see `modules/ai`).
+
+</details>
+
 ### `modules/ai` — speculative (FSM / BT / GOAP; steering split off above)
 
 **Scope.** Generalized AI *decision* drivers — behavior trees, finite
@@ -1273,7 +1313,8 @@ When any of the below becomes true, open a plan for the matching module.
 | Stealth / line-of-sight prototype needing non-V1 algorithms | `modules/grid-based` V2 |
 | Second debug-overlay consumer | `modules/debug` |
 | ✅ **SHIPPED 2026-09-20** — steering-behaviours canon (Reynolds; boids consumer) | `modules/steering` (split from `modules/ai`) |
-| Second prototype with non-trivial AI (BT / FSM / GOAP) | `modules/ai` |
+| ✅ **SHIPPED 2026-09-20** — FSM (stealth-guard 5-state; doom fitting 2nd) | `modules/fsm` (split from `modules/ai`) |
+| Second prototype with non-trivial AI (BT / GOAP) | `modules/ai` |
 | Scoped multiplayer prototype | `modules/networking` |
 | Second local-multiplayer example beyond local-pong | Local-multiplayer player-slot helper |
 | **MET** — 3rd continuous→cell projection consumer | `ContinuousHashGrid2D` |

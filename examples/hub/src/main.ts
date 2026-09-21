@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids' | 'stealth-guard';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -166,6 +166,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'Steering-behaviours playground: 140 boids driven purely by composed Reynolds steering — separation / alignment / cohesion + wander + cursor-flee + food-arrive, neighbours from a spatial hash grid.',
     title: 'Boids (steering)',
     load: () => import('@pierre/ecs-example-boids/src/main.ts'),
+  },
+  {
+    id: 'stealth-guard',
+    controls: 'WASD / arrows to sneak, R reset',
+    summary: 'FSM playground: guards run a 5-state finite state machine (patrol → suspicious → chase → search → return) driven by a vision cone + line-of-sight; the chase state composes modules/steering. Sneak past without entering a cone.',
+    title: 'Stealth Guard (FSM)',
+    load: () => import('@pierre/ecs-example-stealth-guard/src/main.ts'),
   },
 ];
 
