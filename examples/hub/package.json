@@ -31,6 +31,7 @@
     "@pierre/ecs-example-spacewar": "*",
     "@pierre/ecs-example-starfighter": "*",
     "@pierre/ecs-example-stealth-guard": "*",
+    "@pierre/ecs-example-stress-storage": "*",
     "@pierre/ecs-example-tilemap": "*",
     "@pierre/ecs-example-top-down-shooter": "*",
     "@pierre/ecs-example-woodcutter": "*"

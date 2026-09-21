@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids' | 'stealth-guard' | 'critters' | 'woodcutter';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids' | 'stealth-guard' | 'critters' | 'woodcutter' | 'stress-storage';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -187,6 +187,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'GOAP planning playground: workers are given actions (get axe / chop / deliver) with preconditions/effects and a goal; an A* planner sequences them. After the first log a worker keeps its axe, so the planner drops the GetAxe step — the same goal, a different plan.',
     title: 'Woodcutter (GOAP)',
     load: () => import('@pierre/ecs-example-woodcutter/src/main.ts'),
+  },
+  {
+    id: 'stress-storage',
+    controls: 'Slider = entity count, checkbox = SoA storage',
+    summary: 'Storage benchmark (not a game): runs the same integrate-and-wrap sim over N entities two ways — the ECS Map store vs flat SoA typed arrays — with isolated sim/render/frame timings and a frame-time graph. Evidence for the deferred B1 (SoA hot-component storage) step.',
+    title: 'Storage stress (SoA vs Map)',
+    load: () => import('@pierre/ecs-example-stress-storage/src/main.ts'),
   },
 ];
 
