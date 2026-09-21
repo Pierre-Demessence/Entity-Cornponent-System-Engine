@@ -24,7 +24,7 @@ considered and rejected".
     - [`modules/camera` V2 — ✅ shipped 2026-07-18](#modulescamera-v2---shipped-2026-07-18)
     - [`RenderableDef` extensions V2 — ✅ shipped 2026-04-22](#renderabledef-extensions-v2---shipped-2026-04-22)
     - [`RenderableDef` extensions V3 — deferred](#renderabledef-extensions-v3--deferred)
-    - [`ContinuousHashGrid2D(cellSize)` — deferred](#continuoushashgrid2dcellsize--deferred)
+    - [`ContinuousHashGrid2D(cellSize)` — ✅ shipped 2026-06-07](#continuoushashgrid2dcellsize---shipped-2026-06-07)
     - [`modules/input` event-mode variant — deferred](#modulesinput-event-mode-variant--deferred)
     - [`modules/input` — pure `projectPointer` export — ✅ shipped 2026-07-18](#modulesinput--pure-projectpointer-export---shipped-2026-07-18)
   - [3D siblings — speculative](#3d-siblings--speculative)
@@ -44,7 +44,8 @@ considered and rejected".
     - [`modules/asset-loader` V1 — ✅ shipped 2026-04-24](#modulesasset-loader-v1---shipped-2026-04-24)
     - [`modules/asset-loader` V2 — deferred](#modulesasset-loader-v2--deferred)
     - [`modules/tmx` V1 — ✅ shipped 2026-04-24](#modulestmx-v1---shipped-2026-04-24)
-    - [`modules/tilemap` — deferred](#modulestilemap--deferred)
+    - [`modules/tilemap` — ✅ shipped 2026-06-07](#modulestilemap---shipped-2026-06-07)
+    - [`modules/tilemap` V2 — batched renderable (deferred)](#modulestilemap-v2--batched-renderable-deferred)
     - [`modules/pathfinding` V1 — ✅ shipped 2026-04-22](#modulespathfinding-v1---shipped-2026-04-22)
     - [`modules/pathfinding` V2 — deferred](#modulespathfinding-v2--deferred)
     - [`modules/grid-based` V1 — ✅ shipped 2026-04-23](#modulesgrid-based-v1---shipped-2026-04-23)
@@ -54,7 +55,7 @@ considered and rejected".
     - [`modules/networking` — speculative](#modulesnetworking--speculative)
     - [Local-multiplayer player-slot / input-owner helper — speculative](#local-multiplayer-player-slot--input-owner-helper--speculative)
   - [Gameplay \& utility modules — from the examples audit (2026-07-15)](#gameplay--utility-modules--from-the-examples-audit-2026-07-15)
-    - [`modules/collision` V2 — reflection response — deferred](#modulescollision-v2--reflection-response--deferred)
+    - [`modules/collision` V2 — reflection response — ✅ shipped 2026-06-06](#modulescollision-v2--reflection-response---shipped-2026-06-06)
     - [`modules/motion` — vector util (normalize / set-speed) — ✅ shipped 2026-07-15](#modulesmotion--vector-util-normalize--set-speed---shipped-2026-07-15)
     - [`modules/math` — ✅ shipped 2026-07-18](#modulesmath---shipped-2026-07-18)
     - [`modules/timer` — ✅ shipped 2026-07-16](#modulestimer---shipped-2026-07-16)
@@ -62,7 +63,7 @@ considered and rejected".
     - [`modules/cooldown` — ✅ shipped 2026-07-16](#modulescooldown---shipped-2026-07-16)
     - [`modules/grid-movement` — deferred](#modulesgrid-movement--deferred)
     - [`modules/rng` — ✅ shipped 2026-07-15](#modulesrng---shipped-2026-07-15)
-    - [`modules/attach` — deferred](#modulesattach--deferred)
+    - [`modules/attach` — ✅ shipped 2026-06-07](#modulesattach---shipped-2026-06-07)
     - [`modules/rhythm` — speculative](#modulesrhythm--speculative)
     - [App-host mount / teardown helper — speculative](#app-host-mount--teardown-helper--speculative)
   - [Non-goals (declined)](#non-goals-declined)
@@ -162,63 +163,73 @@ and plan
 
 ### `RenderableDef` extensions V3 — deferred
 
-**Scope.** Extensions to the `RenderableDef` union and
-`Canvas2DRenderer` not covered by V2: sprite/texture variant,
-tilemap variant, Canvas filters, a camera-independent **screen-space
-overlay pass** (HUD / chrome / game-over panels), and **honouring GID
-flip/rotation bits** in the sprite path.
+**Scope.** What remains of the original V3 list: **Canvas filters**
+(`ctx.filter`). Everything else has shipped — the sprite/texture variant,
+GID flip bits (including diagonal transpose, via the tilemap module's
+`tileTransform`), and the screen-space overlay pass. The batched tilemap
+renderable moved out to `modules/tilemap` V2.
 
 <details>
-<summary>Details</summary>
+<summary>Shipped + still deferred</summary>
 
-**Sprite / texture variant.** Canon is unanimous on the shape (Pixi
-`Sprite`, Phaser `Image` / `Sprite`, Unity `SpriteRenderer`, Bevy
-`SpriteBundle`), so it can ship on canon alone. Blocked on
-`modules/asset-loader` — shipping a sprite primitive before there's a way
-to load image assets is premature.
+**Sprite / texture variant — ✅ shipped.** `RenderableDef` carries the
+sprite variant and `Canvas2DRenderer` draws it with `drawImage` against
+atlas-frame source rects@[`canvas2d-renderer.ts`](../../src/modules/render-canvas2d/canvas2d-renderer.ts),
+resolved through the `SpriteFrameSource` / `ResolvedSpriteFrame` contract
+and `modules/texture-atlas`. Consumers: `examples/tilemap`,
+`examples/rpg`, and `modules/tilemap` itself.
 
-**Tilemap variant.** Novel enough to want a real consumer first — none
-yet; snake's cell-based rendering currently goes through `rect`.
+**GID flip bits — ✅ shipped 2026-06-07.** Added `flipH`/`flipV` to the
+`Renderable` sprite variant plus the flip transform in `Canvas2DRenderer`
+(`ctx2d.save/translate/scale/restore` for H/V). The tilemap example wired
+`TmxLayer.flags` → `Renderable.flipH`/`flipV`.
 
-**Canvas filters (`ctx.filter`).** Wait for a consumer. Blur, drop-shadow
-and similar post-processing effects are rarely used in practice;
-wait for a concrete request.
+**Screen-space overlay pass — ✅ shipped 2026-06-06.** `ScreenSpaceDef`
+marks entities for screen-pixel rendering, and `Canvas2DRenderer` runs a
+two-pass loop: world pass (through the camera `view`) then overlay pass
+(pixel coords, sorted by `RenderOrderDef`). local-pong migrated; snake
+can't cleanly adopt (its grid-coord `PositionDef` conflicts with the
+pixel-space renderer).
 
-**Snake ↔ `modules/render-canvas2d` migration.** Separately tracked
-under `modules/camera` V2 — blocked on V2 zoom so `Canvas2DRenderer`
-can apply the `cells → pixels` transform instead of every
-renderable multiplying by `CELL` by hand.
+**Tilemap variant.** Tracked as `modules/tilemap` V2 (batched
+renderable) — that entry owns the whole feature, renderer pass included.
+Novel-shape rule applies: wait for an authored tile grid where per-cell
+entities measurably hurt. Snake's cell-based rendering currently goes
+through `rect`.
 
-**Screen-space overlay pass — MET (2026-07-15).** Text and shape
-renderables (`text`/`rect`/`circle`/`polygon`) already ship in V2 —
-local-pong and snake just hand-draw instead (adoption follow-up). The
-genuine gap is a camera-independent overlay layer for HUD/score/chrome
-and full-screen panels (engine-gap-ledger; audit A7). Two consumers
-(local-pong, snake).
+**Canvas filters (`ctx.filter`) — still deferred.** Wait for a consumer.
+Blur, drop-shadow and similar post-processing effects are rarely used in
+practice; wait for a concrete request.
 
-**GID flip bits — ✅ shipped (2026-06-07).** Added `flipH`/`flipV` to the
-`Renderable` sprite variant + flip transform in `Canvas2DRenderer`
-(`ctx2d.save/translate/scale/restore` for H/V; diagonal transpose remains
-via `RotationDef`+`ScaleDef` as the RPG example already does). Tilemap
-example wired `TmxLayer.flags` → `Renderable.flipH`/`flipV`.
+**Snake ↔ `modules/render-canvas2d` migration — still deferred.**
+Separately tracked under `modules/camera` V2 — the `view`/zoom hook now
+exists, so snake needs to adopt a `CameraDef` zoom instead of baking the
+cells→pixels scale into every renderable by hand.
 
 </details>
 
-### `ContinuousHashGrid2D(cellSize)` — deferred
+### `ContinuousHashGrid2D(cellSize)` — ✅ shipped 2026-06-07
 
-**Scope.** Convenience wrapper around `HashGrid2D` + `cellOfPoint` /
-`cellsForAabb` / `cellsForCircle` so callers don't project continuous
-positions to cells by hand.
+**Shape.** `new ContinuousHashGrid2D(cellSize)`@[`continuous-hash-grid-2d.ts`](../../src/modules/spatial/continuous-hash-grid-2d.ts)
+— a `HashGrid2D` wrapper that accepts continuous `{x, y}` world positions
+and projects them to integer cell keys internally via `cellOfPoint`. Pairs
+with `makeGridSyncOnMove({ grid, cellSize })` so a hand-held grid keeps
+up with velocity-integrated motion.
+
+**Consumers.** Five: `examples/asteroids`@[`main.ts:44`](../../examples/asteroids/src/main.ts),
+`examples/boids`@[`main.ts:38`](../../examples/boids/src/main.ts),
+`examples/platformer`@[`main.ts:45`](../../examples/platformer/src/main.ts),
+`examples/spacewar`@[`main.ts:50`](../../examples/spacewar/src/main.ts),
+and `examples/top-down-shooter`@[`main.ts:87`](../../examples/top-down-shooter/src/main.ts).
+All replaced hand-rolled `cellOf` projection plus manual `grid.add(...)`.
 
 <details>
 <summary>Details</summary>
 
-**Trigger — MET (2026-07-15).** Third consumer landed: asteroids,
-platformer, and top-down-shooter all hand-roll the continuous→cell
-projection (engine-gap-ledger). Ready to build; not yet scheduled.
-
-**Rationale.** Deferred despite the canon: the composition-in-app pattern
-is explicit and debuggable, the wrapper would only hide one function call.
+**Why it shipped.** The "explicit and debuggable composition" argument for
+leaving the projection in app code lost to five consumers writing the
+identical wrapper. Platformer keeps `cellsForAabb` for multi-cell AABB
+indexing via the underlying `.grid`.
 
 </details>
 
@@ -649,44 +660,54 @@ sprite / texture-atlas consumer. See
 [src/modules/tmx/README.md](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/blob/main/src/modules/tmx/README.md).
 
 This ships the **load/parse** half only. The tile→ECS glue (one sprite
-entity per cell, layered via `RenderOrderDef`) deliberately stayed in
-the example as one-consumer integration code. A batched tilemap *renderable*
-that avoids per-tile entities is the distinct second-consumer concern
-tracked below.
+entity per cell, layered via `RenderOrderDef`) stayed in the example
+until `modules/tilemap` promoted it (next entry). A batched tilemap
+*renderable* that avoids per-tile entities is the distinct
+second-consumer concern, tracked as `modules/tilemap` V2 below.
 
-### `modules/tilemap` — deferred
+### `modules/tilemap` — ✅ shipped 2026-06-07
 
-**Scope.** `TilemapDef` + matching renderer pass for explicit authored
-tile grids (Zelda-likes, Tiled-imported levels). Would consume
-`modules/tmx` data but render a whole layer in one batched pass instead
-of spawning an entity per cell.
+**Shape.** `buildTilemapAtlas({ map, image, name }) =>
+TextureAtlasRegistry`,
+`spawnTilemap({ world, map, atlas, onTile?, anchor? }) => number`,
+`buildCollisionGrid(map, { floorGids, walkablePropGids }) =>
+CollisionGrid`, `tileTransform(flags) => { angle, sx, sy }`@[`tilemap/`](../../src/modules/tilemap/).
 
-**Trigger update (2026-04-24).** `examples/tilemap` proved the
-per-cell-entity approach renders correctly (~10k entities) but is
-wasteful; a second authored-tile-grid prototype is the trigger for the
-batched renderable.
+**Consumers.** `examples/rpg`@[`map.ts`](../../examples/rpg/src/map.ts)
+(atlas + collision grid + `spawnTilemap` with a per-tile `onTile`
+transform hook) and `examples/tilemap`@[`main.ts`](../../examples/tilemap/src/main.ts)
+(atlas + `spawnTilemap`). Both replaced hand-rolled tile→entity
+auto-spawn and collision-layer derivation.
 
-**Trigger — MET (2026-07-15).** `examples/rpg` is the second
-authored-tile-grid consumer (engine-gap-ledger B15): both rpg and tilemap
-hand-roll tile→entity auto-spawn + collision-layer derivation. Ready to
-build; not yet scheduled.
+Plan: [../plans/done/tilemap-module.md](../plans/done/tilemap-module.md).
+
+### `modules/tilemap` V2 — batched renderable (deferred)
+
+**Scope.** `TilemapDef { widthTiles, heightTiles, tileW, tileH, data }`
+plus a matching renderer pass, so a whole layer draws in one batched pass
+instead of one entity per cell.
 
 <details>
 <summary>Details</summary>
 
+**Rationale.** V1 spawns a sprite entity per non-empty tile — proven
+correct at ~10k entities (`examples/tilemap`) but wasteful in entity
+count, query cost, and draw calls. A batched renderable is the canonical
+fix (Unity `Tilemap`, Godot `TileMap`, Phaser `Tilemap`).
+
 **Probable shape.** `TilemapDef { widthTiles, heightTiles, tileW, tileH, data }`
 with a matching renderer pass. Distinct from the roguelike's `GameMap`
-(app-layer, narrative-tile) and distinct from `modules/spatial` (which
-indexes entities, not tiles).
+(app-layer, narrative-tile) and from `modules/spatial` (which indexes
+entities, not tiles).
 
-**Trigger.** A prototype that has explicit authored levels rendered as
-a grid of tiles (e.g. a Zelda-like, a roguelite with handcrafted rooms,
-a platformer with Tiled-authored levels). Current platformer uses
-procedurally-placed AABB platforms, so it doesn't qualify yet.
+**Trigger.** A prototype whose authored tile grid is large enough that
+per-cell entities measurably hurt. `examples/tilemap` already bakes its
+static ~10k-tile map to one offscreen bitmap — the consumer-side
+workaround this would replace. Current platformer uses
+procedurally-placed AABB platforms, so it doesn't qualify.
 
-**Canon.** Unity `Tilemap`, Godot `TileMap`, Phaser `Tilemap`, Tiled
-editor as the external authoring tool (`.tmx` parsing already lands in
-`modules/tmx`).
+**Canon.** Unity `Tilemap`, Godot `TileMap`, Phaser `Tilemap`, with Tiled
+as the external authoring tool (`modules/tmx` already parses it).
 
 </details>
 
@@ -998,25 +1019,27 @@ trigger ("MET") and are ready-to-build candidates. Nothing here is
 scheduled — promotion records a backlog home and a met bar, it does not
 authorise a build.
 
-### `modules/collision` V2 — reflection response — deferred
+### `modules/collision` V2 — reflection response — ✅ shipped 2026-06-06
 
-**Scope.** Resolve a circle/AABB overlap into a corrected position **plus
-a reflected velocity** (axis-of-least-penetration bounce), complementing
-the shipped `modules/kinematics` push-out which zeroes velocity.
+**Shape.** `reflect(v, normal)` — reflect a velocity off a **unit-length**
+normal — plus `bounceOffAabb(mover, vel, obstacle)`, an AABB overlap
+resolver returning MTV push-out plus the reflected velocity@[`narrowphase.ts`](../../src/modules/collision/narrowphase.ts).
+
+**Consumer.** `examples/breakout`@[`systems.ts:168`](../../examples/breakout/src/systems.ts)
+replaced its hand-rolled centre-distance overlap with `bounceOffAabb`.
 
 <details>
 <summary>Details</summary>
 
-**Trigger — MET (3 consumers).** breakout, local-pong, and frogger
-(partial) hand-roll axis-of-least-penetration reflection
-(engine-gap-ledger). `modules/kinematics` already does push-out +
-velocity-zero (platformer landing), but a bouncing ball needs the
-velocity **reflected**, not zeroed — a distinct response.
+**Shipped shape vs. the sketch.** The planned
+`resolveReflect(aabb, circle | aabb) => { dx, dy, nx, ny }` landed as two
+smaller pieces: a pure `reflect` plus an AABB-specific `bounceOffAabb`.
+No separate circle resolver — the circle case composes the shipped
+overlap tests (`aabbVsCircle` / `circleVsCircle`) with `reflect`.
 
-**Probable shape.** A `resolveReflect(aabb, circle | aabb) => { dx, dy,
-nx, ny }` helper (penetration vector + surface normal) the caller
-applies to position and uses to flip the velocity component along the
-normal. Pairs with the shipped `aabbVsCircle` / `aabbVsAabb` tests.
+**Non-adopters (verified).** local-pong keeps `Math.abs` for its
+axis-aligned wall bounce (simpler for that case); frogger does not bounce
+at all.
 
 **Canon.** Arcade bounce in Phaser `Arcade.Physics` (`bounce`), Unity 2D
 `PhysicsMaterial2D` bounciness, classic Breakout/Pong reflection.
@@ -1047,14 +1070,29 @@ rpg drop private `clamp`s), the #7 spawner ramps refactored to
 `lerp`/`remap`. `moveToward`→motion/`vec` (vector form); `sign` native.
 The original boundary-inset analysis is kept below as the reshape record.
 
-### `modules/motion` — boundary inset / per-entity size — deferred
+### `modules/motion` — boundary inset / per-entity size — superseded (2026-07-18)
 
-**Scope.** Extend the shipped `VelocityIntegrationBoundary` so `clamp`
-can pin to an inset range `[inset, width−inset]` (or a per-entity
-half-extent) instead of only the playfield `[0, width]` point range.
+**Scope.** Extending `VelocityIntegrationBoundary`'s `clamp` mode so it can
+pin to an inset range (`[inset, width − inset]`) or a per-entity
+half-extent, instead of only the raw playfield point range.
+
+**Status — superseded, not pursued.** The size/margin-aware clampers that
+motivated it now clamp directly with `modules/math`'s `clamp`
+(`clamp(value, half, width − half)`) rather than routing a clamp through the
+velocity integrator. An `inset` / `halfExtentOf` option on `boundary` would
+express nothing `clamp` does not, so the extension is dropped rather than
+deferred. The shipped `clamp` mode (`integrateBoundary`@`src/modules/motion/motion.ts:51`,
+`Bounds = { width, height }`@:7) keeps pinning the origin point to
+`[0, width] × [0, height]`, which the full-playfield clampers (asteroids,
+top-down-shooter) adopt as-is.
+
+**Canon.** Every paddle/player-confine in arcade engines clamps to the
+sprite extent, not the raw playfield edge (Pong, Breakout, Arkanoid,
+Space Invaders cannon rails) — which is why `clamp` is the right home for it
+rather than a new boundary mode.
 
 <details>
-<summary>Details</summary>
+<summary>Reshape record (original analysis)</summary>
 
 **Trigger — MET (4 consumers).** The shipped `clamp` mode
 (`integrateBoundary`@`src/modules/motion/motion.ts:51`, `Bounds =
@@ -1066,14 +1104,12 @@ paddle (`[half, width−half]`), frogger, local-pong paddles, and
 space-invaders cannon all need the sprite's half-width subtracted
 (engine-gap-ledger B4 split, 2026-07-15).
 
-**Probable shape.** Add an optional `inset?: number` (uniform) or
-`halfExtentOf?: (e) => { x, y }` to the `clamp` branch of
+**Probable shape (not taken).** Add an optional `inset?: number` (uniform)
+or `halfExtentOf?: (e) => { x, y }` to the `clamp` branch of
 `VelocityIntegrationBoundary`@`motion.ts:15`; the wrap branch is
-unaffected. No new component — it rides the existing `boundary` option.
-
-**Canon.** Every paddle/player-confine in arcade engines clamps to the
-sprite extent, not the raw playfield edge (Pong, Breakout, Arkanoid,
-Space Invaders cannon rails).
+unaffected. Rejected: the dual-sided check found **0** consumers routing a
+size-aware clamp through the integrator, so `modules/math`'s pure `clamp`
+shipped instead.
 
 </details>
 
@@ -1198,30 +1234,33 @@ See
 and plan
 [../plans/done/modules-rng.md](../plans/done/modules-rng.md).
 
-### `modules/attach` — deferred
+### `modules/attach` — ✅ shipped 2026-06-07
 
-**Scope.** Lightweight follow / carrier attachment: entity B inherits
-entity A's per-tick delta (carrier) or tracks A's position/rotation each
-frame (follower). The *narrow* slice of parenting, without full
-recursive transform propagation.
+**Shape.** `AttachDef` — which entity to follow, plus `snapPosition` /
+`snapRotation` flags — with a `makeAttachSystem({ runAfter })` factory and
+an `inheritVelocity` option@[`attach/`](../../src/modules/attach/).
+
+**Consumers.** `examples/asteroids`@[`main.ts:63`](../../examples/asteroids/src/main.ts)
+(thrust flame follows the ship's position and rotation; its flame system
+reduced to an opacity toggle) and `examples/spacewar`@[`main.ts:5`](../../examples/spacewar/src/main.ts).
 
 <details>
 <summary>Details</summary>
 
-**Trigger — MET (3 consumers).** frogger (frog riding a moving log/turtle
-inherits the carrier's `vx·dt`), asteroids (thrust flame tracks the
-ship's pos/rot), and space-invaders (follower) — engine-gap-ledger
-(rider row + B12).
-
-**Probable shape.** `AttachDef { to: EntityId, mode: 'carry' | 'follow',
-offset? }` + a system that, per tick, either adds the carrier's
-position delta (carry — moving platforms, conveyor belts, logs) or sets
-pos/rot to the target's plus an offset (follow — turrets, flames, escort
-sprites). No dirty-tracking, no cyclic-chain machinery.
+**Shipped shape vs. the sketch.** The planned
+`AttachDef { to, mode: 'carry' | 'follow', offset? }` landed as
+`snapPosition` / `snapRotation` flags plus `inheritVelocity` rather than a
+`mode` discriminant — one component covering both the follow (track
+position/rotation) and carrier (inherit a velocity contribution) cases.
 
 **Relation to the declined hierarchy item.** This *re-opens* the
 "Entity hierarchy / parenting" Non-goal in its lighter form — see that
-entry. The full recursive N-level propagation version stays declined.
+entry. Full recursive N-level propagation stays declined.
+
+**Not yet exercised.** The carrier / `inheritVelocity` path has no
+confirmed adopter: the original rider motivation (frogger's moving log)
+is unverified as migrated, and space-invaders had no active attach
+pattern.
 
 **Canon.** Godot `RemoteTransform2D`, Unity simple follow scripts /
 `ParentConstraint`, moving-platform rider patterns in every 2D platformer.
@@ -1371,17 +1410,18 @@ When any of the below becomes true, open a plan for the matching module.
 | Prototype with fuzzy trade-off choices (utility scoring) or authored task decomposition (HTN) | `modules/ai` (Utility AI / HTN) |
 | Scoped multiplayer prototype | `modules/networking` |
 | Second local-multiplayer example beyond local-pong | Local-multiplayer player-slot helper |
-| **MET** — 3rd continuous→cell projection consumer | `ContinuousHashGrid2D` |
-| **MET** — bounce/reflection response in 3 consumers | `modules/collision` V2 (reflection) |
+| ✅ **SHIPPED 2026-06-07** — continuous→cell projection (5 consumers) | `ContinuousHashGrid2D` |
+| ✅ **SHIPPED 2026-06-06** — bounce/reflection response (breakout) | `modules/collision` V2 (reflection) |
 | ✅ **SHIPPED 2026-07-18** — scalar math: clamp + interpolation (9 consumers) | `modules/math` |
 | ✅ **SHIPPED 2026-07-17** — timed spawn cadence (4 consumers) | `modules/spawner` |
 | ✅ **SHIPPED 2026-07-16** — cooldown / grace timer (3 poll/trigger consumers) | `modules/cooldown` (+ `modules/timer` core) |
 | **MET** — discrete grid movement in 3 consumers | `modules/grid-movement` |
-| **MET** — follow/carrier attach in 3 consumers | `modules/attach` |
+| ✅ **SHIPPED 2026-06-07** — follow/carrier attach (asteroids, spacewar) | `modules/attach` |
 | ✅ **SHIPPED 2026-07-18** — FX bursts (3 hand-rollers + 1 adopter) | `modules/particles` |
 | ✅ **SHIPPED 2026-07-18** — renderer camera-consume + off-screen cull (rpg, tilemap) | `modules/camera` V2 |
-| **MET** — screen-space HUD/overlay in 2 consumers | `RenderableDef` V3 overlay |
-| **MET** — 2nd authored tile-grid (auto-spawn) | `modules/tilemap` |
+| ✅ **SHIPPED 2026-06-06** — screen-space overlay pass (local-pong) | `ScreenSpaceDef` (`RenderableDef` V3) |
+| ✅ **SHIPPED 2026-06-07** — auto-spawn + collision-grid (rpg, tilemap) | `modules/tilemap` |
+| Authored tile grid where per-cell entities measurably hurt | `modules/tilemap` V2 (batched renderable) |
 | Rhythm/timing prototype beyond `examples/rhythm` | `modules/rhythm` (speculative) |
 | Second app-host beyond `examples/hub` | App-host helper (speculative) |
 
