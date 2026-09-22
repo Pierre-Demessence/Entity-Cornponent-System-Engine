@@ -1,7 +1,7 @@
 import type { GameState, Platformer3DEvent, PlatformerAction } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
-import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { createInput, Key, KeyboardProvider, MouseLookProvider } from '@pierre/ecs/modules/input';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import { Position3DDef } from './components';
@@ -74,27 +74,21 @@ export function start(container: HTMLElement): () => void {
 
   resetGame(state);
 
-  // Pointer lock: clicking the canvas captures the cursor so the user
-  // can spin the camera indefinitely without hitting the screen edge.
-  // Pressing Esc (browser-handled) releases it.
-  renderer.domElement.style.cursor = 'grab';
-  const requestLock = (): void => {
-    // Some browsers return a promise that rejects if the user denies
-    // the gesture; swallow — there's nothing meaningful to do.
-    void renderer.domElement.requestPointerLock?.();
+  // Pointer lock: clicking the canvas captures the cursor so the user can spin
+  // the camera indefinitely without hitting the screen edge, and it swaps in a
+  // grab hand while released. Esc (browser-handled) releases it.
+  const look = new MouseLookProvider({
+    cursor: { locked: 'none', unlocked: 'grab' },
+    sensitivity: CAMERA_MOUSE_SENSITIVITY,
+    target: renderer.domElement,
+  });
+  look.subscribe(({ x }) => {
+    state.cameraYaw -= x;
+  });
+  const onCaptureClick = (): void => {
+    look.requestLock();
   };
-  const onPointerMove = (e: PointerEvent): void => {
-    if (document.pointerLockElement !== renderer.domElement)
-      return;
-    state.cameraYaw -= e.movementX * CAMERA_MOUSE_SENSITIVITY;
-  };
-  const onLockChange = (): void => {
-    const locked = document.pointerLockElement === renderer.domElement;
-    renderer.domElement.style.cursor = locked ? 'none' : 'grab';
-  };
-  renderer.domElement.addEventListener('click', requestLock);
-  renderer.domElement.addEventListener('pointermove', onPointerMove);
-  document.addEventListener('pointerlockchange', onLockChange);
+  renderer.domElement.addEventListener('click', onCaptureClick);
 
   const scheduler = new Scheduler<GameState>()
     .add(inputSystem)
@@ -134,11 +128,8 @@ export function start(container: HTMLElement): () => void {
   renderTickSource.start();
 
   return (): void => {
-    renderer.domElement.removeEventListener('click', requestLock);
-    renderer.domElement.removeEventListener('pointermove', onPointerMove);
-    document.removeEventListener('pointerlockchange', onLockChange);
-    if (document.pointerLockElement === renderer.domElement)
-      document.exitPointerLock?.();
+    renderer.domElement.removeEventListener('click', onCaptureClick);
+    look.dispose();
     unsubCollected();
     unsubFell();
     input.dispose();

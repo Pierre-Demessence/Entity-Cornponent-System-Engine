@@ -151,30 +151,6 @@ collision, GameMaker, every Celeste-lineage platformer tutorial.
 
 </details>
 
-### `modules/input` V2 — pointer-lock relative look — deferred
-
-**Scope.** A first-person / orbit look provider: capture the cursor, map
-`movementX`/`movementY` to yaw (plus optional pitch) with a sensitivity
-factor and a pitch clamp.
-
-<details>
-<summary>Details</summary>
-
-**Trigger.** Met — three consumers, all hand-rolled. platformer-3d
-`main.ts:89` (`cameraYaw -= e.movementX * CAMERA_MOUSE_SENSITIVITY`, yaw
-only); portal `main.ts:107` (yaw **and** pitch, clamped); doom `main.ts:116`
-(yaw + pitch + clamp).
-
-**Why it isn't just `PointerProvider`.** `modules/input` ships a Pointer
-provider with an absolute `PointerState`; a grep of `src/modules/input`
-finds no `movementX`, no pointer lock, no yaw. Relative-look is a different
-capability, not a flag on the existing provider.
-
-**Distinct from the event-mode variant above**, which is a turn-based input
-question, not a real-time one.
-
-</details>
-
 ### `modules/tick` V2 — fixed-timestep accumulator + interpolation — deferred
 
 **Scope.** A tick source that consumes real elapsed time, advances the world
@@ -320,9 +296,8 @@ similar). Until then, the 2D stack is the only stack. The gap ledger already
 records the duplicated work, which makes this the largest de-facto demand
 cluster in the file: **4 consumers** hand-roll the entity↔mesh sync
 (platformer-3d, portal, doom, starfighter), **3** the 3D AABB solver
-(platformer-3d, portal, doom), **3** pointer-lock look (now homed at
-`modules/input` V2), **2** a ray-vs-AABB test, and **2** a `Vec3`/`Quat`
-library.
+(platformer-3d, portal, doom), **2** a ray-vs-AABB test, and **2** a
+`Vec3`/`Quat` library.
 
 **Rules (re-affirmed from the shipped plan).**
 
@@ -1128,7 +1103,6 @@ signal's absence from this table means it already produced a module.
 | Prototype needing branching dialogue (choices, or lines gated on world state) | `modules/dialogue` (speculative) |
 | Prototype needing picking / hitscan / line-of-sight rays | `modules/collision` V2 |
 | Prototype needing slopes or one-way platforms | `modules/kinematics` V2 |
-| First-person or orbit camera look | `modules/input` V2 |
 | Frame-rate-independent physics determinism | `modules/tick` V2 |
 | A second radial-gravity consumer | `modules/motion` V2 |
 | A game about darkness or light | `modules/lighting` (speculative) |

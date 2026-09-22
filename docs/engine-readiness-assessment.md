@@ -202,7 +202,7 @@ without a core change.
 mesh renderer, and no `Vec3` or quaternion type. Per the ledger,
 `platformer-3d`, `portal`, `doom`, and `starfighter` each hand-roll a
 three.js scene plus entity↔mesh sync *and* a duplicated 3D AABB solver
-*and* pointer-lock look *and* ray-vs-AABB. Beyond that: no terrain or
+*and* ray-vs-AABB. Beyond that: no terrain or
 voxel system, no water or volumetric rendering, no navmesh, no world
 streaming, and no rigid bodies for the submersible.
 
@@ -251,7 +251,7 @@ Ordered by games unlocked per unit of work.
 
 | Move | Unlocks | Cost |
 | --- | --- | --- |
-| Promote the 3D stack that four examples already duplicate — `transform-3d`, 3D broadphase, 3D character controller, entity↔mesh sync, `Vec3`/`Quat`, pointer-lock look, ray-vs-AABB | Subnautica-class 3D; stops active consumer drift | Large |
+| Promote the 3D stack that four examples already duplicate — `transform-3d`, 3D broadphase, 3D character controller, entity↔mesh sync, `Vec3`/`Quat`, ray-vs-AABB | Subnautica-class 3D; stops active consumer drift | Large |
 | SoA hot-component storage (step B1) alone — worth it single-threaded, before any parallelism | VS at scale; Factorio step 1 | Large |
 | Entity pooling + archetype cache (core roadmap 3.1 / 3.2) | VS at ship scale; any spawn-heavy genre | Mid |
 | Slopes + one-way platforms + ray-vs-AABB | Hollow Knight to a comfortable yes | Small–mid |

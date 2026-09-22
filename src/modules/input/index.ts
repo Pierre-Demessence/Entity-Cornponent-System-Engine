@@ -20,6 +20,14 @@ export {
   type KeyboardProviderOptions,
 } from './keyboard-provider';
 export {
+  type LockSource,
+  type LookDelta,
+  type MouseLookOptions,
+  MouseLookProvider,
+  type MouseLookState,
+  type MouseLookTarget,
+} from './mouse-look';
+export {
   Pointer,
   type PointerCode,
   type PointerProjector,

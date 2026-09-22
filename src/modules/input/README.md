@@ -1,10 +1,10 @@
 # `@pierre/ecs/modules/input`
 
 Action-map + edge-detected input state with pluggable raw-event providers.
-Ships DOM `KeyboardProvider` and `PointerProvider` out of the box;
-custom providers (gamepad, touch extensions, synthetic test harness)
-plug in by implementing the tiny `InputProvider` interface from
-`@pierre/ecs/input-source`.
+Ships DOM `KeyboardProvider`, `PointerProvider`, `GamepadProvider` and
+`MouseLookProvider` out of the box; custom providers (touch extensions,
+synthetic test harness) plug in by implementing the tiny `InputProvider`
+interface from `@pierre/ecs/input-source`.
 
 Canon pattern: Bevy `bevy_input`, Unity `InputSystem`, Godot `InputMap`.
 
@@ -122,8 +122,9 @@ Edges are **action-level**, not code-level:
 - OS-level key repeat is filtered twice: `KeyboardProvider` drops events
   with `event.repeat`, and `createInput` additionally dedupes repeated
   `down` events per code.
-- No axis/analog support in v1. Gamepad sticks + mouse deltas are a
-  future Path-A addition once a real consumer lands.
+- No axis/analog support in `InputState<T>`. Gamepad sticks ship in
+  `GamepadProvider` and relative mouse deltas in `MouseLookProvider`;
+  action-map state stays cleanly digital.
 - No global `preventDefault` toggling — pass an explicit list (or empty
   array) via `KeyboardProvider` options to control it.
 
@@ -239,10 +240,97 @@ headless environments.
 ### Pointer scope
 
 - v1 is position + over-flag + buttons 0/1/2, nothing else.
-- No scroll/wheel, no pointer-lock helper, no multi-touch or gesture
-  helpers — these are deferred until a real consumer lands. Single-
-  finger touch already works via Pointer Events.
+- No scroll/wheel, no multi-touch or gesture helpers — these are deferred
+  until a real consumer lands. Pointer lock lives in `MouseLookProvider`
+  (below). Single-finger touch already works via Pointer Events.
 - Analog position lives on `provider.state`, not inside `InputState<T>`
   — action-map state stays cleanly digital.
 
 [Pointer Events]: https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events
+
+## Relative look (pointer lock)
+
+`MouseLookProvider` captures the pointer on request and reports how far it moved
+since the previous event, as radians. That makes it a third shape next to the
+two above: `InputProvider` carries discrete down/up, `PointerProvider` an
+absolute position, and this one a *relative* delta.
+
+```ts
+import { MouseLookProvider } from '@pierre/ecs/modules/input';
+import { clamp } from '@pierre/ecs/modules/math';
+
+const look = new MouseLookProvider({
+  sensitivity: 0.0022, // radians per CSS pixel
+  target: canvas,
+});
+
+// The capture gesture is yours to bind — it usually shares a click with
+// something else (firing, a UI button).
+canvas.addEventListener('mousedown', (e) => {
+  if (e.button === 0)
+    look.requestLock();
+});
+
+look.subscribe(({ x, y }) => {
+  camera.yaw -= x;
+  camera.pitch = clamp(camera.pitch - y, -MAX_PITCH, MAX_PITCH);
+});
+
+// Teardown detaches every listener and releases the lock.
+look.dispose();
+```
+
+### Why it is not an `InputProvider`
+
+`InputProvider` emits discrete `down` / `up` events for `createInput` to map to
+named actions. Relative look is continuous and has no action to map to, so it
+gets its own `subscribe` channel — the same split `PointerProvider` uses for its
+position surface, which also sits outside `InputState`.
+
+### Deltas arrive at event time
+
+`subscribe` fires inside the motion handler, not at the tick boundary, so a
+consumer that applies the delta immediately gets motion *between* ticks instead
+of quantised to the tick rate. A tick-polled form is two lines of composition —
+accumulate in the handler, read and zero it in your system — so it is
+deliberately not shipped.
+
+### Locking behaviour
+
+- Motion is ignored while an element other than `target` holds the lock — an
+  overlay, or a second provider capturing the same pointer — so it cannot steer
+  the camera.
+- `requestLock()` is a no-op when the lock is already held, and never surfaces an
+  unhandled rejection when a browser denies the gesture.
+- `dispose()` detaches everything and releases the lock; afterwards the provider
+  is inert — a repeat `dispose()`, `requestLock()` and `unlock()` all no-op, and
+  a handler registered later never fires.
+- The DOM confirms a release asynchronously, so `unlock()` immediately followed
+  by `dispose()` may request the exit twice; the second request is redundant.
+- `options.cursor = { locked: 'none', unlocked: 'grab' }` swaps the cursor on
+  lock change. Omit it and the provider never touches the target's style.
+- `options.invertY` flips only the vertical axis.
+
+### Relative-look scope
+
+- `sensitivity` is applied by the provider, so with the documented
+  radians-per-pixel value the deltas arrive as radians. It is a bare number, so
+  the unit is a convention you choose. The screen-space sign is fixed — `x`
+  grows to the right, `y` downward unless `invertY` — but what that means for
+  your yaw/pitch is yours: `yaw -= x` and `yaw += x` are both caller choices.
+- A motion event carrying no delta emits nothing, so `sensitivity: 0` silences
+  the stream entirely rather than emitting zeroes.
+- **No yaw/pitch storage.** The provider does not own your camera angles, because
+  consumers need to write them too (portal's teleport rewrites yaw/pitch after a
+  portal crossing). A first-person camera rig belongs with the planned 3D camera
+  module.
+- Orbit / turntable look (drag rather than capture) is not here — it is a camera
+  rig, not an input source.
+- No touch-look and no gyro.
+- **A lock source is required.** With `options.lockSource: null` (or in an
+  environment with no `document` at all) the provider never reports a lock and
+  refuses to capture, because capturing blind could strand the pointer with no
+  way to release it.
+- jsdom and other headless environments ship no pointer-lock API — `document`
+  exists there, so the default lock source is non-null but never reports a lock.
+  Pass `options.lockSource` with a `pointerLockElement` property in tests.

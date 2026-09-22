@@ -1,7 +1,8 @@
 import type { DoomAction, DoomEvent, GameState } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
-import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { createInput, Key, KeyboardProvider, MouseLookProvider } from '@pierre/ecs/modules/input';
+import { clamp } from '@pierre/ecs/modules/math';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import { HealthDef, Position3DDef } from './components';
@@ -106,28 +107,25 @@ export function start(container: HTMLElement): () => void {
 
   resetGame(state);
 
-  // Pointer lock: click to capture the cursor, then mouse drives yaw + pitch.
-  const requestLock = (): void => {
-    void Promise.resolve(renderer.domElement.requestPointerLock?.()).catch(() => undefined);
-  };
-  const onMouseMove = (e: MouseEvent): void => {
-    if (document.pointerLockElement !== renderer.domElement)
-      return;
-    state.yaw -= e.movementX * MOUSE_SENSITIVITY;
-    state.pitch -= e.movementY * MOUSE_SENSITIVITY;
-    if (state.pitch > MAX_PITCH)
-      state.pitch = MAX_PITCH;
-    else if (state.pitch < -MAX_PITCH)
-      state.pitch = -MAX_PITCH;
-  };
+  // Pointer lock: the LMB press captures the cursor, then the mouse drives
+  // yaw + pitch. Esc (browser-handled) releases it.
+  const look = new MouseLookProvider({
+    sensitivity: MOUSE_SENSITIVITY,
+    target: renderer.domElement,
+  });
+  look.subscribe(({ x, y }) => {
+    state.yaw -= x;
+    state.pitch = clamp(state.pitch - y, -MAX_PITCH, MAX_PITCH);
+  });
   const onMouseDown = (e: MouseEvent): void => {
     if (e.button !== 0)
       return;
-    // The click that captures the cursor shouldn't also fire a shot.
-    if (document.pointerLockElement === renderer.domElement)
+    // The click that captures the cursor shouldn't also fire a shot: the lock
+    // is granted asynchronously, so `locked` is still false right here.
+    if (look.state.locked)
       state.firing = true;
     else
-      requestLock();
+      look.requestLock();
   };
   const onMouseUp = (e: MouseEvent): void => {
     if (e.button === 0)
@@ -135,7 +133,6 @@ export function start(container: HTMLElement): () => void {
   };
   renderer.domElement.addEventListener('mousedown', onMouseDown);
   document.addEventListener('mouseup', onMouseUp);
-  document.addEventListener('mousemove', onMouseMove);
 
   const scheduler = new Scheduler<GameState>()
     .add(inputSystem)
@@ -182,11 +179,9 @@ export function start(container: HTMLElement): () => void {
 
   return (): void => {
     input.dispose();
+    look.dispose();
     renderer.domElement.removeEventListener('mousedown', onMouseDown);
     document.removeEventListener('mouseup', onMouseUp);
-    document.removeEventListener('mousemove', onMouseMove);
-    if (document.pointerLockElement === renderer.domElement)
-      document.exitPointerLock?.();
     unsubscribeRender();
     renderTickSource.stop();
     tickRunner.stop();
