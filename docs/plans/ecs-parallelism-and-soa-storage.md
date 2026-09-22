@@ -39,11 +39,19 @@ One line per task; the detail lives in the linked sections. `[x]` done,
       default, keeps id-refs / counters exact), `'f32'` opt-in for hot spatial
       fields (Position / Velocity)
 
-### B1 → "Ideal" (later, gradual, no storage redo) ([detail](#the-path-to-ideal-later-gradual-no-storage-redo))
+### Storage architecture beyond Middle — logged (strategic) ([detail](#the-path-beyond-middle--storage-architecture-logged))
 
-- [ ] Columnar query that yields columns/slots (no per-entity object)
-- [ ] Migrate hot systems from view-style to column-loop-style, incrementally
-- [ ] Demote object-tuple `get()` / `query` to the escape-hatch default
+- [x] Single-component columnar iteration — already works (`getColumnStore` +
+      `column()` + dense slots); multi-component uses the per-entity slot
+      gather (`slotOf`), as `motion.ts` does
+- Cheaper view construction — **declined**: fast prototype accessors silently
+  break spread / `Object.keys`; the non-breaking fix needs `new Function`; and
+  the query fix already cut most view churn.
+- [ ] Archetype *cache* (core roadmap §3.1) — cache query matches; lighter
+      middle step, no storage rewrite
+- [ ] Full archetype tables + sparse-set ("both", Bevy-style) — the top-tier
+      endgame: co-located columns → gather-free multi-component iteration, at
+      the cost of expensive add/remove-component; a storage-engine rewrite
 
 ### A — message-passing worker offload (module) ([detail](#a--message-passing-worker-offload-module))
 
@@ -339,17 +347,40 @@ component immediately (its stored data is no longer objects), and the
   tuples from the columns → **save format is byte-identical** to the object
   store's; a parity test enforces it.
 
-### The path to Ideal (later, gradual, no storage redo)
+### The path beyond Middle — storage architecture (logged)
 
-Ideal = the **query itself yields columns**, systems are written as column
-loops by default, and `get(id)` is demoted to an escape hatch. Middle
-already builds every storage piece Ideal needs; the only remaining step is
-reshaping `world.query` to yield columns and migrating systems from
-view-style to column-loop-style **one at a time** — both read the same
-columnar storage underneath, so nothing built in Middle is thrown away (the
-view API survives as the escape hatch). An independent cheap win that also
-serves Ideal: `query.ts` allocates `Array.from({ length })` **per entity
-per tick** — worth removing on its own.
+Middle's columnar storage already delivers the achievable "Ideal" for a
+**sparse-set** engine: **single-component** iteration is a dense column loop
+(`getColumnStore` + `column()`, slots `[0, size)`), and **multi-component**
+iteration is the per-entity slot gather (`slotOf` per store), which
+`motion.ts` uses. What Middle does *not* give — and cannot without an
+architecture change — is Bevy/DOTS-style **gather-free** multi-component
+iteration, because that needs components of the same entity **co-located** in
+one table.
+
+The ladder, cheapest to biggest:
+
+1. **Sparse-set + columnar (shipped).** Per-entity gather on multi-component
+   queries. Cheap add/remove-component (O(1), no entity move).
+2. **Archetype *cache*** (core roadmap §3.1). Cache *which entities match a
+   query* (invalidate on structural change) so queries stop re-intersecting
+   stores each frame. Data stays in sparse-set columns — the gather remains.
+   A matching win without a storage rewrite.
+3. **Full archetype tables.** Group entities by component set; store each
+   archetype's components as aligned columns → a single-index loop, no gather.
+   The big iteration win, but **add/remove-component becomes a structural
+   move** (copy the entity between tables).
+4. **Both — archetype tables + sparse-set option (Bevy endgame).** Let each
+   component pick table vs sparse storage. The top-tier target, and the
+   *most* work: it's the full archetype system **plus** sparse-set within it,
+   not a middle ground.
+
+**Not breaking to consumers** if pursued: like the columnar work, an archetype
+rewrite can keep the `query` / `get` / `set` API, so consumer code is
+unchanged (Bevy/flecs consumers never mention archetypes). The one visible
+shift is that add/remove-component gets costlier. This is a large, standalone,
+strategic project — logged here and sequenced deliberately (like generational
+ids), not tacked onto the columnar milestone.
 
 ### Rollout
 
