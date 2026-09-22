@@ -1,6 +1,9 @@
 import type { EntityId, SchedulableSystem } from '@pierre/ecs';
+import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
-import type { GameState, Portal, PortalColor, Vec3 } from '../game';
+import type { GameState, Portal, PortalColor } from '../game';
+
+import { vec3Cross, vec3Normalize } from '@pierre/ecs/modules/math-3d';
 
 import { PortalableSurfaceTag, Position3DDef, ShapeAabb3DDef } from '../components';
 import {
@@ -91,8 +94,8 @@ function nearestSurface(ctx: GameState, origin: Vec3, dir: Vec3): SurfaceHit | n
 function buildPortal(hit: SurfaceHit, otherPortal: Portal | null): Portal | null {
   const normal = axisVec(hit.axis, hit.normalSign);
   const ref: Vec3 = hit.axis === 'y' ? { x: 0, y: 0, z: -1 } : { x: 0, y: 1, z: 0 };
-  const right = normalize(cross(ref, normal));
-  const up = cross(normal, right);
+  const right = vec3Normalize(vec3Cross(ref, normal));
+  const up = vec3Cross(normal, right);
 
   const center: Vec3 = { x: hit.point.x, y: hit.point.y, z: hit.point.z };
   // Sit exactly on the face plane, nudged out to avoid z-fighting.
@@ -142,17 +145,4 @@ function other(color: PortalColor): PortalColor {
 
 function axisVec(axis: Axis, sign: number): Vec3 {
   return { x: axis === 'x' ? sign : 0, y: axis === 'y' ? sign : 0, z: axis === 'z' ? sign : 0 };
-}
-
-function cross(a: Vec3, b: Vec3): Vec3 {
-  return {
-    x: a.y * b.z - a.z * b.y,
-    y: a.z * b.x - a.x * b.z,
-    z: a.x * b.y - a.y * b.x,
-  };
-}
-
-function normalize(v: Vec3): Vec3 {
-  const len = Math.hypot(v.x, v.y, v.z) || 1;
-  return { x: v.x / len, y: v.y / len, z: v.z / len };
 }

@@ -1,4 +1,5 @@
 import type { EntityId, SchedulableSystem } from '@pierre/ecs';
+import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import type { GameState } from '../game';
 
@@ -55,7 +56,6 @@ export const kinematics3dSystem: SchedulableSystem<GameState> = {
   },
 };
 
-interface Vec3 { x: number; y: number; z: number }
 interface Box3 { d: number; h: number; w: number }
 
 function resolveAxis(

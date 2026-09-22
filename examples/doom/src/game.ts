@@ -1,5 +1,6 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
+import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import { EcsWorld } from '@pierre/ecs';
 
@@ -89,8 +90,6 @@ const COLOR_CRATE = 0x4F7A3F; // green
 const COLOR_STAIR = 0xB08D57; // tan
 const COLOR_PLATFORM = 0x4A6D8C; // steel blue (raised platforms)
 const COLOR_ELEVATOR = 0xC24A3A; // red (it moves)
-
-export interface Vec3 { x: number; y: number; z: number }
 
 export type DoomAction = 'back' | 'forward' | 'jump' | 'left' | 'reset' | 'right' | 'weapon1' | 'weapon2';
 

@@ -1,6 +1,9 @@
 import type { SchedulableSystem } from '@pierre/ecs';
+import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
-import type { GameState, Vec3 } from '../game';
+import type { GameState } from '../game';
+
+import { vec3Normalize } from '@pierre/ecs/modules/math-3d';
 
 import {
   AiDef,
@@ -112,8 +115,7 @@ export const aiSystem: SchedulableSystem<GameState> = {
 
 /** True if no static blocks the straight line from the enemy to the player. */
 function inSight(from: Vec3, dist: number, dx: number, dy: number, dz: number, statics: StaticBox[]): boolean {
-  const inv = 1 / (dist || 1);
-  const dir = { x: dx * inv, y: dy * inv, z: dz * inv };
+  const dir = vec3Normalize({ x: dx, y: dy, z: dz });
   for (const { b, p } of statics) {
     const hit = rayAabb(from, dir, p, { x: b.w / 2, y: b.h / 2, z: b.d / 2 });
     if (hit && hit.t < dist - 0.5)

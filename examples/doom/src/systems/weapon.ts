@@ -1,6 +1,7 @@
 import type { SchedulableSystem } from '@pierre/ecs';
+import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
-import type { GameState, Vec3 } from '../game';
+import type { GameState } from '../game';
 
 import { EnemyTag, HealthDef, Position3DDef, ShapeAabb3DDef, StaticBodyTag } from '../components';
 import {

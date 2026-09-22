@@ -2,11 +2,11 @@ import type { GameState, StarfighterAction, StarfighterEvent } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { QUAT_IDENTITY } from '@pierre/ecs/modules/math-3d';
 import { makeSeededRng } from '@pierre/ecs/modules/rng';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import { AIM_DEADZONE, makeWorld, resetGame } from './game';
-import { IDENTITY_QUAT } from './quat';
 import { makeRenderer } from './render';
 import { bulletSystem, shipSystem, targetSystem, weaponSystem } from './systems';
 
@@ -101,7 +101,7 @@ export function start(container: HTMLElement): () => void {
     fireTimer: 0,
     firing: false,
     input,
-    orientation: { ...IDENTITY_QUAT },
+    orientation: { ...QUAT_IDENTITY },
     playerId: null,
     rng: makeSeededRng(0x5EED),
     score: 0,

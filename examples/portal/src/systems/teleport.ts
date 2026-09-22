@@ -1,7 +1,8 @@
 import type { SchedulableSystem } from '@pierre/ecs';
+import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import type { Velocity3D } from '../components';
-import type { GameState, Portal, Vec3 } from '../game';
+import type { GameState, Portal } from '../game';
 
 import { DynamicBodyTag, HeldTag, PlayerTag, Position3DDef, Velocity3DDef } from '../components';
 import { MAX_PITCH } from '../game';

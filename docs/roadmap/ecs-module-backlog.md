@@ -241,7 +241,7 @@ deliberate, but not deferred work.
 
 ## 3D siblings — speculative
 
-**Scope.** Parallel 3D-dimension modules (transform, math, motion, collision,
+**Scope.** Parallel 3D-dimension modules (transform, motion, collision,
 kinematics, render-webgl/webgpu, camera-3d, navmesh-3d) that ship alongside
 the 2D stack rather than replacing it.
 
@@ -259,7 +259,6 @@ is attempted, and none is scheduled.
 | `modules/motion-3d` | 3-vector velocity integrator + optional 3D bounds; free-flight attitude control (rate-steered orientation + throttle) | Bevy integrators |
 | `modules/collision-3d` | `ShapeAabb3Def`, `ShapeSphereDef`, optional `ShapeObbDef`; AABB3 / sphere / OBB narrowphase | Bevy `bevy_rapier3d`, PhysX primitives |
 | `modules/kinematics-3d` | Arcade 3D character controller — gravity + axis-separated resolution against statics | Unity `CharacterController`, Godot `CharacterBody3D` |
-| `modules/math-3d` | `Vec3` siblings of the `Vec2` motion helpers; `Quat` (mul / axis-angle / rotate-vector), `cross`, `dot` | Bevy `Vec3`/`Quat`, three.js `Vector3`/`Quaternion` |
 | `modules/render-scene3d` | entity ↔ scene-object sync: create / update / reap by tag — the 3D analogue of `Canvas2DRenderer` | three.js scene graphs, Babylon `Scene` |
 | `modules/navmesh-3d` | Triangle-mesh navigation: bake, regions, links, agent-radius inflation. 2D sibling: `modules/navmesh` | Recast/Detour, Godot `NavigationRegion3D`, Unity `NavMesh` |
 | `modules/render-webgl` | `Renderer<TCtx>` implementation backed by WebGL | three.js, Babylon |
@@ -272,8 +271,7 @@ similar). Until then, the 2D stack is the only stack. The gap ledger already
 records the duplicated work, which makes this the largest de-facto demand
 cluster in the file: **4 consumers** hand-roll the entity↔mesh sync
 (platformer-3d, portal, doom, starfighter), **3** the 3D AABB solver
-(platformer-3d, portal, doom), **2** a ray-vs-AABB test, and **2** a
-`Vec3`/`Quat` library.
+(platformer-3d, portal, doom), and **2** a ray-vs-AABB test.
 
 **Rules (re-affirmed from the shipped plan).**
 
@@ -669,8 +667,8 @@ ping-pong fractal types** beyond fBm, and the **other algorithm families**
 Godot's `FastNoiseLite` and `noise-rs` ship — **cellular / Worley**, **value-
 cubic**, and **domain warp** (turbulence).
 
-**Trigger.** 3D: a scoped 3D prototype, landing with `modules/math-3d` per the
-group rule that dimension-sensitive work ships as parallel siblings. Everything
+**Trigger.** 3D: a scoped 3D prototype, following the group rule that
+dimension-sensitive work ships as parallel siblings. Everything
 else: a consumer that needs it. None of the remainders is *unanimous* canon —
 ridged / ping-pong reach 2 of 3 sources (Godot `FRACTAL_RIDGED` /
 `FRACTAL_PING_PONG`, `noise-rs` `RidgedMulti` / `Billow`), and cellular /

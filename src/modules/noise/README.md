@@ -86,8 +86,8 @@ interface Fbm1DOptions {   // Fbm2DOptions is the same shape
 ## Not included (by design)
 
 - **3D noise.** The 2D stack is the only stack; dimension-sensitive work
-  ships as parallel siblings when a 3D prototype is scoped. Lands with
-  `modules/math-3d`.
+  ships as parallel siblings when a 3D prototype is scoped. Tracked as
+  `modules/noise` V2 in the module backlog.
 - **Other algorithm families** that Godot's `FastNoiseLite` and `noise-rs`
   ship: **cellular / Worley** (Voronoi), **value-cubic**, and **domain warp**
   (turbulence). Real canon, but not *unanimous* across engines and with no

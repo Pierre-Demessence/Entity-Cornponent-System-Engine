@@ -1,4 +1,5 @@
 import type { EntityId, SchedulableSystem } from '@pierre/ecs';
+import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import type { GameState } from '../game';
 
@@ -14,7 +15,6 @@ import {
 import { GRAVITY, MAX_FALL_SPEED, PORTAL_CARVE_DEPTH } from '../game';
 import { localCoords, withinOpening } from './portal-math';
 
-interface Vec3 { x: number; y: number; z: number }
 interface Box3 { d: number; h: number; w: number }
 interface Vel3 { vx: number; vy: number; vz: number }
 interface StaticBox { id: EntityId; b: Box3; p: Vec3 }

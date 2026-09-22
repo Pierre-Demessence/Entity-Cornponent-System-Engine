@@ -2,6 +2,7 @@ import type { EntityId } from '@pierre/ecs';
 
 import type { GameState } from './game';
 
+import { vec3RandomUnit } from '@pierre/ecs/modules/math-3d';
 import * as THREE from 'three';
 
 import { BulletTag, Position3DDef, RadiusDef, TargetTag } from './components';
@@ -55,12 +56,10 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   const starGeo = new THREE.BufferGeometry();
   const starPos = new Float32Array(1500 * 3);
   for (let i = 0; i < 1500; i++) {
-    const z = Math.random() * 2 - 1;
-    const t = Math.random() * Math.PI * 2;
-    const r = Math.sqrt(1 - z * z);
-    starPos[i * 3] = r * Math.cos(t) * 500;
-    starPos[i * 3 + 1] = r * Math.sin(t) * 500;
-    starPos[i * 3 + 2] = z * 500;
+    const s = vec3RandomUnit();
+    starPos[i * 3] = s.x * 500;
+    starPos[i * 3 + 1] = s.y * 500;
+    starPos[i * 3 + 2] = s.z * 500;
   }
   starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
   const starMat = new THREE.PointsMaterial({ color: 0xBFD0FF, size: 2, sizeAttenuation: false });

@@ -1,5 +1,6 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
+import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import { EcsWorld } from '@pierre/ecs';
 
@@ -86,8 +87,6 @@ export const PORTAL_SURFACE_OFFSET = 0.03;
 export const PORTAL_CARVE_DEPTH = 1;
 
 export type PortalColor = 'blue' | 'orange';
-
-export interface Vec3 { x: number; y: number; z: number }
 
 /** A placed portal: a centre on a surface plus an oriented local frame. */
 export interface Portal {
@@ -265,7 +264,7 @@ export function resetGame(state: GameState): void {
 }
 
 /** Reset a body's position + velocity to a spawn point (in place — keeps its id). */
-function resetBody(state: GameState, id: EntityId, spawn: { x: number; y: number; z: number }): void {
+function resetBody(state: GameState, id: EntityId, spawn: Vec3): void {
   const pos = state.world.getStore(Position3DDef).get(id);
   const vel = state.world.getStore(Velocity3DDef).get(id);
   if (pos) {

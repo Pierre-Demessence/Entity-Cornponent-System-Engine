@@ -1,10 +1,10 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
+import type { Quat, Vec3 } from '@pierre/ecs/modules/math-3d';
 import type { RandomFn } from '@pierre/ecs/modules/rng';
 
-import type { Quat } from './quat';
-
 import { EcsWorld } from '@pierre/ecs';
+import { QUAT_IDENTITY, vec3ClampLength, vec3RandomUnit } from '@pierre/ecs/modules/math-3d';
 import { makeSeededRng } from '@pierre/ecs/modules/rng';
 
 import {
@@ -17,7 +17,6 @@ import {
   TargetTag,
   Velocity3DDef,
 } from './components';
-import { IDENTITY_QUAT } from './quat';
 
 // World units are arbitrary "space metres"; +Y is up.
 
@@ -57,8 +56,6 @@ export const CAMERA_DISTANCE = 9;
 export const CAMERA_HEIGHT = 2.8;
 export const CAMERA_POS_LERP = 0.14;
 export const CAMERA_ROT_LERP = 0.1;
-
-export interface Vec3 { x: number; y: number; z: number }
 
 export type StarfighterAction
   = | 'fire'
@@ -128,16 +125,16 @@ export function spawnTarget(state: GameState): EntityId {
     ? { x: 0, y: 0, z: 0 }
     : state.world.getStore(Position3DDef).get(state.playerId) ?? { x: 0, y: 0, z: 0 };
 
-  const dir = randomUnitVec(state.rng);
+  const dir = vec3RandomUnit(state.rng);
   const dist = TARGET_MIN_SPAWN_DIST
     + state.rng() * (TARGET_MAX_SPAWN_DIST - TARGET_MIN_SPAWN_DIST);
-  const pos = clampToBounds({
+  const pos = vec3ClampLength({
     x: ship.x + dir.x * dist,
     y: ship.y + dir.y * dist,
     z: ship.z + dir.z * dist,
-  });
+  }, BOUNDS_RADIUS);
 
-  const drift = randomUnitVec(state.rng);
+  const drift = vec3RandomUnit(state.rng);
   const id = state.world.createEntity();
   state.world.getStore(Position3DDef).set(id, pos);
   state.world.getStore(Velocity3DDef).set(id, {
@@ -151,28 +148,11 @@ export function spawnTarget(state: GameState): EntityId {
   return id;
 }
 
-/** Uniformly random unit vector on the sphere. */
-export function randomUnitVec(rng: RandomFn): Vec3 {
-  const z = rng() * 2 - 1;
-  const t = rng() * Math.PI * 2;
-  const r = Math.sqrt(1 - z * z);
-  return { x: r * Math.cos(t), y: r * Math.sin(t), z };
-}
-
-/** Clamp a point inside the spherical play boundary (in place-safe copy). */
-export function clampToBounds(p: Vec3): Vec3 {
-  const d = Math.hypot(p.x, p.y, p.z);
-  if (d <= BOUNDS_RADIUS || d === 0)
-    return p;
-  const s = BOUNDS_RADIUS / d;
-  return { x: p.x * s, y: p.y * s, z: p.z * s };
-}
-
 export function resetGame(state: GameState): void {
   state.world.clearAll();
   state.events.clear();
   state.score = 0;
-  state.orientation = { ...IDENTITY_QUAT };
+  state.orientation = { ...QUAT_IDENTITY };
   state.angVel = { x: 0, y: 0, z: 0 };
   state.speed = 0;
   state.aimX = 0;

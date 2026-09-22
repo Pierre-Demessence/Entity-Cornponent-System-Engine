@@ -1,4 +1,6 @@
-import type { Portal, Vec3 } from '../game';
+import type { Vec3 } from '@pierre/ecs/modules/math-3d';
+
+import type { Portal } from '../game';
 
 import { PORTAL_H, PORTAL_W } from '../game';
 

@@ -1,6 +1,9 @@
 import type { SchedulableSystem } from '@pierre/ecs';
+import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
-import type { GameState, Vec3 } from '../game';
+import type { GameState } from '../game';
+
+import { quatForward, quatFromAxisAngle, quatMul, quatNormalize } from '@pierre/ecs/modules/math-3d';
 
 import { Position3DDef, Velocity3DDef } from '../components';
 import {
@@ -15,7 +18,6 @@ import {
   TURN_RESPONSE,
   YAW_RATE,
 } from '../game';
-import { quatForward, quatFromAxisAngle, quatMul, quatNormalize } from '../quat';
 
 /**
  * Aim-to-steer flight, No-Man's-Sky style. The reticle deflection
@@ -55,11 +57,11 @@ export const shipSystem: SchedulableSystem<GameState> = {
     ctx.angVel.y += (target.y - ctx.angVel.y) * TURN_RESPONSE;
     ctx.angVel.z += (target.z - ctx.angVel.z) * TURN_RESPONSE;
 
-    // Integrate orientation: rotate by the local angular-velocity vector.
+    // Integrate orientation: rotate by the local angular-velocity vector. The
+    // module normalises the axis, so the raw vector is the axis.
     const speedRad = Math.hypot(ctx.angVel.x, ctx.angVel.y, ctx.angVel.z);
     if (speedRad > 1e-6) {
-      const inv = 1 / speedRad;
-      const dq = quatFromAxisAngle(ctx.angVel.x * inv, ctx.angVel.y * inv, ctx.angVel.z * inv, speedRad * dt);
+      const dq = quatFromAxisAngle(ctx.angVel, speedRad * dt);
       ctx.orientation = quatNormalize(quatMul(ctx.orientation, dq));
     }
 

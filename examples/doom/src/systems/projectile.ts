@@ -1,4 +1,5 @@
 import type { SchedulableSystem } from '@pierre/ecs';
+import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import type { GameState } from '../game';
 
@@ -13,7 +14,6 @@ import {
   Velocity3DDef,
 } from '../components';
 
-interface Vec3 { x: number; y: number; z: number }
 interface Box3 { d: number; h: number; w: number }
 
 /**

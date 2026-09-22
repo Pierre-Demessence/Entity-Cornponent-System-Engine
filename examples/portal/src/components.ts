@@ -1,8 +1,10 @@
 import type { ComponentDef, TagDef } from '@pierre/ecs';
+import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import { simpleComponent } from '@pierre/ecs';
 
-export interface Position3D { x: number; y: number; z: number }
+/** The 3D position payload: the engine's `Vec3` under the component's own name. */
+export type Position3D = Vec3;
 export interface Velocity3D { vx: number; vy: number; vz: number }
 /** Full extents (not half) along X/Y/Z. AABBs are center-based. */
 export interface ShapeAabb3D { d: number; h: number; w: number }
