@@ -49,6 +49,19 @@ complex systems.
 | **Complexity** | Mid — ~150 lines. Generation counter + pool. |
 | **Dependencies** | None outstanding — the query DSL (to filter inactive) and the spatial index both shipped. Confirm the spatial index copes with recycled IDs when this lands. |
 
+> **Generational handles are the load-bearing, breaking part.** Entity ids are
+> monotonic and **never reused** today (`createEntity` = `nextId++`), which is
+> *safe* (a stale ref to a destroyed entity resolves to `undefined`) but grows
+> the id space unbounded over churn-heavy sessions. Reusing ids without a
+> generation reintroduces the **ABA problem** (a recycled id silently resolves
+> to a different entity). The fix — packing `EntityId` into `{ index, generation }`
+> — turns `EntityId` from a bare `number` into a handle, rippling through core,
+> **every module, every consumer, and the save format**. That makes this a
+> large, breaking, strategic change worth its own plan, justified only for a
+> millions-of-entities-with-churn target (VS-like, Factorio). The paged sparse
+> set already bounds the id→slot cost regardless, so nothing forces this yet.
+> Full framing: [../plans/done/ecs-parallelism-and-soa-storage.md](../plans/done/ecs-parallelism-and-soa-storage.md#generational-entity-ids--logged-separate-strategic).
+
 ### 3.4 Render Layers & Culling
 
 | | |
@@ -58,6 +71,26 @@ complex systems.
 | **Unlocks** | Particle effects, floating damage numbers, visual overlays, large maps without frame drops |
 | **Complexity** | Mid — ~200 lines in a renderer refactor. |
 | **Dependencies** | None outstanding — dirty flags and the spatial index shipped. Reconcile against what already exists before building: `RenderOrderDef` sorts drawables within the two-pass loop, and the camera's view-rect cull already drops off-screen entities. |
+
+### 3.5 Archetype Tables — gather-free multi-component iteration
+
+| | |
+|---|---|
+| **Problem** | Columnar (SoA) storage shipped, but it is **sparse-set**: single-component iteration is a dense column loop, yet multi-component queries do a per-entity slot **gather** (`slotOf` per store, as `motion.ts` does). Bevy/DOTS-style gather-free iteration needs an entity's components **co-located** in one table — which sparse-set can't give. |
+| **Solution** | Group entities by component set into **archetype tables** with aligned columns → a single-index loop, no gather. The top-tier form is the **"both" model** (Bevy): each component picks table vs sparse storage. The query / `get` / `set` API is preserved, so consumer code is unchanged. |
+| **Unlocks** | The full multi-component iteration win on top of the storage/GC win the columnar store already delivers. |
+| **Complexity** | Very long — a storage-engine rewrite. add/remove-component becomes a **structural move** (the entity is copied between tables), where sparse-set is O(1). |
+| **Dependencies** | None outstanding — builds on the shipped columnar store, and sits **above** the §3.1 archetype *cache* (the cache is the lighter middle step: cache query matches, keep the gather). Detail + the full cheapest→biggest ladder: [../plans/done/ecs-parallelism-and-soa-storage.md](../plans/done/ecs-parallelism-and-soa-storage.md#the-path-beyond-middle--storage-architecture-logged). |
+
+### 3.6 Data-Parallel Dispatch over Shared Columns
+
+| | |
+|---|---|
+| **Problem** | A CPU-bound per-entity kernel runs single-threaded even though columns can be `SharedArrayBuffer`-backed (`ColumnStore { shared: true }`, shipped). `examples/parallel-kernel` proves the win (13→75 fps at 600k×64, holds 75 fps at 1M), but its worker-splitting logic is **harness-local**, not a reusable primitive. |
+| **Solution** | A reusable `parallelFor(kernel, range)` that splits a shared-column slot range across a worker pool behind a per-frame barrier. The kernel is a **worker-defined module** — JS closures can't cross the worker boundary, so general scheduler auto-dispatch of arbitrary systems is **out** (see the plan); the realizable form is data-parallel over shared columns. |
+| **Unlocks** | ~Nx on genuinely CPU-bound simulation, bounded by core count — a multiplier on the columnar store, only where a kernel is already CPU-bound. |
+| **Complexity** | Mid — the harness already works; promoting it to a module needs a **second consumer** per the promotion rule, plus the cross-origin-isolation (`COOP`/`COEP`) caveat for plain browsers. |
+| **Dependencies** | None outstanding — SAB columns and the `modules/worker-pool` helper both shipped. Detail: [../plans/done/ecs-parallelism-and-soa-storage.md](../plans/done/ecs-parallelism-and-soa-storage.md#b2--parallel-system-dispatch-core-needs-b1). |
 
 ---
 
@@ -130,3 +163,7 @@ its trigger.
 5. **Keybinding Registry** (4.5) — accessibility, small and self-contained
 6. **Entity Inspector** (4.2) — dev quality of life
 7. **Plugin Hooks** (4.4) — modding, long-horizon and the largest piece
+8. **Data-Parallel Dispatch** (3.6) — a reusable module over the shipped SAB
+   columns; gated on a second consumer, not effort
+9. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest,
+   most strategic piece, above the §3.1 cache

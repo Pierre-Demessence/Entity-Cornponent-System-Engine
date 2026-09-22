@@ -80,7 +80,7 @@ One line per task; the detail lives in the linked sections. `[x]` done,
 
 - **Component data is objects in a `Map`.** `ComponentStore<T>` holds each
   component as a JS object in a `Map<EntityId, T>`
-  ([../../src/component-store.ts](../../src/component-store.ts)). It is *not*
+  ([../../../src/component-store.ts](../../../src/component-store.ts)). It is *not*
   a Structure-of-Arrays over typed buffers. This is the real blocker for
   true shared-memory parallelism — not `structuredClone`. (B1 has since moved
   all-numeric components to typed-array columns; non-numeric components stay
@@ -88,7 +88,7 @@ One line per task; the detail lives in the linked sections. `[x]` done,
 - **The scheduler already knows read/write sets.** Every `SchedulableSystem`
   declares `reads` / `writes`, documented as the "Foundation for future
   parallel execution"
-  ([../../src/scheduler.ts](../../src/scheduler.ts)). The dependency
+  ([../../../src/scheduler.ts](../../../src/scheduler.ts)). The dependency
   metadata needed to auto-dispatch disjoint systems already exists.
 
 ## Three levers, not one
@@ -97,7 +97,7 @@ The backlog entry conflates two unrelated things. There are really three,
 and they serve different purposes:
 
 | Step | What it is | Standalone value | Depends on | Core / module |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | **A** | Message-passing worker(s) — offload whole jobs | Yes | nothing | **module** (worker-pool helper) |
 | **B1** | SoA / typed-array "hot component" storage | **Yes, large** (cache + GC wins, single-threaded) | nothing | **core** (`ComponentStore`) |
 | **B2** | Parallel system dispatch over SAB-backed SoA | Only as a multiplier on B1 | **B1** | **core** (scheduler + world) |
@@ -209,7 +209,7 @@ Partially, and **not first.** Two separate bottlenecks:
 
 - **Simulation** of thousands of entities: the big wins are B1 (cache + no
   GC) and the spatial broadphase already in
-  [../../src/spatial-structure.ts](../../src/spatial-structure.ts). A single
+  [../../../src/spatial-structure.ts](../../../src/spatial-structure.ts). A single
   thread with tight data layout handles 10k+ at 60fps. B2 adds a core-count
   multiplier *only after* B1, and only if still CPU-bound.
 - **Rendering** thousands of sprites is a draw-call / fill-rate problem.
@@ -255,7 +255,7 @@ build, with zero speculative engine code written.
 
 - [x] Build the B1 stress harness on the **current `Map` store**; confirm it
       chokes (frame drops + GC sawtooth) at high entity count. → justifies B1.
-      Shipped as [`examples/stress-storage`](../../examples/stress-storage/):
+      Shipped as [`examples/stress-storage`](../../../examples/stress-storage/):
       Map store vs SoA typed arrays toggle. Confirmed — at 1M entities the SoA
       path holds a steady 75 fps while the Map store is unusable.
 - [x] If justified, design + build B1 (hybrid schema-inferred SoA storage);
@@ -282,7 +282,7 @@ an object-view compatibility layer so most systems don't have to change, and
 leaves **Ideal** (columnar query as the default, systems written as column
 loops) reachable *later, incrementally, with no storage redo*. It is the
 storage foundation the roadmap's archetype cache
-([core-engine-roadmap §3.1](../roadmap/core-engine-roadmap.md#31-archetype-cache))
+([core-engine-roadmap §3.1](../../roadmap/core-engine-roadmap.md#31-archetype-cache))
 and schema-first components eventually sit on top of.
 
 > Refines the higher-level "opt-in per component" wording earlier in this

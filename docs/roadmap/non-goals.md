@@ -17,6 +17,21 @@ module README.
 
 ## Declined
 
+### Faster columnar view construction (prototype-accessor flyweight) — declined
+
+The columnar store's `get(id)` materializes a write-through view via
+`Object.defineProperties` per call, which makes `world.query` / `get()`
+iteration over columnar components slower than the old object store. The
+obvious speed-up — a shared prototype with column-backed accessors — is
+declined: prototype accessors are **not own-enumerable**, so they silently
+break `{ ...view }` spread and `Object.keys(view)`, both of which consumers
+rely on. The non-breaking alternative (codegen'd own-accessor objects via
+`new Function`) buys speed for a real cost in complexity and CSP-friendliness,
+and the shipped `query.ts` fix already removed most view churn (it rejects
+non-matches before building any view). Hot loops that need zero-alloc use the
+`column()` / `slotOf()` fast path instead. Revisit only if a profiler shows
+uniform-API columnar `get`/`query` as a real bottleneck in a shipping game.
+
 ### Entity hierarchy / parenting — full transform propagation — declined
 
 Bevy-style `Parent(Entity)` / `Children` with recursive N-level transform
