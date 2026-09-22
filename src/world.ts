@@ -1,16 +1,17 @@
-import type { ComponentDef, TagDef } from '#component-store';
+import type { ComponentDef, ComponentStoreLike, TagDef } from '#component-store';
 import type { EntityId } from '#entity-id';
 import type { LifecycleEvent } from '#lifecycle';
 import type { SpatialStructure } from '#spatial-structure';
 import type { EntityTemplate } from '#template';
 
+import { ColumnStore } from '#column-store';
 import { ComponentStore, TagStore } from '#component-store';
 import { EventBus } from '#event-bus';
 import { HashGrid2D } from '#modules/spatial/hash-grid-2d';
 import { QueryBuilder } from '#query';
 import { asNumber, asObject } from '#validation';
 
-interface ComponentEntry { def: ComponentDef<unknown>; store: ComponentStore<unknown> }
+interface ComponentEntry { def: ComponentDef<unknown>; store: ComponentStoreLike<unknown> }
 interface TagEntry { def: TagDef; store: TagStore }
 
 /**
@@ -33,7 +34,7 @@ export class EcsWorld {
   private nextId = 0;
   private spatialDef: ComponentDef<unknown> | undefined;
   private spawning = false;
-  private storeByName = new Map<string, ComponentStore<unknown>>();
+  private storeByName = new Map<string, ComponentStoreLike<unknown>>();
   private tagByName = new Map<string, TagStore>();
   private tagRegistry: TagEntry[] = [];
 
@@ -145,7 +146,7 @@ export class EcsWorld {
       throw new Error(`Component "${def.name}" must be registered before enabling spatial.`);
     this.spatialDef = def as ComponentDef<unknown>;
     this._spatial = structure;
-    const typedStore = store as ComponentStore<T>;
+    const typedStore = store as ComponentStoreLike<T>;
     typedStore.subscribe('set', (id, pos) => {
       this._spatial!.add(id, pos);
     });
@@ -182,14 +183,26 @@ export class EcsWorld {
     for (const id of ids) this.destroyEntity(id);
   }
 
-  getStore<T>(def: ComponentDef<T>): ComponentStore<T> {
+  /**
+   * Fast-path accessor for a columnar (all-numeric) component's
+   * Structure-of-Arrays store, exposing `column()` / `slotOf()` for
+   * zero-allocation hot loops. Throws if the component uses object storage.
+   */
+  getColumnStore<T>(def: ComponentDef<T>): ColumnStore<T> {
+    const store = this.getStore(def);
+    if (!(store instanceof ColumnStore))
+      throw new Error(`Component "${def.name}" is not columnar (uses object storage).`);
+    return store as ColumnStore<T>;
+  }
+
+  getStore<T>(def: ComponentDef<T>): ComponentStoreLike<T> {
     const store = this.storeByName.get(def.name);
     if (!store)
       throw new Error(`Component "${def.name}" not registered`);
-    return store as ComponentStore<T>;
+    return store as ComponentStoreLike<T>;
   }
 
-  getStoreByName(name: string): ComponentStore<unknown> | undefined {
+  getStoreByName(name: string): ComponentStoreLike<unknown> | undefined {
     return this.storeByName.get(name);
   }
 
@@ -235,7 +248,7 @@ export class EcsWorld {
   move(id: EntityId, x: number, y: number): void {
     if (!this.spatialDef || !this._spatial)
       throw new Error('move() requires enableSpatial() to have been called.');
-    const store = this.storeByName.get(this.spatialDef.name) as ComponentStore<{ x: number; y: number }>;
+    const store = this.storeByName.get(this.spatialDef.name) as ComponentStoreLike<{ x: number; y: number }>;
     const pos = store.get(id);
     if (!pos)
       return;
@@ -268,12 +281,17 @@ export class EcsWorld {
     this.destroyQueue.add(id);
   }
 
-  registerComponent<T>(def: ComponentDef<T>): ComponentStore<T> {
+  registerComponent<T>(def: ComponentDef<T>): ComponentStoreLike<T> {
     if (this.storeByName.has(def.name))
       throw new Error(`Component "${def.name}" already registered`);
-    const store = new ComponentStore<T>();
-    this.componentRegistry.push({ def: def as ComponentDef<unknown>, store: store as ComponentStore<unknown> });
-    this.storeByName.set(def.name, store as ComponentStore<unknown>);
+    // Storage is inferred from the schema: all-numeric components (def.columns
+    // set by simpleComponent) get columnar Structure-of-Arrays storage; the
+    // rest keep the object-backed Map store. Callers never choose.
+    const store: ComponentStoreLike<T> = def.columns
+      ? new ColumnStore<T>(def.columns)
+      : new ComponentStore<T>();
+    this.componentRegistry.push({ def: def as ComponentDef<unknown>, store: store as ComponentStoreLike<unknown> });
+    this.storeByName.set(def.name, store as ComponentStoreLike<unknown>);
 
     store.subscribe('set', (id, value) => {
       this.lifecycle.emit({ id, component: def.name, type: 'ComponentAdded', value });

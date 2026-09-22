@@ -191,9 +191,13 @@ build, with zero speculative engine code written.
       Shipped as [`examples/stress-storage`](../../examples/stress-storage/):
       Map store vs SoA typed arrays toggle. Confirmed — at 1M entities the SoA
       path holds a steady 75 fps while the Map store is unusable.
-- [ ] If justified, design + build B1 (hybrid opt-in SoA hot components);
-      re-run the harness with the toggle to quantify the win. Design sketched
-      below; implementation not started.
+- [x] If justified, design + build B1 (hybrid schema-inferred SoA storage);
+      re-run the harness to quantify the win. **Shipped** — `ColumnStore`
+      (typed-array columns, swap-remove, id-bound write-through view),
+      `ComponentStoreLike` interface, schema-inferred storage in
+      `registerComponent`, `world.getColumnStore` fast-path accessor, and the
+      motion integration columnar fast path. Full suite (1012) green; harness
+      confirms flat sim at millions of entities.
 - [ ] Build the A "main-thread stall" harness; confirm the stall on the main
       thread. → justifies A (a module).
 - [ ] Build the B2 fat-kernel harness on B1; confirm it is core-bound single-
@@ -322,14 +326,34 @@ per tick** — worth removing on its own.
 - **DEV flyweight-aliasing guard** fires when two live flyweights are held.
 - **Perf smoke** (non-gating) — sim ms/tick under a threshold at N.
 
-### Open decisions to pin before coding
+### Deferred optimizations (post-Middle, surfaced by the stress harness)
 
-- **Float32 vs Float64** default for columns (footprint vs precision).
-- Whether to fix `query.ts`'s per-entity tuple allocation in the same pass
-  (independent win, also a down-payment on Ideal, but touches the hot path).
-- Where the numeric-schema check lives so `registerComponent` can infer
-  layout (extend `simpleComponent` to expose its field kinds, vs a separate
-  `columnarSchema` marker on the def).
+The Middle slice shipped; these are follow-ups the `examples/stress-storage`
+harness made concrete. None blocks correctness (full suite green); each is a
+perf lever with a wrinkle, to be taken deliberately.
+
+- **Cheaper view construction.** `get()` on a columnar store materializes a
+  write-through view via `Object.defineProperties` per call. That makes
+  `world.query` / `get()` iteration over columnar components *slower* than the
+  old object store (the harness's engine-`query` path measured ~3 fps at 100k
+  — tuple-per-entity **plus** view-per-entity). The motion system sidesteps it
+  via the `column()` fast path, but other query/get consumers pay it. A faster
+  view (prototype accessors or codegen'd object-literal getters) exists, but
+  plain prototype accessors break spread / `Object.keys` — needs care to keep
+  the view spreadable.
+- **`query.ts` per-entity tuple allocation.** `QueryBuilder` allocates an
+  `Array.from({ length })` per entity per tick — an independent win that also
+  helps object-store queries and is a down-payment on the Ideal columnar query.
+- **`id2slot` GC cost at extreme counts.** The entity→slot lookup is a
+  `Map<EntityId, number>`; at millions of entities its live size adds GC
+  pressure. For dense ids an `Int32Array` id→slot avoids most of it.
+
+### Open decisions (pinned during the build)
+
+- **Float32 columns** shipped as the default (footprint); a `Float64` opt-in
+  is still open if a consumer needs the precision.
+- Numeric-schema detection lives on `simpleComponent`, which sets
+  `def.columns` when every field is `'number'`; `registerComponent` reads it.
 
 ## Relationship to the backlog
 

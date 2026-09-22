@@ -2,20 +2,23 @@ import { EcsWorld } from '@pierre/ecs';
 import { PositionDef, VelocityDef } from '@pierre/ecs/modules/transform';
 
 /**
- * Storage stress harness — evidence for the deferred B1 (SoA hot-component
- * storage) step in docs/plans/ecs-parallelism-and-soa-storage.md.
+ * Storage stress harness — a live demo (and regression check) of the engine's
+ * columnar storage (docs/plans/ecs-parallelism-and-soa-storage.md, target
+ * "Middle").
  *
  * Runs the *same* trivial simulation (integrate position by velocity, wrap at
  * the edges) over N entities two ways, toggled by a checkbox:
- *   - ECS Map store  — the engine's real path: EcsWorld + PositionDef/VelocityDef,
- *     iterated via world.query (idiomatic; allocates a tuple per entity per tick).
- *   - SoA typed arrays — throwaway harness code: flat Float32Arrays, one plain loop.
+ *   - Engine columnar — the real engine: EcsWorld + PositionDef/VelocityDef,
+ *     which are all-numeric so they get Structure-of-Arrays storage. The loop
+ *     reads/writes the typed-array columns directly via world.getColumnStore().
+ *   - Naive objects — throwaway baseline: an array of `{x,y}` / `{vx,vy}` heap
+ *     objects (what the object-backed Map store costs), one plain loop.
  *
  * The headline number is simulation ms/tick (render is excluded from the timing
- * and kept O(n) via a single ImageData). Crank the slider until the Map path
- * drops below the frame budget while SoA stays flat — that gap, plus the GC
- * sawtooth visible in the frame-time graph, is the evidence that justifies
- * building B1 into core. No engine code is changed here.
+ * and kept O(n) via a single ImageData). Crank the slider until the object
+ * baseline drops below the frame budget while the engine's columns stay flat —
+ * that gap, plus the GC sawtooth on the object side, is the win the columnar
+ * storage delivers.
  */
 
 const W = 800;
@@ -42,40 +45,55 @@ function median(xs: number[]): number {
   const s = [...xs].sort((a, b) => a - b);
   return s[s.length >> 1];
 }
-function makeEcsBackend(n: number): Backend {
+// Single-step toroidal wrap. Valid because movement per tick << playfield size;
+// compare-and-subtract is ~2-3x cheaper than the double-modulo `((v%m)+m)%m`.
+function wrap(v: number, max: number): number {
+  if (v < 0)
+    return v + max;
+  if (v >= max)
+    return v - max;
+  return v;
+}
+function makeEngineBackend(n: number): Backend {
   const world = new EcsWorld();
   world.registerComponent(PositionDef);
   world.registerComponent(VelocityDef);
-  const pos = world.getStore(PositionDef);
-  const vel = world.getStore(VelocityDef);
   for (let i = 0; i < n; i++) {
     const id = world.createEntity();
     const a = Math.random() * Math.PI * 2;
-    pos.set(id, { x: Math.random() * W, y: Math.random() * H });
-    vel.set(id, { vx: Math.cos(a) * SPEED, vy: Math.sin(a) * SPEED });
+    world.getStore(PositionDef).set(id, { x: Math.random() * W, y: Math.random() * H });
+    world.getStore(VelocityDef).set(id, { vx: Math.cos(a) * SPEED, vy: Math.sin(a) * SPEED });
   }
+  // Spawned pos-then-vel in id order with no deletes, so both columnar stores
+  // are dense and aligned: slot i is entity i in each. Read the columns directly.
+  const pos = world.getColumnStore(PositionDef);
+  const vel = world.getColumnStore(VelocityDef);
+  const px = pos.column('x');
+  const py = pos.column('y');
+  const vx = vel.column('vx');
+  const vy = vel.column('vy');
   return {
-    dotColor: DOT_ECS,
-    label: 'ECS Map store',
+    dotColor: DOT_SOA,
+    label: 'Engine columnar (SoA)',
     draw(pixels) {
-      for (const [, p] of world.query(PositionDef)) {
-        const x = p.x | 0;
-        const y = p.y | 0;
+      for (let i = 0; i < n; i++) {
+        const x = px[i] | 0;
+        const y = py[i] | 0;
         if (x >= 0 && x < W && y >= 0 && y < H)
-          pixels[y * W + x] = DOT_ECS;
+          pixels[y * W + x] = DOT_SOA;
       }
     },
     step(dtMs) {
       const dt = dtMs / 1000;
-      for (const [, p, v] of world.query(PositionDef, VelocityDef)) {
-        p.x = (((p.x + v.vx * dt) % W) + W) % W;
-        p.y = (((p.y + v.vy * dt) % H) + H) % H;
+      for (let i = 0; i < n; i++) {
+        px[i] = wrap(px[i] + vx[i] * dt, W);
+        py[i] = wrap(py[i] + vy[i] * dt, H);
       }
     },
   };
 }
 
-function makeSoaBackend(n: number): Backend {
+function makeBareBackend(n: number): Backend {
   const xs = new Float32Array(n);
   const ys = new Float32Array(n);
   const vxs = new Float32Array(n);
@@ -89,7 +107,7 @@ function makeSoaBackend(n: number): Backend {
   }
   return {
     dotColor: DOT_SOA,
-    label: 'SoA typed arrays',
+    label: 'Bare typed arrays (floor)',
     draw(pixels) {
       for (let i = 0; i < n; i++) {
         const x = xs[i] | 0;
@@ -101,8 +119,43 @@ function makeSoaBackend(n: number): Backend {
     step(dtMs) {
       const dt = dtMs / 1000;
       for (let i = 0; i < n; i++) {
-        xs[i] = (((xs[i] + vxs[i] * dt) % W) + W) % W;
-        ys[i] = (((ys[i] + vys[i] * dt) % H) + H) % H;
+        xs[i] = wrap(xs[i] + vxs[i] * dt, W);
+        ys[i] = wrap(ys[i] + vys[i] * dt, H);
+      }
+    },
+  };
+}
+
+interface Obj2 { x: number; y: number }
+interface ObjVel { vx: number; vy: number }
+
+function makeMapBackend(n: number): Backend {
+  const pos: Obj2[] = Array.from({ length: n });
+  const vel: ObjVel[] = Array.from({ length: n });
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2;
+    pos[i] = { x: Math.random() * W, y: Math.random() * H };
+    vel[i] = { vx: Math.cos(a) * SPEED, vy: Math.sin(a) * SPEED };
+  }
+  return {
+    dotColor: DOT_ECS,
+    label: 'Naive objects (Map-style)',
+    draw(pixels) {
+      for (let i = 0; i < n; i++) {
+        const p = pos[i];
+        const x = p.x | 0;
+        const y = p.y | 0;
+        if (x >= 0 && x < W && y >= 0 && y < H)
+          pixels[y * W + x] = DOT_ECS;
+      }
+    },
+    step(dtMs) {
+      const dt = dtMs / 1000;
+      for (let i = 0; i < n; i++) {
+        const p = pos[i];
+        const v = vel[i];
+        p.x = wrap(p.x + v.vx * dt, W);
+        p.y = wrap(p.y + v.vy * dt, H);
       }
     },
   };
@@ -172,13 +225,23 @@ export function start(container: HTMLElement): () => void {
   countText.style.cssText = 'min-width:96px;font-variant-numeric:tabular-nums';
   countLabel.append('Entities:', slider, countText);
 
-  const soaLabel = document.createElement('label');
-  soaLabel.style.cssText = 'font:13px system-ui;display:flex;gap:6px;align-items:center;cursor:pointer';
-  const soaBox = document.createElement('input');
-  soaBox.type = 'checkbox';
-  soaLabel.append(soaBox, 'Use SoA typed arrays');
+  const storageLabel = document.createElement('label');
+  storageLabel.style.cssText = 'font:13px system-ui;display:flex;gap:6px;align-items:center';
+  const storageSel = document.createElement('select');
+  storageSel.style.cssText = 'font:13px system-ui;padding:2px 6px';
+  for (const [value, text] of [
+    ['engine', 'Engine columnar (SoA)'],
+    ['objects', 'Naive objects (Map-style)'],
+    ['bare', 'Bare typed arrays (floor)'],
+  ] as [string, string][]) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = text;
+    storageSel.append(opt);
+  }
+  storageLabel.append('Storage:', storageSel);
 
-  controls.append(countLabel, soaLabel);
+  controls.append(countLabel, storageLabel);
 
   const stage = document.createElement('div');
   stage.style.cssText = 'position:relative;width:100%';
@@ -231,7 +294,7 @@ export function start(container: HTMLElement): () => void {
   const pixels = new Uint32Array(img.data.buffer);
 
   let count = Number(slider.value);
-  let backend: Backend = makeSoaBackend(count); // replaced immediately in rebuild()
+  let backend: Backend = makeEngineBackend(count); // replaced immediately in rebuild()
   let frameHistory: number[] = [];
   let simMsAvg = 0;
   let renderMsAvg = 0;
@@ -245,11 +308,19 @@ export function start(container: HTMLElement): () => void {
 
   const rebuild = (): void => {
     count = Number(slider.value);
-    backend = soaBox.checked ? makeSoaBackend(count) : makeEcsBackend(count);
+    backend = storageSel.value === 'objects'
+      ? makeMapBackend(count)
+      : storageSel.value === 'bare'
+        ? makeBareBackend(count)
+        : makeEngineBackend(count);
     frameHistory = [];
     simMsAvg = 0;
     renderMsAvg = 0;
     frameMsAvg = 0;
+    // Don't fold the synchronous rebuild freeze (spawning millions) into the
+    // fps/frame EMAs — reset the clock so measurement resumes clean.
+    fps = 0;
+    lastFrame = performance.now();
   };
 
   const fmtCount = (n: number): string => n.toLocaleString('en-US');
@@ -257,7 +328,7 @@ export function start(container: HTMLElement): () => void {
     countText.textContent = fmtCount(Number(slider.value));
   });
   slider.addEventListener('change', rebuild);
-  soaBox.addEventListener('change', rebuild);
+  storageSel.addEventListener('change', rebuild);
   countText.textContent = fmtCount(count);
   rebuild();
 

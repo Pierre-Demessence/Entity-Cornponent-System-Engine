@@ -1,4 +1,4 @@
-import type { ComponentStore, TagStore } from '#component-store';
+import type { ComponentStoreLike, TagStore } from '#component-store';
 import type { EntityId } from '#entity-id';
 
 /**
@@ -8,9 +8,9 @@ import type { EntityId } from '#entity-id';
 export class QueryBuilder<T extends unknown[]> {
   private excludedTags: TagStore[] = [];
   private requiredTags: TagStore[] = [];
-  private stores: ComponentStore<unknown>[];
+  private stores: ComponentStoreLike<unknown>[];
 
-  constructor(stores: ComponentStore<unknown>[]) {
+  constructor(stores: ComponentStoreLike<unknown>[]) {
     this.stores = stores;
   }
 

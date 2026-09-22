@@ -9,6 +9,22 @@ export type ComponentMigration = (raw: unknown, label: string) => unknown;
 export interface ComponentDef<T> {
   readonly name: string;
   /**
+   * When present, the component is all-numeric and eligible for columnar
+   * (Structure-of-Arrays) storage; lists the field names to store as
+   * typed-array columns, in serialization order. Set automatically by
+   * {@link simpleComponent} when every schema field is `'number'`.
+   * `world.registerComponent` uses it to pick a columnar `ColumnStore` over
+   * the object-backed {@link ComponentStore}. Never set for components with
+   * non-numeric fields or a hand-written `serialize` / `deserialize`.
+   *
+   * PRECISION: columnar values are stored as **Float32**. Fields that must
+   * stay exact above 2^24 (16,777,216) — entity-id references, large counters,
+   * packed bitflags, seeds — lose precision. Such a component should carry a
+   * non-numeric field (keeping it on the object store) or wait for the planned
+   * Float64 column opt-in. Position / velocity / timings are fine.
+   */
+  readonly columns?: readonly string[];
+  /**
    * Per-version upgrade functions. `migrations[n]` transforms a raw value
    * serialized at version `n` into the shape expected at version `n + 1`.
    * The chain runs from the saved version up to `def.version` before the
@@ -41,6 +57,37 @@ export type StoreDeleteHandler<T> = (id: EntityId, oldValue: T) => void;
 export type StoreValidateHandler = (id: EntityId) => void;
 
 /**
+ * The storage-agnostic access surface shared by the object-backed
+ * {@link ComponentStore} and the columnar `ColumnStore`. `world`,
+ * `QueryBuilder`, the spatial index, and save all consume this interface, so
+ * a component's storage layout (object vs Structure-of-Arrays) is invisible
+ * to them. Static `ComponentStore.fromSerialized` and the columnar-only fast
+ * path (`column` / `slotOf`) are deliberately excluded — callers that need
+ * those reach for the concrete type.
+ */
+export interface ComponentStoreLike<T> extends Iterable<[EntityId, T]> {
+  readonly size: number;
+  subscribe: {
+    (event: 'set', fn: StoreSetHandler<T>): () => void;
+    (event: 'delete', fn: StoreDeleteHandler<T>): () => void;
+    (event: 'validate', fn: StoreValidateHandler): () => void;
+  };
+  clear: () => void;
+  clearDirty: () => void;
+  delete: (id: EntityId) => boolean;
+  entries: () => IterableIterator<[EntityId, T]>;
+  get: (id: EntityId) => T | undefined;
+  has: (id: EntityId) => boolean;
+  hasChanges: () => boolean;
+  isDirty: (id: EntityId) => boolean;
+  keys: () => IterableIterator<EntityId>;
+  markDirty: (id: EntityId) => void;
+  set: (id: EntityId, value: T) => this;
+  toSerialized: (def: ComponentDef<T>) => unknown;
+  validate: (id: EntityId) => void;
+}
+
+/**
  * Map from EntityId to component data, with dirty-tracking and lifecycle hooks.
  *
  * Lifecycle hooks are exposed via `subscribe(event, fn)` and returns an
@@ -51,7 +98,7 @@ export type StoreValidateHandler = (id: EntityId) => void;
  * Emission order within `set()`: `validate` → `delete` (if replacing an
  * existing value) → `set`.
  */
-export class ComponentStore<T> implements Iterable<[EntityId, T]> {
+export class ComponentStore<T> implements ComponentStoreLike<T> {
   private readonly deleteHandlers: StoreDeleteHandler<T>[] = [];
   private readonly dirty = new Set<EntityId>();
   private readonly map = new Map<EntityId, T>();
@@ -376,9 +423,11 @@ export function simpleComponent<T extends { [K in keyof T]: boolean | number | s
   options: SimpleComponentOptions = {},
 ): ComponentDef<T> {
   const keys = Object.keys(schema) as (keyof T & string)[];
+  const columns = keys.length > 0 && keys.every(k => schema[k] === 'number') ? keys : undefined;
   return {
     name,
     ...options,
+    ...(columns ? { columns } : {}),
     deserialize: (raw, label) => {
       const obj = asObject(raw, label);
       const out: Record<string, unknown> = {};
