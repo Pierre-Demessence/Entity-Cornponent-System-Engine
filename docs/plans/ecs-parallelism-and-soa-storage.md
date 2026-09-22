@@ -1,11 +1,11 @@
 # Parallelism & SoA storage (multi-threading) — design + plan
 
-Expands the "Multi-threading / worker-based parallelism" Non-goal in
-[../roadmap/ecs-module-backlog.md](../roadmap/ecs-module-backlog.md#non-goals-declined).
-That entry declined the topic on a single argument (`structuredClone`
-copy cost). This doc records the fuller picture so the question isn't
-re-litigated from scratch: what would actually be built, in what order,
-what each piece is worth **on its own**, and how each would be proven.
+Supersedes the "Multi-threading / worker-based parallelism" decline in
+[../roadmap/non-goals.md](../roadmap/non-goals.md#superseded), which rejected
+the topic on a single argument (`structuredClone` copy cost). This doc records
+the fuller picture so the question isn't re-litigated from scratch: what would
+actually be built, in what order, what each piece is worth **on its own**, and
+how each would be proven.
 
 This began as a design capture. **B1 (columnar storage) has since shipped its
 "Middle" slice** — the [Task checklist](#task-checklist) below tracks what is

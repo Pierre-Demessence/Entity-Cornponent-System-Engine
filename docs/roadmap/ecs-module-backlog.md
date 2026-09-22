@@ -304,7 +304,7 @@ is attempted, and none is scheduled.
 | Module | Shape | Canon |
 |---|---|---|
 | `modules/transform-3d` | `Position3DDef {x,y,z}`, quaternion `Rotation3DDef`, `ScaleDef` | Bevy `Transform`, Unity, Godot `Node3D` |
-| `modules/motion-3d` | 3-vector velocity integrator + optional 3D bounds | Bevy integrators |
+| `modules/motion-3d` | 3-vector velocity integrator + optional 3D bounds; free-flight attitude control (rate-steered orientation + throttle) | Bevy integrators |
 | `modules/collision-3d` | `ShapeAabb3Def`, `ShapeSphereDef`, optional `ShapeObbDef`; AABB3 / sphere / OBB narrowphase | Bevy `bevy_rapier3d`, PhysX primitives |
 | `modules/kinematics-3d` | Arcade 3D character controller — gravity + axis-separated resolution against statics | Unity `CharacterController`, Godot `CharacterBody3D` |
 | `modules/math-3d` | `Vec3` siblings of the `Vec2` motion helpers; `Quat` (mul / axis-angle / rotate-vector), `cross`, `dot` | Bevy `Vec3`/`Quat`, three.js `Vector3`/`Quaternion` |

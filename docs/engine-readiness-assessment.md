@@ -160,14 +160,18 @@ foundation, `modules/tilemap` parse plus collision grid, `modules/spatial`.
 
 **Missing — every item load-bearing.**
 
-- **Storage layout (ABSENT).** The engine's own design capture
+- **Storage layout (partially addressed).** The engine's own design capture
   ([`plans/ecs-parallelism-and-soa-storage.md`](plans/ecs-parallelism-and-soa-storage.md))
   states it plainly: objects in a `Map` is "the real blocker", and SoA
   storage is worth 2–10× single-threaded before parallelism is even
-  considered, plus the elimination of per-entity GC. At factory scale this
-  is fatal, not a nice-to-have.
-- **No workers or parallel dispatch** — all three levers in that plan
-  (message-passing offload, SoA storage, parallel dispatch) are deferred.
+  considered, plus the elimination of per-entity GC. Its "Middle" slice —
+  typed-array `ColumnStore` plus schema-inferred storage — has since
+  shipped, but the archetype endgame has not. At factory scale the
+  remainder is fatal, not a nice-to-have.
+- **No parallel dispatch** — of that plan's three levers, message-passing
+  offload (`modules/worker-pool` plus the `examples/worker-offload` harness)
+  and the columnar storage slice have shipped; parallel *dispatch* (B2) is
+  still open.
 - **No pooling and no archetype cache**, while `QueryBuilder` intersects
   store key sets on every call.
 - **No chunked or streaming world.** `HashGrid2D` is a single `Map` of
