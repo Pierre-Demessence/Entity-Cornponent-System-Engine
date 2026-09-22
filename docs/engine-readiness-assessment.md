@@ -17,7 +17,7 @@ are marked **PRESENT** or **ABSENT** where they drive a verdict.
 ## Verdict summary
 
 | Game | Would it ship on this engine today? | The load-bearing blocker |
-|---|---|---|
+| --- | --- | --- |
 | **Vampire Survivors** | Yes for a strong vertical slice; strained at shipping scale | Simulation entity count (thousands of gems/enemies) — no pooling, no SoA, no archetype cache |
 | **Stardew Valley** | Yes — but most of the work is app-side simulation + UI | No UI module; world-model primitives (crops, inventory, schedules) are deliberately not engine surface |
 | **Hollow Knight** | Yes — the engine's home genre | Slopes / one-way platforms, animation clip registry, UI + dialogue, lighting |
@@ -161,7 +161,7 @@ foundation, `modules/tilemap` parse plus collision grid, `modules/spatial`.
 **Missing — every item load-bearing.**
 
 - **Storage layout (partially addressed).** The engine's own design capture
-  ([`plans/ecs-parallelism-and-soa-storage.md`](plans/ecs-parallelism-and-soa-storage.md))
+  ([`plans/done/ecs-parallelism-and-soa-storage.md`](plans/done/ecs-parallelism-and-soa-storage.md))
   states it plainly: objects in a `Map` is "the real blocker", and SoA
   storage is worth 2–10× single-threaded before parallelism is even
   considered, plus the elimination of per-entity GC. Its "Middle" slice —
@@ -250,7 +250,7 @@ prevent.
 Ordered by games unlocked per unit of work.
 
 | Move | Unlocks | Cost |
-|---|---|---|
+| --- | --- | --- |
 | Promote the 3D stack that four examples already duplicate — `transform-3d`, 3D broadphase, 3D character controller, entity↔mesh sync, `Vec3`/`Quat`, pointer-lock look, ray-vs-AABB | Subnautica-class 3D; stops active consumer drift | Large |
 | SoA hot-component storage (step B1) alone — worth it single-threaded, before any parallelism | VS at scale; Factorio step 1 | Large |
 | Entity pooling + archetype cache (core roadmap 3.1 / 3.2) | VS at ship scale; any spawn-heavy genre | Mid |
