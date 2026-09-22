@@ -711,28 +711,39 @@ is attempted — which also matches the other zero-consumer entries
 
 </details>
 
-### `modules/noise` — deferred
+### `modules/noise` V2 — 3D + extra families — deferred
 
-**Scope.** Coherent noise — value / Perlin / simplex — as a seeded,
-domain-neutral sampler (1D/2D/3D): the math under terrain, water shaping,
-texture variation and clouds.
+**Scope.** What V1 left out: **3D samplers** (V1 ships 1D/2D), the **ridged /
+ping-pong fractal types** beyond fBm, and the **other algorithm families**
+Godot's `FastNoiseLite` and `noise-rs` ship — **cellular / Worley**, **value-
+cubic**, and **domain warp** (turbulence).
+
+**Trigger.** 3D: a scoped 3D prototype, landing with `modules/math-3d` per the
+group rule that dimension-sensitive work ships as parallel siblings. Everything
+else: a consumer that needs it. None of the remainders is *unanimous* canon —
+ridged / ping-pong reach 2 of 3 sources (Godot `FRACTAL_RIDGED` /
+`FRACTAL_PING_PONG`, `noise-rs` `RidgedMulti` / `Billow`), and cellular /
+value-cubic / domain warp are Godot-and-`noise-rs` rather than universal — so
+each needs **1** consumer.
 
 <details>
 <summary>Details</summary>
 
-**Trigger.** Met on both axes. Canon: [game-ai-landscape.md](../game-ai-landscape.md)
-lists Noise as engine-standard. Consumer: `examples/river-raid` hand-rolls
-"smooth noise for river width variation"@`examples/river-raid/src/game.ts:137`.
+**Why V1 stopped where it did.** The three classical algorithm families
+(value / Perlin / simplex) in 1D/2D plus the universal fractal combiner (fBm)
+are unanimous canon and cleared the rule-book at 0 consumers. Each remainder is
+solid canon rather than unanimous, which is the 1-consumer tier — and 3D is
+additionally a stack decision, not a capability gap.
 
-**Evidence.** ABSENT in `src/`: a grep for `noise` / `perlin` / `simplex`
-finds nothing. `modules/rng` ships seeded uniform streams, which is a
-different primitive — white noise, not coherent noise.
+**Permanently excluded, not deferred: 1D simplex.** The simplex construction
+degenerates in 1D to a gradient noise indistinguishable in shape from
+`perlin1D`, so shipping both would be two names for one behaviour.
 
-**Probable shape.** Pure functions over a seed plus coordinates, matching the
-`modules/math` and `modules/rng` value-primitive style: no ECS component, no
-system.
-
-**Canon.** Godot `FastNoiseLite`, Unity `Mathf.PerlinNoise`, `noise-rs`.
+**Related open item — river-raid's adoption.** `examples/river-raid` hand-sums
+three sines for "smooth noise for river width variation"@`examples/river-raid/src/game.ts:137`
+and two more for `riverCentreX`@`examples/river-raid/src/game.ts:148`. V1 did
+not migrate it because swapping the sine stack for `fbm1D` changes the river's
+visual profile — a playtest-owned change, not a mechanical one.
 
 </details>
 
@@ -1122,7 +1133,7 @@ signal's absence from this table means it already produced a module.
 | A second radial-gravity consumer | `modules/motion` V2 |
 | A game about darkness or light | `modules/lighting` (speculative) |
 | A 2D game whose obstacles aren't grid-aligned, or a world too large for a grid | `modules/navmesh` (speculative) |
-| Terrain / water / texture variation needing coherent noise | `modules/noise` |
+| A terrain / water prototype wanting ridged, cellular or domain-warp noise | `modules/noise` V2 |
 | A prototype with a scripted sequence (intro, cutscene, boss reveal) | `modules/timeline` (speculative) |
 | Ladder #18/#19/#20 (Worms, Dig Dug, Motherload) — mutable terrain | `modules/destructible-terrain` (speculative) |
 | Card/deck game needing pile moves or drag-and-drop | `modules/card-interaction` |

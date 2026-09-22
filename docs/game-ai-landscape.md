@@ -96,7 +96,8 @@ plan lives in the [ECS module backlog](roadmap/ecs-module-backlog.md) (see the
 
 - **Procedural content generation (PCG)** 🟨→🟩 — algorithmically build
   levels/dungeons/terrain. Increasingly core (Unreal PCG framework).
-- **Noise (Perlin/Simplex)** 🟩 — the math under terrain/textures/clouds.
+- **Noise (Perlin/Simplex)** ✅ 🟩 — the math under terrain/textures/clouds.
+  → `@pierre/ecs/modules/noise`.
 - **WFC / BSP / cellular automata / drunkard's walk** 🟨 — classic dungeon
   & level generators.
 - **Grammars / L-systems** 🟥 — rule-based generation of plants, roads,

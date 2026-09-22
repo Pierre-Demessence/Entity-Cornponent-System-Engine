@@ -321,6 +321,19 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`VelocityIntegrationOptions`** _(interface)_ — —
 - **`VelocityIntegrationTickCtx`** _(interface)_ — —
 
+### `@pierre/ecs/modules/noise`
+- **`fbm1D`** _(fn)_ — Fractal Brownian motion, 1D: octaves of `source` summed at growing frequency and shrinking amplitude, normalized by the summed **absolute...
+- **`Fbm1DOptions`** _(interface)_ — Fractal options for `fbm1D`.
+- **`fbm2D`** _(fn)_ — Fractal Brownian motion, 2D — the 2D sibling of `fbm1D`.
+- **`Fbm2DOptions`** _(interface)_ — Fractal options for `fbm2D`.
+- **`Noise1D`** _(type)_ — 1D coherent-noise sampler over a seed. Returns a value in `[-1, 1]` for finite input.
+- **`Noise2D`** _(type)_ — 2D coherent-noise sampler over a seed. Returns a value in `[-1, 1]` for finite input.
+- **`perlin1D`** _(fn)_ — Perlin gradient noise, 1D. Exactly `0` at every integer coordinate — the property that makes it well-behaved when a scrolling world sampl...
+- **`perlin2D`** _(fn)_ — Perlin gradient noise, 2D. Exactly `0` at every integer lattice point. Gradients are unit-length, so the theoretical peak is `sqrt(2)/2` ...
+- **`simplex2D`** _(fn)_ — Ken Perlin's simplex noise, 2D — gradient noise on a triangular lattice, so it has less directional bias than `perlin2D` and no axis-alig...
+- **`valueNoise1D`** _(fn)_ — Value noise, 1D: lattice values interpolated with the quintic fade. The cheapest family and the most "blocky" — good for cheap variation,...
+- **`valueNoise2D`** _(fn)_ — Value noise, 2D: faded bilinear interpolation of hashed lattice values.
+
 ### `@pierre/ecs/modules/particles`
 - **`burst`** _(fn)_ — Spawn `config.count` particles in one shot and return their entity ids. Each particle carries `PositionDef`, `VelocityDef`, `LifetimeDef`...
 - **`BurstConfig`** _(interface)_ — Configuration for burst (and the per-emission config of an emitter).
