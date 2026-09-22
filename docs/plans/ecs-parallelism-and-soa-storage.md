@@ -30,7 +30,8 @@ One line per task; the detail lives in the linked sections. `[x]` done,
 
 ### B1 — optimizations (next) ([detail](#deferred-optimizations-post-middle-surfaced-by-the-stress-harness))
 
-- [ ] `query.ts` — remove the per-entity tuple allocation (helps every query)
+- [x] `query.ts` — drop the per-entity intermediate array + spread; reject
+      non-matches via `has()` before building any component view
 - [ ] Cheaper columnar view construction (keep spread / `Object.keys` working)
 - [ ] `Int32Array` id→slot for dense ids — cut GC pressure at millions of entities
 - [ ] Float32 vs Float64 columns — decide default / add opt-in (precision footgun)

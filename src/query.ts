@@ -43,21 +43,16 @@ export class QueryBuilder<T extends unknown[]> {
         smallestIdx = i;
     }
 
+    const width = this.stores.length;
     // eslint-disable-next-line no-labels -- intentional labeled break for nested-loop query engine
     outer:
     for (const id of this.stores[smallestIdx].keys()) {
-      const values: unknown[] = Array.from({ length: this.stores.length });
-      for (let i = 0; i < this.stores.length; i++) {
-        if (i === smallestIdx) {
-          values[i] = this.stores[i].get(id);
-          continue;
-        }
-        const val = this.stores[i].get(id);
-        if (val === undefined)
+      // Cheap rejects first (membership + tags) so we never build a component
+      // view or the result tuple for a non-matching entity.
+      for (let i = 0; i < width; i++) {
+        if (i !== smallestIdx && !this.stores[i].has(id))
           continue outer; // eslint-disable-line no-labels
-        values[i] = val;
       }
-
       for (const tag of this.requiredTags) {
         if (!tag.has(id))
           continue outer; // eslint-disable-line no-labels
@@ -67,7 +62,12 @@ export class QueryBuilder<T extends unknown[]> {
           continue outer; // eslint-disable-line no-labels
       }
 
-      yield [id, ...values] as [EntityId, ...T];
+      // Match: a single result tuple built by push — one get() per store, no
+      // intermediate array, no spread.
+      const result: unknown[] = [id];
+      for (let i = 0; i < width; i++)
+        result.push(this.stores[i].get(id));
+      yield result as [EntityId, ...T];
     }
   }
 
