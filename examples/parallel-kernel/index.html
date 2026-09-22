@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Parallel kernel (core-bound) — @pierre/ecs</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: #0b0f14;
+      color: #dfe7ef;
+      font-family: system-ui, sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+
+    #root {
+      width: 800px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import { start } from './src/main.ts';
+    const teardown = start(document.getElementById('root'));
+    window.addEventListener('beforeunload', teardown);
+  </script>
+</body>
+
+</html>

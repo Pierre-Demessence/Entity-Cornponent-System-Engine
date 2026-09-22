@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids' | 'stealth-guard' | 'critters' | 'woodcutter' | 'stress-storage' | 'worker-offload';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids' | 'stealth-guard' | 'critters' | 'woodcutter' | 'stress-storage' | 'worker-offload' | 'parallel-kernel';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -201,6 +201,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'Main-thread-stall demo (not a game): a heavy CPU job run on the main thread freezes the page and spikes the frame-time graph; run in a Web Worker (via modules/worker-pool) the dots keep drifting smoothly. Evidence for step A (message-passing offload).',
     title: 'Worker offload (no stall)',
     load: () => import('@pierre/ecs-example-worker-offload/src/main.ts'),
+  },
+  {
+    id: 'parallel-kernel',
+    controls: 'Entities slider, Kernel-K slider',
+    summary: 'Core-bound benchmark (not a game): a heavy O(n·K) per-entity kernel (K attractors) run single-threaded over the columnar store. Raise entities/K until "sim" dominates the frame — evidence for step B2 (parallel dispatch over shared-memory columns).',
+    title: 'Parallel kernel (core-bound)',
+    load: () => import('@pierre/ecs-example-parallel-kernel/src/main.ts'),
   },
 ];
 
