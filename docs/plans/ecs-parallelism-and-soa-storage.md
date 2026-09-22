@@ -55,8 +55,10 @@ One line per task; the detail lives in the linked sections. `[x]` done,
 
 ### A — message-passing worker offload (module) ([detail](#a--message-passing-worker-offload-module))
 
-- [ ] "Main-thread stall" harness — evidence a heavy job freezes the frame
-- [ ] Worker-pool helper — offload a job, get a `Promise` back
+- [x] "Main-thread stall" harness — `examples/worker-offload` (a heavy job on
+      the main thread freezes the page; in a worker the dots stay smooth)
+- [x] Worker-pool helper — `modules/worker-pool` (`WorkerPool` + worker-side
+      `handleJobs`), consumed by the harness
 
 ### B2 — parallel system dispatch (core, needs B1) ([detail](#b2--parallel-system-dispatch-core-needs-b1))
 

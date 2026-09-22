@@ -34,7 +34,8 @@
     "@pierre/ecs-example-stress-storage": "*",
     "@pierre/ecs-example-tilemap": "*",
     "@pierre/ecs-example-top-down-shooter": "*",
-    "@pierre/ecs-example-woodcutter": "*"
+    "@pierre/ecs-example-woodcutter": "*",
+    "@pierre/ecs-example-worker-offload": "*"
   },
   "devDependencies": {
     "typescript": "~5.9.3",

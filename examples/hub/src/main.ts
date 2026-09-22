@@ -2,7 +2,7 @@ import './style.css';
 
 type Teardown = () => void;
 type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids' | 'stealth-guard' | 'critters' | 'woodcutter' | 'stress-storage';
+type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids' | 'stealth-guard' | 'critters' | 'woodcutter' | 'stress-storage' | 'worker-offload';
 
 interface ExampleSpec {
   id: ExampleId;
@@ -194,6 +194,13 @@ const EXAMPLES: ExampleSpec[] = [
     summary: 'Storage benchmark (not a game): runs the same integrate-and-wrap sim over N entities two ways — the ECS Map store vs flat SoA typed arrays — with isolated sim/render/frame timings and a frame-time graph. Evidence for the deferred B1 (SoA hot-component storage) step.',
     title: 'Storage stress (SoA vs Map)',
     load: () => import('@pierre/ecs-example-stress-storage/src/main.ts'),
+  },
+  {
+    id: 'worker-offload',
+    controls: 'Job-size slider, "Run in worker" checkbox, Run job button',
+    summary: 'Main-thread-stall demo (not a game): a heavy CPU job run on the main thread freezes the page and spikes the frame-time graph; run in a Web Worker (via modules/worker-pool) the dots keep drifting smoothly. Evidence for step A (message-passing offload).',
+    title: 'Worker offload (no stall)',
+    load: () => import('@pierre/ecs-example-worker-offload/src/main.ts'),
   },
 ];
 

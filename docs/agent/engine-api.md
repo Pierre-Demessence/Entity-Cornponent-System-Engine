@@ -509,3 +509,9 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`Tween`** _(interface)_ — A number interpolated `from → to` over `timer.durationMs` along `easing`.
 - **`tweenDone`** _(fn)_ — Whether a `'once'` tween has reached `to` (a `'repeating'` tween's per-wrap edge).
 - **`tweenValue`** _(fn)_ — Current eased value without advancing time.
+
+### `@pierre/ecs/modules/worker-pool`
+- **`handleJobs`** _(fn)_ — Worker-side counterpart to WorkerPool: wires the message protocol so the worker script only supplies the job function. Handles both sync ...
+- **`WorkerLike`** _(interface)_ — Minimal Worker surface the pool needs — satisfied by a real DOM `Worker`, and easy to fake in tests.
+- **`WorkerPool`** _(class)_ — A fixed pool of Web Workers that runs jobs off the main thread. Pass a spawn function (typically `() => new Worker(new URL('./job.worker....
+- **`WorkerPoolOptions`** _(interface)_ — —
