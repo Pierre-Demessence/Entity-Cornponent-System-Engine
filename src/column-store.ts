@@ -22,8 +22,30 @@ const COLUMN_CTORS = {
   u32: Uint32Array,
 } as const;
 
-function makeColumn(kind: NumericColumnKind, capacity: number): NumericArray {
-  return new COLUMN_CTORS[kind](capacity);
+function makeColumn(kind: NumericColumnKind, capacity: number, shared: boolean): NumericArray {
+  const Ctor = COLUMN_CTORS[kind];
+  if (shared) {
+    if (typeof SharedArrayBuffer === 'undefined') {
+      throw new TypeError('Shared columns require SharedArrayBuffer — enable cross-origin isolation (COOP/COEP headers).');
+    }
+    // Typed arrays accept a SharedArrayBuffer at runtime; the cast sidesteps the
+    // union-constructor overload that only sees `ArrayBuffer`.
+    const buffer = new SharedArrayBuffer(capacity * Ctor.BYTES_PER_ELEMENT) as unknown as ArrayBuffer;
+    return new Ctor(buffer);
+  }
+  return new Ctor(capacity);
+}
+
+/** Options for {@link ColumnStore}. */
+export interface ColumnStoreOptions {
+  /**
+   * Back each column with a `SharedArrayBuffer` instead of a plain
+   * `ArrayBuffer`, so worker threads can read/write the same memory with no
+   * copy (the foundation for parallel dispatch — step B2). Requires
+   * cross-origin isolation in the browser. Note: `grow()` reallocates the
+   * buffers, so any worker views must be re-acquired after the store grows.
+   */
+  shared?: boolean;
 }
 
 /**
@@ -52,15 +74,17 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   private readonly fields: string[];
   private readonly pages: (Int32Array | undefined)[] = [];
   private readonly setHandlers: StoreSetHandler<T>[] = [];
+  private readonly shared: boolean;
   private readonly slot2id: EntityId[] = [];
   private readonly validateHandlers: StoreValidateHandler[] = [];
   private readonly viewDescriptors: PropertyDescriptorMap = {};
 
-  constructor(specs: readonly ColumnField[]) {
+  constructor(specs: readonly ColumnField[], options: ColumnStoreOptions = {}) {
+    this.shared = options.shared ?? false;
     this.fields = specs.map(s => s.field);
     for (const s of specs) {
       this.colKinds[s.field] = s.kind;
-      this.columns[s.field] = makeColumn(s.kind, this.capacity);
+      this.columns[s.field] = makeColumn(s.kind, this.capacity, this.shared);
     }
 
     // Capture the backing references (not `this`) so view accessors stay
@@ -153,7 +177,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   private grow(): void {
     this.capacity *= 2;
     for (const f of this.fields) {
-      const next = makeColumn(this.colKinds[f], this.capacity);
+      const next = makeColumn(this.colKinds[f], this.capacity, this.shared);
       next.set(this.columns[f]);
       this.columns[f] = next;
     }

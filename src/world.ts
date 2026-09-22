@@ -1,3 +1,4 @@
+import type { ColumnStoreOptions } from '#column-store';
 import type { ComponentDef, ComponentStoreLike, TagDef } from '#component-store';
 import type { EntityId } from '#entity-id';
 import type { LifecycleEvent } from '#lifecycle';
@@ -281,14 +282,16 @@ export class EcsWorld {
     this.destroyQueue.add(id);
   }
 
-  registerComponent<T>(def: ComponentDef<T>): ComponentStoreLike<T> {
+  registerComponent<T>(def: ComponentDef<T>, options: ColumnStoreOptions = {}): ComponentStoreLike<T> {
     if (this.storeByName.has(def.name))
       throw new Error(`Component "${def.name}" already registered`);
+    if (options.shared && !def.columns)
+      throw new Error(`Component "${def.name}" cannot use shared storage — it is not columnar (has a non-numeric field).`);
     // Storage is inferred from the schema: all-numeric components (def.columns
     // set by simpleComponent) get columnar Structure-of-Arrays storage; the
     // rest keep the object-backed Map store. Callers never choose.
     const store: ComponentStoreLike<T> = def.columns
-      ? new ColumnStore<T>(def.columns)
+      ? new ColumnStore<T>(def.columns, { shared: options.shared })
       : new ComponentStore<T>();
     this.componentRegistry.push({ def: def as ComponentDef<unknown>, store: store as ComponentStoreLike<unknown> });
     this.storeByName.set(def.name, store as ComponentStoreLike<unknown>);

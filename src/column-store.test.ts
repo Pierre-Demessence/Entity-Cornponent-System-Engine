@@ -128,6 +128,16 @@ describe('columnStore', () => {
     expect(s.column('flag')).toBeInstanceOf(Int32Array);
   });
 
+  it('shared:true backs columns with SharedArrayBuffer (and stays shared across grow)', () => {
+    const s = new ColumnStore<Vec2>(FIELDS, { shared: true });
+    s.set(1, { x: 3, y: 4 });
+    expect(s.get(1)).toMatchObject({ x: 3, y: 4 });
+    expect(s.column('x').buffer).toBeInstanceOf(SharedArrayBuffer);
+    for (let i = 0; i < 100; i++) s.set(i, { x: i, y: -i });
+    expect(s.column('x').buffer).toBeInstanceOf(SharedArrayBuffer);
+    expect(s.get(50)).toMatchObject({ x: 50, y: -50 });
+  });
+
   it('column() + slotOf() fast path writes through', () => {
     const s = new ColumnStore<Vec2>(FIELDS);
     s.set(10, { x: 1, y: 1 });

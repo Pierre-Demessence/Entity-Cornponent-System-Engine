@@ -62,9 +62,22 @@ One line per task; the detail lives in the linked sections. `[x]` done,
 
 ### B2 — parallel system dispatch (core, needs B1) ([detail](#b2--parallel-system-dispatch-core-needs-b1))
 
-- [ ] `SharedArrayBuffer`-backed columns (SAB storage option on `ColumnStore`)
-- [ ] Fat-kernel harness — evidence a per-entity kernel is core-bound single-threaded
-- [ ] Scheduler auto-dispatch of disjoint (`reads` / `writes`) systems to workers
+- [x] `SharedArrayBuffer`-backed columns — `ColumnStore` `{ shared: true }`
+      option (`ColumnStoreOptions`), plumbed through `world.registerComponent`;
+      columns allocate over `SharedArrayBuffer` so workers can read/write the
+      same buffers with no copy
+- [x] Fat-kernel harness — `examples/parallel-kernel` (a per-entity attractor
+      kernel; 600k×64 is ~75 ms single-threaded, ~1 ms render → core-bound)
+- [x] Data-parallel dispatch over shared columns — the harness splits the slot
+      range across `hardwareConcurrency` workers, each running the kernel over
+      its slice of the shared Position columns behind a per-frame barrier;
+      verified 13→75 fps at 600k×64, holds 75 fps at 1M entities
+  - **Not** general scheduler auto-dispatch of arbitrary systems: JS closures
+    can't be sent to a worker, so a system's function body can't be shipped.
+    The realizable form is a data-parallel `parallelFor(kernel, range)` where
+    the kernel is a worker-defined module operating on shared columns. Promoting
+    the harness pattern into a reusable module is future work (needs a second
+    consumer per the promotion rule).
 
 ## Two facts that shape everything
 

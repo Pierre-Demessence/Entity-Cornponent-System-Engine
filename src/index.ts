@@ -1,7 +1,7 @@
 export type { EntityId } from '#entity-id';
 
 export { type AudioHandle, type AudioPlayOptions, type AudioProvider } from '#audio-provider';
-export { ColumnStore } from '#column-store';
+export { ColumnStore, type ColumnStoreOptions } from '#column-store';
 export {
   type ColumnField,
   type ComponentDef,

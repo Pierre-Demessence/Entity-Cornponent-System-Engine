@@ -2,22 +2,28 @@ import { EcsWorld } from '@pierre/ecs';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
 /**
- * Parallel-kernel harness — evidence for step B2 (parallel dispatch over
- * SharedArrayBuffer) in docs/plans/ecs-parallelism-and-soa-storage.md.
+ * Parallel-kernel harness — step B2 (parallel dispatch over SharedArrayBuffer).
  *
- * Each tick runs a deliberately heavy, embarrassingly-parallel per-entity
- * kernel: every entity is pulled by K fixed attractors (O(n·K), a sqrt per
- * pair). This is *single-threaded* here — the point is to show the simulation
- * is genuinely **core-bound** (raise the entity count or the kernel weight and
- * "sim" ms dominates the frame), which is the prerequisite that justifies B2:
- * splitting the kernel across workers over shared-memory columns. A "parallel"
- * toggle is added once SAB-backed columns + worker dispatch land.
+ * Each tick runs a heavy O(n·K) per-entity kernel (every entity pulled by K
+ * attractors). Toggle "Parallel":
+ *   - OFF — the kernel runs single-threaded on the main thread; a heavy kernel
+ *     makes "sim" dominate the frame and the graph spikes past vsync.
+ *   - ON  — the kernel is split across workers that read/write the *shared*
+ *     Position columns (SharedArrayBuffer, no copy). The main thread dispatches
+ *     and renders without blocking, so it stays smooth, and "sim" (worker
+ *     wall-time) drops ~cores× for a heavy kernel.
+ *
+ * Parallel needs cross-origin isolation (SharedArrayBuffer). The example's dev
+ * server sets COOP/COEP headers; loaded via the hub (no headers) the toggle is
+ * disabled and it runs single-threaded.
  */
 
 const W = 800;
 const H = 600;
 const STEP = 6; // px/s pull toward the net attractor direction
 const HISTORY = W;
+const ISOLATED = typeof SharedArrayBuffer !== 'undefined';
+const CORES = Math.max(2, Math.min(navigator.hardwareConcurrency || 4, 8));
 
 const BG = rgba(11, 15, 20);
 const DOT = rgba(127, 212, 255);
@@ -44,19 +50,23 @@ interface Sim {
   ax: Float32Array;
   ay: Float32Array;
   count: number;
-  px: Float32Array | Float64Array | Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array;
-  py: Float32Array | Float64Array | Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array;
+  px: Float32Array;
+  pxBuf: ArrayBufferLike;
+  py: Float32Array;
+  pyBuf: ArrayBufferLike;
 }
 
-function makeSim(count: number, attractorCount: number): Sim {
+function makeSim(count: number, attractorCount: number, shared: boolean): Sim {
   const world = new EcsWorld();
-  world.registerComponent(PositionDef);
+  world.registerComponent(PositionDef, { shared });
   const store = world.getStore(PositionDef);
   for (let i = 0; i < count; i++) {
     const id = world.createEntity();
     store.set(id, { x: Math.random() * W, y: Math.random() * H });
   }
   const col = world.getColumnStore(PositionDef);
+  const px = col.column('x') as Float32Array;
+  const py = col.column('y') as Float32Array;
   const ax = new Float32Array(attractorCount);
   const ay = new Float32Array(attractorCount);
   for (let k = 0; k < attractorCount; k++) {
@@ -64,10 +74,10 @@ function makeSim(count: number, attractorCount: number): Sim {
     ax[k] = W / 2 + Math.cos(a) * (W * 0.35);
     ay[k] = H / 2 + Math.sin(a) * (H * 0.35);
   }
-  return { attractorCount, ax, ay, count, px: col.column('x'), py: col.column('y') };
+  return { attractorCount, ax, ay, count, px, pxBuf: px.buffer, py, pyBuf: py.buffer };
 }
 
-function stepSim(sim: Sim, dt: number): void {
+function stepSingle(sim: Sim, dt: number): void {
   const { attractorCount: K, ax, ay, count, px, py } = sim;
   const pull = STEP * dt;
   for (let s = 0; s < count; s++) {
@@ -85,6 +95,13 @@ function stepSim(sim: Sim, dt: number): void {
     px[s] = wrap(x + fx * pull, W);
     py[s] = wrap(y + fy * pull, H);
   }
+}
+
+function ranges(count: number, n: number): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  const per = Math.ceil(count / n);
+  for (let i = 0; i < n; i++) out.push([Math.min(i * per, count), Math.min((i + 1) * per, count)]);
+  return out;
 }
 
 function drawGraph(gctx: CanvasRenderingContext2D, history: number[], refreshMs: number): void {
@@ -141,9 +158,9 @@ export function start(container: HTMLElement): () => void {
     el.max = String(max);
     el.step = String(step);
     el.value = String(value);
-    el.style.width = '180px';
+    el.style.width = '160px';
     const text = document.createElement('span');
-    text.style.cssText = 'min-width:64px;font-variant-numeric:tabular-nums';
+    text.style.cssText = 'min-width:60px;font-variant-numeric:tabular-nums';
     wrapEl.append(`${label}:`, el, text);
     controls.append(wrapEl);
     return { el, text };
@@ -151,6 +168,14 @@ export function start(container: HTMLElement): () => void {
 
   const count = mkSlider('Entities', 10000, 1000000, 10000, 100000);
   const kernel = mkSlider('Kernel K', 1, 64, 1, 8);
+
+  const parLabel = document.createElement('label');
+  parLabel.style.cssText = 'font:13px system-ui;display:flex;gap:6px;align-items:center;cursor:pointer';
+  const parBox = document.createElement('input');
+  parBox.type = 'checkbox';
+  parBox.disabled = !ISOLATED;
+  parLabel.append(parBox, ISOLATED ? `Parallel (${CORES} workers)` : 'Parallel (needs COOP/COEP — run standalone)');
+  controls.append(parLabel);
 
   const stage = document.createElement('div');
   stage.style.cssText = 'position:relative;width:100%';
@@ -161,7 +186,7 @@ export function start(container: HTMLElement): () => void {
   const ctx = canvas.getContext('2d')!;
 
   const panel = document.createElement('div');
-  panel.style.cssText = 'position:absolute;top:8px;right:8px;background:rgba(6,10,15,0.72);border:1px solid #1c2833;border-radius:6px;padding:8px 10px;font:12px/1.6 ui-monospace,monospace;min-width:170px';
+  panel.style.cssText = 'position:absolute;top:8px;right:8px;background:rgba(6,10,15,0.72);border:1px solid #1c2833;border-radius:6px;padding:8px 10px;font:12px/1.6 ui-monospace,monospace;min-width:180px';
   const panelRow = (label: string): HTMLSpanElement => {
     const r = document.createElement('div');
     r.style.cssText = 'display:flex;justify-content:space-between;gap:16px';
@@ -177,7 +202,7 @@ export function start(container: HTMLElement): () => void {
   const fpsV = panelRow('fps');
   const frameV = panelRow('frame');
   const simV = panelRow('sim (kernel)');
-  const renderV = panelRow('render');
+  const modeV = panelRow('mode');
   const entV = panelRow('entities');
   const kV = panelRow('kernel K');
   stage.append(canvas, panel);
@@ -190,17 +215,59 @@ export function start(container: HTMLElement): () => void {
 
   const caption = document.createElement('div');
   caption.style.cssText = 'padding:8px 0;font:12px system-ui;color:#6f8296';
-  caption.textContent = 'Single-threaded, on purpose. Each tick every entity is pulled by K attractors (O(n·K)). Raise Entities or Kernel K until "sim" dominates the frame and the graph climbs past the vsync line — that core-bound simulation is the case B2 (parallel dispatch over shared-memory columns) is meant to speed up.';
+  caption.textContent = 'Raise Entities / Kernel K until the single-threaded sim spikes past vsync, then toggle Parallel: the kernel is split across workers over shared-memory columns, the main thread stops blocking, and the graph flattens. On light kernels the barrier overhead makes parallel slower — the crossover is the point.';
 
   container.append(controls, stage, graph, caption);
 
   const img = ctx.createImageData(W, H);
   const pixels = new Uint32Array(img.data.buffer);
 
-  let sim = makeSim(Number(count.el.value), Number(kernel.el.value));
+  const workers: Worker[] = [];
+  if (ISOLATED) {
+    for (let i = 0; i < CORES; i++)
+      workers.push(new Worker(new URL('./kernel.worker.ts', import.meta.url), { type: 'module' }));
+  }
+
+  let doneCount = 0;
+  let barrierResolve: (() => void) | null = null;
+  for (const w of workers) {
+    w.addEventListener('message', (e: MessageEvent) => {
+      if ((e.data as { type: string }).type === 'done' && ++doneCount === workers.length && barrierResolve) {
+        const r = barrierResolve;
+        barrierResolve = null;
+        r();
+      }
+    });
+  }
+
+  let sim = makeSim(Number(count.el.value), Number(kernel.el.value), false);
+  let workersReady = false;
+  let inFlight = false;
+
+  const initWorkers = async (s: Sim): Promise<void> => {
+    workersReady = false;
+    const rs = ranges(s.count, workers.length);
+    await Promise.all(workers.map((w, i) => new Promise<void>((resolve) => {
+      const onReady = (e: MessageEvent): void => {
+        if ((e.data as { type: string }).type === 'ready') {
+          w.removeEventListener('message', onReady);
+          resolve();
+        }
+      };
+      w.addEventListener('message', onReady);
+      w.postMessage({ ax: s.ax, ay: s.ay, end: rs[i][1], h: H, pxBuf: s.pxBuf, pyBuf: s.pyBuf, start: rs[i][0], step: STEP, type: 'init', w: W });
+    })));
+    workersReady = true;
+  };
+
+  const stepParallel = (dt: number): Promise<void> => new Promise((resolve) => {
+    doneCount = 0;
+    barrierResolve = resolve;
+    for (const w of workers) w.postMessage({ dt, type: 'step' });
+  });
+
   let history: number[] = [];
   let simMsAvg = 0;
-  let renderMsAvg = 0;
   let frameMsAvg = 0;
   let fps = 0;
   let lastFrame = performance.now();
@@ -209,13 +276,17 @@ export function start(container: HTMLElement): () => void {
 
   const fmt = (n: number): string => n.toLocaleString('en-US');
   const rebuild = (): void => {
-    sim = makeSim(Number(count.el.value), Number(kernel.el.value));
+    const parallel = parBox.checked && ISOLATED;
+    sim = makeSim(Number(count.el.value), Number(kernel.el.value), parallel);
     history = [];
     simMsAvg = 0;
-    renderMsAvg = 0;
     frameMsAvg = 0;
     fps = 0;
+    inFlight = false;
+    workersReady = false;
     lastFrame = performance.now();
+    if (parallel)
+      void initWorkers(sim);
   };
   count.text.textContent = fmt(Number(count.el.value));
   kernel.text.textContent = String(kernel.el.value);
@@ -227,6 +298,7 @@ export function start(container: HTMLElement): () => void {
   });
   count.el.addEventListener('change', rebuild);
   kernel.el.addEventListener('change', rebuild);
+  parBox.addEventListener('change', rebuild);
 
   const ema = (avg: number, sample: number): number => avg === 0 ? sample : avg * 0.9 + sample * 0.1;
 
@@ -244,11 +316,25 @@ export function start(container: HTMLElement): () => void {
     if (history.length > HISTORY)
       history.shift();
 
-    const t0 = performance.now();
-    stepSim(sim, Math.min(frameDelta, 33) / 1000);
-    const simMs = performance.now() - t0;
+    const dt = Math.min(frameDelta, 33) / 1000;
+    const parallel = parBox.checked && ISOLATED;
+    if (parallel) {
+      if (workersReady && !inFlight) {
+        inFlight = true;
+        const t0 = performance.now();
+        void stepParallel(dt).then(() => {
+          simMsAvg = ema(simMsAvg, performance.now() - t0);
+          inFlight = false;
+        });
+      }
+    }
+    else {
+      const t0 = performance.now();
+      stepSingle(sim, dt);
+      simMsAvg = ema(simMsAvg, performance.now() - t0);
+    }
 
-    const t1 = performance.now();
+    frameMsAvg = ema(frameMsAvg, frameDelta);
     pixels.fill(BG);
     const { count: n, px, py } = sim;
     for (let s = 0; s < n; s++) {
@@ -258,17 +344,12 @@ export function start(container: HTMLElement): () => void {
         pixels[y * W + x] = DOT;
     }
     ctx.putImageData(img, 0, 0);
-    const renderMs = performance.now() - t1;
-
-    simMsAvg = ema(simMsAvg, simMs);
-    renderMsAvg = ema(renderMsAvg, renderMs);
-    frameMsAvg = ema(frameMsAvg, frameDelta);
     drawGraph(gctx, history, refreshMs || (1000 / 60));
 
     fpsV.textContent = fps.toFixed(0);
     frameV.textContent = `${frameMsAvg.toFixed(2)} ms`;
     simV.textContent = `${simMsAvg.toFixed(2)} ms`;
-    renderV.textContent = `${renderMsAvg.toFixed(2)} ms`;
+    modeV.textContent = parallel ? `parallel ×${workers.length}` : 'single';
     entV.textContent = fmt(sim.count);
     kV.textContent = String(sim.attractorCount);
 
@@ -278,6 +359,7 @@ export function start(container: HTMLElement): () => void {
 
   return (): void => {
     window.cancelAnimationFrame(rafId);
+    for (const w of workers) w.terminate();
     container.innerHTML = '';
   };
 }
