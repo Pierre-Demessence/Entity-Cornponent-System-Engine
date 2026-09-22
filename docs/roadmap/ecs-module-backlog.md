@@ -62,13 +62,29 @@ and guardrails.
 
 ### `RenderableDef` extensions V3 — deferred
 
-**Scope.** The last item of the original V3 list: **Canvas filters**
-(`ctx.filter`) — blur, drop-shadow and similar post-processing.
+**Scope.** Three remaining `Renderable` gaps: **composite renderables**
+(one entity drawing several primitives, so `Renderable` stops being one
+drawable per entity), a **billboard sprite** (a camera-facing textured quad
+for a 2D sprite in a 3D world), and the original last item, **Canvas
+filters** (`ctx.filter`) — blur, drop-shadow and similar post-processing.
 
-**Trigger.** A concrete request. These effects are rarely used in practice.
+**Trigger.** Composite: a second consumer beyond flappy's pipe pairs.
+Billboard: doom is the only consumer and three.js `Sprite` covers it today.
+Canvas filters: a concrete request — these effects are rarely used in
+practice.
 
 <details>
 <summary>Details</summary>
+
+**Composite.** `Renderable`@`src/modules/render-canvas2d/renderable.ts` is a
+single discriminated union — one `kind` per entity — so multi-part sprites
+(flappy's pipe pairs) are hand-drawn instead of going through the renderer.
+1 consumer.
+
+**Billboard.** doom draws each enemy as a `THREE.Sprite`@`examples/doom/src/render.ts:123`
+(auto-faces the camera, `alphaTest` for the transparent background). The 2D
+renderers have no analogue, and three.js supplies it for free — so this is an
+engine-shape question, not a missing capability.
 
 Two related items are *not* here: the sprite/texture variant and GID flip
 bits shipped, and the batched tilemap renderable is tracked as
@@ -79,6 +95,133 @@ included).
 `view`/zoom hook exists, so snake needs to adopt a `CameraDef` zoom instead
 of baking the `cells → pixels` scale into every renderable by hand. Tracked
 with the camera V3 entry.
+
+</details>
+
+### `modules/collision` V2 — raycast — deferred
+
+**Scope.** A ray-vs-shape query — slab-method ray/AABB returning the entry
+`t` plus the face axis — and its 3D sibling. Serves picking, hitscan,
+line-of-sight, and carry clamps.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** Met — two consumers already hand-roll the same function. portal
+`rayAabb`@`examples/portal/src/systems/portal-math.ts:63` (portal-gun aim +
+carry wall-clamp), and doom copies it to
+`examples/doom/src/systems/math.ts:18` for hitscan
+(`systems/weapon.ts`) and enemy line-of-sight (`systems/ai.ts`).
+
+**Probable shape.** A ray is a degenerate `aabbVsAabbSwept` (a zero-size
+mover), so this may be an extension of that function rather than a new one —
+decide at build time. The 3D variant lands with the 3D group.
+
+**Canon.** Unity `Physics.Raycast`, Godot
+`PhysicsDirectSpaceState2D.intersect_ray`, Unreal line traces.
+
+</details>
+
+### `modules/kinematics` V2 — slopes + one-way platforms — deferred
+
+**Scope.** Two surface behaviours the arcade body solver lacks: **slopes**
+(walk a non-axis-aligned surface with the body following its normal) and
+**one-way platforms** (solid from above, pass-through from below).
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** A platformer prototype that needs them. None does yet —
+`examples/platformer` uses procedurally-placed AABB platforms — but ladder
+entries #15/#16/#17 (Mario Bros, Pitfall, VVVVVV) all do, and
+[engine-readiness-assessment.md](../engine-readiness-assessment.md) names
+both as Hollow Knight's load-bearing blocker.
+
+**Evidence.** ABSENT, confirmed in `src/`: a grep of `src/modules/**` finds no
+`oneWay` or slope handling in `collision` or `kinematics`; the only `slope`
+matches are shadowcasting math in `grid-based/visibility.ts:45`.
+
+**Probable shape.** One-way is a per-collider flag consulted in the axis
+sweep (skip the contact when the mover approaches from the disabled side).
+Slopes need the sweep to become normal-aware, or an explicit slope resolver
+after it. `kinematics-3d` gets them separately.
+
+**Canon.** Unity `PlatformEffector2D`, Godot `CharacterBody2D` one-way
+collision, GameMaker, every Celeste-lineage platformer tutorial.
+
+</details>
+
+### `modules/input` V2 — pointer-lock relative look — deferred
+
+**Scope.** A first-person / orbit look provider: capture the cursor, map
+`movementX`/`movementY` to yaw (plus optional pitch) with a sensitivity
+factor and a pitch clamp.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** Met — three consumers, all hand-rolled. platformer-3d
+`main.ts:89` (`cameraYaw -= e.movementX * CAMERA_MOUSE_SENSITIVITY`, yaw
+only); portal `main.ts:107` (yaw **and** pitch, clamped); doom `main.ts:116`
+(yaw + pitch + clamp).
+
+**Why it isn't just `PointerProvider`.** `modules/input` ships a Pointer
+provider with an absolute `PointerState`; a grep of `src/modules/input`
+finds no `movementX`, no pointer lock, no yaw. Relative-look is a different
+capability, not a flag on the existing provider.
+
+**Distinct from the event-mode variant above**, which is a turn-based input
+question, not a real-time one.
+
+</details>
+
+### `modules/tick` V2 — fixed-timestep accumulator + interpolation — deferred
+
+**Scope.** A tick source that consumes real elapsed time, advances the world
+at a fixed `dt` with catch-up steps, and exposes an interpolation factor so
+the renderer can draw between the last two simulation states.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** A game whose physics needs frame-rate-independent determinism at
+a varying display rate. Both shipped sources deliberately sidestep it:
+`AnimationFrameTickSource` emits variable dt@`src/modules/tick/animation-frame-tick-source.ts:27`
+and its own docs say consumers needing catch-up "layer an accumulator on
+top"; `FixedIntervalTickSource` is *nominal* fixed dt@`src/modules/tick/fixed-interval-tick-source.ts:7`.
+
+**Probable shape.** `FixedAccumulatorTickSource { fixedDtMs, maxStepsPerFrame }`
+yielding `{ dt, alpha }` — systems keep reading a fixed `dt`, the renderer
+lerps by `alpha`. The spiral-of-death clamp (`maxStepsPerFrame`) is the
+load-bearing detail, not the loop.
+
+**Canon.** Godot `_physics_process` + `Engine.physics_ticks_per_second`,
+Unity `FixedUpdate` + `Rigidbody.interpolation`, Bevy `FixedUpdate`.
+
+</details>
+
+### `modules/motion` V2 — force fields (point attractor) — deferred
+
+**Scope.** A reusable "accelerate every body toward point P" force — the
+radial/attractor case, as distinct from constant-directional gravity.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** A second *radial* consumer. spacewar is the only one: it
+hand-rolls an inverse-square field toward the star with a minimum-radius
+clamp (`force = STAR_GRAVITY / r2`@`examples/spacewar/src/systems/gravity.ts:52`,
+clamp @:49). flappy / jetpack / platformer-3d hand-roll constant
+`vel.vy += G*dt`, which is a one-liner and **not** the same shape.
+
+**Related row closed with this entry.** The ledger's out-of-bounds respawn
+(kill-plane) row is declined, not promoted — portal and doom each check
+`y < RESPAWN_Y` in `onBeforeFlush`, which is a one-liner, not a force. See
+[non-goals.md](non-goals.md).
+
+**Canon.** Constant-directional gravity ships in every integrator; radial
+fields are usually a game-side force accumulator (Unity `Rigidbody.AddForce`
+with a computed direction, Godot `Area2D` gravity point).
 
 </details>
 
@@ -146,9 +289,9 @@ deliberate, but not deferred work.
 
 ## 3D siblings — speculative
 
-**Scope.** Parallel 3D-dimension modules (transform, motion, collision,
-kinematics, render-webgl/webgpu, camera-3d) that ship alongside the 2D stack
-rather than replacing it.
+**Scope.** Parallel 3D-dimension modules (transform, math, motion, collision,
+kinematics, render-webgl/webgpu, camera-3d, navmesh-3d) that ship alongside
+the 2D stack rather than replacing it.
 
 <details>
 <summary>Details</summary>
@@ -164,16 +307,22 @@ is attempted, and none is scheduled.
 | `modules/motion-3d` | 3-vector velocity integrator + optional 3D bounds | Bevy integrators |
 | `modules/collision-3d` | `ShapeAabb3Def`, `ShapeSphereDef`, optional `ShapeObbDef`; AABB3 / sphere / OBB narrowphase | Bevy `bevy_rapier3d`, PhysX primitives |
 | `modules/kinematics-3d` | Arcade 3D character controller — gravity + axis-separated resolution against statics | Unity `CharacterController`, Godot `CharacterBody3D` |
+| `modules/math-3d` | `Vec3` siblings of the `Vec2` motion helpers; `Quat` (mul / axis-angle / rotate-vector), `cross`, `dot` | Bevy `Vec3`/`Quat`, three.js `Vector3`/`Quaternion` |
+| `modules/render-scene3d` | entity ↔ scene-object sync: create / update / reap by tag — the 3D analogue of `Canvas2DRenderer` | three.js scene graphs, Babylon `Scene` |
+| `modules/navmesh-3d` | Triangle-mesh navigation: bake, regions, links, agent-radius inflation. 2D sibling: `modules/navmesh` | Recast/Detour, Godot `NavigationRegion3D`, Unity `NavMesh` |
 | `modules/render-webgl` | `Renderer<TCtx>` implementation backed by WebGL | three.js, Babylon |
 | `modules/render-webgpu` | Same interface, WebGPU backend | Bevy WGPU, three.js WebGPU renderer |
-| `modules/camera-3d` | Perspective + orthographic projection, frustum, view matrix | Bevy `Camera3dBundle`, Unity `Camera` |
+| `modules/camera-3d` | Projection (perspective + ortho), frustum, view matrix, and the rig family — first-person look, orbit, third-person chase (smoothed, slerped) | Bevy `Camera3dBundle`, Unity `Camera`, Godot `Camera3D` |
 
 **Trigger for the whole group.** A scoped 3D prototype (matches the
 [prototype ladder](../archived/prototype-games-roadmap.md) — 3D platformer or
-similar). Until then, the 2D stack is the only stack. The gap ledger records
-**4 consumers already duplicating** a 3D solver and a 3D entity↔mesh sync
-(platformer-3d, portal, doom, starfighter), so this group is the largest
-de-facto demand cluster in the file.
+similar). Until then, the 2D stack is the only stack. The gap ledger already
+records the duplicated work, which makes this the largest de-facto demand
+cluster in the file: **4 consumers** hand-roll the entity↔mesh sync
+(platformer-3d, portal, doom, starfighter), **3** the 3D AABB solver
+(platformer-3d, portal, doom), **3** pointer-lock look (now homed at
+`modules/input` V2), **2** a ray-vs-AABB test, and **2** a `Vec3`/`Quat`
+library.
 
 **Rules (re-affirmed from the shipped plan).**
 
@@ -362,6 +511,35 @@ container parenting, custom DOM render loops in card/deckbuilder web games.
 
 </details>
 
+### `modules/lighting` — speculative
+
+**Scope.** 2D lighting: light sources with radius/cone/falloff, occluders
+that cast shadows, and a light-accumulation pass the renderer blends over
+the world.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** A game that is *about* darkness or light — stealth visibility,
+cave crawling, day/night mood. No consumer yet: nothing in `examples/`
+hand-rolls a light pass. `modules/grid-based` visibility is the related but
+different capability (what the *player* can see on a grid, not what the
+*renderer* lights).
+
+**Evidence.** ABSENT in `src/`: a grep for `Light2D`/lighting finds only
+`castLight` shadowcasting in `grid-based/visibility.ts:88`. The Canvas2D
+renderer has no blend-mode lighting pass.
+
+**Rationale for speculative.** [engine-readiness-assessment.md](../engine-readiness-assessment.md)
+names it for Hollow Knight ("Lighting, shaders, post-FX — Canvas2D only"),
+but no prototype has needed it. Building it speculatively means guessing a
+light model (simple radial? normal-mapped?) with no consumer to validate it.
+
+**Canon.** Godot `Light2D` + `LightOccluder2D`, Unity 2D Lights (URP),
+Phaser's `Light2D` pipeline.
+
+</details>
+
 ### `modules/scene` V2 — deferred
 
 **Scope.** Full scene-stack orchestration: bundle-a-world-with-content, scene
@@ -376,6 +554,38 @@ V1 ships only the tick-boundary transition queue (`SceneTransitionQueue`) plus
 `transferEntities`.
 
 **Canon.** Unity `SceneManager`, Godot scenes, Bevy `States`.
+
+</details>
+
+### `modules/timeline` — speculative
+
+**Scope.** Sequenced multi-track playback — "do A, wait 0.5 s, then B and C
+together" — where the tracks drive tweens, camera moves, dialogue steps, and
+app callbacks off one clock.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** A prototype with a scripted sequence: an intro fly-in, a boss
+reveal, a scripted camera. No consumer yet.
+
+**Why nothing shipped covers it.** `modules/tween` animates a *single*
+scalar (`tweenValue` / `tickTween` / `tweenDone` / `resetTween`) and leaves
+composition to the caller. `modules/scene-transition` is a tick-boundary
+transition *queue*, not a timeline. A sequence therefore means hand-nesting
+completion callbacks in app code.
+
+**Probable shape.** A clip list with `{ startMs, durationMs, track }` and one
+`tickMs` advance. Tracks are adapters, so a tween track, a camera track and a
+dialogue track are each ~20 lines — the engine ships the clock and the clip
+list, not the clip kinds.
+
+**Related.** The natural partner to `modules/dialogue`: a cutscene is a
+timeline whose tracks include dialogue steps, which is why the dialogue entry
+scopes itself to the runner/presenter seam and leaves sequencing here.
+
+**Canon.** Unity Timeline, Godot `AnimationPlayer` + `AnimationTree`, Unreal
+Sequencer.
 
 </details>
 
@@ -459,6 +669,70 @@ on a real-world map (binary heap).
 **Rationale for deferral.** None of the deferred features pay for themselves
 at rogue-scale (80×60 grids, single-pather-per-turn workloads). A\* with
 linear open-set returns in well under a millisecond on these maps.
+
+</details>
+### `modules/navmesh` — speculative
+
+**Scope.** Polygon navigation for 2D: walkable polygon regions baked from
+authored outlines (or derived from a collision grid), joined by links, with
+agent-radius inflation and funnel / string-pulled paths. A 3D sibling
+(`modules/navmesh-3d`) ships with the 3D group.
+
+<details>
+<summary>Details</summary>
+
+**Not a 3D-only concept.** A navmesh is a walkable *surface*, which makes the
+2D case the more direct one — Godot ships an explicit 2D variant
+(`NavigationPolygon` + `NavigationRegion2D` + `NavigationAgent2D`, with
+one-way/bidirectional `NavigationLink2D` links, `navigation_layers` bitmasks,
+and avoidance by agent radius). Unity's `NavMesh` is 3D; the 2D route there is
+a community package.
+
+**Trigger.** A 2D game whose obstacles are not grid-aligned, or whose world
+is large enough that one polygon replaces many grid cells — Godot's docs make
+exactly this argument for mesh-based navigation. `modules/pathfinding`
+already covers the grid case, so a navmesh waits for a consumer the grid
+cannot serve.
+
+**Why it isn't `modules/pathfinding` V2.** That entry's deferred list is
+*grid* A\* work — JPS, flow fields, a binary-heap open set, path smoothing. A
+navmesh is a different problem: continuous-space geometry, agent radius, and
+region/link composition. Smoothing a grid path and baking an
+agent-radius-inflated polygon graph are different jobs.
+
+**Canon.** Godot `NavigationRegion2D` (2D) and `NavigationRegion3D` (3D);
+Recast/Detour as the classic 3D bake; Unity `NavMesh`.
+
+**Why speculative rather than deferred.** The *shape* is canon-clear; what is
+missing is any consumer representing the class of game that needs it. By this
+file's definitions that is `speculative` — the shape exists only if that class
+is attempted — which also matches the other zero-consumer entries
+(`modules/ui`, `modules/lighting`, `modules/timeline`).
+
+</details>
+
+### `modules/noise` — deferred
+
+**Scope.** Coherent noise — value / Perlin / simplex — as a seeded,
+domain-neutral sampler (1D/2D/3D): the math under terrain, water shaping,
+texture variation and clouds.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** Met on both axes. Canon: [game-ai-landscape.md](../game-ai-landscape.md)
+lists Noise as engine-standard. Consumer: `examples/river-raid` hand-rolls
+"smooth noise for river width variation"@`examples/river-raid/src/game.ts:137`.
+
+**Evidence.** ABSENT in `src/`: a grep for `noise` / `perlin` / `simplex`
+finds nothing. `modules/rng` ships seeded uniform streams, which is a
+different primitive — white noise, not coherent noise.
+
+**Probable shape.** Pure functions over a seed plus coordinates, matching the
+`modules/math` and `modules/rng` value-primitive style: no ECS component, no
+system.
+
+**Canon.** Godot `FastNoiseLite`, Unity `Mathf.PerlinNoise`, `noise-rs`.
 
 </details>
 
@@ -743,6 +1017,67 @@ contracts (single-spa), React root `createRoot`/`unmount`.
 
 </details>
 
+### `modules/destructible-terrain` — speculative
+
+**Scope.** Mutable terrain: erase or modify tiles at runtime and keep the
+collision mask, the rendered layer, and any path/FOV data in step.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** Ladder entries #18 (Worms), #19 (Dig Dug) and #20 (Motherload)
+are all built on it — three consecutive games, none started.
+
+**What ships today is static.** `buildCollisionGrid` derives a
+`CollisionGrid { width, height, solid: Uint8Array }` from a `TmxMap` once
+(`src/modules/tilemap/collision-grid.ts:10`), and `spawnTilemap` spawns one
+entity per non-empty tile from that same map. Neither has a mutation path:
+there is no `eraseTile` / `setCell`, and `buildTilemapAtlas` bakes once.
+
+**Probable shape.** The collision half is nearly free — `solid` is already a
+row-major `Uint8Array`, so a hole is a write plus a query-cache invalidation.
+The rendering half is the real work, and it is the same work
+`modules/tilemap` V2 (batched renderable) needs: mutate a tile grid and
+re-upload the dirty region instead of respawning entities.
+
+**Rationale for speculative.** It presumes a batched tile layer that does not
+exist yet, so it cannot land before V2 — track the two together.
+
+**Canon.** Worms-style destructible bitmaps, Godot `TileMap.erase_cell`,
+Unity `Tilemap.SetTile(null)`.
+
+</details>
+
+### `modules/card-interaction` — deferred
+
+**Scope.** Two genre-clustered capabilities for card and deck games:
+**zone/pile management** (move a card between hand ↔ deck ↔ discard, or stock
+↔ waste, keeping pile metadata consistent) and **drag-and-drop hit-testing**
+(reverse hit-test plus a legal-drop predicate).
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** Met — 2 consumers each, clustering on one genre shape:
+card-battler and solitaire. Compare `modules/grid-movement`, which stayed
+`deferred` because three consumers turned out to have three shapes; here two
+consumers agree.
+
+**Evidence.** Both ABSENT in `src/`: no zone/pile helper (the tag swaps are
+hand-rolled) and no hit-test / drop-predicate helper (card-battler and
+solitaire each hand-roll reverse hit-testing for DOM and canvas).
+
+**Open question to settle before building.** card-battler models zones as
+*tags*, and tags emit no lifecycle event; a *component* model would get
+`ComponentAdded` / `ComponentRemoved` reactivity for free. Pick the zone model
+first — it decides both the helper's shape and whether the related ledger row
+(zone changes with no reactive hook) closes or returns.
+
+**Canon.** Unity UI drag handlers, Godot `Control` drag-and-drop, Phaser's
+drag plugins, every card-game tutorial's hand-rolled pile manager.
+
+</details>
+
 ---
 
 ## Promotion triggers — summary
@@ -780,6 +1115,17 @@ signal's absence from this table means it already produced a module.
 | Second app-host beyond `examples/hub` | App-host helper (speculative) |
 | Prototype needing in-game UI widgets | `modules/ui` |
 | Prototype needing branching dialogue (choices, or lines gated on world state) | `modules/dialogue` (speculative) |
+| Prototype needing picking / hitscan / line-of-sight rays | `modules/collision` V2 |
+| Prototype needing slopes or one-way platforms | `modules/kinematics` V2 |
+| First-person or orbit camera look | `modules/input` V2 |
+| Frame-rate-independent physics determinism | `modules/tick` V2 |
+| A second radial-gravity consumer | `modules/motion` V2 |
+| A game about darkness or light | `modules/lighting` (speculative) |
+| A 2D game whose obstacles aren't grid-aligned, or a world too large for a grid | `modules/navmesh` (speculative) |
+| Terrain / water / texture variation needing coherent noise | `modules/noise` |
+| A prototype with a scripted sequence (intro, cutscene, boss reveal) | `modules/timeline` (speculative) |
+| Ladder #18/#19/#20 (Worms, Dig Dug, Motherload) — mutable terrain | `modules/destructible-terrain` (speculative) |
+| Card/deck game needing pile moves or drag-and-drop | `modules/card-interaction` |
 
 Every promotion still runs through the engine extension rule-book (the
 sliding-scale evidence rule) — this table just catalogs the likely first

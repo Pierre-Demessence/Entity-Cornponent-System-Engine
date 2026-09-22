@@ -55,6 +55,22 @@ prototype ships that is genuinely CPU-bound on the main thread. Storage
 layout and per-entity GC are a separate open concern — see
 [core-engine-roadmap.md](core-engine-roadmap.md).
 
+### Kill-plane / out-of-bounds respawn helper — declined
+
+Content, not engine. portal and doom each check `y < RESPAWN_Y` and respawn
+in the tick runner's `onBeforeFlush` — a one-liner over shipped primitives
+(`transform` plus `queueDestroy`). Recorded from the gap ledger's kill-plane
+row so the tally stops accumulating.
+
+### Pickup / collectible-on-overlap — declined
+
+Composes from shipped primitives, and one consumer already proves it:
+platformer's pickup is `makeTriggerSystem` with an `onOverlap` callback that
+emits a `CoinCollected` event@`examples/platformer/src/systems/pickup.ts:20`.
+doom hand-rolls the same overlap → apply → despawn flow. The remaining work
+is an **adoption** follow-up (migrate doom onto `makeTriggerSystem`), not a
+module.
+
 ## Superseded
 
 ### `modules/motion` — boundary inset / per-entity size — superseded
