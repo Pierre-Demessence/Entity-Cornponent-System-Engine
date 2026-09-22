@@ -3,10 +3,12 @@ export type { EntityId } from '#entity-id';
 export { type AudioHandle, type AudioPlayOptions, type AudioProvider } from '#audio-provider';
 export { ColumnStore } from '#column-store';
 export {
+  type ColumnField,
   type ComponentDef,
   type ComponentMigration,
   ComponentStore,
   type ComponentStoreLike,
+  type NumericColumnKind,
   registryComponent,
   type RegistryComponentOptions,
   type RegistryComponentValue,

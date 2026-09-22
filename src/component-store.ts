@@ -9,21 +9,20 @@ export type ComponentMigration = (raw: unknown, label: string) => unknown;
 export interface ComponentDef<T> {
   readonly name: string;
   /**
-   * When present, the component is all-numeric and eligible for columnar
-   * (Structure-of-Arrays) storage; lists the field names to store as
-   * typed-array columns, in serialization order. Set automatically by
-   * {@link simpleComponent} when every schema field is `'number'`.
-   * `world.registerComponent` uses it to pick a columnar `ColumnStore` over
-   * the object-backed {@link ComponentStore}. Never set for components with
-   * non-numeric fields or a hand-written `serialize` / `deserialize`.
+   * When present, the component is all-numeric and stored columnar
+   * (Structure-of-Arrays): one typed-array column per field, each with its own
+   * element kind. Set automatically by {@link simpleComponent} when every
+   * schema field is numeric. `world.registerComponent` uses it to pick a
+   * columnar `ColumnStore` over the object-backed {@link ComponentStore}. Never
+   * set for components with a `boolean` / `string` field or a hand-written
+   * `serialize` / `deserialize`.
    *
-   * PRECISION: columnar values are stored as **Float32**. Fields that must
-   * stay exact above 2^24 (16,777,216) — entity-id references, large counters,
-   * packed bitflags, seeds — lose precision. Such a component should carry a
-   * non-numeric field (keeping it on the object store) or wait for the planned
-   * Float64 column opt-in. Position / velocity / timings are fine.
+   * Per-field precision is explicit via {@link NumericColumnKind}: `'number'`
+   * is `f64` (lossless, the safe default — entity-id refs and large counters
+   * stay exact), and a hot spatial field opts into `'f32'` for half-size,
+   * cache-friendlier storage.
    */
-  readonly columns?: readonly string[];
+  readonly columns?: readonly ColumnField[];
   /**
    * Per-version upgrade functions. `migrations[n]` transforms a raw value
    * serialized at version `n` into the shape expected at version `n + 1`.
@@ -358,10 +357,27 @@ export class TagStore implements Iterable<EntityId> {
 }
 
 /**
- * Schema token for {@link simpleComponent}. Maps each field of a component
- * type to one of the three primitive validators this helper understands.
+ * Element type for a columnar (Structure-of-Arrays) numeric field, mapping to
+ * a JS typed array. `f32`/`f64` are floating-point; the integer kinds truncate
+ * on write. `'number'` in a schema is an alias for `'f64'` (lossless, matching
+ * a plain JS number) — the safe default; use `'f32'` to opt a hot, high-count
+ * spatial field into half-size / cache-friendlier storage.
  */
-export type SimpleFieldKind = 'boolean' | 'number' | 'string';
+export type NumericColumnKind = 'f32' | 'f64' | 'i8' | 'u8' | 'i16' | 'u16' | 'i32' | 'u32';
+
+/** One columnar field: its name and typed-array element kind. */
+export interface ColumnField {
+  readonly field: string;
+  readonly kind: NumericColumnKind;
+}
+
+/**
+ * Schema token for {@link simpleComponent}. `boolean` / `string` keep the
+ * component on the object store; every numeric kind (`'number'` = `f64`, plus
+ * the explicit typed-array kinds in {@link NumericColumnKind}) makes the field
+ * a typed-array column when the whole component is numeric.
+ */
+export type SimpleFieldKind = 'boolean' | 'number' | 'string' | NumericColumnKind;
 
 /**
  * Schema map: for every field `K` of `T`, specify its primitive kind.
@@ -401,6 +417,25 @@ export interface RegistryComponentOptions<
   readonly selectId: (value: TValue) => TId;
 }
 
+const NUMERIC_KINDS: ReadonlySet<string> = new Set(['f32', 'f64', 'i8', 'u8', 'i16', 'u16', 'i32', 'u32']);
+
+/** Columnar field specs for an all-numeric schema (`'number'` → `f64`), else undefined. */
+function toColumnFields(schema: Record<string, SimpleFieldKind>, keys: readonly string[]): ColumnField[] | undefined {
+  if (keys.length === 0)
+    return undefined;
+  const out: ColumnField[] = [];
+  for (const k of keys) {
+    const kind = schema[k];
+    if (kind === 'number')
+      out.push({ field: k, kind: 'f64' });
+    else if (NUMERIC_KINDS.has(kind))
+      out.push({ field: k, kind: kind as NumericColumnKind });
+    else
+      return undefined;
+  }
+  return out;
+}
+
 /**
  * Build a {@link ComponentDef} from a flat schema of primitives.
  *
@@ -423,7 +458,7 @@ export function simpleComponent<T extends { [K in keyof T]: boolean | number | s
   options: SimpleComponentOptions = {},
 ): ComponentDef<T> {
   const keys = Object.keys(schema) as (keyof T & string)[];
-  const columns = keys.length > 0 && keys.every(k => schema[k] === 'number') ? keys : undefined;
+  const columns = toColumnFields(schema as Record<string, SimpleFieldKind>, keys);
   return {
     name,
     ...options,
@@ -434,11 +469,11 @@ export function simpleComponent<T extends { [K in keyof T]: boolean | number | s
       for (const k of keys) {
         const kind = schema[k];
         const fieldLabel = `${label}.${k}`;
-        if (kind === 'number')
-          out[k] = asNumber(obj[k], fieldLabel);
-        else if (kind === 'boolean')
+        if (kind === 'boolean')
           out[k] = asBoolean(obj[k], fieldLabel);
-        else out[k] = asString(obj[k], fieldLabel);
+        else if (kind === 'string')
+          out[k] = asString(obj[k], fieldLabel);
+        else out[k] = asNumber(obj[k], fieldLabel);
       }
       return out as T;
     },

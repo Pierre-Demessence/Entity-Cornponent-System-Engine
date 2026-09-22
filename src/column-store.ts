@@ -1,4 +1,4 @@
-import type { ComponentDef, ComponentStoreLike, StoreDeleteHandler, StoreSetHandler, StoreValidateHandler } from '#component-store';
+import type { ColumnField, ComponentDef, ComponentStoreLike, NumericColumnKind, StoreDeleteHandler, StoreSetHandler, StoreValidateHandler } from '#component-store';
 import type { EntityId } from '#entity-id';
 
 // Paged sparse set for id -> slot. Pages of Int32Array are allocated on demand
@@ -9,12 +9,30 @@ const PAGE_SIZE = 1 << PAGE_BITS; // 4096 ids per page
 const PAGE_MASK = PAGE_SIZE - 1;
 const ABSENT = -1;
 
+type NumericArray = Float32Array | Float64Array | Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array;
+
+const COLUMN_CTORS = {
+  f32: Float32Array,
+  f64: Float64Array,
+  i8: Int8Array,
+  i16: Int16Array,
+  i32: Int32Array,
+  u8: Uint8Array,
+  u16: Uint16Array,
+  u32: Uint32Array,
+} as const;
+
+function makeColumn(kind: NumericColumnKind, capacity: number): NumericArray {
+  return new COLUMN_CTORS[kind](capacity);
+}
+
 /**
  * Structure-of-Arrays store for all-numeric components — the columnar half of
  * the hybrid storage model (see docs/plans/ecs-parallelism-and-soa-storage.md,
- * target "Middle"). Each declared field is a contiguous `Float32Array`
- * (a "column") indexed by a dense slot; an entity ↔ slot table maps ids to
- * slots. Deletion is swap-remove, so live slots stay `[0, size)` and dense.
+ * target "Middle"). Each declared field is a contiguous typed-array "column"
+ * (element type per {@link ColumnField.kind}) indexed by a dense slot; a paged
+ * sparse set maps ids to slots. Deletion is swap-remove, so live slots stay
+ * `[0, size)` and dense.
  *
  * Implements the same access surface as {@link ComponentStore} (`get` / `set` /
  * `delete` / iteration / `subscribe` / dirty tracking / `toSerialized`) so
@@ -26,7 +44,8 @@ const ABSENT = -1;
  */
 export class ColumnStore<T> implements ComponentStoreLike<T> {
   private capacity = 16;
-  private readonly columns: Record<string, Float32Array> = {};
+  private readonly colKinds: Record<string, NumericColumnKind> = {};
+  private readonly columns: Record<string, NumericArray> = {};
   private count = 0;
   private readonly deleteHandlers: StoreDeleteHandler<T>[] = [];
   private readonly dirty = new Set<EntityId>();
@@ -37,9 +56,12 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   private readonly validateHandlers: StoreValidateHandler[] = [];
   private readonly viewDescriptors: PropertyDescriptorMap = {};
 
-  constructor(fields: readonly string[]) {
-    this.fields = [...fields];
-    for (const f of this.fields) this.columns[f] = new Float32Array(this.capacity);
+  constructor(specs: readonly ColumnField[]) {
+    this.fields = specs.map(s => s.field);
+    for (const s of specs) {
+      this.colKinds[s.field] = s.kind;
+      this.columns[s.field] = makeColumn(s.kind, this.capacity);
+    }
 
     // Capture the backing references (not `this`) so view accessors stay
     // correct across grow() — `columns[f]` is reassigned in place on the same
@@ -79,7 +101,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   clearDirty(): void { this.dirty.clear(); }
 
   /** Raw backing array for a field. Valid indices are `[0, size)`; pair with {@link slotOf}. */
-  column(field: string): Float32Array { return this.columns[field]; }
+  column(field: string): NumericArray { return this.columns[field]; }
 
   delete(id: EntityId): boolean {
     const slot = this.slotFor(id);
@@ -131,7 +153,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   private grow(): void {
     this.capacity *= 2;
     for (const f of this.fields) {
-      const next = new Float32Array(this.capacity);
+      const next = makeColumn(this.colKinds[f], this.capacity);
       next.set(this.columns[f]);
       this.columns[f] = next;
     }

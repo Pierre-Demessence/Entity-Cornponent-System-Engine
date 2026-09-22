@@ -6,5 +6,5 @@ export interface Position { x: number; y: number }
 
 export const PositionDef: ComponentDef<Position> = simpleComponent<Position>(
   'position',
-  { x: 'number', y: 'number' },
+  { x: 'f32', y: 'f32' },
 );

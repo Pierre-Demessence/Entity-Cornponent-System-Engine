@@ -35,7 +35,9 @@ One line per task; the detail lives in the linked sections. `[x]` done,
 - [ ] Cheaper columnar view construction (keep spread / `Object.keys` working)
 - [x] Paged sparse set for id→slot — GC-light `Int32Array` pages allocated on
       demand, memory bounded to used id ranges (replaces the id→slot `Map`)
-- [ ] Float32 vs Float64 columns — decide default / add opt-in (precision footgun)
+- [x] Per-field typed columns (`i8`…`f64`) — `'number'` = `f64` (lossless
+      default, keeps id-refs / counters exact), `'f32'` opt-in for hot spatial
+      fields (Position / Velocity)
 
 ### B1 → "Ideal" (later, gradual, no storage redo) ([detail](#the-path-to-ideal-later-gradual-no-storage-redo))
 
@@ -395,8 +397,12 @@ perf lever with a wrinkle, to be taken deliberately.
 
 ### Open decisions (pinned during the build)
 
-- **Float32 columns** shipped as the default (footprint); a `Float64` opt-in
-  is still open if a consumer needs the precision.
+- **Per-field typed columns** shipped (`NumericColumnKind`: `i8`…`f64`). A
+  schema field's kind is its column element type; `'number'` maps to `f64`
+  (lossless, the safe default — an unaware author never gets silent precision
+  loss), and hot spatial fields opt into `'f32'`. This matches Bevy/Unity
+  (declare the type; transforms are f32) and retires the earlier blanket-f32
+  footgun.
 - Numeric-schema detection lives on `simpleComponent`, which sets
   `def.columns` when every field is `'number'`; `registerComponent` reads it.
 

@@ -20,17 +20,19 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`AudioProvider`** _(interface)_ — —
 
 ### `@pierre/ecs/component-store`
+- **`ColumnField`** _(interface)_ — One columnar field: its name and typed-array element kind.
 - **`ComponentDef`** _(interface)_ — Schema definition for a component type — handles serialization, optional dependency declarations, and optional schema evolution.
 - **`ComponentMigration`** _(type)_ — Migrates a serialized value from its stored version to the next.
 - **`ComponentStore`** _(class)_ — Map from EntityId to component data, with dirty-tracking and lifecycle hooks. Lifecycle hooks are exposed via `subscribe(event, fn)` and ...
 - **`ComponentStoreLike`** _(interface)_ — The storage-agnostic access surface shared by the object-backed ComponentStore and the columnar `ColumnStore`. `world`, `QueryBuilder`, t...
+- **`NumericColumnKind`** _(type)_ — Element type for a columnar (Structure-of-Arrays) numeric field, mapping to a JS typed array. `f32`/`f64` are floating-point; the integer...
 - **`registryComponent`** _(fn)_ — Build a ComponentDef for registry-backed references. The generated serializer stores only an id field (default: `{ id }`), and deserializ...
 - **`RegistryComponentOptions`** _(interface)_ — —
 - **`RegistryComponentValue`** _(type)_ — Shape produced by registryComponent: a single registry-backed field.
 - **`RegistryIdKind`** _(type)_ — Primitive id kind supported by registryComponent.
 - **`simpleComponent`** _(fn)_ — Build a ComponentDef from a flat schema of primitives. For a component type `T` whose every field is a `number`, `boolean`, or `string`, ...
 - **`SimpleComponentOptions`** _(interface)_ — Optional extras carried onto the generated ComponentDef.
-- **`SimpleFieldKind`** _(type)_ — Schema token for simpleComponent. Maps each field of a component type to one of the three primitive validators this helper understands.
+- **`SimpleFieldKind`** _(type)_ — Schema token for simpleComponent. `boolean` / `string` keep the component on the object store; every numeric kind (`'number'` = `f64`, pl...
 - **`SimpleSchema`** _(type)_ — Schema map: for every field `K` of `T`, specify its primitive kind. The helper uses this to auto-generate `serialize` and `deserialize`.
 - **`StoreDeleteHandler`** _(type)_ — —
 - **`StoreSetHandler`** _(type)_ — Handler signatures for `ComponentStore.subscribe`.

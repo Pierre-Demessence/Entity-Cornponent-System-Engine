@@ -1,4 +1,4 @@
-import type { ComponentDef } from '#component-store';
+import type { ColumnField, ComponentDef } from '#component-store';
 
 import { describe, expect, it } from 'vitest';
 
@@ -6,7 +6,7 @@ import { ColumnStore } from '#column-store';
 import { ComponentStore, simpleComponent } from '#component-store';
 
 interface Vec2 { x: number; y: number }
-const FIELDS = ['x', 'y'];
+const FIELDS: ColumnField[] = [{ field: 'x', kind: 'f32' }, { field: 'y', kind: 'f32' }];
 const PosDef = simpleComponent<Vec2>('pos', { x: 'number', y: 'number' });
 
 describe('columnStore', () => {
@@ -114,6 +114,18 @@ describe('columnStore', () => {
     expect(s.get(4095)!.x).toBe(4095);
     expect(s.get(1_000_000)!.x).toBe(1_000_000);
     expect(new Set(s.keys())).toEqual(new Set([0, 4095, 5000, 1_000_000]));
+  });
+
+  it('stores per-field typed columns (f64 exact, i32 truncates)', () => {
+    const s = new ColumnStore<{ big: number; flag: number }>([
+      { field: 'big', kind: 'f64' },
+      { field: 'flag', kind: 'i32' },
+    ]);
+    s.set(1, { big: 2 ** 40 + 1, flag: 3.9 });
+    expect(s.get(1)!.big).toBe(2 ** 40 + 1); // f64 keeps a large integer exact
+    expect(s.get(1)!.flag).toBe(3); // i32 truncates toward zero
+    expect(s.column('big')).toBeInstanceOf(Float64Array);
+    expect(s.column('flag')).toBeInstanceOf(Int32Array);
   });
 
   it('column() + slotOf() fast path writes through', () => {
