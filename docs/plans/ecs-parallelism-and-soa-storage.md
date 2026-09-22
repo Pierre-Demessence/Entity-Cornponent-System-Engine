@@ -83,11 +83,12 @@ latency (answer arrives a frame or more later).
 
 ## B1 — SoA / hot-component storage (core)
 
-**Shape.** A hybrid store. Keep the `Map`-of-objects as the default
-(ergonomic, flexible, fine for cold or non-numeric components); add an
-opt-in path where a consumer marks a numeric component (position, velocity)
-as **Structure-of-Arrays** — one contiguous `Float32Array` per field,
-indexed by a dense slot, with an entity↔slot table.
+**Shape.** A hybrid store — see the [B1 design sketch](#b1-design-sketch--target-middle)
+for the full design (target: "Middle"). Keep the `Map`-of-objects for
+components that can't be columnized; store all-numeric components as
+**Structure-of-Arrays** — one contiguous `Float32Array` per field, indexed
+by a dense slot, with an entity↔slot table. Which store a component uses is
+**inferred from its schema**, not a per-component opt-in flag.
 
 **Value is independent of parallelism.** Unity DOTS, flecs, EnTT, and Bevy
 adopted this layout for the *single-threaded* cache wins first; parallelism
@@ -114,8 +115,9 @@ came later.
 - Harder to inspect (a `Float32Array` + slot table vs a `Map` of objects).
 - A philosophical pivot away from the object-first `simpleComponent` model.
 
-The hybrid (opt-in per component) is what keeps the cons contained: the 90%
-of components that don't dominate the tick never leave the `Map`.
+The hybrid (schema-inferred per component) is what keeps the cons
+contained: the components that can't be columnized, and the object-view
+compatibility layer, mean most systems never have to change.
 
 ## B2 — parallel system dispatch (core, needs B1)
 
@@ -184,14 +186,150 @@ chicken-and-egg. The break: build each **harness against today's code
 first**; if it visibly chokes, that is the evidence that authorises the
 build, with zero speculative engine code written.
 
-- [ ] Build the B1 stress harness on the **current `Map` store**; confirm it
+- [x] Build the B1 stress harness on the **current `Map` store**; confirm it
       chokes (frame drops + GC sawtooth) at high entity count. → justifies B1.
+      Shipped as [`examples/stress-storage`](../../examples/stress-storage/):
+      Map store vs SoA typed arrays toggle. Confirmed — at 1M entities the SoA
+      path holds a steady 75 fps while the Map store is unusable.
 - [ ] If justified, design + build B1 (hybrid opt-in SoA hot components);
-      re-run the harness with the toggle to quantify the win.
+      re-run the harness with the toggle to quantify the win. Design sketched
+      below; implementation not started.
 - [ ] Build the A "main-thread stall" harness; confirm the stall on the main
       thread. → justifies A (a module).
 - [ ] Build the B2 fat-kernel harness on B1; confirm it is core-bound single-
       threaded. → justifies B2 (SAB dispatch).
+
+## B1 design sketch — target: "Middle"
+
+Grounded in the current code. This pins the *how* so the eventual build
+doesn't ossify a wrong shape in `ComponentStore` — the most load-bearing
+primitive in the engine.
+
+Chosen target is **Middle** (of three considered — Pragmatic / Middle /
+Ideal). Middle builds the real data-oriented storage foundation now, keeps
+an object-view compatibility layer so most systems don't have to change, and
+leaves **Ideal** (columnar query as the default, systems written as column
+loops) reachable *later, incrementally, with no storage redo*. It is the
+storage foundation the roadmap's archetype cache
+([core-engine-roadmap §3.1](../roadmap/core-engine-roadmap.md#31-archetype-cache))
+and schema-first components eventually sit on top of.
+
+> Refines the higher-level "opt-in per component" wording earlier in this
+> doc: storage is **inferred from the schema**, not a per-component opt-in
+> flag or a duplicated `SoA` component type.
+
+### The central tension (the decision the build resolved)
+
+Every consumer today does `store.get(id)` → a **mutable object** and mutates
+it **in place**: `pos.x += vx * dt`, `pos.x = …` (verified across the
+examples and modules — the idiom is universal). The columnar win comes
+*precisely from not having per-entity objects*. So columnar storage
+**cannot preserve the get()-mutate idiom at full speed** — that is the real
+design problem, and the one a blind port would have hit head-on. Middle
+resolves it by keeping the idiom *working* (via a view) while making the
+*fast* path a separate, opt-in column API.
+
+### Storage is inferred from the schema — one component def, no duplication
+
+`PositionDef` stays **one** definition, shared by every consumer. Storage
+layout is **not** a user dial and **not** a duplicated `PositionSoADef` —
+the engine picks it from the component's schema:
+
+- **All-numeric schema** (every field `'number'`) → **columnar** store
+  (typed-array columns). Position, Velocity, etc.
+- **Any non-numeric field** (string / boolean-heavy / nested) → **object**
+  store (today's `Map<id, T>`).
+
+Two representations exist even in a from-scratch JS ECS for a language
+reason, not an ergonomics one: you cannot pack a string or a nested object
+into a `Float32Array`. So the object store is kept **only** for components
+that genuinely can't be columnized — decided automatically, never chosen by
+the consumer. A hand-written opaque `ComponentDef` (custom
+`serialize`/`deserialize`) is treated as non-numeric → object store.
+
+### Access surfaces — uniform `get`/`set`, opt-in columns
+
+Both stores implement the **same** access interface, so `world.query`,
+`getStore`, the spatial index, and save all work regardless of layout:
+
+- **Uniform `get(id)` / `set(id, value)`** — object store returns the live
+  object; columnar store returns a **shared write-through flyweight** whose
+  getters/setters hit `column[slot]` (valid only until the next store op;
+  DEV guard against holding two live flyweights from one store). Systems
+  written this way (most of them, incl. the transform/collision modules)
+  are **storage-agnostic** — a component flipping to columnar doesn't break
+  them, and they gain the storage/GC win. They do **not** get the full
+  *iteration* win (the query still visits entity-by-entity).
+- **Columnar fast path (columnar store only, opt-in per hot loop)** —
+  `column(field)` → raw `Float32Array` + `slotOf(id)`, or a
+  `forEach((slot, cols) => …)`. Zero-alloc. The 2–3 hottest loops (movement
+  integration) adopt this for the full win; everything else stays on the
+  uniform API.
+
+So Middle delivers the **full storage/memory/GC win** for any columnar
+component immediately (its stored data is no longer objects), and the
+**full iteration win** only where a loop opts into columns.
+
+### Storage internals (columnar store)
+
+- One `Float32Array` per field (grow by doubling), a `Map<EntityId, slot>`
+  and a `slot → EntityId` reverse array.
+- Delete = **swap-remove**: move the last slot into the hole, fix the
+  reverse map. Dirty tracked as a `Set<EntityId>`. `size` = live count.
+- `Float32` columns by default; opt-in `Float64` where precision needs it.
+
+### Lifecycle / spatial / save must stay intact
+
+- `subscribe('set' | 'delete' | 'validate')` fire on slot alloc / free /
+  repack. `world.ts` already wires a `set` subscription — unchanged.
+- Spatial `onMove` + grid sync stay driven by the motion system callback;
+  positions readable via flyweight or column.
+- `toSerialized` / `fromSerialized` reproduce the same `[id, { fields }]`
+  tuples from the columns → **save format is byte-identical** to the object
+  store's; a parity test enforces it.
+
+### The path to Ideal (later, gradual, no storage redo)
+
+Ideal = the **query itself yields columns**, systems are written as column
+loops by default, and `get(id)` is demoted to an escape hatch. Middle
+already builds every storage piece Ideal needs; the only remaining step is
+reshaping `world.query` to yield columns and migrating systems from
+view-style to column-loop-style **one at a time** — both read the same
+columnar storage underneath, so nothing built in Middle is thrown away (the
+view API survives as the escape hatch). An independent cheap win that also
+serves Ideal: `query.ts` allocates `Array.from({ length })` **per entity
+per tick** — worth removing on its own.
+
+### Rollout
+
+1. Land the columnar store + schema-inferred storage selection in
+   `registerComponent`; object store untouched (zero consumer impact —
+   all-numeric components silently become columnar, read through the
+   uniform `get`/`set`).
+2. Adopt the columnar fast path in the motion module's integration system
+   (the first full-win loop).
+3. The stress harness's Map/SoA toggle becomes **harness-local**: the fast
+   side points at the real engine's columnar store; the slow side is a
+   throwaway `Map<id, {x,y}>` baseline. The engine no longer ships a slow
+   object-mode for numeric data just to enable the A/B.
+
+### Test strategy
+
+- **Parity** — for a random workload, the columnar and object stores yield
+  identical `query` results and identical `toSerialized` output.
+- **Slot recycle** — create / delete / re-create keeps the reverse map and
+  free-list correct, no stale slot.
+- **DEV flyweight-aliasing guard** fires when two live flyweights are held.
+- **Perf smoke** (non-gating) — sim ms/tick under a threshold at N.
+
+### Open decisions to pin before coding
+
+- **Float32 vs Float64** default for columns (footprint vs precision).
+- Whether to fix `query.ts`'s per-entity tuple allocation in the same pass
+  (independent win, also a down-payment on Ideal, but touches the hot path).
+- Where the numeric-schema check lives so `registerComponent` can infer
+  layout (extend `simpleComponent` to expose its field kinds, vs a separate
+  `columnarSchema` marker on the def).
 
 ## Relationship to the backlog
 
