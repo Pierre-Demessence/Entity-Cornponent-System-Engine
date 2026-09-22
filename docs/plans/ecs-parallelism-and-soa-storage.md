@@ -1,4 +1,4 @@
-# Parallelism & SoA storage (multi-threading) — design capture, deferred
+# Parallelism & SoA storage (multi-threading) — design + plan
 
 Expands the "Multi-threading / worker-based parallelism" Non-goal in
 [../roadmap/ecs-module-backlog.md](../roadmap/ecs-module-backlog.md#non-goals-declined).
@@ -7,9 +7,50 @@ copy cost). This doc records the fuller picture so the question isn't
 re-litigated from scratch: what would actually be built, in what order,
 what each piece is worth **on its own**, and how each would be proven.
 
-Nothing here is scheduled. This is a design capture, kept deferred until
-a prototype produces the evidence each step demands (see
+This began as a design capture. **B1 (columnar storage) has since shipped its
+"Middle" slice** — the [Task checklist](#task-checklist) below tracks what is
+done and what remains; the rest of the doc holds the reasoning and detail.
+Evidence still gates each unbuilt step (see
 [Evidence-first sequence](#evidence-first-sequence)).
+
+## Task checklist
+
+One line per task; the detail lives in the linked sections. `[x]` done,
+`[ ]` remaining.
+
+### B1 — columnar storage, "Middle" slice — ✅ shipped ([design](#b1-design-sketch--target-middle))
+
+- [x] Stress-storage harness — evidence that objects-in-a-`Map` choke at scale
+- [x] `ColumnStore` — typed-array columns, swap-remove, id-bound write-through view
+- [x] `ComponentStoreLike` — shared interface; world / query / spatial / save use it
+- [x] Schema-inferred storage — `simpleComponent` sets `columns`; `registerComponent` picks the store
+- [x] `world.getColumnStore` — fast-path accessor (`column()` / `slotOf()`)
+- [x] Motion integration columnar fast path
+- [x] Full suite green (1012) + examples playtested clean
+
+### B1 — optimizations (next) ([detail](#deferred-optimizations-post-middle-surfaced-by-the-stress-harness))
+
+- [ ] `query.ts` — remove the per-entity tuple allocation (helps every query)
+- [ ] Cheaper columnar view construction (keep spread / `Object.keys` working)
+- [ ] `Int32Array` id→slot for dense ids — cut GC pressure at millions of entities
+- [ ] Float32 vs Float64 columns — decide default / add opt-in (precision footgun)
+
+### B1 → "Ideal" (later, gradual, no storage redo) ([detail](#the-path-to-ideal-later-gradual-no-storage-redo))
+
+- [ ] Columnar query that yields columns/slots (no per-entity object)
+- [ ] Migrate hot systems from view-style to column-loop-style, incrementally
+- [ ] Demote object-tuple `get()` / `query` to the escape-hatch default
+
+### A — message-passing worker offload (module) ([detail](#a--message-passing-worker-offload-module))
+
+- [ ] "Main-thread stall" harness — evidence a heavy job freezes the frame
+- [ ] Worker-pool helper — offload a job, get a `Promise` back
+
+### B2 — parallel system dispatch (core, needs B1) ([detail](#b2--parallel-system-dispatch-core-needs-b1))
+
+- [ ] `SharedArrayBuffer`-backed columns (SAB storage option on `ColumnStore`)
+- [ ] Fat-kernel harness — evidence a per-entity kernel is core-bound single-threaded
+- [ ] Scheduler auto-dispatch of disjoint (`reads` / `writes`) systems to workers
 
 ## Two facts that shape everything
 
@@ -17,7 +58,9 @@ a prototype produces the evidence each step demands (see
   component as a JS object in a `Map<EntityId, T>`
   ([../../src/component-store.ts](../../src/component-store.ts)). It is *not*
   a Structure-of-Arrays over typed buffers. This is the real blocker for
-  true shared-memory parallelism — not `structuredClone`.
+  true shared-memory parallelism — not `structuredClone`. (B1 has since moved
+  all-numeric components to typed-array columns; non-numeric components stay
+  object-in-`Map`.)
 - **The scheduler already knows read/write sets.** Every `SchedulableSystem`
   declares `reads` / `writes`, documented as the "Foundation for future
   parallel execution"
