@@ -1,122 +1,43 @@
 # Core-Engine Roadmap
 
-**Scope.** Pure **core-engine internals** — primitives in `src/` that
-underpin every module and app: component stores, queries, scheduler,
-event bus, lifecycle, validation, change detection, plugin/extension
-hooks. No modules, no gameplay features.
+**Open core-internals work only.** Primitives in `src/` that underpin every
+module and app: component stores, queries, scheduler, event bus, lifecycle,
+validation, change detection, plugin/extension hooks. No modules, no gameplay
+features.
 
-For module-level work (camera, audio, render-dom, pathfinding, …) see
-[ecs-module-backlog.md](ecs-module-backlog.md).
+**Entry IDs are stable references** (`3.1`, `4.2`, `4.4`). A gap in the
+numbering means that entry shipped and left this file, so citations elsewhere
+keep resolving to the same item. Shipped core work is described by `src/` and
+dated by `git log`; where a plan exists it sits under `plans/done/`, and core
+work performed before the engine split out is in the Roguelike monorepo's
+`docs/plans/done/`.
 
-For the layering principles and promotion rule-book, see
-[../extending-the-engine.md](../extending-the-engine.md).
+**Nothing here is blocked.** Every remaining entry's original dependencies
+have shipped, so the order at the bottom reflects value, not a dependency
+graph.
 
-Tiers below are ordered by dependency: earlier tiers unblock later ones.
-
----
-
-## Tier 1 — Critical Foundations
-
-These are the highest-leverage improvements. Each one removes a concrete
-scalability wall and makes every subsequent feature cheaper to build.
-
-### 1.1 Spatial Index ✅ DONE
-
-| | |
-|---|---|
-| **Problem** | `getBlockingAt()`, `getItemsAt()`, `isOccupied()` iterate ALL positions — O(n) per call. Called multiple times per turn by multiple systems. |
-| **Solution** | Spatial hash grid: `Map<cellKey, Set<EntityId>>`. Auto-maintained when positions change (set/delete hooks on `ComponentStore`). Shipped as `SpatialStructure<TPos>` interface in `src/spatial-structure.ts` plus `HashGrid2D` backend in `src/modules/spatial/`. |
-| **API** | `world.spatial.getAt(x, y)`, `world.spatial.getInRadius(x, y, r)`, `world.spatial.getInRect(x1, y1, x2, y2)` |
-| **Unlocks** | Ranged combat, AoE spells, A* pathfinding, large maps, multi-floor navigation |
-| **Complexity** | Short — ~150 lines. Wire into position store's set/delete. |
-| **Dependencies** | None (standalone) |
-
-### 1.2 Entity Query DSL ✅ DONE
-
-| | |
-|---|---|
-| **Problem** | Systems manually iterate specific stores and cross-reference others with ad-hoc `if` checks. Adding filters (alive, in-range, has-component) duplicates logic everywhere. |
-| **Solution** | Fluent query builder: `world.query(PositionDef, FighterDef).without(DeadTag).run()` returning an iterator of `[EntityId, Position, Fighter]` tuples. Shipped in `src/query.ts`. |
-| **Implementation** | Intersect the `keys()` of requested ComponentStores; exclude keys present in excluded TagStores. |
-| **Unlocks** | Clean system code, easy component filtering, foundation for archetype caching |
-| **Complexity** | Short — ~100 lines. Builds on the existing component registry. |
-| **Dependencies** | Generic component store (done) |
-
-### 1.3 System Scheduler (Dependency Graph) ✅ DONE
-
-| | |
-|---|---|
-| **Problem** | 4 systems in a hardcoded array. Adding more requires knowing the implicit order contract. No way to express "run after X" or "run before Y". |
-| **Solution** | DAG-based scheduler. Systems declare `runAfter` / `runBefore` dependencies. Engine topologically sorts them once at startup. Optional: phase grouping (input → logic → render). Shipped in `src/scheduler.ts`. |
-| **Unlocks** | 50+ systems without order confusion, system hot-plug, conditional system skipping |
-| **Complexity** | Mid — ~200 lines. Toposort + phase tags. |
-| **Dependencies** | None (standalone). But benefits from query DSL. |
+- Module-level work (camera, audio, render-dom, pathfinding, …) —
+  [ecs-module-backlog.md](ecs-module-backlog.md)
+- Declined core work — [non-goals.md](non-goals.md)
+- Layering principles and the promotion rule-book —
+  [../extending-the-engine.md](../extending-the-engine.md)
 
 ---
 
-## Tier 2 — Robustness & Scale
+## Performance & Large Scale
 
-Improvements that make the engine robust at 50+ components, 100+
-entities, and frequent content changes.
-
-### 2.1 Component Validation ✅ DONE
-
-| | |
-|---|---|
-| **Problem** | Nothing prevents creating a Fighter without a Position, or an AI without a Renderable. Bugs surface at runtime, not creation time. |
-| **Solution** | `ComponentDef<T>` gains optional `requires?: ComponentDef[]`. On `store.set(id, value)`, assert all required stores contain `id`. Dev-mode only (strip in prod build). |
-| **Unlocks** | Catches entity assembly bugs immediately, enforces architectural invariants |
-| **Complexity** | Short — ~30 lines in `ComponentStore.set()`. |
-| **Dependencies** | Generic component store (done) |
-
-### 2.2 Entity Templates / Prefab System ✅ DONE
-
-| | |
-|---|---|
-| **Problem** | 3 factory functions manually call `store.set()` for each component. Adding a new component means updating every factory. Templates (`EnemyTemplate`, `ItemTemplate`) are external objects with no formal schema. |
-| **Solution** | Declarative entity templates: `{ components: { [def.name]: data }, tags: [tagName] }`. Generic `world.spawn(template)` that iterates the template and populates registered stores. |
-| **Unlocks** | Data-driven entity creation, hot-reloadable templates, mod support, auto-transfer on level change |
-| **Complexity** | Mid — ~120 lines. Template schema + generic spawner. |
-| **Dependencies** | Generic component store (done). Better with component validation (2.1). |
-
-> **Future evolution:** When enemies gain inventories/equipment (see IDEA-BOX "Enemy equipment system"), unify `enemy()` and `player()` builders into a single `creature()` builder with optional AI, inventory, and equipment fields.
-
-### 2.3 Serialization Schema Evolution ✅ DONE (infra only)
-
-| | |
-|---|---|
-| **Problem** | Save format is version-locked. Adding/removing/renaming a component breaks old saves unless manually handled. Current approach: hardcoded `if (version === 1)` branches. |
-| **Solution** | `MigrationRegistry` with `register(from, to, fn)` and `run(blob, saved, target)` chain runner. `parseSaveBlob()` delegates to the registry. Uses integer versions; `SAVE_VERSION = 0` signals dev mode (no migrations registered — incompatible saves are rejected). Bump to `1+` for production. |
-| **Unlocks** | Fearless refactoring — any component can be renamed/restructured without breaking saves |
-| **Complexity** | Mid — ~100 lines. Migration registry + chain runner. |
-| **Dependencies** | Generic component store (done) |
-
-### 2.4 Event System Enhancements ✅ DONE
-
-| | |
-|---|---|
-| **Problem** | (a) No event priorities — handlers fire in registration order. (b) No event consumption — all handlers always run. (c) Events emitted inside handlers queue for next flush, creating multi-turn delays for chain reactions. |
-| **Solution** | (a) Priority field on handlers (higher = first, default 0). (b) `ctx.stopPropagation()` via EventContext. (c) Nested flush: handler-emitted events drain in subsequent batches within the same flush, depth-limited (default 3). Handler signature: `(event, ctx)`. `on()` returns unsubscribe function. |
-| **Unlocks** | Complex event chains (attack → death → loot drop → quest check) in a single turn, event-driven AI reactions |
-| **Complexity** | Mid — ~80 lines of changes to EventBus. |
-| **Dependencies** | None (standalone) |
-
----
-
-## Tier 3 — Performance & Large Scale
-
-Optimizations that matter once the game has 100+ entities on large
-maps with complex systems.
+Optimizations that matter once a game has 100+ entities on large maps with
+complex systems.
 
 ### 3.1 Archetype Cache
 
 | | |
 |---|---|
-| **Problem** | Query DSL (1.2) intersects store keys on every call. With 50+ components and frequent queries, this becomes expensive. |
+| **Problem** | The query DSL intersects store key sets on every call. With 50+ components and frequent queries, that becomes expensive. |
 | **Solution** | Cache entity→archetype mappings. An archetype is the set of component types an entity possesses. Queries match against archetype signatures. Cache invalidates when components are added/removed. |
 | **Unlocks** | O(1) query matching instead of O(components) intersection, batch iteration by archetype |
 | **Complexity** | Mid-Long — ~300 lines. Bitmask-based archetype signatures. |
-| **Dependencies** | Query DSL (1.2), component validation (2.1 — helpful but not required) |
+| **Dependencies** | None outstanding — the query DSL shipped. |
 
 ### 3.2 Entity Pooling
 
@@ -126,44 +47,24 @@ maps with complex systems.
 | **Solution** | Entity pool: destroyed entities are recycled (ID reused after a generation counter bump). Stores don't delete on recycle — they mark as inactive. Queries skip inactive entries. |
 | **Unlocks** | Particle effects, projectile physics, summon spells without GC spikes |
 | **Complexity** | Mid — ~150 lines. Generation counter + pool. |
-| **Dependencies** | Query DSL (1.2 — to filter inactive), spatial index (1.1 — must handle recycled IDs) |
-
-### 3.3 Dirty Flags / Change Detection ✅ DONE
-
-| | |
-|---|---|
-| **Problem** | FOV runs every turn even if the player didn't move. Render runs even if nothing changed. Wasted computation. |
-| **Solution** | ComponentStore tracks a dirty set per frame. Systems can check `store.isDirty(id)` or `store.hasChanges()` before running. Reset at end of turn. |
-| **Unlocks** | Skip unnecessary FOV/render passes, reactive UI updates, efficient network sync (future multiplayer) |
-| **Complexity** | Short — ~50 lines in ComponentStore + ~20 lines per system opt-in. |
-| **Dependencies** | Generic component store (done) |
+| **Dependencies** | None outstanding — the query DSL (to filter inactive) and the spatial index both shipped. Confirm the spatial index copes with recycled IDs when this lands. |
 
 ### 3.4 Render Layers & Culling
 
 | | |
 |---|---|
-| **Problem** | Renderer receives the entire world. No z-ordering, no frustum culling. Everything renders every frame. |
-| **Solution** | Render layers (terrain → items → entities → effects → UI overlays). Cull entities outside viewport. Only re-render layers that changed (via dirty flags). |
+| **Problem** | The renderer receives the entire world. No z-ordering, no frustum culling. Everything renders every frame. |
+| **Solution** | Render layers (terrain → items → entities → effects → UI overlays). Cull entities outside the viewport. Only re-render layers that changed (via dirty flags). |
 | **Unlocks** | Particle effects, floating damage numbers, visual overlays, large maps without frame drops |
-| **Complexity** | Mid — ~200 lines in renderer refactor. |
-| **Dependencies** | Dirty flags (3.3 — helpful), spatial index (1.1 — for viewport culling) |
+| **Complexity** | Mid — ~200 lines in a renderer refactor. |
+| **Dependencies** | None outstanding — dirty flags and the spatial index shipped. Reconcile against what already exists before building: `RenderOrderDef` sorts drawables within the two-pass loop, and the camera's view-rect cull already drops off-screen entities. |
 
 ---
 
-## Tier 4 — Extensibility & Developer Experience
+## Extensibility & Developer Experience
 
 Infrastructure that improves the development workflow and enables
 modding/plugin support.
-
-### 4.1 Testing Utilities ✅ DONE
-
-| | |
-|---|---|
-| **Problem** | No unit test infrastructure. Can't test a system in isolation without wiring up a full World + Map + Renderer. |
-| **Solution** | Vitest + test helpers: `EntityBuilder` (fluent entity assembly), `createTestMap` (flat grid), `createMockRenderer` (no-op), `createTestContext` (TurnContext factory). |
-| **Unlocks** | Unit tests for systems, regression tests for combat math, CI validation |
-| **Complexity** | Short — ~100 lines of test helpers. |
-| **Dependencies** | Generic component store (done), entity templates (2.2 — nice-to-have) |
 
 ### 4.2 Entity Inspector (Dev Overlay)
 
@@ -173,17 +74,26 @@ modding/plugin support.
 | **Solution** | Dev overlay panel listing all entities and their components. Click an entity to inspect. Only enabled in dev mode. |
 | **Unlocks** | Faster debugging, easier content balancing, live state inspection |
 | **Complexity** | Mid — ~200 lines of UI. |
-| **Dependencies** | Query DSL (1.2 — to enumerate entities), component store (done) |
+| **Dependencies** | None outstanding — the query DSL shipped. **Overlaps `modules/debug`** in the module backlog, whose scope already includes a live entity inspector; decide whether the inspector is core or belongs to that module. |
 
-### 4.3 Hot-Reload for Content ✅ DONE
+### 4.3 Content Hot-Reload
 
 | | |
 |---|---|
-| **Problem** | Changing enemy/item templates requires a full page refresh. |
-| **Solution** | Mutable content registry (`src/content/registry.ts`) with getter-based access. Content files self-register on first import and use `import.meta.hot.accept()` to re-register on HMR update. Consumers (`game.ts`, `entity.ts`) read from the registry instead of direct imports. Existing entities keep old stats (only new spawns use updated templates). |
+| **Problem** | Changing entity/item templates requires a full page refresh. |
+| **Solution** | A mutable content registry with getter-based access. Content files self-register on first import and use `import.meta.hot.accept()` to re-register on an HMR update, so consumers read from the registry instead of importing values directly. Existing entities keep old stats; only new spawns pick up the change. |
 | **Unlocks** | Rapid content iteration without restarting the game |
 | **Complexity** | Short — ~40 lines of HMR wiring. |
-| **Dependencies** | Entity templates (2.2 — gives a formal registry to update) |
+| **Dependencies** | None outstanding — entity templates shipped, and this is the registry HMR would refresh. |
+
+> **Provenance — restored to open on 2026-09-21.** This entry carried a
+> `✅ DONE` marker. That was true of the Roguelike app it was written in
+> (`src/content/registry.ts`, consuming `game.ts` / `entity.ts`), but not of
+> this repo: there is no `src/content/`, and `import.meta.hot` appears nowhere
+> under `src/` or `examples/`. As *engine* surface nothing is built, so it is
+> open. Triage whether content hot-reload is engine work at all or a
+> documented consumer-side Vite recipe — the same shape question the module
+> backlog's app-host mount/teardown helper raises.
 
 ### 4.4 Plugin / Hook Architecture
 
@@ -193,67 +103,30 @@ modding/plugin support.
 | **Solution** | Lifecycle hooks: `onEntityCreated`, `onEntityDestroyed`, `onComponentSet`, `onTurnStart`, `onTurnEnd`. Plugins register via a manifest. |
 | **Unlocks** | Modding support, experimental features without core changes, community content |
 | **Complexity** | Long — ~400 lines. Hook registry + plugin loader + sandboxing. |
-| **Dependencies** | System scheduler (1.3), event enhancements (2.4), entity templates (2.2) |
+| **Dependencies** | None outstanding — the scheduler and `LifecycleEvent` shipped. `LifecycleEvent` covers created / destroyed / component-added / removed; the tick runner's tick-boundary reaping is the natural home for start/end hooks. |
 
 ### 4.5 Centralized Keybinding Registry
 
 | | |
 |---|---|
-| **Problem** | Two hardcoded key maps (`input.ts` and `panel-keys.ts`). No rebinding, no modifier keys, no conflict detection. |
-| **Solution** | Single `KeybindingRegistry` with default bindings, player overrides persisted to localStorage, conflict detection, and modifier key support. |
-| **Unlocks** | Accessibility (input remapping), complex key combos, in-game controls reference panel |
-| **Complexity** | Mid — plan already exists at `docs/plans/keybinding-system.md` |
-| **Dependencies** | None (standalone) |
+| **Problem** | Two hardcoded key maps in the Roguelike app (`input.ts`, `panel-keys.ts`). No rebinding, no modifier keys, no conflict detection. |
+| **Solution** | A single `KeybindingRegistry` with default bindings, player overrides persisted to localStorage, conflict detection, and modifier-key support. |
+| **Unlocks** | Accessibility (input remapping), complex key combos, an in-game controls reference panel |
+| **Complexity** | Mid. A plan was written for this in the Roguelike monorepo (`keybinding-system.md`) but was not ported here. |
+| **Dependencies** | None outstanding. **Overlaps `modules/input`**, which ships `InputMap` plus Keyboard/Pointer/Gamepad providers — check what a registry adds beyond that before building. |
 
 ---
 
-## Dependency Graph
-
-```
-                    Generic Component Store (DONE)
-                   /           |            \
-                 /             |              \
-           Spatial Index    Query DSL    Component Validation
-              (1.1)          (1.2)           (2.1)
-                \             / \              |
-                 \           /   \             |
-                  \         /     \       Entity Templates
-                   \       /       \        (2.2)
-                 Archetype Cache    \         |
-                    (3.1)      System Scheduler
-                                  (1.3)       \
-                                    \       Plugin Hooks
-                                     \       (4.4)
-                                      \
-            Dirty Flags ---- Render Layers
-              (3.3)            (3.4)
-
-  Event Enhancements (2.4) ---- standalone
-  Schema Evolution (2.3) ------ standalone
-  Entity Pooling (3.2) -------- needs 1.1 + 1.2
-  Testing Utilities (4.1) ----- standalone (benefits from 2.2)
-  Entity Inspector (4.2) ------ needs 1.2
-  Hot-Reload (4.3) ------------ needs 2.2
-  Keybinding Registry (4.5) --- standalone
-```
-
 ## Suggested Implementation Order
 
-A pragmatic order that maximizes value at each step:
+By value per unit of effort. Nothing here is scheduled; each entry still needs
+its trigger.
 
-1. ✅ **Spatial Index** (1.1) — immediate perf win, small effort
-2. ✅ **Query DSL** (1.2) — makes every system cleaner
-3. ✅ **Component Validation** (2.1) — tiny effort, catches bugs
-4. ✅ **Dirty Flags** (3.3) — tiny effort, skips unnecessary work
-5. ✅ **Entity Templates** (2.2) — data-driven entities
-6. ✅ **System Scheduler** (1.3) — needed before 10+ systems
-7. ✅ **Testing Utilities** (4.1) — enables CI
-8. ✅ **Event Enhancements** (2.4) — needed for complex chains
-9. ✅ **Serialization Evolution** (2.3) — migration infra (no migrations registered yet)
-10. ✅ **Hot-Reload** (4.3) — content iteration speed
-11. **Keybinding Registry** (4.5) — plan already written
-12. **Archetype Cache** (3.1) — performance at scale
-13. **Entity Pooling** (3.2) — for projectiles/particles
-14. **Render Layers** (3.4) — for visual effects
-15. **Entity Inspector** (4.2) — dev QoL
-16. **Plugin Hooks** (4.4) — modding (long-term)
+1. **Archetype Cache** (3.1) — the biggest query-cost win, and the cheapest of
+   the three scale items
+2. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
+3. **Render Layers & Culling** (3.4) — unlocks dense visual effects
+4. **Content Hot-Reload** (4.3) — ~40 lines for faster content iteration
+5. **Keybinding Registry** (4.5) — accessibility, small and self-contained
+6. **Entity Inspector** (4.2) — dev quality of life
+7. **Plugin Hooks** (4.4) — modding, long-horizon and the largest piece

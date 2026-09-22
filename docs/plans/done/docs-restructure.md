@@ -155,28 +155,41 @@ Filenames `ecs-module-backlog.md` and `engine-gap-ledger.md` are kept so the
       open as `modules/tilemap` V2).
 - [x] 13. Validate: `npm test` (the new test plus the engine-api drift
       test), `npx tsc --noEmit`, `npm run lint`.
-- [ ] 16. **Not yet done — `docs/roadmap/core-engine-roadmap.md`.** Found
-      after implementation (and after the first peer review passed it): the
-      core roadmap has **10 `✅ DONE` headings** out of 16 entries (1.1,
-      1.2, 1.3, 2.1, 2.2, 2.3, 2.4, 3.3, 4.1, 4.3), so it violates the same
-      invariant. Tiers 1 and 2 are *entirely* shipped and would disappear;
-      the `Dependency Graph` and `Suggested Implementation Order` sections
-      reference the removed items and need reworking. It has no per-entry
-      status suffix, so enforcing it in `scripts/docs.test.ts` needs either
-      status suffixes on its headings or a file-specific rule ("no `✅` in a
-      roadmap heading"). Deliberately left as a separate pass so this one
-      stays reviewable — which means **success criterion 1 is not yet met
-      repo-wide, and this plan must not move to `done/` until it is.**
-- [ ] 17. Peer review loop with a small model until no actionable items;
-      then fix and re-run.
-- [ ] 15. Move this plan to `docs/plans/done/docs-restructure.md` in the
+- [x] 16. `docs/roadmap/core-engine-roadmap.md` rewritten as open-only: the
+      now-empty Tiers 1–2 removed and `Dependency Graph` / the implementation
+      order reworked down to the survivors (203 → ~130 lines). Entry IDs were
+      kept stable rather than renumbered, because
+      `docs/engine-readiness-assessment.md` cites `3.1`, `3.2` and `4.4`; the
+      intro states that a gap in the numbering means that entry shipped.
+      Enforced by a new repo-wide rule in `scripts/docs.test.ts` — no `✅` in
+      any roadmap heading.
+- [x] 17. Re-review (small model) found what the first pass missed — and in
+      the opposite direction. **`4.3` Content Hot-Reload was falsely marked
+      `✅ DONE`.** Its text described the Roguelike app's
+      `src/content/registry.ts` and consumers `game.ts` / `entity.ts`; this
+      repo has no `src/content/`, and `import.meta.hot` appears nowhere under
+      `src/` or `examples/`. Deleting it as "shipped" would have destroyed
+      live work, so it is **restored as open** with a provenance note and
+      added to the ordering. `MigrationRegistry` was spot-checked and is real
+      (`src/modules/save/migration-registry.ts`), so `2.3` was the only other
+      entry whose shipped status needed confirming.
+- **Lesson from this pass, and the residual risk it implies.** A `✅`/`DONE`
+      heading is a *claim*, and the whole "delete shipped entries" strategy
+      depends on that claim being true. The core roadmap proved the claim can
+      be false — a marker describing another repo's implementation. The module
+      backlog's 27 deleted entries were spot-verified by symbol
+      (`ContinuousHashGrid2D`, `bounceOffAabb`, `ScreenSpaceDef`,
+      `spawnTilemap`, `AttachDef`, and the `src/modules/` tree), but that was
+      a spot-check, not an exhaustive pass. **A follow-up sweep asserting that
+      every deleted entry maps to real `src/` surface is the honest way to
+      close this**, and is deliberately not bundled here.
+- [x] 15. Move this plan to `docs/plans/done/docs-restructure.md` in the
       same commit as the implementation.
 
 ## Success criteria
 
-- No live status doc contains a `✅ shipped` heading. **(Not yet met — see
-  subtask 16: `docs/roadmap/core-engine-roadmap.md` still carries 10
-  `✅ DONE` headings.)**
+- No live status doc contains a `✅ shipped` heading — enforced repo-wide over
+  `docs/roadmap/` by `scripts/docs.test.ts`.
 - The backlog is open-only and roughly a third of its current length.
 - `npm test` fails if a status doc re-admits shipped work, if an entry
   loses its status, or if a live doc link breaks.

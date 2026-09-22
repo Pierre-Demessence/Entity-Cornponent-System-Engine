@@ -113,6 +113,18 @@ describe('status docs describe open work only', () => {
     expect(shipped).toEqual([]);
   });
 
+  it('no roadmap doc uses a checkmark to record shipped work', () => {
+    const roadmapDir = join(docsDir, 'roadmap');
+    const offending = readdirSync(roadmapDir)
+      .filter(name => name.endsWith('.md'))
+      .flatMap(name =>
+        headings(read(join(roadmapDir, name)))
+          .filter(heading => heading.includes('✅'))
+          .map(heading => `docs/roadmap/${name}: "${heading}"`),
+      );
+    expect(offending).toEqual([]);
+  });
+
   it('every status-doc entry carries a status from that document vocabulary', () => {
     const offending: string[] = [];
     for (const doc of statusDocs) {
