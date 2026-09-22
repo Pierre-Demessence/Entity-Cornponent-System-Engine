@@ -33,7 +33,8 @@ One line per task; the detail lives in the linked sections. `[x]` done,
 - [x] `query.ts` — drop the per-entity intermediate array + spread; reject
       non-matches via `has()` before building any component view
 - [ ] Cheaper columnar view construction (keep spread / `Object.keys` working)
-- [ ] `Int32Array` id→slot for dense ids — cut GC pressure at millions of entities
+- [x] Paged sparse set for id→slot — GC-light `Int32Array` pages allocated on
+      demand, memory bounded to used id ranges (replaces the id→slot `Map`)
 - [ ] Float32 vs Float64 columns — decide default / add opt-in (precision footgun)
 
 ### B1 → "Ideal" (later, gradual, no storage redo) ([detail](#the-path-to-ideal-later-gradual-no-storage-redo))
@@ -398,6 +399,21 @@ perf lever with a wrinkle, to be taken deliberately.
   is still open if a consumer needs the precision.
 - Numeric-schema detection lives on `simpleComponent`, which sets
   `def.columns` when every field is `'number'`; `registerComponent` reads it.
+
+### Generational entity ids — logged (separate, strategic)
+
+Surfaced by the id→slot work: entity ids are monotonic and **never reused**
+(`createEntity` = `nextId++`), so over long churn-heavy sessions the id space
+grows unbounded. That is safe today — a stale reference to a destroyed entity is
+*detectable* (`get()` returns `undefined`) — and the paged sparse set keeps the
+id→slot cost bounded regardless. Reusing ids would bound the id space but needs
+**generational handles** (`{ index, generation }`) to stay safe: a bare
+free-list reintroduces the ABA problem (a recycled id silently resolves to a
+different entity). Generational handles change `EntityId` from a `number` into a
+packed handle, rippling through core, every module, every consumer, and the save
+format — a large, breaking, strategic change worth its own plan, justified only
+if the engine targets millions-of-entities-with-churn (VS-like, Factorio). Not
+planned; recorded so the tradeoff isn't rediscovered.
 
 ## Relationship to the backlog
 

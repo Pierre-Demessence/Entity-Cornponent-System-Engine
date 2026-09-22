@@ -1,6 +1,14 @@
 import type { ComponentDef, ComponentStoreLike, StoreDeleteHandler, StoreSetHandler, StoreValidateHandler } from '#component-store';
 import type { EntityId } from '#entity-id';
 
+// Paged sparse set for id -> slot. Pages of Int32Array are allocated on demand
+// (only where live ids fall), so lookup is a GC-leaf typed-array read instead of
+// a millions-entry Map, and memory stays bounded to the id ranges actually used.
+const PAGE_BITS = 12;
+const PAGE_SIZE = 1 << PAGE_BITS; // 4096 ids per page
+const PAGE_MASK = PAGE_SIZE - 1;
+const ABSENT = -1;
+
 /**
  * Structure-of-Arrays store for all-numeric components — the columnar half of
  * the hybrid storage model (see docs/plans/ecs-parallelism-and-soa-storage.md,
@@ -23,7 +31,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   private readonly deleteHandlers: StoreDeleteHandler<T>[] = [];
   private readonly dirty = new Set<EntityId>();
   private readonly fields: string[];
-  private readonly id2slot = new Map<EntityId, number>();
+  private readonly pages: (Int32Array | undefined)[] = [];
   private readonly setHandlers: StoreSetHandler<T>[] = [];
   private readonly slot2id: EntityId[] = [];
   private readonly validateHandlers: StoreValidateHandler[] = [];
@@ -35,17 +43,19 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
 
     // Capture the backing references (not `this`) so view accessors stay
     // correct across grow() — `columns[f]` is reassigned in place on the same
-    // Record, and `dirty` / `slot2id` references are stable.
-    const { columns, dirty, id2slot } = this;
+    // Record, and `dirty` / `pages` references are stable.
+    const { columns, dirty, pages } = this;
     for (const f of this.fields) {
       this.viewDescriptors[f] = {
         enumerable: true,
         get(this: { _id: EntityId }): number {
-          return columns[f][id2slot.get(this._id)!];
+          const page = pages[this._id >>> PAGE_BITS];
+          return columns[f][page === undefined ? ABSENT : page[this._id & PAGE_MASK]];
         },
         set(this: { _id: EntityId }, v: number): void {
-          const slot = id2slot.get(this._id);
-          if (slot !== undefined) {
+          const page = pages[this._id >>> PAGE_BITS];
+          const slot = page === undefined ? ABSENT : page[this._id & PAGE_MASK];
+          if (slot !== ABSENT) {
             columns[f][slot] = v;
             dirty.add(this._id);
           }
@@ -61,7 +71,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
       }
     }
     this.count = 0;
-    this.id2slot.clear();
+    this.pages.length = 0;
     this.slot2id.length = 0;
     this.dirty.clear();
   }
@@ -72,8 +82,8 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   column(field: string): Float32Array { return this.columns[field]; }
 
   delete(id: EntityId): boolean {
-    const slot = this.id2slot.get(id);
-    if (slot === undefined)
+    const slot = this.slotFor(id);
+    if (slot === ABSENT)
       return false;
 
     const old = this.deleteHandlers.length > 0 ? this.plainAt(slot) : undefined;
@@ -83,10 +93,10 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
       for (const f of this.fields) this.columns[f][slot] = this.columns[f][lastSlot];
       const lastId = this.slot2id[lastSlot];
       this.slot2id[slot] = lastId;
-      this.id2slot.set(lastId, slot);
+      this.setSparse(lastId, slot);
     }
+    this.setSparse(id, ABSENT);
     this.slot2id.length = lastSlot;
-    this.id2slot.delete(id);
     this.count = lastSlot;
     this.dirty.add(id);
 
@@ -115,7 +125,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   }
 
   get(id: EntityId): T | undefined {
-    return this.id2slot.has(id) ? this.makeView(id) : undefined;
+    return this.slotFor(id) === ABSENT ? undefined : this.makeView(id);
   }
 
   private grow(): void {
@@ -127,10 +137,12 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     }
   }
 
-  has(id: EntityId): boolean { return this.id2slot.has(id); }
+  has(id: EntityId): boolean { return this.slotFor(id) !== ABSENT; }
   hasChanges(): boolean { return this.dirty.size > 0; }
   isDirty(id: EntityId): boolean { return this.dirty.has(id); }
-  keys(): MapIterator<EntityId> { return this.id2slot.keys(); }
+  * keys(): Generator<EntityId> {
+    for (let slot = 0; slot < this.count; slot++) yield this.slot2id[slot];
+  }
 
   /** Per-call write-through view bound to the entity id, so it survives slot moves caused by other deletes (swap-remove). */
   private makeView(id: EntityId): T {
@@ -151,13 +163,13 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   /** Insert or replace a component value. Fires validate → delete (if replacing) → set handlers. */
   set(id: EntityId, value: T): this {
     this.emitValidate(id);
-    const existing = this.id2slot.get(id);
+    const existing = this.slotFor(id);
     let slot: number;
-    if (existing === undefined) {
+    if (existing === ABSENT) {
       if (this.count === this.capacity)
         this.grow();
       slot = this.count++;
-      this.id2slot.set(id, slot);
+      this.setSparse(id, slot);
       this.slot2id[slot] = id;
     }
     else {
@@ -172,10 +184,30 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     return this;
   }
 
+  /** Sparse-set write: allocate the id's page on demand, then record its slot. */
+  private setSparse(id: EntityId, slot: number): void {
+    const p = id >>> PAGE_BITS;
+    let page = this.pages[p];
+    if (page === undefined) {
+      page = new Int32Array(PAGE_SIZE).fill(ABSENT);
+      this.pages[p] = page;
+    }
+    page[id & PAGE_MASK] = slot;
+  }
+
   get size(): number { return this.count; }
 
+  /** Sparse-set lookup: dense slot for an entity id, or {@link ABSENT}. */
+  private slotFor(id: EntityId): number {
+    const page = this.pages[id >>> PAGE_BITS];
+    return page === undefined ? ABSENT : page[id & PAGE_MASK];
+  }
+
   /** Dense slot index for an entity, or `undefined`. Pair with {@link column} for fast loops. */
-  slotOf(id: EntityId): number | undefined { return this.id2slot.get(id); }
+  slotOf(id: EntityId): number | undefined {
+    const slot = this.slotFor(id);
+    return slot === ABSENT ? undefined : slot;
+  }
 
   subscribe(event: 'set', fn: StoreSetHandler<T>): () => void;
   subscribe(event: 'delete', fn: StoreDeleteHandler<T>): () => void;

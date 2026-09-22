@@ -102,6 +102,20 @@ describe('columnStore', () => {
     for (let i = 0; i < 100; i++) expect(s.get(i)).toMatchObject({ x: i, y: -i });
   });
 
+  it('handles sparse and large entity ids across sparse-set pages', () => {
+    const s = new ColumnStore<Vec2>(FIELDS);
+    // 4095/4096 straddle a page boundary (page size 4096); others are far apart.
+    const ids = [0, 4095, 4096, 5000, 1_000_000];
+    ids.forEach((id, i) => s.set(id, { x: id, y: i }));
+    expect(s.size).toBe(5);
+    for (const id of ids) expect(s.get(id)!.x).toBe(id);
+    s.delete(4096);
+    expect(s.has(4096)).toBe(false);
+    expect(s.get(4095)!.x).toBe(4095);
+    expect(s.get(1_000_000)!.x).toBe(1_000_000);
+    expect(new Set(s.keys())).toEqual(new Set([0, 4095, 5000, 1_000_000]));
+  });
+
   it('column() + slotOf() fast path writes through', () => {
     const s = new ColumnStore<Vec2>(FIELDS);
     s.set(10, { x: 1, y: 1 });
