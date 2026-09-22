@@ -1,4 +1,4 @@
-import type { ComponentStore } from '#component-store';
+import type { ComponentStoreLike } from '#component-store';
 import type { EntityId } from '#entity-id';
 import type { Renderer } from '#renderer';
 import type { EcsWorld } from '#world';
@@ -116,13 +116,13 @@ export class Canvas2DRenderer implements Renderer<Canvas2DRenderContext> {
  */
 function drawPass(
   ctx2d: CanvasRenderingContext2D,
-  renderableStore: ComponentStore<Renderable>,
-  posStore: ComponentStore<{ x: number; y: number }>,
-  rotStore: ComponentStore<{ angle: number }> | null,
-  scaleStore: ComponentStore<{ x: number; y: number }> | null,
-  opacityStore: ComponentStore<{ value: number }> | null,
-  orderStore: ComponentStore<{ value: number }> | null,
-  screenStore: ComponentStore<ScreenSpace> | null,
+  renderableStore: ComponentStoreLike<Renderable>,
+  posStore: ComponentStoreLike<{ x: number; y: number }>,
+  rotStore: ComponentStoreLike<{ angle: number }> | null,
+  scaleStore: ComponentStoreLike<{ x: number; y: number }> | null,
+  opacityStore: ComponentStoreLike<{ value: number }> | null,
+  orderStore: ComponentStoreLike<{ value: number }> | null,
+  screenStore: ComponentStoreLike<ScreenSpace> | null,
   viewRect: ViewRect | null,
   atlases: SpriteFrameSource | null,
   screenSpace: boolean,
@@ -224,8 +224,8 @@ function isCulled(x: number, y: number, r: Renderable, rect: ViewRect): boolean 
 function tryGetStore<T>(
   world: EcsWorld,
   def: { name: string },
-): ComponentStore<T> | null {
-  return (world.getStoreByName(def.name) as ComponentStore<T> | undefined) ?? null;
+): ComponentStoreLike<T> | null {
+  return (world.getStoreByName(def.name) as ComponentStoreLike<T> | undefined) ?? null;
 }
 
 function drawEntity(
@@ -234,9 +234,9 @@ function drawEntity(
   x: number,
   y: number,
   r: Renderable,
-  rotStore: ComponentStore<{ angle: number }> | null,
-  scaleStore: ComponentStore<{ x: number; y: number }> | null,
-  opacityStore: ComponentStore<{ value: number }> | null,
+  rotStore: ComponentStoreLike<{ angle: number }> | null,
+  scaleStore: ComponentStoreLike<{ x: number; y: number }> | null,
+  opacityStore: ComponentStoreLike<{ value: number }> | null,
   atlases: SpriteFrameSource | null,
 ): void {
   if (r.kind !== 'sprite' && r.fill === undefined && r.stroke === undefined)
