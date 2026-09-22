@@ -2,47 +2,26 @@ import type { Vec2 } from '@pierre/ecs/modules/motion';
 
 import type { GuardBrain, Wall } from './game';
 
+import { aabbVsAabb, rayVsAabb } from '@pierre/ecs/modules/collision';
+
 import { VISION_HALF_ANGLE, VISION_RANGE } from './game';
 
 /**
- * Liang–Barsky segment-vs-AABB test: does the segment `a→b` cross `r`?
- * Used for line-of-sight — a wall between guard and player blocks sight.
+ * True if no wall blocks the straight line from `from` to `to`.
+ *
+ * Composed from two engine primitives rather than a bespoke segment test: a
+ * zero-size AABB at the origin answers "am I standing in a wall?" (which must
+ * block sight), and the ray query takes the segment vector as its direction,
+ * so `t <= 1` means "crossed before reaching `to`".
  */
-function segmentHitsRect(ax: number, ay: number, bx: number, by: number, r: Wall): boolean {
-  const dx = bx - ax;
-  const dy = by - ay;
-  const p = [-dx, dx, -dy, dy];
-  const q = [ax - r.x, r.x + r.w - ax, ay - r.y, r.y + r.h - ay];
-  let t0 = 0;
-  let t1 = 1;
-  for (let i = 0; i < 4; i++) {
-    if (p[i] === 0) {
-      if (q[i] < 0)
-        return false; // parallel and outside this slab
-    }
-    else {
-      const t = q[i] / p[i];
-      if (p[i] < 0) {
-        if (t > t1)
-          return false;
-        if (t > t0)
-          t0 = t;
-      }
-      else {
-        if (t < t0)
-          return false;
-        if (t < t1)
-          t1 = t;
-      }
-    }
-  }
-  return true;
-}
-
-/** True if no wall blocks the straight line from `from` to `to`. */
 export function hasLineOfSight(from: Vec2, to: Vec2, walls: readonly Wall[]): boolean {
+  const here = { h: 0, w: 0, x: from.x, y: from.y };
+  const segment = { x: to.x - from.x, y: to.y - from.y };
   for (const w of walls) {
-    if (segmentHitsRect(from.x, from.y, to.x, to.y, w))
+    if (aabbVsAabb(here, w))
+      return false;
+    const hit = rayVsAabb(from, segment, w);
+    if (hit && hit.t <= 1)
       return false;
   }
   return true;

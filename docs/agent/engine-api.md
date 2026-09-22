@@ -180,6 +180,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 
 ### `@pierre/ecs/modules/collision`
 - **`Aabb`** _(interface)_ — —
+- **`AabbAxis`** _(type)_ — —
 - **`aabbVsAabb`** _(fn)_ — Two AABBs overlap when their projections on both axes overlap. Edge contact does NOT count as overlap.
 - **`aabbVsAabbSwept`** _(fn)_ — Swept AABB: `a` moves by `motionA` toward static `b`. Returns the first fraction of motion at which they touch (`tEntry ∈ [0, 1]`) and th...
 - **`aabbVsCircle`** _(fn)_ — Circle–AABB overlap: closest point on the AABB to the circle centre lies within the radius.
@@ -187,6 +188,8 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`BounceResult`** _(interface)_ — —
 - **`circleVsCircle`** _(fn)_ — Two circles overlap (or touch) when the distance between centres ≤ sum of radii.
 - **`makeTriggerSystem`** _(fn)_ — Builds a schedulable system that iterates a broadphase, runs an optional narrowphase filter, and invokes `onOverlap` for each surviving p...
+- **`RayHit`** _(interface)_ — —
+- **`rayVsAabb`** _(fn)_ — Ray vs AABB, slab method. Returns the entry `t` (strictly positive) and the axis of the face it enters through, or `null` when the ray mi...
 - **`reflect`** _(fn)_ — Reflect a velocity vector off a surface normal using the standard formula `v' = v - 2(v·n)n`. The caller must supply a **unit-length** no...
 - **`ShapeAabb`** _(interface)_ — Axis-aligned bounding box shape. Anchored at `PositionDef.{x,y}` as the top-left corner — matches the platformer's physics convention. Wi...
 - **`ShapeAabbDef`** _(const)_ — —

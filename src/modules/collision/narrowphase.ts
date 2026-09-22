@@ -1,6 +1,6 @@
 /**
  * Domain-free 2D narrowphase collision helpers. No ECS imports,
- * no allocations inside the hot path — callers compose `{x,y,w,h}`
+ * no allocation on the miss path — callers compose `{x,y,w,h}`
  * and `{x,y}` structs from their own `PositionDef + ShapeAabbDef`
  * or `PositionDef + ShapeCircleDef` before calling.
  *
@@ -133,6 +133,87 @@ export function aabbVsAabbSwept(a: Aabb, motionA: Vec2, b: Aabb): SweptHit {
     : { x: 0, y: motionA.y > 0 ? -1 : 1 };
 
   return { hit: true, normal, tEntry: entry };
+}
+
+export type AabbAxis = 'x' | 'y';
+
+export interface RayHit {
+  /** The face the ray entered through. */
+  readonly axis: AabbAxis;
+  /**
+   * Entry point, parametric in units of `dir`: a world distance when `dir` is
+   * unit-length, or a fraction of the segment when `dir` is `to - from`.
+   */
+  readonly t: number;
+}
+
+/**
+ * Ray vs AABB, slab method. Returns the entry `t` (strictly positive) and the
+ * axis of the face it enters through, or `null` when the ray misses, the box
+ * lies entirely behind the origin, or the origin is on or inside the box.
+ *
+ * `t` is parametric in units of `dir`, which is what makes one function serve
+ * both ray shapes: pass a **unit** vector for a world distance (hitscan,
+ * picking), or the **segment** vector `to - from` and treat `t <= 1` as "the
+ * segment crosses the box" (line-of-sight against walls).
+ *
+ * A zero-length `dir` never hits. A ray travelling exactly along a face counts
+ * as a hit once it enters that face's span from outside (the slab method treats
+ * boxes as closed) — an origin already sitting on the boundary is still a miss,
+ * as above — and so does a corner graze, where entry and exit land on the same
+ * `t`. Its `axis` is whichever face the ray ultimately enters through, which
+ * need not be the face it grazes. When two axes enter at the same `t` — a ray
+ * through an exact corner or crack — the `y` face wins, consistent with
+ * `aabbVsAabbSwept` and `bounceOffAabb`.
+ *
+ * Note that the 3D copies in `examples/portal` / `examples/doom` break corner
+ * ties the other way (`x` wins), and use a small tolerance rather than an exact
+ * zero test, so a port is not a byte-for-byte match.
+ *
+ * For "is the origin already inside?" — which this function answers `null` —
+ * compose `aabbVsAabb` with a zero-size box at the origin instead of paying
+ * for a flag on this path.
+ */
+export function rayVsAabb(origin: Vec2, dir: Vec2, box: Aabb): RayHit | null {
+  const maxX = box.x + box.w;
+  const maxY = box.y + box.h;
+
+  // Parallel to a slab: either the origin lies within it (that axis cannot
+  // constrain the entry) or nothing on this axis can ever meet the box.
+  if (dir.x === 0 && (origin.x < box.x || origin.x > maxX))
+    return null;
+  if (dir.y === 0 && (origin.y < box.y || origin.y > maxY))
+    return null;
+
+  let tEnter = Number.NEGATIVE_INFINITY;
+  let tExit = Number.POSITIVE_INFINITY;
+  let axis: AabbAxis = 'x';
+
+  if (dir.x !== 0) {
+    const near = (box.x - origin.x) / dir.x;
+    const far = (maxX - origin.x) / dir.x;
+    tEnter = near < far ? near : far;
+    tExit = near < far ? far : near;
+  }
+
+  if (dir.y !== 0) {
+    const near = (box.y - origin.y) / dir.y;
+    const far = (maxY - origin.y) / dir.y;
+    const yEnter = near < far ? near : far;
+    const yExit = near < far ? far : near;
+    if (yEnter >= tEnter) {
+      tEnter = yEnter;
+      axis = 'y';
+    }
+    if (yExit < tExit)
+      tExit = yExit;
+  }
+
+  // `tEnter` stays -Infinity when both components are zero.
+  if (tEnter > tExit || tEnter <= 0)
+    return null;
+
+  return { axis, t: tEnter };
 }
 
 export interface BounceResult {

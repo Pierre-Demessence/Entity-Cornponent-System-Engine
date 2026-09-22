@@ -98,30 +98,6 @@ with the camera V3 entry.
 
 </details>
 
-### `modules/collision` V2 — raycast — deferred
-
-**Scope.** A ray-vs-shape query — slab-method ray/AABB returning the entry
-`t` plus the face axis — and its 3D sibling. Serves picking, hitscan,
-line-of-sight, and carry clamps.
-
-<details>
-<summary>Details</summary>
-
-**Trigger.** Met — two consumers already hand-roll the same function. portal
-`rayAabb`@`examples/portal/src/systems/portal-math.ts:63` (portal-gun aim +
-carry wall-clamp), and doom copies it to
-`examples/doom/src/systems/math.ts:18` for hitscan
-(`systems/weapon.ts`) and enemy line-of-sight (`systems/ai.ts`).
-
-**Probable shape.** A ray is a degenerate `aabbVsAabbSwept` (a zero-size
-mover), so this may be an extension of that function rather than a new one —
-decide at build time. The 3D variant lands with the 3D group.
-
-**Canon.** Unity `Physics.Raycast`, Godot
-`PhysicsDirectSpaceState2D.intersect_ray`, Unreal line traces.
-
-</details>
-
 ### `modules/kinematics` V2 — slopes + one-way platforms — deferred
 
 **Scope.** Two surface behaviours the arcade body solver lacks: **slopes**
@@ -1101,7 +1077,7 @@ signal's absence from this table means it already produced a module.
 | Second app-host beyond `examples/hub` | App-host helper (speculative) |
 | Prototype needing in-game UI widgets | `modules/ui` |
 | Prototype needing branching dialogue (choices, or lines gated on world state) | `modules/dialogue` (speculative) |
-| Prototype needing picking / hitscan / line-of-sight rays | `modules/collision` V2 |
+| Prototype needing **3D** picking / hitscan / line-of-sight rays | `modules/collision-3d` (3D group) |
 | Prototype needing slopes or one-way platforms | `modules/kinematics` V2 |
 | Frame-rate-independent physics determinism | `modules/tick` V2 |
 | A second radial-gravity consumer | `modules/motion` V2 |

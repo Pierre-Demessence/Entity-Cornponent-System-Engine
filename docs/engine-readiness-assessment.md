@@ -201,8 +201,8 @@ without a core change.
 `kinematics` are all 2D; there is no `transform-3d`, no 3D broadphase, no
 mesh renderer, and no `Vec3` or quaternion type. Per the ledger,
 `platformer-3d`, `portal`, `doom`, and `starfighter` each hand-roll a
-three.js scene plus entity↔mesh sync *and* a duplicated 3D AABB solver
-*and* ray-vs-AABB. Beyond that: no terrain or
+three.js scene plus entity↔mesh sync; three of them also duplicate a 3D AABB
+solver and two a ray-vs-AABB test. Beyond that: no terrain or
 voxel system, no water or volumetric rendering, no navmesh, no world
 streaming, and no rigid bodies for the submersible.
 
@@ -229,8 +229,8 @@ prevent.
 - **No slopes or one-way platforms** in `collision` + `kinematics`
   (verified absent) — Hollow Knight.
 - **No 3D stack** — Subnautica, and four consumers already duplicating it.
-- **No ray-vs-AABB raycast** (open ledger row; `portal` and `doom` copy the
-  same `rayAabb`) — Hollow Knight melee and line-of-sight, Subnautica
+- **No 3D ray-vs-AABB raycast** — the 2D query ships in `modules/collision`,
+  but `portal` and `doom` still each copy the same 3D `rayAabb` — Subnautica
   picking.
 - **No animation clip registry** (deferred) — Hollow Knight and Stardew
   directional animation.
@@ -254,7 +254,7 @@ Ordered by games unlocked per unit of work.
 | Promote the 3D stack that four examples already duplicate — `transform-3d`, 3D broadphase, 3D character controller, entity↔mesh sync, `Vec3`/`Quat`, ray-vs-AABB | Subnautica-class 3D; stops active consumer drift | Large |
 | SoA hot-component storage (step B1) alone — worth it single-threaded, before any parallelism | VS at scale; Factorio step 1 | Large |
 | Entity pooling + archetype cache (core roadmap 3.1 / 3.2) | VS at ship scale; any spawn-heavy genre | Mid |
-| Slopes + one-way platforms + ray-vs-AABB | Hollow Knight to a comfortable yes | Small–mid |
+| Slopes + one-way platforms | Hollow Knight to a comfortable yes | Small–mid |
 | A UI module, or a documented DOM-UI recipe | Four of the five games | Mid |
 | Batched tilemap renderable | Stardew and VS at real map sizes | Mid |
 | WebGL or batched renderer | Factorio; dense 2D | Large |

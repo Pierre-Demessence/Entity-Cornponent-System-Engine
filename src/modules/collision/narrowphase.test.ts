@@ -6,6 +6,7 @@ import {
   aabbVsCircle,
   bounceOffAabb,
   circleVsCircle,
+  rayVsAabb,
   reflect,
 } from './narrowphase';
 
@@ -306,5 +307,105 @@ describe('bounceOffAabb', () => {
     expect(r.pushOut.y).not.toBe(0);
     expect(r.velocity.x).toBe(-5);
     expect(r.velocity.y).toBe(5);
+  });
+});
+
+const BOX = { h: 10, w: 10, x: 10, y: 10 };
+
+describe('rayVsAabb', () => {
+  it('enters through the X face when approaching from the left', () => {
+    expect(rayVsAabb({ x: 0, y: 15 }, { x: 1, y: 0 }, BOX)).toEqual({ axis: 'x', t: 10 });
+  });
+
+  it('enters through the Y face when approaching from above', () => {
+    expect(rayVsAabb({ x: 15, y: 0 }, { x: 0, y: 1 }, BOX)).toEqual({ axis: 'y', t: 10 });
+  });
+
+  it('enters through the Y face travelling upward, with a negative direction', () => {
+    // Bottom face is `box.y + box.h = 20`, so the entry is 10 units away.
+    expect(rayVsAabb({ x: 15, y: 30 }, { x: 0, y: -1 }, BOX)).toEqual({ axis: 'y', t: 10 });
+
+    // Diagonal and negative: the Y slab's near/far planes arrive swapped, and
+    // the X face is the later entry.
+    expect(rayVsAabb({ x: 0, y: 25 }, { x: 1, y: -1 }, BOX)).toEqual({ axis: 'x', t: 10 });
+  });
+
+  it('enters through the X face approaching from the right, with a negative direction', () => {
+    // The right face is `box.x + box.w = 20`, so the entry is 10 units away.
+    expect(rayVsAabb({ x: 30, y: 15 }, { x: -1, y: 0 }, BOX)).toEqual({ axis: 'x', t: 10 });
+  });
+
+  it('enters through the later axis for a diagonal ray', () => {
+    // X enters at t=15 (the x=10 face); the Y slab is entered long before and
+    // left after, so it cannot constrain the entry.
+    expect(rayVsAabb({ x: -5, y: 15 }, { x: 1, y: 0.1 }, BOX)).toEqual({ axis: 'x', t: 15 });
+
+    // Steeper ray from the left of the box: X enters at t=5 but leaves at
+    // t=15, while Y only enters at t=10 → the Y face is the entry.
+    expect(rayVsAabb({ x: 5, y: 0 }, { x: 1, y: 1 }, BOX)).toEqual({ axis: 'y', t: 10 });
+  });
+
+  it('misses when the ray passes beside the box', () => {
+    expect(rayVsAabb({ x: 0, y: 0 }, { x: 1, y: 0 }, BOX)).toBeNull();
+  });
+
+  it('misses when the box is entirely behind the origin', () => {
+    expect(rayVsAabb({ x: 50, y: 15 }, { x: 1, y: 0 }, BOX)).toBeNull();
+  });
+
+  it('misses when the origin is inside the box', () => {
+    expect(rayVsAabb({ x: 15, y: 15 }, { x: 1, y: 0 }, BOX)).toBeNull();
+  });
+
+  it('misses when the origin sits on a face, either direction', () => {
+    // On the near face heading in: entry would be 0, which is not an entry.
+    expect(rayVsAabb({ x: 10, y: 15 }, { x: 1, y: 0 }, BOX)).toBeNull();
+    // On the far face heading in.
+    expect(rayVsAabb({ x: 20, y: 15 }, { x: -1, y: 0 }, BOX)).toBeNull();
+    // On the top face and travelling along it: the boundary rule wins over the
+    // "a ray along a face counts" rule, because there is no entry at all.
+    expect(rayVsAabb({ x: 15, y: 10 }, { x: 1, y: 0 }, BOX)).toBeNull();
+  });
+
+  it('misses for a zero-length direction, from outside and from inside', () => {
+    // Outside, the parallel pre-filter rejects it...
+    expect(rayVsAabb({ x: 0, y: 15 }, { x: 0, y: 0 }, BOX)).toBeNull();
+    // ...inside, it is the "no entry time was ever set" path that rejects it.
+    expect(rayVsAabb({ x: 15, y: 15 }, { x: 0, y: 0 }, BOX)).toBeNull();
+  });
+
+  it('treats a ray running along a face as a hit', () => {
+    // Running exactly along the top edge: boxes stay closed. The entry axis is
+    // the left face it reaches, not the edge it grazes.
+    expect(rayVsAabb({ x: 0, y: 10 }, { x: 1, y: 0 }, BOX)).toEqual({ axis: 'x', t: 10 });
+  });
+
+  it('counts a corner graze as a hit', () => {
+    // Touches the box at exactly (10, 20), so entry and exit times are equal —
+    // which the closed-box convention keeps as a hit rather than a miss.
+    expect(rayVsAabb({ x: 0, y: 10 }, { x: 1, y: 1 }, BOX)).toEqual({ axis: 'x', t: 10 });
+  });
+
+  it('tie-breaks to the Y face when entry times are equal', () => {
+    // Straight at the box's top-left corner: both axes enter at t=20.
+    const hit = rayVsAabb({ x: -10, y: -10 }, { x: 1, y: 1 }, BOX)!;
+    expect(hit.t).toBe(20);
+    expect(hit.axis).toBe('y');
+  });
+
+  it('reports t in units of dir, so a segment vector makes it a fraction', () => {
+    // Segment from (0,15) to (25,15): the box is crossed at 40% of the way.
+    expect(rayVsAabb({ x: 0, y: 15 }, { x: 25, y: 0 }, BOX)).toEqual({ axis: 'x', t: 0.4 });
+
+    // A segment that stops short reports t > 1, which the caller rejects.
+    const short = rayVsAabb({ x: 0, y: 15 }, { x: 5, y: 0 }, BOX)!;
+    expect(short.t).toBeGreaterThan(1);
+  });
+
+  it('is unaffected by the magnitude of a unit-consistent direction', () => {
+    const unit = rayVsAabb({ x: 0, y: 15 }, { x: 1, y: 0 }, BOX)!;
+    const scaled = rayVsAabb({ x: 0, y: 15 }, { x: 2, y: 0 }, BOX)!;
+    expect(scaled.t).toBe(unit.t / 2);
+    expect(scaled.axis).toBe(unit.axis);
   });
 });
