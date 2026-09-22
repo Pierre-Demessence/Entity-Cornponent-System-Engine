@@ -283,6 +283,69 @@ Picking a side speculatively is waste.
 
 </details>
 
+### `modules/dialogue` — speculative
+
+**Scope.** The presenter + runner **seam** only: a `DialogueRunner` contract
+(`advance()` → next step, `choose(index)`) and a `DialoguePresenter`
+interface (show a line, show choices, close). **No narrative language, no
+script format, no VM** — those stay app-side.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** A narrative prototype needing *branching* dialogue — choices, or
+lines gated on world state. `examples/rpg` is the only consumer and it is
+strictly linear: a flat per-NPC line array
+(`NpcDialogue { name; dialog: string[]; gid }`@`examples/rpg/src/characters.ts:63`)
+advanced one box at a time by a hand-rolled DOM presenter
+(`DialogueBox`@`examples/rpg/src/dialogue.ts:6` — `start` / `advance` /
+`open`). rpg exercises the presenter half and the advance case; nothing
+exercises the `DialogueStep` union, and `choices` / world-gated lines are the
+part that has to be right — a linear consumer cannot reveal whether that
+model holds.
+
+**Probable shape.**
+
+```ts
+type DialogueStep =
+  | { kind: 'line'; speaker: string; text: string }
+  | { kind: 'choices'; choices: readonly string[] }
+  | { kind: 'end' };
+
+interface DialogueRunner {
+  advance(): DialogueStep;
+  choose(index: number): void;
+}
+```
+
+The engine ships the interface; the app supplies the presenter and adapts
+whatever script format it chose.
+
+**Rationale for the seam, not a runtime.** Ink and Yarn Spinner each ship
+their own authoring language *and* VM, and they are different authoring
+models — a nested weave is not a node graph. Bundling one makes a
+narrative-tooling choice for every consumer and drags a VM into the engine's
+dependency graph, which collides with the tree-shakeable-module invariant.
+The part every consumer actually duplicates is the seam — drive a story →
+show a box → lock input — which is exactly what rpg hand-rolls today.
+
+**Canon, at its verified strength.** Ink's runtime API is the one shape
+checked first-hand — `Continue()` / `currentChoices` /
+`ChooseChoiceIndex(i)`, behind the authoring `.ink` → `inklecate` → compiled
+JSON pipeline (Ink and inkjs READMEs). Yarn Spinner is a second dialogue
+system with the same authoring → runtime → presenter split, but its compiler
+and VM are C#/.NET with **no first-party JS runtime** for this stack, and its
+runtime API was not opened in this pass. That is *one verified runtime plus
+one authoring-pipeline precedent* — short of the ≥3-engine unanimity the
+rule-book needs to promote on canon alone, and the step model is opinionated
+besides. Hence **speculative**: the shape is sketched, and it exists if a
+narrative-heavy prototype is attempted.
+
+**Not `modules/ui`.** That entry is in-world ECS widgets; this one is
+app-layer presentation plus a runner contract.
+
+</details>
+
 ### `modules/render-dom` V2 — deferred
 
 **Scope.** Follow-ups intentionally excluded from V1: event-driven DOM updates
@@ -716,6 +779,7 @@ signal's absence from this table means it already produced a module.
 | Rhythm/timing prototype beyond `examples/rhythm` | `modules/rhythm` (speculative) |
 | Second app-host beyond `examples/hub` | App-host helper (speculative) |
 | Prototype needing in-game UI widgets | `modules/ui` |
+| Prototype needing branching dialogue (choices, or lines gated on world state) | `modules/dialogue` (speculative) |
 
 Every promotion still runs through the engine extension rule-book (the
 sliding-scale evidence rule) — this table just catalogs the likely first
