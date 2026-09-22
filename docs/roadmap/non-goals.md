@@ -74,16 +74,3 @@ extension is off the table rather than deferred. The shipped `clamp` mode
 (`integrateBoundary`@`src/modules/motion/motion.ts:51`) keeps pinning the
 origin to `[0, width] × [0, height]`, which the full-playfield clampers
 adopt as-is.
-
-### Multi-threading / worker-based parallelism — superseded
-
-Declined on a single argument: JavaScript's cooperative concurrency forces
-`structuredClone` across every worker boundary, and single-threaded is plenty
-for the games this engine targets. **Reversed** — it is now being built.
-`modules/worker-pool` ships, `examples/worker-offload` is the harness that
-produces the evidence, and the step-by-step design lives in
-[plans/ecs-parallelism-and-soa-storage.md](../plans/ecs-parallelism-and-soa-storage.md).
-The decline's own revisit condition ("a prototype that is genuinely CPU-bound
-on the main thread") is exactly what that harness measures. Storage layout
-and per-entity GC remain the open core concern — see
-[core-engine-roadmap.md](core-engine-roadmap.md).

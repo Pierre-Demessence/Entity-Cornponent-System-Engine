@@ -1,11 +1,8 @@
 # Parallelism & SoA storage (multi-threading) — design + plan
 
-Supersedes the "Multi-threading / worker-based parallelism" decline in
-[../roadmap/non-goals.md](../roadmap/non-goals.md#superseded), which rejected
-the topic on a single argument (`structuredClone` copy cost). This doc records
-the fuller picture so the question isn't re-litigated from scratch: what would
-actually be built, in what order, what each piece is worth **on its own**, and
-how each would be proven.
+This doc records the fuller picture so the question isn't re-litigated from
+scratch: what would actually be built, in what order, what each piece is
+worth **on its own**, and how each would be proven.
 
 This began as a design capture. **B1 (columnar storage) has since shipped its
 "Middle" slice** — the [Task checklist](#task-checklist) below tracks what is
@@ -469,9 +466,8 @@ planned; recorded so the tradeoff isn't rediscovered.
 
 ## Relationship to the backlog
 
-This supersedes the reasoning in the multi-threading Non-goal. The *core*
-version (B1 + B2) stays deferred — but the honest blockers are the
-`Map`-of-objects storage and the absence of a proven-CPU-bound prototype,
-not `structuredClone`. The *module* version (A) was never really the same
-question and could land on its own the moment a consumer needs to offload a
-heavy job without stalling a frame.
+The *core* version (B1 + B2) is the storage and parallelism work tracked by
+this plan — the honest blockers are the `Map`-of-objects storage and the
+absence of a proven-CPU-bound prototype, not `structuredClone`. The *module*
+version (A) was never really the same question and could land on its own the
+moment a consumer needs to offload a heavy job without stalling a frame.
