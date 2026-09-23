@@ -483,6 +483,47 @@ container parenting, custom DOM render loops in card/deckbuilder web games.
 
 </details>
 
+### `modules/render-target` — deferred
+
+**Scope.** A render-to-texture primitive: a secondary camera renders the scene
+(or a layer of it) into an offscreen target, which is then sampled as a texture
+on an in-world surface. The substrate behind portals, planar mirrors,
+security-camera monitors, in-world screens/TVs, and minimaps.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** Met on canon alone — render-to-texture + secondary camera is
+*unanimous* canon (Unity `Camera` → `RenderTexture`, Godot `SubViewport` +
+`Camera3D` → `ViewportTexture`, Unreal `SceneCaptureComponent2D` → render
+target, three.js `WebGLRenderTarget`), which clears the 0-consumer bar in the
+sliding-scale rule. Ships as part of the 3D render-module family, so it also
+waits on the `render-scene3d` group cadence.
+
+**Evidence.** `examples/portal` hand-rolls the whole thing inside its renderer:
+a `virtualCam` posed per portal (`render.ts:244`), one `WebGLRenderTarget` per
+view rendered by `renderToTarget()` (`render.ts:646`,
+`renderer.setRenderTarget(rt); renderer.render(scene, virtualCam)`), and a quad
+shader that samples the target as its surface (`render.ts:96`). ABSENT in
+`src/modules/**` — no render-target or secondary-camera helper exists.
+
+**Probable shape.** A `RenderTarget` handle (size, dpr, linear/sRGB) plus a
+`renderView(target, camera, { clipPlanes? })` call that a consumer drives each
+frame, returning the texture to bind onto a material. Deliberately *does not*
+own the portal specifics.
+
+**Explicitly out of scope (stays in the portal example, 1 consumer).** The
+portal *transform* (`portalTransform` / `transformPoint`), the oblique
+near-plane clip to the destination wall (`render.ts:652`), and the fixed
+2-level recursion. These are an opinionated, single-consumer shape — they
+promote only when a second consumer (a mirror, a monitor, a second portal-like
+game) converges on them.
+
+**Canon.** Unity Render Textures, Godot `SubViewport`/`ViewportTexture`, Unreal
+`SceneCapture2D`, three.js `WebGLRenderTarget`.
+
+</details>
+
 ### `modules/lighting` — speculative
 
 **Scope.** 2D lighting: light sources with radius/cone/falloff, occluders
@@ -1103,6 +1144,7 @@ signal's absence from this table means it already produced a module.
 | Frame-rate-independent physics determinism | `modules/tick` V2 |
 | A second radial-gravity consumer | `modules/motion` V2 |
 | A game about darkness or light | `modules/lighting` (speculative) |
+| A prototype needing a mirror, monitor, in-world screen, or minimap (RTT surface) | `modules/render-target` |
 | A 2D game whose obstacles aren't grid-aligned, or a world too large for a grid | `modules/navmesh` (speculative) |
 | A terrain / water prototype wanting ridged, cellular or domain-warp noise | `modules/noise` V2 |
 | A prototype with a scripted sequence (intro, cutscene, boss reveal) | `modules/timeline` (speculative) |
