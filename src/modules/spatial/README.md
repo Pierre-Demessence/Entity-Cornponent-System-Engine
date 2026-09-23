@@ -76,12 +76,17 @@ const motion = makeVelocityIntegrationSystem({
 Spawn/despawn bookkeeping stays in app code — the helper only covers
 the motion step.
 
-## Future implementations
+## Backends — shipped and future
 
-Likely candidates as real drivers surface: continuous-space `HashGrid2D`
-with cell-size parameter, `QuadTree`, `Octree`, `SweepAndPrune` / `BVH`
-for AABBs. None are in scope until an example or consumer forces them
-(Rule of Three).
+Shipped: `HashGrid2D` (above) and `ContinuousHashGrid2D` (a continuous-space
+grid taking a `cellSize`).
+
+Tracked as a deferred gap (`modules/spatial` — `QuadTree` / `BVH` backends)
+in the [module backlog](../../../docs/roadmap/ecs-module-backlog.md):
+`QuadTree`, and `BVH` / `SweepAndPrune` for AABB sets. Both are solid canon,
+so one consumer is enough per the rule-book — a consumer a uniform grid cannot
+serve (very uneven entity density, or static AABB sets). An `Octree` for the
+3D stack stays out of scope until a 3D consumer forces it.
 
 ## Integration with `EcsWorld`
 

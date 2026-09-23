@@ -34,12 +34,18 @@ approximately(a, b, epsilon = 1e-6)          // |a - b| <= epsilon
 - `approximately` uses an **absolute** tolerance — pass an `epsilon` scaled to
   your magnitudes when comparing large numbers.
 
-## Not included (by design)
+## Not included
+
+Deliberate exclusions — plus one authorized omission: `moveToward`, whose shape
+canon settles and which is tracked as an existing-module gap in the
+[module backlog](../../../docs/roadmap/ecs-module-backlog.md) rather than
+excluded.
 
 - **`sign`** — use the native `Math.sign`.
 - **`moveToward`** — the game-useful form is the *vector* one
   (`Vector2.move_toward`); it belongs next to `vec` in `modules/motion`, not
-  here. Deferred until a consumer needs it (camera follow).
+  here. Canon (Unity `Vector3.MoveTowards`, Godot `Vector2.move_toward`), so
+  it waits on a build slot, not on a consumer.
 
 ## Usage
 

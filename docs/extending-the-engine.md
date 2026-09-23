@@ -23,13 +23,56 @@ Two things are evidence, and they **trade off against each other**:
   stable, obvious API has *already* had its shape validated by the
   industry. The literature is a substitute for an internal consumer.
 
-The stronger the canon, the fewer internal consumers you need:
+The stronger the canon, the fewer internal consumers you need — and the
+status a backlogged primitive carries follows from that:
 
-| Canon strength | Internal consumers needed before promotion |
-|---|---|
-| **Unanimous, universal** — same shape in ≥3 major engines (z-order, opacity, scale, rotation, AABB, sprite/text/polygon primitives, viewport) | **0** — ship it; waiting just delays obvious infrastructure |
-| **Solid** — domain-standard with an obvious API (spatial hash, quad-tree/BVH, fixed-step tick, AABB sweep, ring buffer, event bus, command buffer, lifetime/lifespan) | **1** — ship once one real consumer exercises it |
-| **None** — novel, opinionated, or genre-specific shape you are still discovering (turn cycler, combat-log bridge, class/race registry, save-slot manager) | **2** — the genuine Rule of Three; wait for a second consumer to reveal the real parameters |
+| Canon strength | Internal consumers needed | Backlog status |
+|---|---|---|
+| **Unanimous, universal** — same shape in ≥3 major engines (z-order, opacity, scale, rotation, AABB, sprite/text/polygon primitives, viewport, fixed-timestep accumulator, 2D camera rotation/parallax, one-way platforms) | **0** — ship it; waiting just delays obvious infrastructure | **Ready** |
+| **Solid** — domain-standard with an obvious API (spatial hash, quad-tree/BVH, fixed-step tick, AABB sweep, ring buffer, event bus, command buffer, lifetime/lifespan) | **1** — ship once one real consumer exercises it | **Ready** once that consumer lands; **Deferred** until then |
+| **None** — novel, opinionated, or genre-specific shape you are still discovering (turn cycler, combat-log bridge, class/race registry, save-slot manager) | **2** — the genuine Rule of Three; wait for a second consumer to reveal the real parameters | **Deferred**, then **Ready** |
+
+**Ready** means the *shape* is proven and the primitive is authorized to
+build: the only remaining gate is a build slot (scheduling or effort), never
+doubt about whether it belongs in the engine. A unanimous-canon primitive is
+**Ready** — full stop. Filing one as Deferred or Speculative confuses "no
+consumer needs it yet" with "we don't trust the shape," which are opposite
+claims.
+
+### The 2-consumer rule gates *shape*, not vocabulary
+
+The "wait for a second consumer" rule exists for one reason: a shape nobody
+has pinned yet will be over-fitted by its first caller. That reason evaporates
+when ≥2 major engines already ship the same API shape. So the only question
+that gates on consumer count is:
+
+> **Do ≥2 major engines ship the same shape?** If yes, it is canon — you need
+> ≤1 consumer, not 2. If no, it is novel — and the second consumer must be
+> real, not hypothetical.
+
+Do not re-derive an answer the industry already published.
+
+## Canon Is a Shipping Authorization
+
+Two questions get conflated in practice, and they have different answers:
+
+- **Is the shape right?** — settled by external canon. Do not spend internal
+  consumers re-deriving it.
+- **Does it fit *this* core?** — settled by one cheap integration wiring (the
+  module's own tests, plus one example importing it). Canon cannot tell you
+  whether a component def fits the store, whether the module keeps the
+  no-core-import invariant, or whether it composes with the tick model.
+
+So a canon primitive needs **one wiring**, never a fleet of demos. "We only
+have one example consumer" is not a reason to defer a shape that ≥3 engines
+already ship — it is a reason to *cite* them and file it **Ready**.
+
+> **Do not reflexively file everything as "wait for a second consumer."**
+> Under-promotion is the failure mode this project actually suffers from.
+> A half-baked primitive — a camera with no zoom, a math module with `clamp`
+> but no `lerp` — costs more than a canon module that lands before its first
+> consumer, because the missing half comes back as backlog churn (see
+> [Failure mode 3](#failure-mode-3-the-slice-v1)).
 
 ### These examples are deliberately generic
 
@@ -38,9 +81,8 @@ small and genre-spanning. That changes the calculus: **a gap that even one
 of these generic examples hits is strong evidence the gap is generic too.**
 The "first consumer over-fits the shape" worry — the whole reason the Rule
 of Three exists — is much weaker here than in a single product codebase.
-Combine that with canon and the bar drops fast. Do **not** reflexively
-file everything as "wait for a second consumer"; that under-promotion is
-the failure mode this project actually suffers from.
+Combine that with canon and the bar drops fast: canon, not a consumer count,
+is what authorizes the build.
 
 ### Canon-complete by default
 
@@ -54,6 +96,12 @@ with position but no zoom/limits/smoothing, or a math module with `clamp`
 but no `lerp`/`remap`, is a *half-baked* primitive — the under-promotion
 flagged just above. Build the whole canonical thing, cite the engines it
 mirrors, and let consumers exercise it as they land.
+
+**Hold the whole list, not the first caller's slice.** The test is "what does
+Godot's `Camera2D` expose?" — open it, enumerate it, cite it — not "what did
+this example call?" A V1 built from one consumer's call sites is the
+[slice-V1 failure mode](#failure-mode-3-the-slice-v1): the remainder returns
+as V2/V3 backlog churn and the primitive ships half-baked meanwhile.
 
 ### Guardrails (slide with the evidence)
 
@@ -101,7 +149,8 @@ capability proven enough to promote?*
 
 The capability is standard / well-established — the engine *ought* to have
 it. Add the new primitive, or extend the existing module, under the
-sliding-scale rule (canon + this one consumer is enough). Record it in the
+sliding-scale rule (unanimous canon needs no consumer; solid canon plus this
+one consumer is enough). Record it in the
 [gap ledger](roadmap/engine-gap-ledger.md) as resolved. (Standard
 `.tsx`/CSV/flip-flag TMX → extend `modules/tmx`; a bespoke dialect → keep
 it local, see Option 2.)
@@ -193,7 +242,7 @@ consumer reveals the real parameters** — but promote *canon* early, since
 its shape is already proven and demotion of a canonical primitive is
 rare.
 
-## Two Failure Modes
+## Three Failure Modes
 
 ### Failure mode 1: breaking the engine/game separation
 
@@ -227,6 +276,25 @@ consumer's assumptions. Red flags:
 Wait for a second driver to reveal the real abstraction shape. Better
 "consumer has code the engine could own" than "engine has code nobody
 but one consumer uses."
+
+### Failure mode 3: the slice-V1
+
+A recognised canon subsystem is built from whatever the first consumer
+happened to call, instead of the canon-complete surface. Red flags:
+
+- A backlog `V2`/`V3` entry exists for a feature ≥3 engines ship in the
+  primitive's V1 (a fixed-timestep accumulator, camera rotation/parallax,
+  slopes and one-way platforms).
+- The primitive's own README has to say "not yet supported" for something the
+  canon reference lists as a property.
+- A consumer hand-rolls the missing half beside the module instead of
+  through it.
+
+**Triage**: the missing half is not new work — it is unfinished work. Enumerate
+the canon reference's surface (Godot `Camera2D`, `CharacterBody2D`, the
+`FixedUpdate` contract), ship the remainder, and delete the V2 entry. A V2
+entry whose only reason to exist is "the V1 was built from one consumer's
+call sites" is the receipt for this failure mode, not a backlog item.
 
 ## Tradeoffs
 
@@ -281,15 +349,17 @@ Engines worth reading when considering layering or extension shape:
 
 When you identify a primitive worth promoting:
 
-1. **Confirm you have enough shape-evidence** (see [The Core Rule](#the-core-rule)):
-   - **Novel shape, no canon:** ≥2 real consumers. A hypothetical future
-     consumer doesn't count. The second consumer can be a planned, scoped
-     prototype — but not a vague "someone might want this someday".
+1. **Confirm you have enough shape-evidence, and read off the status** (see
+   [The Core Rule](#the-core-rule)):
+   - **Novel shape, no canon:** ≥2 real consumers ⇒ **Deferred** until the
+     second lands. A hypothetical future consumer doesn't count; the second
+     consumer can be a planned, scoped prototype — but not a vague "someone
+     might want this someday".
    - **Canon shape:** 1 consumer (solid canon) or 0 (unanimous universal
      canon) + a citable reference (named engine, library, or standard
-     textbook treatment with a stable API shape). Paste the reference into
-     the plan file and the commit body. If you can't cite it, it's a novel
-     shape and needs 2 consumers.
+     textbook treatment with a stable API shape) ⇒ **Ready**. Paste the
+     reference into the plan file, the module docs, and the commit body. If
+     you can't cite it, it's a novel shape and needs 2 consumers.
 2. **Identify what parameterizes the difference.** Component defs? Tag
    names? A strategy interface? If you can't name the parameter, you
    don't yet have the abstraction.
@@ -327,9 +397,9 @@ so the split was one tight commit instead of an archaeology expedition.
 - A second consumer's need shows the first consumer had unnecessary
   specificity baked in.
 - The shape is **canon** — well-established across major engines with a
-  stable API — and at least one real consumer exercises it (or it's
-  unanimous universal canon needing none). Canon substitutes for the
-  second consumer.
+  stable API — even with zero consumers: it is **Ready** on the citation
+  alone. Canon substitutes for consumers outright (see
+  [Canon Is a Shipping Authorization](#canon-is-a-shipping-authorization)).
 - The code has no natural dependency on consumer-specific types — it
   could be written with type parameters or zero consumer imports.
 - The abstraction boundary is obvious (a clear interface + ≥1 impl).

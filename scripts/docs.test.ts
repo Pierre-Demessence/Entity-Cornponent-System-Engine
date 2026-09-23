@@ -67,9 +67,10 @@ interface StatusDoc {
 const statusDocs: readonly StatusDoc[] = [
   {
     file: join(docsDir, 'roadmap', 'ecs-module-backlog.md'),
-    statuses: ['deferred', 'speculative'],
+    statuses: ['ready', 'deferred', 'speculative'],
     structural: [
-      'Status vocabulary',
+      'Status: shape, not demand',
+      'Gate: shape or scheduling',
       'Entry shape',
       'Version suffixes (V1 / V2 / …)',
       'Engine extension rule-book',

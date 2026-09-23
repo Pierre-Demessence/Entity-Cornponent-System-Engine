@@ -99,10 +99,13 @@ world.getStore(ParticleEmitterDef).set(playerId, {
 
 ## Out of scope
 
-- **Sub-emitters / trails / collision** — Godot/Unity advanced features; add when
-  a consumer needs them.
+- **Sub-emitters / trails / collision** — the `modules/particles` V2 backlog
+  entry, marked **ready**: canon (Unity `ParticleSystem` modules, Godot
+  advanced particle properties, Unreal Niagara/Cascade), so they wait on a
+  build slot, not on a consumer.
 - **Non-rect particle shapes** beyond what `RenderableDef` already offers
-  (sprites work — pass a sprite renderable is not yet wired; rects only in V1).
+  (sprites work — passing a sprite renderable is not wired yet; rects only in
+  V1). Same V2 entry.
 
 Import via `@pierre/ecs/modules/particles`. Depends on `modules/lifetime`,
 `modules/timer`, `modules/math`, `modules/transform` components,

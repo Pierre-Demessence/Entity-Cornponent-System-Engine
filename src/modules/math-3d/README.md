@@ -78,7 +78,12 @@ quatForward(q)                 quatUp(q)
   quaternion obtained from it (no function here does, since all return new
   values).
 
-## Not included (by design)
+## Not included
+
+Deliberate exclusions — plus one authorized omission: `quatSlerp`, whose shape
+canon settles and which is tracked as an existing-module gap in the
+[module backlog](../../../docs/roadmap/ecs-module-backlog.md) rather than
+excluded.
 
 - **3D ray/AABB tests** — `rayAabb` and the centre-based AABB overlap are
   `modules/collision-3d`'s primitives, per the 3D group table in the
@@ -91,10 +96,13 @@ quatForward(q)                 quatUp(q)
 - **Euler ↔ quaternion conversion.** Nothing hand-rolls it (the examples use
   three.js `Euler`), so it would be speculative, and Euler order is the exact
   can of worms the previous bullet avoids.
-- **`quatSlerp`.** Canon-unanimous, but no hand-rolled consumer: the one place
-  that needs it (`starfighter/src/render.ts`) already holds a three.js
-  `Quaternion` and calls its own `slerp`. Add it when a consumer interpolates
-  with this module's `Quat`.
+- **`quatSlerp`.** Canon-unanimous (Unity `Quaternion.Slerp`, Godot
+  `Quaternion.slerp`, three.js `Quaternion.slerp`), so it is authorized under
+  the rule-book and waits on a build slot, not on a consumer. The one call
+  site today (`starfighter/src/render.ts`) already holds a three.js
+  `Quaternion` and calls its own `slerp`, so nothing exercises it yet. Unity
+  clamps `t` to `[0, 1]` where Godot and three.js do not; this module's lerp
+  convention is unclamped, so the build has to pick a side.
 - **Float equality helpers** (`vec3IsZero`, `vec3Equals`). No hand-rolled
   consumer, and an epsilon-equality helper is a policy call — what epsilon? —
   that `modules/math`'s `approximately` already answers for scalars.

@@ -71,10 +71,11 @@ spawnTilemap({
 
 ## What this module does NOT do
 
-- **Batched/baked tilemap rendering** — the tilemap example bakes the
-  layer to a single offscreen canvas, which is a consumer-level
-  optimization. This module spawns standard sprite entities; the
-  consumer decides how to render.
+- **Batched/baked tilemap rendering** — the `modules/tilemap` V2 backlog
+  entry, marked **ready** (Unity `Tilemap`, Godot `TileMap`, Phaser
+  `Tilemap`). This module spawns standard sprite entities; until V2 lands the
+  consumer decides how to render (the tilemap example bakes the layer to one
+  offscreen canvas).
 - **Object-layer spawning** — object layers are game-specific. Keep
   those in app code.
 - **Pathfinding or advanced grid queries** — use `modules/pathfinding`

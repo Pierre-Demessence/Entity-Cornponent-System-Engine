@@ -141,12 +141,13 @@ V1, `modules/input`, and `modules/cooldown` for i-frames.
   only `slope` matches are shadowcasting math in
   `modules/grid-based/visibility.ts`. Hollow Knight leans on both
   constantly.
-- **Animation clip registry** — deferred in the backlog; directional
-  attack animation is app-side today.
+- **Animation clip registry** — ready in the backlog (shape proven by
+  canon), not built; directional attack animation is app-side today.
 - **UI and dialogue** again.
 - **Lighting, shaders, post-FX** — Canvas2D only; there is no WebGL module
   in the tree.
-- **Spatial audio and listener** — `modules/audio` V2 deferred.
+- **Spatial audio and listener** — `modules/audio` V2 ready (shape proven
+  by canon), not built.
 
 **Verdict.** The closest fit of the five. Platformer physics, decision AI,
 camera, tilemap, and save form a coherent whole; the gaps are a handful of
@@ -234,9 +235,9 @@ prevent.
 - **No 3D ray-vs-AABB raycast** — the 2D query ships in `modules/collision`,
   but `portal` and `doom` still each copy the same 3D `rayAabb` — Subnautica
   picking.
-- **No animation clip registry** (deferred) — Hollow Knight and Stardew
-  directional animation.
-- **No spatial audio or listener** (`modules/audio` V2 deferred).
+- **No animation clip registry** (ready, not built) — Hollow Knight and
+  Stardew directional animation.
+- **No spatial audio or listener** (`modules/audio` V2 ready, not built).
 - **No fixed-timestep accumulator with interpolation.**
   `AnimationFrameTickSource` emits variable dt and its own docs say
   consumers needing catch-up layer an accumulator on top.

@@ -131,6 +131,7 @@ for this post-processing pattern.
 
 - No broadphase acceleration structures (use
   `@pierre/ecs/spatial-structure` or your own grid).
-- No physics response (see the planned M4 `kinematics` module).
+- No physics response (see the shipped `modules/kinematics`; full rigid-body
+  physics is tracked as deferred in the module backlog).
 - No layer/mask filtering (do it in `broadphase` or `overlaps`).
 - No continuous circle or OBB collision.

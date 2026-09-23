@@ -1,8 +1,9 @@
 # ECS Module Backlog
 
 **Open module work only.** An entry here is a module (or a slice of one) that
-does not exist yet. Nothing in this file is scheduled — each entry records a
-*shape* and the *trigger* that would justify building it.
+does not exist yet. Nothing here is scheduled — each entry records a *shape*,
+the *evidence* that the shape is right, and the **Gate** still standing between
+it and a build.
 
 Shipped work does not live here. Once a module ships it is described by
 `src/`, dated by `git log`, and explained by its `plans/done/` plan or its
@@ -21,23 +22,57 @@ Related:
 
 ## Conventions
 
-### Status vocabulary
+### Status: shape, not demand
 
-- **Deferred** — planned shape is clear; waiting on a concrete trigger
-  (consumer, pain, or prototype).
-- **Speculative** — shape is sketched but would only exist if a specific
-  class of game is attempted.
+Status is a claim about the **shape**, and only about the shape. Demand is a
+separate axis, recorded separately as the entry's **Gate** (below). Conflating
+the two is how a primitive whose shape ships in Unity *and* Godot *and* Bevy
+gets filed as "speculative" — which reads as *"we doubt this belongs in a game
+engine."* Those are opposite claims.
+
+- **Ready** — the shape is proven: unanimous canon (≥3 major engines shipping
+  the *same API shape*) or equivalent internal-consumer evidence. The module
+  is **authorized to build**; the only thing left is a build slot. A Ready
+  entry is never waiting on evidence — do not write "wait for a second
+  consumer" against it.
+- **Deferred** — the shape is believable but not yet pinned; a named *shape*
+  trigger would prove it. Two cases land here: solid-but-not-unanimous canon
+  with no consumer, and a capability whose canon supplies a *function* but not
+  a *shape* (physics, networking: every engine ships one, and no two ship the
+  same API).
+- **Speculative** — the shape is undetermined, or canon is genuinely split
+  (ECS-native UI: Bevy does it, Unity and Godot do not). The module exists only
+  if a specific class of game is attempted.
 
 Two more statuses exist but are not backlog states, so they live elsewhere:
 **Shipped** (the module exists — `src/` + `git log`) and **Declined** /
 **Superseded** (terminal — [non-goals.md](non-goals.md)).
 
+Status is read off the [rule-book](../extending-the-engine.md): canon gates
+the *shape*, a consumer or the module's own tests gate *integration with this
+core*. Canon substitutes for consumers outright — it is not a weaker form of
+evidence.
+
+### Gate: shape or scheduling
+
+Every entry's **Gate** states what is actually blocking a build, and it is one
+of two kinds:
+
+- **Shape gate** — the API is not pinned; a named trigger would prove it. Only
+  `deferred` entries have a shape gate.
+- **Scheduling gate** — the shape is proven; what is missing is a build slot,
+  a dependency module, or a consumer to exercise it. Every `ready` entry has a
+  scheduling gate.
+
+An `ready` entry with a scheduling gate may sit for a long time — that is fine,
+because the cost of sitting is zero and the shape is not in doubt.
+
 ### Entry shape
 
-Each entry opens with a **Scope** one-liner and carries a **Trigger** — the
-concrete event that would justify building it. When a sketched API exists it
-appears inside the details as **Probable shape**. Canon (what other engines
-do) is cited where it exists; novel shapes need internal consumers instead.
+Each entry opens with a **Scope** one-liner and carries a **Status** (the
+evidence, with the engines named) and a **Gate**. When a sketched API exists
+it appears inside the details as **Probable shape**. Canon is cited where it
+exists; novel shapes need internal consumers instead.
 
 ### Version suffixes (V1 / V2 / …)
 
@@ -46,40 +81,131 @@ deliberately left out, the shipped slice becomes **V1** and a sibling **V2**
 entry captures what was left. Each further round increments: V3, V4. This
 keeps shipped work out of the file while the open remainder stays visible.
 
+**Sweep every V2/V3 before treating it as backlog.** A V2 entry whose only
+reason to exist is that "the V1 was built from one consumer's call sites" is
+not new work — it is unfinished work, the *slice-V1* failure mode in the
+[rule-book](../extending-the-engine.md#failure-mode-3-the-slice-v1). Those
+entries are marked **ready** here: the fix is to finish the canon-complete
+surface, not to queue a phase two.
+
+**A single missing operation is not a version.** When the leftover is one
+named operation rather than a coherent slice, it gets a `<module> — <op>` entry
+in [Existing-module gaps](#existing-module-gaps) instead of a version suffix:
+`modules/motion` V2 is a slice, `modules/math-3d` — `quatSlerp` is one
+function.
+
 ### Engine extension rule-book
 
 Every entry follows the same sliding-scale rule: a module ships once its
 *shape* is proven, where internal consumers and external canon are
 interchangeable evidence — unanimous universal canon needs **0** consumers,
 solid canon **1**, and a novel/opinionated shape **2** (the genuine rule of
-three). Nothing ships speculatively. See
+three). A unanimous-canon primitive is **ready**; nothing ships on a guess. See
 [extending-the-engine.md](../extending-the-engine.md) for the full rule-book
 and guardrails.
 
 ---
 
-## Deferred 2D modules
+## Status at a glance
 
-### `RenderableDef` extensions V3 — deferred
+`ready` = shape proven, waiting on a build slot. `deferred` = shape not yet
+pinned. `speculative` = shape undetermined or canon split.
 
-**Scope.** Three remaining `Renderable` gaps: **composite renderables**
-(one entity drawing several primitives, so `Renderable` stops being one
-drawable per entity), a **billboard sprite** (a camera-facing textured quad
-for a 2D sprite in a 3D world), and the original last item, **Canvas
-filters** (`ctx.filter`) — blur, drop-shadow and similar post-processing.
+| Module | Status | Gate |
+|---|---|---|
+| `RenderableDef` composite renderables | ready | Scheduling — finish the canon-complete `Renderable` surface |
+| `RenderableDef` billboard + Canvas filters | deferred | Shape — a second billboard consumer; a concrete `ctx.filter` request |
+| `modules/kinematics` V2 (slopes, one-way) | ready | Scheduling — consumer exercises it |
+| `modules/kinematics-3d` V2 (slopes, one-way) | ready | Scheduling — consumer exercises it |
+| `modules/tick` V2 (fixed-step accumulator) | ready | Scheduling — consumer needs catch-up |
+| `modules/motion` V2 (radial force fields) | deferred | Shape — second radial consumer |
+| `modules/motion-3d` V2 (attitude, spherical bounds) | deferred | Shape — second consumer for either |
+| `modules/input` event-mode variant | ready | Scheduling — consumer needs event dispatch |
+| `modules/camera` V3 (rotation, parallax) | ready | Scheduling — consumer needs it; snake zoom adoption |
+| `modules/render-scene3d` | ready | Scheduling — 4 consumers already hand-roll it |
+| `modules/camera-3d` | ready | Scheduling — build slot |
+| `modules/navmesh-3d` | ready | Scheduling — 3D consumer |
+| `modules/render-webgl` / `render-webgpu` | deferred | Shape — three.js covers 3D today |
+| Rigid-body physics | deferred | Shape — no single canon API; demand + backend choice |
+| `modules/audio` V2 spatial listener | ready | Scheduling — build slot |
+| `modules/audio` V2 event adapters, clip loading | deferred | Shape — a second consumer's convention |
+| `modules/animation` V2 clip registry | ready | Scheduling — build slot |
+| `modules/animation` V2 rig, `TweenDef` component | deferred | Shape — 2D rig canon thin; no component consumer |
+| `modules/ui` | speculative | Shape — ECS-vs-scene-graph UI is a split decision |
+| `modules/dialogue` | speculative | Shape — choices/world-gating unproven by a linear consumer |
+| `modules/render-dom` V2 | deferred | Shape — second DOM-heavy consumer |
+| `modules/render-target` | ready | Scheduling — build slot (3D render family) |
+| `modules/lighting` | ready | Scheduling — consumer that is about light |
+| `modules/scene` V2 | ready | Scheduling — build slot |
+| `modules/timeline` | ready | Scheduling — consumer with a scripted sequence |
+| `modules/save` V2 | deferred | Shape — a shared slot-policy convention |
+| `modules/asset-loader` V2 | deferred | Shape — second consumer of grouped manifests |
+| `modules/tilemap` V2 (batched renderable) | ready | Scheduling — a large authored grid |
+| `modules/pathfinding` V2 | deferred | Shape — per-algorithm triggers |
+| `modules/navmesh` (2D) | deferred | Shape — a 2D consumer the grid cannot serve |
+| `modules/noise` V2 (3D samplers) | ready | Scheduling — 3D consumer |
+| `modules/noise` V3 (extra fractal types, families) | deferred | Shape — a consumer needing them |
+| `modules/grid-based` V2 | deferred | Shape — second consumer needing another algorithm |
+| `modules/debug` | ready | Scheduling — build slot (dev-only) |
+| `modules/steering` V2 | ready | Scheduling — build slot |
+| `modules/fsm` V2 | ready | Scheduling — build slot |
+| `modules/behavior-tree` V2 | deferred | Shape — a consumer needing the decorators |
+| `modules/goap` V2 | deferred | Shape — a consumer needing planner features |
+| `modules/particles` V2 | ready | Scheduling — build slot |
+| `modules/ai` (Utility AI / HTN) | speculative | Shape — no single canonical API |
+| `modules/networking` | speculative | Shape — replication shape follows a real game |
+| Local-multiplayer player-slot helper | deferred | Shape — second local-multiplayer example |
+| `modules/grid-movement` | deferred | Shape — a fourth consumer converging on one shape |
+| `modules/rhythm` | speculative | Shape — second rhythm prototype |
+| App-host mount / teardown helper | speculative | Shape — second app host |
+| `modules/destructible-terrain` | ready | Scheduling — depends on `modules/tilemap` V2 |
+| `modules/card-interaction` | ready | Scheduling — build slot |
+| `modules/math-3d` — `quatSlerp` | ready | Scheduling — build slot |
+| `modules/motion` — `moveToward` (vector form) | ready | Scheduling — build slot |
+| `modules/input` — wheel + multi-touch | deferred | Shape — wheel model and multi-pointer set unpinned |
+| `modules/spatial` — `QuadTree` / `BVH` backends | deferred | Shape — one consumer a uniform grid cannot serve |
 
-**Trigger.** Composite: a second consumer beyond flappy's pipe pairs.
-Billboard: doom is the only consumer and three.js `Sprite` covers it today.
-Canvas filters: a concrete request — these effects are rarely used in
-practice.
+---
+
+## 2D module extensions
+
+### `RenderableDef` composite renderables — ready
+
+**Scope.** One entity drawing several primitives, so `Renderable` stops being
+one drawable per entity.
+
+**Status.** Ready — multiple drawables per object is the same shape in Unity
+(several `Renderer` components), Godot (several `CanvasItem` children) and
+Phaser (`Container`). One internal consumer today.
+
+**Gate.** Scheduling — folded into finishing the canon-complete `Renderable`
+surface.
 
 <details>
 <summary>Details</summary>
 
-**Composite.** `Renderable`@`src/modules/render-canvas2d/renderable.ts` is a
-single discriminated union — one `kind` per entity — so multi-part sprites
+`Renderable`@`src/modules/render-canvas2d/renderable.ts` is a single
+discriminated union — one `kind` per entity — so multi-part sprites
 (flappy's pipe pairs) are hand-drawn instead of going through the renderer.
-1 consumer.
+1 consumer. The canon-complete fix is a drawable *list* per entity, not a
+bigger union.
+
+</details>
+
+### `RenderableDef` billboard sprite + Canvas filters — deferred
+
+**Scope.** A camera-facing textured quad for a 2D sprite in a 3D world, and
+`ctx.filter` post-processing (blur, drop-shadow and similar).
+
+**Status.** Deferred. Billboard: doom is the only consumer and three.js
+`Sprite` covers it. Canvas filters: no canon pressure — the effects are rarely
+used in practice.
+
+**Gate.** Shape — a second billboard consumer; a concrete request for
+`ctx.filter` post-processing.
+
+<details>
+<summary>Details</summary>
 
 **Billboard.** doom draws each enemy as a `THREE.Sprite`@`examples/doom/src/render.ts:123`
 (auto-faces the camera, `alphaTest` for the transparent background). The 2D
@@ -98,20 +224,21 @@ with the camera V3 entry.
 
 </details>
 
-### `modules/kinematics` V2 — slopes + one-way platforms — deferred
+### `modules/kinematics` V2 — slopes + one-way platforms — ready
 
 **Scope.** Two surface behaviours the arcade body solver lacks: **slopes**
 (walk a non-axis-aligned surface with the body following its normal) and
 **one-way platforms** (solid from above, pass-through from below).
 
+**Status.** Ready — the same shape in Unity (`PlatformEffector2D`), Godot
+(`CharacterBody2D` one-way collision) and GameMaker, and the standard in every
+Celeste-lineage platformer. This is the *slice-V1* case: the shape was known
+when V1 shipped.
+
+**Gate.** Scheduling — a platformer consumer that exercises it.
+
 <details>
 <summary>Details</summary>
-
-**Trigger.** A platformer prototype that needs them. None does yet —
-`examples/platformer` uses procedurally-placed AABB platforms — but ladder
-entries #15/#16/#17 (Mario Bros, Pitfall, VVVVVV) all do, and
-[engine-readiness-assessment.md](../engine-readiness-assessment.md) names
-both as Hollow Knight's load-bearing blocker.
 
 **Evidence.** ABSENT, confirmed in `src/`: a grep of `src/modules/**` finds no
 `oneWay` or slope handling in `collision` or `kinematics`; the only `slope`
@@ -122,58 +249,63 @@ sweep (skip the contact when the mover approaches from the disabled side).
 Slopes need the sweep to become normal-aware, or an explicit slope resolver
 after it. `kinematics-3d` ships without either; they are its own entry below.
 
-**Canon.** Unity `PlatformEffector2D`, Godot `CharacterBody2D` one-way
-collision, GameMaker, every Celeste-lineage platformer tutorial.
+Ladder entries #15/#16/#17 (Mario Bros, Pitfall, VVVVVV) all need them, and
+[engine-readiness-assessment.md](../engine-readiness-assessment.md) names
+both as Hollow Knight's load-bearing blocker.
 
 </details>
 
-### `modules/kinematics-3d` V2 — slopes + one-way platforms — deferred
+### `modules/kinematics-3d` V2 — slopes + one-way platforms — ready
 
 **Scope.** The 3D siblings of the two surface behaviours the
-`modules/kinematics` V2 entry above defers: walking a non-axis-aligned surface
-with the body following its normal, and platforms solid from above but
+`modules/kinematics` V2 entry carries: walking a non-axis-aligned surface with
+the body following its normal, and platforms solid from above but
 pass-through from below.
+
+**Status.** Ready — Godot ships `CharacterBody3D.floor_max_angle` and
+`CollisionShape3D.one_way_collision`, Unity `CharacterController.slopeLimit`,
+Unreal a walkable-floor angle. Same shape in three engines.
+
+**Gate.** Scheduling — a 3D platformer consumer that exercises it.
 
 <details>
 <summary>Details</summary>
 
-**Trigger.** The one the 2D entry names — a platformer that needs them.
-`examples/platformer-3d` climbs flat AABB platforms, so nothing hits them yet.
-
 **Probable shape.** Same in kind as the 2D shape: one-way is a per-collider
 flag consulted in the axis sweep, slopes need the sweep to become
 normal-aware, or an explicit slope resolver after it. Shipping
-`modules/kinematics-3d` without them is deliberate — each is a distinct
-feature, not a missing slice of the character controller.
-
-**Canon.** Godot `CharacterBody3D.floor_max_angle` and
-`CollisionShape3D.one_way_collision`; Unity `CharacterController.slopeLimit`
-for the slope half.
+`modules/kinematics-3d` without them was not a deliberate scope call against
+canon — it is the same slice-V1 gap as the 2D half.
 
 </details>
 
-### `modules/tick` V2 — fixed-timestep accumulator + interpolation — deferred
+### `modules/tick` V2 — fixed-timestep accumulator + interpolation — ready
 
 **Scope.** A tick source that consumes real elapsed time, advances the world
 at a fixed `dt` with catch-up steps, and exposes an interpolation factor so
 the renderer can draw between the last two simulation states.
 
+**Status.** Ready — the same shape in Godot (`_physics_process` +
+`Engine.physics_ticks_per_second`), Unity (`FixedUpdate` +
+`Rigidbody.interpolation`) and Bevy (`FixedUpdate`). Both shipped sources
+deliberately sidestep it, which makes this a slice-V1 gap, not a new idea.
+
+**Gate.** Scheduling — a consumer whose physics needs frame-rate-independent
+determinism at a varying display rate.
+
 <details>
 <summary>Details</summary>
 
-**Trigger.** A game whose physics needs frame-rate-independent determinism at
-a varying display rate. Both shipped sources deliberately sidestep it:
-`AnimationFrameTickSource` emits variable dt@`src/modules/tick/animation-frame-tick-source.ts:27`
-and its own docs say consumers needing catch-up "layer an accumulator on
-top"; `FixedIntervalTickSource` is *nominal* fixed dt@`src/modules/tick/fixed-interval-tick-source.ts:7`.
+**Evidence.** `AnimationFrameTickSource` emits variable
+dt@`src/modules/tick/animation-frame-tick-source.ts:27` and its own docs say
+consumers needing catch-up "layer an accumulator on top";
+`FixedIntervalTickSource` is *nominal* fixed
+dt@`src/modules/tick/fixed-interval-tick-source.ts:7`.
 
 **Probable shape.** `FixedAccumulatorTickSource { fixedDtMs, maxStepsPerFrame }`
 yielding `{ dt, alpha }` — systems keep reading a fixed `dt`, the renderer
 lerps by `alpha`. The spiral-of-death clamp (`maxStepsPerFrame`) is the
 load-bearing detail, not the loop.
-
-**Canon.** Godot `_physics_process` + `Engine.physics_ticks_per_second`,
-Unity `FixedUpdate` + `Rigidbody.interpolation`, Bevy `FixedUpdate`.
 
 </details>
 
@@ -182,12 +314,19 @@ Unity `FixedUpdate` + `Rigidbody.interpolation`, Bevy `FixedUpdate`.
 **Scope.** A reusable "accelerate every body toward point P" force — the
 radial/attractor case, as distinct from constant-directional gravity.
 
+**Status.** Deferred — canon here is *game-side*, not a shared engine shape.
+Constant-directional gravity ships in every integrator; radial fields are
+normally a game-side force accumulator (Unity `Rigidbody.AddForce` with a
+computed direction, Godot `Area2D` gravity point). Function is canon; shape is
+not.
+
+**Gate.** Shape — a second *radial* consumer.
+
 <details>
 <summary>Details</summary>
 
-**Trigger.** A second *radial* consumer. spacewar is the only one: it
-hand-rolls an inverse-square field toward the star with a minimum-radius
-clamp (`force = STAR_GRAVITY / r2`@`examples/spacewar/src/systems/gravity.ts:52`,
+spacewar is the only consumer: it hand-rolls an inverse-square field toward
+the star with a minimum-radius clamp (`force = STAR_GRAVITY / r2`@`examples/spacewar/src/systems/gravity.ts:52`,
 clamp @:49). flappy / jetpack / platformer-3d hand-roll constant
 `vel.vy += G*dt`, which is a one-liner and **not** the same shape.
 
@@ -195,10 +334,6 @@ clamp @:49). flappy / jetpack / platformer-3d hand-roll constant
 (kill-plane) row is declined, not promoted — portal and doom each check
 `y < RESPAWN_Y` in `onBeforeFlush`, which is a one-liner, not a force. See
 [non-goals.md](non-goals.md).
-
-**Canon.** Constant-directional gravity ships in every integrator; radial
-fields are usually a game-side force accumulator (Unity `Rigidbody.AddForce`
-with a computed direction, Godot `Area2D` gravity point).
 
 </details>
 
@@ -209,32 +344,45 @@ with a computed direction, Godot `Area2D` gravity point).
 the facing vector) and **non-box world bounds** (a spherical clamp / bounce, as
 distinct from V1's axis-aligned `Bounds3D`).
 
+**Status.** Deferred — neither is an engine-canon *motion primitive*. Unity /
+Godot / Unreal ship velocity integration and playfield bounds, but a
+"free-flight controller" and a "spherical arena bound" are game-specific
+things each title builds.
+
+**Gate.** Shape — a second consumer for either.
+
 <details>
 <summary>Details</summary>
 
-**Trigger.** A second consumer for either. `examples/starfighter` is the only
-one for both: it steers `orientation: Quat` by an angular-rate vector eased
-toward an input target and integrates it with `quatFromAxisAngle`/`quatMul`
+`examples/starfighter` is the only consumer for both: it steers
+`orientation: Quat` by an angular-rate vector eased toward an input target and
+integrates it with `quatFromAxisAngle`/`quatMul`
 (`examples/starfighter/src/systems/ship.ts`), and clamps/bounces bodies against
 a sphere (`ship.ts` `shipBoundsSystem`, `target.ts`). Both are stored in
 GameState, not components, and are a single-consumer opinionated shape.
 
-**Why not V1.** Neither is an engine-canon *motion primitive* — Unity / Godot /
-Unreal ship velocity integration and playfield bounds, but a "free-flight
-controller" and a "spherical arena bound" are game-specific things each title
-builds. Velocity integration (V1) is the unanimous-canon part; these wait for a
-second consumer to prove the shape.
+**Why not V1.** Velocity integration (V1) is the unanimous-canon part; these
+wait for a second consumer to prove the shape.
 
 **Canon.** Free-flight attitude: Elite / No Man's Sky flight models (game-side).
 Spherical bounds: game-specific; the canonical engine bound is a box (shipped).
 
 </details>
 
-### `modules/input` event-mode variant — deferred
+### `modules/input` event-mode variant — ready
 
 **Scope.** Event-driven action dispatch for turn-based games (single
 keypress = single turn), complementary to the shipped poll-on-tick
 `createInput`.
+
+**Status.** Ready — every major engine ships both input modes: Godot
+`_input`/`_unhandled_input` signals alongside `Input.is_action_pressed`,
+Unity `Input.GetKeyDown` edges alongside `GetKey`, Phaser keyboard events
+alongside its polled key objects. The same shape (subscribe to the keydown
+edge, dispatch an action) in three engines.
+
+**Gate.** Scheduling — a consumer that needs event dispatch rather than
+polling.
 
 <details>
 <summary>Details</summary>
@@ -242,10 +390,6 @@ keypress = single turn), complementary to the shipped poll-on-tick
 **Probable shape.** An `EventInput<TAction>` that wraps `InputProvider`,
 applies the same `InputMap`, and dispatches to a subscriber callback on the
 keydown edge.
-
-**Trigger.** A second turn-based consumer of `@pierre/ecs` appears, OR a
-deliberate decision to design event-mode proactively to unblock the
-roguelike migration.
 
 **Rationale.** The shipped `createInput` is calibrated for real-time games
 (snake / asteroids / platformer): poll-based, flat-action enum,
@@ -264,18 +408,26 @@ mapping layer and DOM listeners — the right shape for that game.
 
 </details>
 
-### `modules/camera` V3 — rotation + parallax layers — deferred
+### `modules/camera` V3 — rotation + parallax layers — ready
 
 **Scope.** Two things V2 deliberately left out of the canon-complete 2D
 camera: **rotation** (Godot `Camera2D.rotation`) and **parallax layers** (a
 layer / scroll-factor model).
+
+**Status.** Ready — rotation is a camera transform in Godot
+(`Camera2D.rotation`), Phaser (`Camera.rotation`) and Unity (a 2D camera is a
+3D camera, so rotation is native), and per-layer scroll-factor parallax is
+the same shape in all three.
+
+**Gate.** Scheduling — a scrolling prototype that needs either.
 
 <details>
 <summary>Details</summary>
 
 **Rotation.** A rotated view needs a full affine transform plus a
 *conservative* rotated-AABB cull — the shipped cull is axis-aligned. 2D
-top-down and platform games rarely rotate the camera, so this waits.
+top-down and platform games rarely rotate the camera, but the omission is a
+slice-V1 gap, not a decision against canon.
 
 **Parallax.** Its own follow-up shape rather than a camera flag: a layer list
 with per-layer scroll factors, which the renderer would consume alongside
@@ -285,63 +437,98 @@ with per-layer scroll factors, which the renderer would consume alongside
 exists; snake still bakes the `cells → pixels` scale into every renderable by
 hand instead of adopting a camera zoom.
 
-**Pixel/tile helpers** stay in app code (DOM/canvas-specific) — also
-deliberate, but not deferred work.
+**Pixel/tile helpers** stay in app code (DOM/canvas-specific) — deliberate,
+but not deferred work.
 
 </details>
 
 ---
 
-## 3D siblings — speculative
+## 3D siblings
 
 **Scope.** Parallel 3D-dimension modules (transform, motion, collision,
-kinematics, render-webgl/webgpu, camera-3d, navmesh-3d) that ship alongside
-the 2D stack rather than replacing it.
+kinematics, render, camera-3d, navmesh-3d) that ship alongside the 2D stack
+rather than replacing it.
 
-<details>
-<summary>Details</summary>
-
-Forward-looking per the 2D-vs-3D strategy in the shipped plan: dimension-sensitive
-modules ship as **parallel siblings**, not extensions or
-renames (Godot / flecs model). The entries below are the ones the 3D prototypes
-have not pulled in yet.
-
-| Module | Shape | Canon |
-|---|---|---|
-| `modules/render-scene3d` | entity ↔ scene-object sync: create / update / reap by tag — the 3D analogue of `Canvas2DRenderer` | three.js scene graphs, Babylon `Scene` |
-| `modules/navmesh-3d` | Triangle-mesh navigation: bake, regions, links, agent-radius inflation. 2D sibling: `modules/navmesh` | Recast/Detour, Godot `NavigationRegion3D`, Unity `NavMesh` |
-| `modules/render-webgl` | `Renderer<TCtx>` implementation backed by WebGL | three.js, Babylon |
-| `modules/render-webgpu` | Same interface, WebGPU backend | Bevy WGPU, three.js WebGPU renderer |
-| `modules/camera-3d` | Projection (perspective + ortho), frustum, view matrix, and the rig family — first-person look, orbit, third-person chase (smoothed, slerped) | Bevy `Camera3dBundle`, Unity `Camera`, Godot `Camera3D` |
-
-**Trigger for the whole group.** A scoped 3D prototype (matches the
-[prototype ladder](../archived/prototype-games-roadmap.md) — 3D platformer or
-similar), and it has fired: `modules/math-3d`, `modules/collision-3d`,
-`modules/kinematics-3d`, `modules/transform-3d` and `modules/motion-3d` all
-shipped this way, each replacing a hand-rolled duplicate. What is left above is
-dominated by one duplication — **4 consumers**
-hand-roll the three.js entity↔mesh sync (platformer-3d, portal, doom,
-starfighter) — which makes it the largest de-facto demand cluster in the file.
-
-**Rules (re-affirmed from the shipped plan).**
+**Rules (re-affirmed).**
 
 - Do not add `z` to `PositionDef`. Breaks `HashGrid2D`, every query, and the
   2D contract.
 - Do not preemptively rename `PositionDef` → `Position2DDef`. Retroactive
   rename only if mixed 2D/3D games prove it ambiguous.
-- `SpatialStructure<TPos>` already generic in core — a future `HashGrid3D`
-  ships as another backend with zero core change. That's why spatial is
-  dimension-agnostic and isn't duplicated above.
+- `SpatialStructure<TPos>` is already generic in core — a future `HashGrid3D`
+  ships as another backend with zero core change. That is why spatial is
+  dimension-agnostic and is not duplicated below.
+
+### `modules/render-scene3d` — ready
+
+**Scope.** Entity ↔ scene-object sync: create / update / reap by tag — the 3D
+analogue of `Canvas2DRenderer`.
+
+**Status.** Ready — the same shape in three.js scene graphs and Babylon
+`Scene`, **and** the largest de-facto demand cluster in this file: **4
+consumers** hand-roll the three.js entity↔mesh sync (platformer-3d, portal,
+doom, starfighter). Both axes are met.
+
+**Gate.** Scheduling — build slot.
+
+<details>
+<summary>Details</summary>
+
+Shipped alongside it: `modules/math-3d`, `modules/collision-3d`,
+`modules/kinematics-3d`, `modules/transform-3d`, `modules/motion-3d` — each
+replaced a hand-rolled duplicate. This is the remaining one the fourth
+consumer has not yet pulled in.
 
 </details>
 
+### `modules/camera-3d` — ready
+
+**Scope.** Projection (perspective + ortho), frustum, view matrix, and the rig
+family — first-person look, orbit, third-person chase (smoothed, slerped).
+
+**Status.** Ready — Bevy `Camera3dBundle`, Unity `Camera`, Godot `Camera3D`
+ship the same primitives.
+
+**Gate.** Scheduling — build slot.
+
+### `modules/navmesh-3d` — ready
+
+**Scope.** Triangle-mesh navigation: bake, regions, links, agent-radius
+inflation. 2D sibling: `modules/navmesh`.
+
+**Status.** Ready — Recast/Detour, Godot `NavigationRegion3D` and Unity
+`NavMesh` ship the same bake → regions → links → agent-radius shape.
+
+**Gate.** Scheduling — a 3D consumer.
+
+### `modules/render-webgl` / `modules/render-webgpu` — deferred
+
+**Scope.** `Renderer<TCtx>` implementations backed by WebGL / WebGPU.
+
+**Status.** Deferred — the capability is canon (three.js, Babylon), but the
+3D examples already render through three.js, so the engine has a primitive
+covering the need. Per the rule-book's own signal — *the engine already has a
+primitive that covers 80% of the need* — this is not a gap yet.
+
+**Gate.** Shape — a consumer wanting the engine's `Renderer` interface for 3D
+rather than three.js directly.
+
 ---
 
-## Rigid-body physics — speculative
+## Rigid-body physics — deferred
 
 **Scope.** Full rigid-body simulation (mass, restitution, constraints,
 continuous collision across many dynamic bodies) distinct from the shipped
 arcade `modules/kinematics`.
+
+**Status.** Deferred — physics is canon as a *capability* (Unity PhysX, Godot,
+Unreal Chaos, Box2D, Rapier) but **not as a shape**: no two engines ship the
+same API, and the sketch below deliberately leaves roll-our-own vs adapt
+open. Canon supplies a function, not a shape.
+
+**Gate.** Shape — a prototype that arcade physics genuinely cannot handle,
+plus a backend choice.
 
 <details>
 <summary>Details</summary>
@@ -350,11 +537,10 @@ arcade `modules/kinematics`.
 `planck.js` / `rapier-js`. Integrates with `SpatialStructure` via a
 physics-appropriate backend (BVH / SweepAndPrune).
 
-**Trigger.** A prototype that arcade physics genuinely cannot handle —
-stacking crates with realistic settle, rope / chain, jointed ragdoll,
-soft-body, vehicles with suspension.
+**Trigger.** Stacking crates with realistic settle, rope / chain, jointed
+ragdoll, soft-body, vehicles with suspension.
 
-**Rationale for deferral.** Arcade covers platformers, top-down action,
+**Rationale for the caution.** Arcade covers platformers, top-down action,
 twin-stick shooters, and puzzle-physics-lite. Full physics is a large ongoing
 commitment (authoring tools, debug viz, determinism tuning) and should not be
 spent without a game design that demands it.
@@ -365,69 +551,72 @@ spent without a game design that demands it.
 
 ## Standard engine modules
 
-Every mature engine eventually ships these. Listed with scope sketches so
-"what would this even look like" is not a greenfield question when the time
-comes.
+### `modules/audio` V2 — spatial listener — ready
 
-### `modules/audio` V2 — deferred
+**Scope.** Listener-aware playback: a listener position/orientation on the
+world and distance/pan attenuation on each source.
 
-**Scope.** Audio features deliberately excluded from V1: spatial listener
-modeling, event adapters for bus-driven one-shots, and clip loading
-orchestration with `modules/asset-loader`.
+**Status.** Ready — the same shape in Unity (`AudioSource` /
+`AudioListener`), Godot `AudioStream*`, Phaser `SoundManager` and Bevy
+`bevy_audio`.
 
-<details>
-<summary>Details</summary>
+**Gate.** Scheduling — build slot.
 
-**Trigger.** A second consumer needs listener-aware playback or shared event
-wiring conventions, OR asset loading lands and two apps need the same
+### `modules/audio` V2 — event adapters, clip loading — deferred
+
+**Scope.** Bus-driven one-shot event adapters, and clip loading orchestration
+with `modules/asset-loader`.
+
+**Status.** Deferred — these are *conventions* over a shipped module rather
+than a primitive, and each engine's wiring differs.
+
+**Gate.** Shape — a second consumer sharing the same event wiring or
 clip-binding flow.
 
-**Canon.** Unity `AudioSource` / `AudioListener`, Godot `AudioStream*`, Phaser
-`SoundManager`, Bevy `bevy_audio`.
+### `modules/animation` V2 — clip registry — ready
 
-</details>
+**Scope.** A clip registry: named animation clips shared across entities,
+lookup by key, playback control.
 
-### `modules/animation` V2 — deferred
+**Status.** Ready — the same shape in Unity (`AnimationClip`), Godot
+(`Animation`), Bevy (`AnimationClip`) and Phaser (named anims): a named clip
+resource shared across entities and selected by key. V1 ships the per-entity
+`SpriteAnimationDef` only, which is a slice of the canonical surface.
 
-**Scope.** What V1 left out: a **clip registry** (named animation clips shared
-across entities, lookup by key, playback control) and, much later, **skeletal
-/ 2D rig** animation.
+**Gate.** Scheduling — build slot.
 
-<details>
-<summary>Details</summary>
+### `modules/animation` V2 — 2D rig, `TweenDef` component — deferred
 
-**Trigger (clip registry).** A second consumer needing shared named clips. V1
-ships the per-entity `SpriteAnimationDef` only.
+**Scope.** Skeletal / 2D-rig animation, and an ECS component wrapper for
+tweens.
 
-**Trigger (skeletal).** Much later; a second consumer must request it (likely
-alongside a 3D prototype).
+**Status.** Deferred — 2D rig canon is thinner (Godot `Skeleton2D`, Unity's
+separate 2D Animation package) and needs a consumer; the `TweenDef` component
+shape isn't single-canon (Godot node vs a DOTween fluent chain).
 
-**Also open — `TweenDef` ECS component.** No consumer animates via a component
-(they read `tweenValue` inline), and the ECS-wrapper shape isn't single-canon
-(Godot node vs DOTween fluent chain). Ships only if a consumer wants the
-component form.
-
-</details>
+**Gate.** Shape — a consumer requesting a rig; a consumer wanting the
+component form of a tween.
 
 ### `modules/ui` — speculative
 
 **Scope.** Game-facing UI as ECS — in-world HUDs, damage numbers, inventory
 widgets — distinct from `modules/render-canvas2d` and from app-layer DOM UI.
 
+**Status.** Speculative — canon is **split**: Bevy does ECS-native UI
+(`bevy_ui`, flecs UI addons) and Unity UGUI / Godot `Control` keep UI on a
+dedicated scene graph. Picking a side speculatively is waste.
+
+**Gate.** Shape — a second prototype that needs in-game UI widgets, enough to
+commit to a model.
+
 <details>
 <summary>Details</summary>
 
-**Trigger.** A second prototype that needs in-game UI widgets. Today the
-roguelike's UI is DOM + app code; snake/asteroids/platformer use the canvas
-directly. If a prototype ships world-space HUDs, start planning. The
-capability assessment ranks UI as the **most frequently missing surface**
-across the five commercial-scale targets.
-
-**Rationale for speculative.** ECS-UI is controversial; some engines (Bevy) do
-it, others (Unity UGUI, Godot `Control`) keep UI on a dedicated scene graph.
-Picking a side speculatively is waste.
-
-**Canon.** Bevy `bevy_ui`, flecs UI addons.
+Today the roguelike's UI is DOM + app code; snake/asteroids/platformer use the
+canvas directly. The capability assessment ranks UI as the **most frequently
+missing surface** across the five commercial-scale targets, which is why it is
+worth watching — but "most often missing" is not the same as "canon has a
+shape".
 
 </details>
 
@@ -438,12 +627,18 @@ Picking a side speculatively is waste.
 interface (show a line, show choices, close). **No narrative language, no
 script format, no VM** — those stay app-side.
 
+**Status.** Speculative — **one verified runtime plus one authoring-pipeline
+precedent**, short of the ≥3-engine unanimity the rule-book needs to promote
+on canon alone, and the step model is opinionated besides.
+
+**Gate.** Shape — a narrative prototype needing *branching* dialogue (choices,
+or lines gated on world state).
+
 <details>
 <summary>Details</summary>
 
-**Trigger.** A narrative prototype needing *branching* dialogue — choices, or
-lines gated on world state. `examples/rpg` is the only consumer and it is
-strictly linear: a flat per-NPC line array
+`examples/rpg` is the only consumer and it is strictly linear: a flat per-NPC
+line array
 (`NpcDialogue { name; dialog: string[]; gid }`@`examples/rpg/src/characters.ts:63`)
 advanced one box at a time by a hand-rolled DOM presenter
 (`DialogueBox`@`examples/rpg/src/dialogue.ts:6` — `start` / `advance` /
@@ -483,11 +678,7 @@ checked first-hand — `Continue()` / `currentChoices` /
 JSON pipeline (Ink and inkjs READMEs). Yarn Spinner is a second dialogue
 system with the same authoring → runtime → presenter split, but its compiler
 and VM are C#/.NET with **no first-party JS runtime** for this stack, and its
-runtime API was not opened in this pass. That is *one verified runtime plus
-one authoring-pipeline precedent* — short of the ≥3-engine unanimity the
-rule-book needs to promote on canon alone, and the step model is opinionated
-besides. Hence **speculative**: the shape is sketched, and it exists if a
-narrative-heavy prototype is attempted.
+runtime API was not opened in this pass.
 
 **Not `modules/ui`.** That entry is in-world ECS widgets; this one is
 app-layer presentation plus a runner contract.
@@ -499,33 +690,28 @@ app-layer presentation plus a runner contract.
 **Scope.** Follow-ups intentionally excluded from V1: event-driven DOM updates
 via lifecycle hooks and higher-level zone/container reparenting helpers.
 
-<details>
-<summary>Details</summary>
+**Status.** Deferred — these are workflow layers over a shipped module, not a
+missing primitive; each engine's reconciler shape differs.
 
-**Trigger.** A second DOM-heavy consumer proving a shared shape for
-event-driven updates or container/zone policies.
+**Gate.** Shape — a second DOM-heavy consumer proving a shared shape.
 
-**Canon.** React reconcilers, Pixi display-list ownership patterns, Phaser
-container parenting, custom DOM render loops in card/deckbuilder web games.
-
-</details>
-
-### `modules/render-target` — deferred
+### `modules/render-target` — ready
 
 **Scope.** A render-to-texture primitive: a secondary camera renders the scene
 (or a layer of it) into an offscreen target, which is then sampled as a texture
 on an in-world surface. The substrate behind portals, planar mirrors,
 security-camera monitors, in-world screens/TVs, and minimaps.
 
+**Status.** Ready — **unanimous** canon, the same shape in Unity (`Camera` →
+`RenderTexture`), Godot (`SubViewport` + `Camera3D` → `ViewportTexture`),
+Unreal (`SceneCaptureComponent2D` → render target) and three.js
+(`WebGLRenderTarget`). Clears the zero-consumer bar on its own; portal is a
+bonus consumer.
+
+**Gate.** Scheduling — build slot, alongside the 3D render-module family.
+
 <details>
 <summary>Details</summary>
-
-**Trigger.** Met on canon alone — render-to-texture + secondary camera is
-*unanimous* canon (Unity `Camera` → `RenderTexture`, Godot `SubViewport` +
-`Camera3D` → `ViewportTexture`, Unreal `SceneCaptureComponent2D` → render
-target, three.js `WebGLRenderTarget`), which clears the 0-consumer bar in the
-sliding-scale rule. Ships as part of the 3D render-module family, so it also
-waits on the `render-scene3d` group cadence.
 
 **Evidence.** `examples/portal` hand-rolls the whole thing inside its renderer:
 a `virtualCam` posed per portal (`render.ts:244`), one `WebGLRenderTarget` per
@@ -546,68 +732,65 @@ near-plane clip to the destination wall (`render.ts:652`), and the fixed
 promote only when a second consumer (a mirror, a monitor, a second portal-like
 game) converges on them.
 
-**Canon.** Unity Render Textures, Godot `SubViewport`/`ViewportTexture`, Unreal
-`SceneCapture2D`, three.js `WebGLRenderTarget`.
-
 </details>
 
-### `modules/lighting` — speculative
+### `modules/lighting` — ready
 
 **Scope.** 2D lighting: light sources with radius/cone/falloff, occluders
 that cast shadows, and a light-accumulation pass the renderer blends over
 the world.
 
+**Status.** Ready — the same shape in Godot (`Light2D` + `LightOccluder2D`),
+Unity 2D Lights (URP) and Phaser's `Light2D` pipeline. Zero consumers today,
+which is the case the rule-book explicitly covers: canon alone authorizes it.
+
+**Gate.** Scheduling — a game that is *about* darkness or light (stealth
+visibility, cave crawling, day/night mood).
+
 <details>
 <summary>Details</summary>
 
-**Trigger.** A game that is *about* darkness or light — stealth visibility,
-cave crawling, day/night mood. No consumer yet: nothing in `examples/`
-hand-rolls a light pass. `modules/grid-based` visibility is the related but
+**Evidence.** ABSENT in `src/`: a grep for `Light2D`/lighting finds only
+`castLight` shadowcasting in `grid-based/visibility.ts:88`. The Canvas2D
+renderer has no blend-mode lighting pass. That is a missing canon primitive,
+not a reason to wait — `modules/grid-based` visibility is the related but
 different capability (what the *player* can see on a grid, not what the
 *renderer* lights).
 
-**Evidence.** ABSENT in `src/`: a grep for `Light2D`/lighting finds only
-`castLight` shadowcasting in `grid-based/visibility.ts:88`. The Canvas2D
-renderer has no blend-mode lighting pass.
+**The light model is not an open question.** Canon-complete means shipping
+Godot's `Light2D` surface (texture, energy, colour, shadow on/off, occluder
+polygons), not guessing a model from scratch.
 
-**Rationale for speculative.** [engine-readiness-assessment.md](../engine-readiness-assessment.md)
-names it for Hollow Knight ("Lighting, shaders, post-FX — Canvas2D only"),
-but no prototype has needed it. Building it speculatively means guessing a
-light model (simple radial? normal-mapped?) with no consumer to validate it.
-
-**Canon.** Godot `Light2D` + `LightOccluder2D`, Unity 2D Lights (URP),
-Phaser's `Light2D` pipeline.
+[engine-readiness-assessment.md](../engine-readiness-assessment.md) names it
+for Hollow Knight ("Lighting, shaders, post-FX — Canvas2D only").
 
 </details>
 
-### `modules/scene` V2 — deferred
+### `modules/scene` V2 — ready
 
 **Scope.** Full scene-stack orchestration: bundle-a-world-with-content, scene
 push/pop, pause/modal layers, and optional transition effects.
 
-<details>
-<summary>Details</summary>
+**Status.** Ready — the same shape in Unity `SceneManager`, Godot scenes and
+Bevy `States`. V1 ships only the tick-boundary transition queue
+(`SceneTransitionQueue`) plus `transferEntities`, which is the slice.
 
-**Trigger.** A second game needing full scene stack semantics (push/pop modal
-scenes, separate pause/options scenes, or authored scene lifecycle policies).
-V1 ships only the tick-boundary transition queue (`SceneTransitionQueue`) plus
-`transferEntities`.
+**Gate.** Scheduling — build slot.
 
-**Canon.** Unity `SceneManager`, Godot scenes, Bevy `States`.
-
-</details>
-
-### `modules/timeline` — speculative
+### `modules/timeline` — ready
 
 **Scope.** Sequenced multi-track playback — "do A, wait 0.5 s, then B and C
 together" — where the tracks drive tweens, camera moves, dialogue steps, and
 app callbacks off one clock.
 
+**Status.** Ready — the same shape in Unity Timeline, Godot
+`AnimationPlayer` + `AnimationTree` and Unreal Sequencer. No consumer yet,
+which is the zero-canon-consumer case the rule-book covers.
+
+**Gate.** Scheduling — a prototype with a scripted sequence.
+
 <details>
 <summary>Details</summary>
-
-**Trigger.** A prototype with a scripted sequence: an intro fly-in, a boss
-reveal, a scripted camera. No consumer yet.
 
 **Why nothing shipped covers it.** `modules/tween` animates a *single*
 scalar (`tweenValue` / `tickTween` / `tweenDone` / `resetTween`) and leaves
@@ -624,9 +807,6 @@ list, not the clip kinds.
 timeline whose tracks include dialogue steps, which is why the dialogue entry
 scopes itself to the runner/presenter seam and leaves sequencing here.
 
-**Canon.** Unity Timeline, Godot `AnimationPlayer` + `AnimationTree`, Unreal
-Sequencer.
-
 </details>
 
 ### `modules/save` V2 — deferred
@@ -635,60 +815,55 @@ Sequencer.
 conventions, cross-game metadata schemas, and optional app-payload composition
 helpers layered above world serialization.
 
-<details>
-<summary>Details</summary>
+**Status.** Deferred — canon is a *function* without a shape: Unity ships
+`JsonUtility` and expects a custom save system, Godot `ResourceSaver`, Bevy a
+community crate. No two engines agree on slot policy or metadata schema.
 
-**Trigger.** Second consumer that needs a shared slot-policy or metadata
-convention beyond the low-level persistence primitives.
-
-**Canon.** Unity `JsonUtility` + custom save systems, Godot `ResourceSaver`,
-Bevy `bevy_save` (community), Phaser scene-data serialization.
-
-</details>
+**Gate.** Shape — a second consumer needing a shared slot-policy or metadata
+convention.
 
 ### `modules/asset-loader` V2 — deferred
 
 **Scope.** Higher-level workflows intentionally excluded from V1: manifest
 grouping, weighted per-byte progress, and optional dev-time hot reload hooks.
 
-<details>
-<summary>Details</summary>
+**Status.** Deferred — a workflow layer over a shipped loader; manifest and
+progress APIs differ substantially between Unity `Addressables`, Godot
+`ResourceLoader`, Phaser `LoaderPlugin` and Bevy `AssetServer`.
 
-**Trigger.** A second consumer needing grouped manifests, byte-level progress
-semantics, or automatic dev-time asset refresh.
+**Gate.** Shape — a second consumer needing grouped manifests or byte-level
+progress semantics.
 
-**Canon.** Unity `Addressables`, Godot `ResourceLoader`, Phaser `LoaderPlugin`,
-Bevy `AssetServer`.
-
-</details>
-
-### `modules/tilemap` V2 — batched renderable — deferred
+### `modules/tilemap` V2 — batched renderable — ready
 
 **Scope.** `TilemapDef { widthTiles, heightTiles, tileW, tileH, data }` plus a
 matching renderer pass, so a whole layer draws in one batched pass instead of
 one entity per cell.
 
+**Status.** Ready — the same shape in Unity `Tilemap`, Godot `TileMap` and
+Phaser `Tilemap`. V1 spawns a sprite entity per non-empty tile, which is
+correct but not the canonical surface.
+
+**Gate.** Scheduling — a prototype whose authored tile grid is large enough
+that per-cell entities measurably hurt.
+
 <details>
 <summary>Details</summary>
 
-**Rationale.** V1 spawns a sprite entity per non-empty tile — proven correct
-at ~10k entities (`examples/tilemap`) but wasteful in entity count, query
-cost, and draw calls. A batched renderable is the canonical fix (Unity
-`Tilemap`, Godot `TileMap`, Phaser `Tilemap`).
+**Rationale.** V1 is proven correct at ~10k entities (`examples/tilemap`) but
+wasteful in entity count, query cost, and draw calls. `examples/tilemap`
+already bakes its static ~10k-tile map to one offscreen bitmap — the
+consumer-side workaround this module would replace. Current platformer uses
+procedurally-placed AABB platforms, so it does not qualify yet.
 
-**Probable shape.** `TilemapDef { widthTiles, heightTiles, tileW, tileH, data }`
-with a matching renderer pass. Distinct from the roguelike's `GameMap`
-(app-layer, narrative-tile) and from `modules/spatial` (which indexes
-entities, not tiles).
-
-**Trigger.** A prototype whose authored tile grid is large enough that
-per-cell entities measurably hurt. `examples/tilemap` already bakes its static
-~10k-tile map to one offscreen bitmap — the consumer-side workaround this
-would replace. Current platformer uses procedurally-placed AABB platforms, so
-it doesn't qualify.
+**Distinct from** the roguelike's `GameMap` (app-layer, narrative-tile) and
+from `modules/spatial` (which indexes entities, not tiles).
 
 **Canon.** Unity `Tilemap`, Godot `TileMap`, Phaser `Tilemap`, with Tiled as
 the external authoring tool (`modules/tmx` already parses it).
+
+**Related.** `modules/destructible-terrain` needs this module's dirty-region
+re-upload path — the two are tracked together.
 
 </details>
 
@@ -698,41 +873,39 @@ the external authoring tool (`modules/tmx` already parses it).
 and A\* optimizations (path smoothing, binary-heap open-set) that V1
 intentionally omits.
 
-<details>
-<summary>Details</summary>
+**Status.** Deferred — each is a distinct algorithm with its own niche, and
+none is an engine-canon *shape* (engines ship A\* and leave the variants to
+libraries). None pays for itself at rogue-scale (80×60 grids,
+single-pather-per-turn workloads).
 
-**Trigger.** Each sub-feature promotes on its own ≥2-consumer rule. Likely
-first movers: a strategy prototype with many simultaneous pathers (flow
-fields), or profile evidence that the linear-scan open-set is the bottleneck
-on a real-world map (binary heap).
+**Gate.** Shape — each sub-feature's own ≥2-consumer rule. Likely first
+movers: a strategy prototype with many simultaneous pathers (flow fields), or
+profile evidence that the linear-scan open-set is the bottleneck (binary
+heap).
 
-**Rationale for deferral.** None of the deferred features pay for themselves
-at rogue-scale (80×60 grids, single-pather-per-turn workloads). A\* with
-linear open-set returns in well under a millisecond on these maps.
-
-</details>
-### `modules/navmesh` — speculative
+### `modules/navmesh` — deferred
 
 **Scope.** Polygon navigation for 2D: walkable polygon regions baked from
 authored outlines (or derived from a collision grid), joined by links, with
-agent-radius inflation and funnel / string-pulled paths. A 3D sibling
-(`modules/navmesh-3d`) ships with the 3D group.
+agent-radius inflation and funnel / string-pulled paths.
+
+**Status.** Deferred — solid canon but not unanimous for *2D*: Godot ships an
+explicit 2D variant (`NavigationPolygon` + `NavigationRegion2D` +
+`NavigationAgent2D`, with `NavigationLink2D` links, `navigation_layers`
+bitmasks, avoidance by agent radius), while Unity's `NavMesh` is 3D and the
+2D route there is a community package. Godot's docs make the mesh-beats-grid
+argument itself. Solid canon with no consumer for that class of game ⇒
+deferred, not speculative.
+
+**Gate.** Shape — a 2D game whose obstacles are not grid-aligned, or whose
+world is large enough that one polygon replaces many grid cells.
 
 <details>
 <summary>Details</summary>
 
 **Not a 3D-only concept.** A navmesh is a walkable *surface*, which makes the
-2D case the more direct one — Godot ships an explicit 2D variant
-(`NavigationPolygon` + `NavigationRegion2D` + `NavigationAgent2D`, with
-one-way/bidirectional `NavigationLink2D` links, `navigation_layers` bitmasks,
-and avoidance by agent radius). Unity's `NavMesh` is 3D; the 2D route there is
-a community package.
-
-**Trigger.** A 2D game whose obstacles are not grid-aligned, or whose world
-is large enough that one polygon replaces many grid cells — Godot's docs make
-exactly this argument for mesh-based navigation. `modules/pathfinding`
-already covers the grid case, so a navmesh waits for a consumer the grid
-cannot serve.
+2D case the more direct one. `modules/pathfinding` already covers the grid
+case, so a navmesh waits for a consumer the grid cannot serve.
 
 **Why it isn't `modules/pathfinding` V2.** That entry's deferred list is
 *grid* A\* work — JPS, flow fields, a binary-heap open set, path smoothing. A
@@ -740,50 +913,49 @@ navmesh is a different problem: continuous-space geometry, agent radius, and
 region/link composition. Smoothing a grid path and baking an
 agent-radius-inflated polygon graph are different jobs.
 
-**Canon.** Godot `NavigationRegion2D` (2D) and `NavigationRegion3D` (3D);
-Recast/Detour as the classic 3D bake; Unity `NavMesh`.
-
-**Why speculative rather than deferred.** The *shape* is canon-clear; what is
-missing is any consumer representing the class of game that needs it. By this
-file's definitions that is `speculative` — the shape exists only if that class
-is attempted — which also matches the other zero-consumer entries
-(`modules/ui`, `modules/lighting`, `modules/timeline`).
+**Related.** The 3D sibling, `modules/navmesh-3d`, is **ready** — Recast/Detour,
+Godot `NavigationRegion3D` and Unity `NavMesh` agree on the shape there.
 
 </details>
 
-### `modules/noise` V2 — 3D + extra families — deferred
+### `modules/noise` V2 — 3D samplers — ready
 
-**Scope.** What V1 left out: **3D samplers** (V1 ships 1D/2D), the **ridged /
-ping-pong fractal types** beyond fBm, and the **other algorithm families**
-Godot's `FastNoiseLite` and `noise-rs` ship — **cellular / Worley**, **value-
-cubic**, and **domain warp** (turbulence).
+**Scope.** The 3D forms of V1's value / Perlin / simplex samplers.
 
-**Trigger.** 3D: a scoped 3D prototype, following the group rule that
-dimension-sensitive work ships as parallel siblings. Everything
-else: a consumer that needs it. None of the remainders is *unanimous* canon —
-ridged / ping-pong reach 2 of 3 sources (Godot `FRACTAL_RIDGED` /
-`FRACTAL_PING_PONG`, `noise-rs` `RidgedMulti` / `Billow`), and cellular /
-value-cubic / domain warp are Godot-and-`noise-rs` rather than universal — so
-each needs **1** consumer.
+**Status.** Ready — Godot (`FastNoiseLite.get_noise_3d`), `noise-rs` and
+`simplex-noise` / three.js all expose 3D samplers of the same shape as the
+shipped 1D/2D surface, and the dimension-sensitive modules ship as parallel
+siblings by project rule.
+
+**Gate.** Scheduling — a 3D prototype that samples noise.
+
+### `modules/noise` V3 — extra fractal types + algorithm families — deferred
+
+**Scope.** The **ridged / ping-pong fractal types** beyond fBm, and the other
+algorithm families Godot's `FastNoiseLite` and `noise-rs` ship — **cellular /
+Worley**, **value-cubic**, and **domain warp** (turbulence).
+
+**Status.** Deferred — none is *unanimous* canon. Ridged / ping-pong reach 2
+of 3 sources (Godot `FRACTAL_RIDGED` / `FRACTAL_PING_PONG`, `noise-rs`
+`RidgedMulti` / `Billow`), and cellular / value-cubic / domain warp are
+Godot-and-`noise-rs` rather than universal.
+
+**Gate.** Shape — a consumer that needs one, at the rule-book's solid-canon
+tier of 1.
 
 <details>
 <summary>Details</summary>
-
-**Why V1 stopped where it did.** The three classical algorithm families
-(value / Perlin / simplex) in 1D/2D plus the universal fractal combiner (fBm)
-are unanimous canon and cleared the rule-book at 0 consumers. Each remainder is
-solid canon rather than unanimous, which is the 1-consumer tier — and 3D is
-additionally a stack decision, not a capability gap.
 
 **Permanently excluded, not deferred: 1D simplex.** The simplex construction
 degenerates in 1D to a gradient noise indistinguishable in shape from
 `perlin1D`, so shipping both would be two names for one behaviour.
 
-**Related open item — river-raid's adoption.** `examples/river-raid` hand-sums
-three sines for "smooth noise for river width variation"@`examples/river-raid/src/game.ts:137`
-and two more for `riverCentreX`@`examples/river-raid/src/game.ts:148`. V1 did
-not migrate it because swapping the sine stack for `fbm1D` changes the river's
-visual profile — a playtest-owned change, not a mechanical one.
+**Related open item — river-raid's adoption.** `examples/river-raid`
+hand-sums three sines for "smooth noise for river width
+variation"@`examples/river-raid/src/game.ts:137` and two more for
+`riverCentreX`@`examples/river-raid/src/game.ts:148`. V1 did not migrate it
+because swapping the sine stack for `fbm1D` changes the river's visual
+profile — a playtest-owned change, not a mechanical one.
 
 </details>
 
@@ -793,82 +965,87 @@ visual profile — a playtest-owned change, not a mechanical one.
 permissive FOV variants, directional cones, and richer visibility-state
 outputs.
 
-<details>
-<summary>Details</summary>
+**Status.** Deferred — every roguelike framework (libtcod, rot.js) ships FOV
+variants and Unity/Godot supply raycast cones, but the *set* to ship is a
+function of the game's needs, not a single canonical shape.
 
-**Trigger.** Second consumer needing an algorithm outside V1's shape — for
-example stealth cones, faction-shared sight masks, or permissive FOV
-tradeoffs.
+**Gate.** Shape — a second consumer needing an algorithm outside V1's shape
+(stealth cones, faction-shared sight masks, permissive-FOV tradeoffs).
 
-**Canon.** Unity NavMesh `Raycast`, Godot `RayCast2D` + `VisibleOnScreen`,
-broadly: every roguelike framework (libtcod, rot.js) ships FOV as a
-first-class primitive separate from pathing.
-
-</details>
-
-### `modules/debug` — deferred
+### `modules/debug` — ready
 
 **Scope.** In-game debug overlays — gizmos, entity inspector, frame-time
 graphs, system-timing breakdown — dev-build only.
+
+**Status.** Ready — the same shape in Unity (`Gizmos` / `Debug.DrawRay` +
+Inspector), Godot's Debug tab, and Unreal's `DrawDebugHelpers` + console.
+Tree-shaken out of production builds; also overlaps
+[core-engine-roadmap.md](core-engine-roadmap.md) §4.2, which asks whether the
+entity inspector is core or belongs to this module.
+
+**Gate.** Scheduling — build slot.
 
 <details>
 <summary>Details</summary>
 
 **Probable shape.** Gizmo rendering (show AABBs, show spatial grid, show FOV
 cones), a live entity inspector, frame-time / tick-time graphs, system-timing
-breakdown. Tree-shaken out of production builds.
+breakdown. Platformer's static-collision overlay already lives in the example;
+when a second consumer wants a similar toggle, migrate it here.
 
-**Trigger.** Enough friction debugging existing prototypes that a one-off
-`drawDebug` call inside `Canvas2DRenderer` is no longer enough. Platformer's
-static-collision overlay already lives in the example — when a second
-consumer wants a similar toggle, it promotes.
-
-**Canon.** Unity `Gizmos` / `Debug.DrawRay`, Godot `Debug` tab, `dat.gui` /
-`lil-gui` (DOM-based), Tracy / Optick for native engines.
+**Non-goals boundary.** `non-goals.md` declines a *visual editor / inspector as
+authoring tool*. This module is diagnose-only, which is why it is not the same
+decision.
 
 </details>
 
-### `modules/steering` V2 — deferred
+### `modules/steering` V2 — ready
 
 **Scope.** The rest of Reynolds' behaviour set not shipped in V1:
 **obstacle-avoidance**, **wall-following**, and **path-following**.
 
+**Status.** Ready — obstacle avoidance is the same shape in Unity
+`NavMeshAgent` avoidance, Unreal's avoidance layer and Godot's RVO
+(`NavigationAgent2D.avoidance_enabled`); path-following is the same shape in
+Unity `NavMeshAgent.SetDestination`, Unreal `MoveTo` and Godot
+`NavigationAgent2D.target_position`. Both sit on top of the Reynolds
+behaviour set V1 already implements. Wall-following has no engine-level
+counterpart (it is a robotics-era behaviour), so it rides along as the
+Reynolds-set remainder.
+
+**Gate.** Scheduling — build slot.
+
 <details>
 <summary>Details</summary>
 
-**Trigger.** A consumer needing avoidance or path-following. Each promotes on
-its own ≥2-consumer rule.
-
-**Also open — an ECS component wrapper** (`SteeringAgentDef` + system). No
-consumer wants the component form yet; the pure-function surface is the proven
-shape.
-
-**Canon.** Reynolds (1987) steering behaviours; Unity / Unreal / Godot
-navigation-avoidance layers.
+**Also open — an ECS component wrapper** (`SteeringAgentDef` + system) stays
+deferred: no consumer wants the component form yet; the pure-function surface
+is the proven shape.
 
 </details>
 
-### `modules/fsm` V2 — deferred
+### `modules/fsm` V2 — ready
 
 **Scope.** State-machine features not shipped in V1: **hierarchical / nested
 states (HSM)**, **parallel and history states**, and an **`FsmDef`** ECS
 component wrapper.
 
+**Status.** Ready for the HSM surface — nested states and history are the same
+shape in Unity Animator sub-state machines, Godot's
+`AnimationNodeStateMachine` nesting and Unreal's State Machine nodes, on top
+of the Harel statechart formalism. The `FsmDef` component wrapper stays
+deferred (no consumer wants it yet).
+
+**Gate.** Scheduling — build slot; the doom AI migration below.
+
 <details>
 <summary>Details</summary>
-
-**Trigger.** A consumer whose state graph actually needs nesting or
-parallelism — none does yet. Each feature promotes on its own ≥2-consumer
-rule.
 
 **Also open — the doom migration.** doom's enemy AI (idle/chase/attack) maps
 onto the `update`-returns-next subset and would be a behaviour-preserving
 second consumer. Deferred because doom is a complex, playtest-owned 3D example
 and the migration is a real `AiDef` schema change (`mode: number` →
 `current: string` + `elapsedMs`) — left to a deliberate pass.
-
-**Canon.** Harel statecharts, Unity Animator sub-state machines, Godot
-`AnimationNodeStateMachine` nesting.
 
 </details>
 
@@ -878,51 +1055,38 @@ and the migration is a real `AiDef` schema change (`mode: number` →
 **`repeat` / `repeatUntil`**, plus a **stateful** (remembered running-child)
 tree variant.
 
-<details>
-<summary>Details</summary>
+**Status.** Deferred — solid but not unanimous canon (Unreal's `Loop` /
+`TimeLimit` / `Cooldown` decorators are the reference shape; Godot has no
+built-in behaviour tree).
 
-**Trigger.** A consumer needing one of them. The reactive re-tick covered
+**Gate.** Shape — a consumer needing one of them. The reactive re-tick covered
 every critter behaviour in `examples/critters`, so no consumer wants the
 stateful variant yet.
-
-**Canon.** Unreal Behavior Tree decorators (`Loop`, `TimeLimit`, `Cooldown`).
-
-</details>
 
 ### `modules/goap` V2 — deferred
 
 **Scope.** Planner features not shipped in V1: a **heap open-set**, a shipped
 **plan-runner**, and **cost / typed non-boolean facts**.
 
-<details>
-<summary>Details</summary>
+**Status.** Deferred — canon here is papers (F.E.A.R. / Halo GOAP, SHOP2), not
+a shipped engine API; each feature is a distinct shape.
 
-**Trigger.** Each promotes on its own ≥2-consumer rule. V1 deliberately ships
-only the pure `plan()` — execution and replanning stay in the consumer because
-mapping `action.name` → a runtime behaviour is game-specific. The linear-scan
-open-set is fine at GOAP scale.
+**Gate.** Shape — a consumer needing one, at its own ≥2-consumer rule. V1
+deliberately ships only the pure `plan()` — execution and replanning stay in
+the consumer because mapping `action.name` → a runtime behaviour is
+game-specific. The linear-scan open-set is fine at GOAP scale.
 
-**Canon.** F.E.A.R. / Halo GOAP papers; typed-fact planners (SHOP2
-preconditions).
-
-</details>
-
-### `modules/particles` V2 — deferred
+### `modules/particles` V2 — ready
 
 **Scope.** Advanced particle features deliberately excluded from V1:
 **sub-emitters**, **trails**, **particle-collision**, and **sprite-kind**
 particles beyond rects.
 
-<details>
-<summary>Details</summary>
+**Status.** Ready — the same shape in Unity's `ParticleSystem` modules,
+Godot's `CPUParticles2D` / `GPUParticles2D` advanced properties, and Unreal's
+Niagara/Cascade modules. V1's rect-only emitter is the slice.
 
-**Trigger.** A consumer needing one — each promotes on its own ≥2-consumer
-rule.
-
-**Canon.** Godot `CPUParticles2D` advanced properties, Unity `ParticleSystem`
-sub-emitters + collision module.
-
-</details>
+**Gate.** Scheduling — build slot.
 
 ### `modules/ai` — speculative
 
@@ -931,23 +1095,14 @@ sub-emitters + collision module.
 shipped as their own modules: **Utility AI** (score each candidate action 0–1,
 pick the max) and **HTN** (hierarchical task-network planning).
 
-<details>
-<summary>Details</summary>
+**Status.** Speculative — **neither has a single canonical API**. Utility AI
+lives in papers and hand-rolled scorers (Dave Mark's *Behavioral Mathematics*
+/ "infinite axis" utility systems, The Sims); HTN in SHOP2 and Guerrilla's
+*Horizon*, not in shipped engine surfaces.
 
-**Trigger.** Utility AI — a prototype whose choices are *fuzzy trade-offs*
-(the Sims-style "how much do I want each option right now") rather than strict
-priorities (BT) or discrete states (FSM); it's a small, reusable scorer and the
-likely next AI pick. HTN — a prototype needing authored task decomposition
-beyond GOAP's emergent search.
-
-**Rationale for speculative.** No current prototype needs either, and neither
-has a single canonical API. Utility AI is the lighter, more broadly useful of
-the two.
-
-**Canon.** Utility AI: Dave Mark's *Behavioral Mathematics* / "infinite axis"
-utility systems, The Sims. HTN: SHOP2, Guerrilla's *Horizon* HTN.
-
-</details>
+**Gate.** Shape — a prototype needing fuzzy trade-off choices (Utility AI, the
+lighter and more broadly useful of the two) or authored task decomposition
+(HTN).
 
 ### `modules/networking` — speculative
 
@@ -955,43 +1110,37 @@ utility systems, The Sims. HTN: SHOP2, Guerrilla's *Horizon* HTN.
 lockstep / rollback — layered on top of `EcsWorld.lifecycle` events and
 `modules/save` serialization.
 
-<details>
-<summary>Details</summary>
+**Status.** Speculative — canon is a *capability* with wildly divergent shapes
+(Photon, Mirror, bevy_replicon, Unity Netcode, Source's model). Network code
+touches every layer (input, physics determinism, scene transitions,
+persistence), so the shape has to be forced by a real game's constraints.
 
-**Trigger.** A scoped multiplayer prototype. None is planned. Local
+**Gate.** Shape — a scoped multiplayer prototype. None is planned. Local
 multi-input belongs under the player-slot helper below, not here —
 `modules/networking` is for cross-machine sync.
 
-**Rationale for speculative.** Long-horizon. Network code touches every layer
-(input, physics determinism, scene transitions, persistence) and is the wrong
-thing to design without a real game shape forcing the constraints.
-
-**Canon.** Bevy `bevy_replicon`, Photon, Mirror (Unity), Source engine
-networking model.
-
-</details>
-
-### Local-multiplayer player-slot / input-owner helper — speculative
+### Local-multiplayer player-slot / input-owner helper — deferred
 
 **Scope.** A small helper for stable local player identity and routing input
 to the entity each player controls.
 
+**Status.** Deferred — Unity's `PlayerInput` + `PlayerInputManager` and
+Unreal's local-player index are the canon shape, but the ECS-side split (two
+component defs) is opinionated and one-example shapes over-fit. The two
+existing consumers (local-pong, spacewar) both kept player identity as
+app-level unions rather than converging on a slot abstraction.
+
+**Gate.** Shape — a second local-multiplayer example converging on it. Pong
+kept player identity as the app-level union `'left' | 'right'` — correct for
+that single consumer.
+
 <details>
 <summary>Details</summary>
-
-**Trigger.** A second local-multiplayer example beyond local-pong. Two
-`createInput`s already work for two players (local-pong, spacewar); only the
-slot abstraction is missing. Pong kept player identity as the app-level union
-`'left' | 'right'` — correct for that single consumer. Don't design from one
-data point — wait for a second.
 
 **Probable shape.** `PlayerSlotDef { slotId: number }` paired with an
 `InputOwnerDef { slotId: number }` so a system can route per-slot actions from
 `createInput` to the controlled entity. Slot count and mapping stay
 app-defined.
-
-**Canon.** Unity `PlayerInput` + `PlayerInputManager`, Unreal local player
-index, Godot `InputMap` action sets.
 
 </details>
 
@@ -1002,10 +1151,8 @@ index, Godot `InputMap` action sets.
 Promoted from the [engine-gap-ledger](engine-gap-ledger.md) triage pass; the
 closed rows of that pass are archived in
 [../archived/audits/2026-09-21-example-gap-audit.md](../archived/audits/2026-09-21-example-gap-audit.md).
-Each entry is **Deferred** with its consumer tally noted; some have already
-cleared their promotion trigger ("MET") and are ready-to-build candidates.
-Nothing here is scheduled — promotion records a backlog home and a met bar, it
-does not authorise a build.
+Each entry carries its own **Status**; where the evidence is internal
+consumers rather than canon, the tally is noted.
 
 ### `modules/grid-movement` — deferred
 
@@ -1013,14 +1160,16 @@ does not authorise a build.
 query, and a 180°-reversal guard. Distinct from `modules/grid-based` (which is
 FOV / line-of-sight only, **not** movement).
 
+**Status.** Deferred — and this is the case the deferral rule is *for*: three
+consumers, three different shapes. snake has body-shift + reversal guard +
+spatial occupancy, frogger has row-based hopping + water/road semantics, and
+rpg uses free pixel movement with walkability checks. Three consumers, three
+shapes — a fourth converging on one of them is the proof.
+
+**Gate.** Shape — a fourth consumer converging on the shape below.
+
 <details>
 <summary>Details</summary>
-
-**Trigger.** A fourth consumer converging on the shape below. The original
-"MET (3 consumers)" tally (snake, frogger, rpg — audit B7) did not survive the
-dual-cited pass: snake has body-shift + reversal guard + spatial occupancy,
-frogger has row-based hopping + water/road semantics, and rpg uses free pixel
-movement with walkability checks. Three consumers, three shapes.
 
 **Probable shape.** `GridPositionDef { col, row }` + a step system that
 advances by a queued direction on a movement tick, snapping continuous
@@ -1038,17 +1187,14 @@ step, classic Snake/Sokoban/Pac-Man movement.
 judgement, lookahead/absolute-time spawn scheduling, a timestamped input
 queue, and latency compensation.
 
-<details>
-<summary>Details</summary>
+**Status.** Speculative — genre-specific, and the canon *disagrees on the
+shape*: Friday Night Funkin' judges against fixed hit windows, osu! against
+per-object timing points, Rhythm Doctor against a calibration curve, and Web
+Audio supplies only `AudioContext.currentTime` scheduling. Canon supplies a
+function (judge a hit against a clock), not a shared model — and a single
+consumer cannot pick one.
 
-**Trigger.** A second rhythm/timing prototype beyond `examples/rhythm` (audit
-B21). Genre-specific but real and cleanly built; one consumer is not enough to
-pin a reusable shape.
-
-**Canon.** Friday Night Funkin' engine, osu! timing, Rhythm Doctor
-calibration, Web Audio `AudioContext.currentTime` scheduling patterns.
-
-</details>
+**Gate.** Shape — a second rhythm/timing prototype beyond `examples/rhythm`.
 
 ### App-host mount / teardown helper — speculative
 
@@ -1056,28 +1202,29 @@ calibration, Web Audio `AudioContext.currentTime` scheduling patterns.
 race guard (stale-load token / CAS) for mount → cleanup → async-load →
 teardown orchestration.
 
-<details>
-<summary>Details</summary>
+**Status.** Speculative — every example re-implements `start`/teardown, but
+the contract is so thin that no single canon shape is worth committing to
+(SPA mount/unmount lifecycles, micro-frontend `mount`/`unmount` contracts,
+React root `createRoot`/`unmount` all differ).
 
-**Trigger.** A second app-host beyond `examples/hub` (every example
-re-implements `start`/teardown). Low priority; the per-example `start`
-boilerplate is small.
+**Gate.** Shape — a second app-host beyond `examples/hub`. Low priority; the
+per-example `start` boilerplate is small.
 
-**Canon.** SPA mount/unmount lifecycles, micro-frontend `mount`/`unmount`
-contracts (single-spa), React root `createRoot`/`unmount`.
-
-</details>
-
-### `modules/destructible-terrain` — speculative
+### `modules/destructible-terrain` — ready
 
 **Scope.** Mutable terrain: erase or modify tiles at runtime and keep the
 collision mask, the rendered layer, and any path/FOV data in step.
 
+**Status.** Ready — the same shape in Godot (`TileMap.erase_cell`), Unity
+(`Tilemap.SetTile(null)`) and Phaser (`Tilemap.removeTileAt`), with
+Worms-style destructible bitmaps as the archetype. Blocked only by the
+batched tile layer it presumes.
+
+**Gate.** Scheduling — depends on `modules/tilemap` V2 shipping the dirty-region
+re-upload path. Track the two together.
+
 <details>
 <summary>Details</summary>
-
-**Trigger.** Ladder entries #18 (Worms), #19 (Dig Dug) and #20 (Motherload)
-are all built on it — three consecutive games, none started.
 
 **What ships today is static.** `buildCollisionGrid` derives a
 `CollisionGrid { width, height, solid: Uint8Array }` from a `TmxMap` once
@@ -1091,38 +1238,39 @@ The rendering half is the real work, and it is the same work
 `modules/tilemap` V2 (batched renderable) needs: mutate a tile grid and
 re-upload the dirty region instead of respawning entities.
 
-**Rationale for speculative.** It presumes a batched tile layer that does not
-exist yet, so it cannot land before V2 — track the two together.
-
-**Canon.** Worms-style destructible bitmaps, Godot `TileMap.erase_cell`,
-Unity `Tilemap.SetTile(null)`.
+**Ladder.** Entries #18 (Worms), #19 (Dig Dug) and #20 (Motherload) are all
+built on it — three consecutive games, none started.
 
 </details>
 
-### `modules/card-interaction` — deferred
+### `modules/card-interaction` — ready
 
 **Scope.** Two genre-clustered capabilities for card and deck games:
 **zone/pile management** (move a card between hand ↔ deck ↔ discard, or stock
 ↔ waste, keeping pile metadata consistent) and **drag-and-drop hit-testing**
 (reverse hit-test plus a legal-drop predicate).
 
+**Status.** Ready — trigger met, 2 consumers agreeing on the same *operations*:
+card-battler and solitaire. Compare `modules/grid-movement`, which stayed
+deferred because three consumers turned out to have three shapes; here two
+consumers agree on the operation surface.
+
+**Gate.** Scheduling — build slot.
+
 <details>
 <summary>Details</summary>
-
-**Trigger.** Met — 2 consumers each, clustering on one genre shape:
-card-battler and solitaire. Compare `modules/grid-movement`, which stayed
-`deferred` because three consumers turned out to have three shapes; here two
-consumers agree.
 
 **Evidence.** Both ABSENT in `src/`: no zone/pile helper (the tag swaps are
 hand-rolled) and no hit-test / drop-predicate helper (card-battler and
 solitaire each hand-roll reverse hit-testing for DOM and canvas).
 
-**Open question to settle before building.** card-battler models zones as
-*tags*, and tags emit no lifecycle event; a *component* model would get
-`ComponentAdded` / `ComponentRemoved` reactivity for free. Pick the zone model
-first — it decides both the helper's shape and whether the related ledger row
-(zone changes with no reactive hook) closes or returns.
+**Representation choice to make during the build.** card-battler models zones
+as *tags*, and tags emit no lifecycle event; a *component* model would get
+`ComponentAdded` / `ComponentRemoved` reactivity for free. This does not change
+the operation surface (move a card between piles; hit-test a drop), so it does
+not gate the module — it is a design decision the plan settles. It also
+decides whether the related ledger row (zone changes with no reactive hook)
+closes or returns.
 
 **Canon.** Unity UI drag handlers, Godot `Control` drag-and-drop, Phaser's
 drag plugins, every card-game tutorial's hand-rolled pile manager.
@@ -1131,54 +1279,87 @@ drag plugins, every card-game tutorial's hand-rolled pile manager.
 
 ---
 
-## Promotion triggers — summary
+## Existing-module gaps
 
-Open signals only. When any of the below becomes true, open a plan for the
-matching module. Shipped triggers are removed rather than marked done — a
-signal's absence from this table means it already produced a module.
+Capabilities missing from a module that already ships — a leftover operation,
+or a leftover slice, but not a new module. Each was left out of its V1 for a
+reason worth recording, and the status says whether that reason still holds.
 
-| Signal | Unblocks |
-|---|---|
-| Scrolling prototype needing camera rotation, or a parallax layer model | `modules/camera` V3 |
-| Concrete request for `ctx.filter` post-processing | `RenderableDef` extensions V3 (Canvas filters) |
-| A second turn-based consumer | `modules/input` event-mode variant |
-| 3D prototype scoped | All 3D sibling modules |
-| Stacking / ragdoll / vehicle prototype | Rigid-body physics |
-| Spatialized playback or shared bus-driven audio events in a second consumer | `modules/audio` V2 |
-| Second consumer needing shared named animation clips | `modules/animation` V2 (clip registry) |
-| Second app with multiple runtime worlds and full scene stack needs | `modules/scene` V2 |
-| Second app needing shared slot metadata/policy conventions | `modules/save` V2 |
-| Asset volume exceeds Vite import comfort | `modules/asset-loader` V2 |
-| Flow-field / many-pather prototype | `modules/pathfinding` V2 |
-| Stealth / line-of-sight prototype needing non-V1 algorithms | `modules/grid-based` V2 |
-| Second debug-overlay consumer | `modules/debug` |
-| Prototype needing obstacle-avoidance or path-following | `modules/steering` V2 |
-| Prototype needing nested / parallel states | `modules/fsm` V2 |
-| Prototype needing BT decorators, or a deliberate doom AI migration | `modules/behavior-tree` V2 / the doom migration |
-| Prototype needing a GOAP plan-runner or typed facts | `modules/goap` V2 |
-| Prototype needing sub-emitters, trails or particle-collision | `modules/particles` V2 |
-| Prototype with fuzzy trade-off choices (utility scoring) or authored task decomposition (HTN) | `modules/ai` (Utility AI / HTN) |
-| Scoped multiplayer prototype | `modules/networking` |
-| Second local-multiplayer example beyond local-pong | Local-multiplayer player-slot helper |
-| A prototype whose authored tile grid makes per-cell entities measurably hurt | `modules/tilemap` V2 (batched renderable) |
-| Fourth consumer converging on discrete grid movement | `modules/grid-movement` |
-| Rhythm/timing prototype beyond `examples/rhythm` | `modules/rhythm` (speculative) |
-| Second app-host beyond `examples/hub` | App-host helper (speculative) |
-| Prototype needing in-game UI widgets | `modules/ui` |
-| Prototype needing branching dialogue (choices, or lines gated on world state) | `modules/dialogue` (speculative) |
-| Prototype needing **3D** picking / hitscan / line-of-sight rays | `modules/collision-3d` (3D group) |
-| Prototype needing slopes or one-way platforms | `modules/kinematics` V2 / `modules/kinematics-3d` V2 |
-| Frame-rate-independent physics determinism | `modules/tick` V2 |
-| A second radial-gravity consumer | `modules/motion` V2 |
-| A second consumer needing free-flight attitude control or spherical bounds | `modules/motion-3d` V2 |
-| A game about darkness or light | `modules/lighting` (speculative) |
-| A prototype needing a mirror, monitor, in-world screen, or minimap (RTT surface) | `modules/render-target` |
-| A 2D game whose obstacles aren't grid-aligned, or a world too large for a grid | `modules/navmesh` (speculative) |
-| A terrain / water prototype wanting ridged, cellular or domain-warp noise | `modules/noise` V2 |
-| A prototype with a scripted sequence (intro, cutscene, boss reveal) | `modules/timeline` (speculative) |
-| Ladder #18/#19/#20 (Worms, Dig Dug, Motherload) — mutable terrain | `modules/destructible-terrain` (speculative) |
-| Card/deck game needing pile moves or drag-and-drop | `modules/card-interaction` |
+### `modules/math-3d` — `quatSlerp` — ready
 
-Every promotion still runs through the engine extension rule-book (the
-sliding-scale evidence rule) — this table just catalogs the likely first
-signals.
+**Scope.** Spherical linear interpolation between two `Quat` values.
+
+**Status.** Ready — canon-unanimous (Unity `Quaternion.Slerp`, Godot
+`Quaternion.slerp`, three.js `Quaternion.slerp`). Nothing exercises it today:
+the one call site (`examples/starfighter/src/render.ts`) already holds a
+three.js `Quaternion` and calls its own `slerp`.
+
+**Gate.** Scheduling — build slot.
+
+**Divergence to resolve.** Unity's `Quaternion.Slerp` clamps `t` to `[0, 1]`
+where Godot's and three.js's do not; this module's lerp convention is
+unclamped, so the build has to pick a side rather than copy one engine.
+
+### `modules/motion` — `moveToward` (vector form) — ready
+
+**Scope.** Move a vector a fixed distance toward a target each step — the
+*vector* form of move-toward, as distinct from the scalar form `modules/math`
+already answers with a clamp/lerp pair.
+
+**Status.** Ready — the same shape in Unity (`Vector3.MoveTowards`), Godot
+(`Vector2.move_toward`) and Unreal (`FMath::VInterpConstantTo`).
+
+**Gate.** Scheduling — build slot.
+
+### `modules/input` — wheel + multi-touch — deferred
+
+**Scope.** Scroll/wheel deltas and a multi-pointer set, beyond V1's position +
+over-flag + buttons 0/1/2.
+
+**Status.** Deferred — canon supplies the *function* but not a shared *shape*.
+Unity exposes a polled signed delta (`Input.mouseScrollDelta`), Godot a
+discrete wheel-button event carrying a `factor` (`InputEventMouseButton`), and
+Phaser a `'wheel'` event object with `deltaX`/`deltaY`/`deltaZ` — state versus
+event, vector versus discrete. The choice is load-bearing here rather than
+incidental: the core raw-event union is
+`{ kind: 'down' | 'up'; code: string }`, which cannot carry a wheel delta
+without extending the core contract, and `PointerProvider` tracks a single
+pointer today.
+
+**Gate.** Shape — the model decision (a polled delta on `InputState`, or a new
+event on the raw union), and whether multi-touch earns a multi-pointer set.
+Demand already exists (`examples/tilemap` hand-rolls a wheel listener), so only
+the shape is open.
+
+<details>
+<summary>Details</summary>
+
+Single-finger touch already works through Pointer Events, so what is missing
+is the wheel delta and the multi-pointer set — not the events themselves.
+
+</details>
+
+### `modules/spatial` — `QuadTree` / `BVH` backends — deferred
+
+**Scope.** Additional `SpatialStructure` backends beside the shipped
+`HashGrid2D`: a `QuadTree`, and a `BVH` / `SweepAndPrune` for AABB sets.
+
+**Status.** Deferred — solid canon but not unanimous. The rule-book classes
+quad-tree/BVH as domain-standard with an obvious API, which is its
+one-consumer tier; `HashGrid2D` serves every current consumer, so nothing has
+exercised either shape yet.
+
+**Gate.** Shape — one consumer a uniform-grid backend cannot serve (very
+uneven entity density, or static AABB sets).
+
+<details>
+<summary>Details</summary>
+
+An `Octree` for the 3D stack is the other candidate; it stays out of scope
+until a 3D consumer forces it. A continuous-space grid is *not* pending —
+`ContinuousHashGrid2D` ships beside `HashGrid2D`.
+
+**Related.** The rigid-body physics entry names a BVH / SweepAndPrune spatial
+backend too; build it on this entry's backend rather than beside it.
+
+</details>

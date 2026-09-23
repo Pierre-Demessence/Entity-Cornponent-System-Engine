@@ -8,8 +8,7 @@ motion module owning either.
 Canon pattern: Bevy `bevy_transform` motion systems, Godot
 `_physics_process` velocity integration, Unity DOTS
 `TransformSystemGroup`. Not a full physics module — for gravity +
-collision + grounded, see `@pierre/ecs/modules/kinematics` (M4, ships
-later).
+collision + grounded, see the shipped `@pierre/ecs/modules/kinematics`.
 
 ## API
 
@@ -105,11 +104,16 @@ vel.vy = v.y;
 - `bounds.width` and `bounds.height` must be positive (`> 0`). Zero or
   negative bounds produce `NaN` positions under `wrap` and are not
   validated at runtime — caller responsibility.
-- 2D only — angle (`RotationDef`) is not integrated here. Games that want
-  a rotation-rate component can ship their own `AngularVelocity` system;
-  promotion into this module follows the Path-A rule of three.
+- 2D only — angle (`RotationDef`) is not integrated here. No engine ships
+  angular-velocity integration as a standalone ECS component, so canon gives a
+  function and not a shape; a rotation-rate component ships in the game until a
+  second consumer converges on one.
 - No acceleration term, gravity, or collision — those belong in
-  `modules/kinematics` (M4).
+  `modules/kinematics`.
+- No vector move-toward helper (`Vector2.move_toward`) yet — canon (Unity
+  `Vector3.MoveTowards`, Godot `Vector2.move_toward`, Unreal
+  `FMath::VInterpConstantTo`), tracked as an existing-module gap in the
+  [module backlog](../../../docs/roadmap/ecs-module-backlog.md).
 - `onMove` is the only extension point. Games that need per-entity
   enable/disable either remove the `VelocityDef` component or set
   `(vx, vy)` to `(0, 0)`.

@@ -72,8 +72,10 @@ preserving all other `Renderable` fields (atlas, kind, anchor, dw, dh).
 
 ## Design notes
 
-- A **clip registry** (named animation clips shared across entities) is
-  deferred to V2 — add it when a second consumer proves the shape.
+- A **clip registry** (named animation clips shared across entities) is a `V2`
+  backlog entry, marked **ready** — the shape is canon (Unity `AnimationClip`,
+  Godot `Animation`, Bevy `AnimationClip`), so it waits on a build slot rather
+  than on a second consumer.
 - The `frames` array stores atlas frame **names** (strings), matching
   the `Renderable.frame` field contract.
 - Zero-fps animations never advance (no division by zero).

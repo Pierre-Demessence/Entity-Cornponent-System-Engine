@@ -8,8 +8,8 @@ Two kinds live here, both terminal — neither is a backlog candidate:
 
 - **Declined** — considered and rejected.
 - **Superseded** — the problem got solved a different way, so the sketched
-  solution is off the table. Distinct from deferred: deferred work is still
-  wanted.
+  solution is off the table. Distinct from the backlog's
+  `ready` / `deferred` / `speculative`: those are still wanted, this is not.
 
 Shipped work does **not** belong here (or in the backlog) — it is described
 by `src/`, dated by `git log`, and explained by its `plans/done/` plan or

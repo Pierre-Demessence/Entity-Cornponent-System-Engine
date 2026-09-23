@@ -32,7 +32,9 @@ stable surface. This means:
   unanimous universal canon ships with 0 consumers, solid canon with 1,
   a novel shape needs 2. These examples are deliberately generic, so a
   gap one of them hits is strong generality signal — don't reflexively
-  defer canon to "wait for a second consumer".
+  defer canon to "wait for a second consumer". A primitive whose shape
+  canon settles is **Ready** in the backlog — authorized to build, gated
+  only on a build slot, never on evidence.
 - **Canon-complete over incremental.** For a recognized canonical
   subsystem (a 2D camera, a scalar-math library, a collision narrowphase),
   build the *canon-complete* surface in one pass — the operations every

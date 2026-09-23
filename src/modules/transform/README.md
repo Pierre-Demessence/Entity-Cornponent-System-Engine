@@ -24,7 +24,7 @@ const ScaleDef: ComponentDef<Scale>;
 Entities without the component render at 1:1.
 
 Data-only module. No systems. A velocity integrator ships separately in
-`@pierre/ecs/modules/motion` (M2) so games that only need static
+`@pierre/ecs/modules/motion` so games that only need static
 positions don't carry motion logic. `VelocityDef` is the *data*; only the
 integrator lives in `motion`. Whether the velocity data itself belongs here or
 in `motion` is unsettled — if it moves, it moves for both `transform` and

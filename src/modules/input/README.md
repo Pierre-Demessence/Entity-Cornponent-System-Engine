@@ -240,8 +240,12 @@ headless environments.
 ### Pointer scope
 
 - v1 is position + over-flag + buttons 0/1/2, nothing else.
-- No scroll/wheel, no multi-touch or gesture helpers — these are deferred
-  until a real consumer lands. Pointer lock lives in `MouseLookProvider`
+- No scroll/wheel and no multi-touch or gesture helpers yet — tracked as a
+  deferred gap (`modules/input` — wheel + multi-touch) in the module backlog.
+  Every engine ships the *function*, but no two agree on the *shape* (Unity a
+  polled `Input.mouseScrollDelta`, Godot a discrete wheel-button event with a
+  `factor`, Phaser a `'wheel'` event object), and the core raw-event union
+  cannot carry a delta as-is. Pointer lock lives in `MouseLookProvider`
   (below). Single-finger touch already works via Pointer Events.
 - Analog position lives on `provider.state`, not inside `InputState<T>`
   — action-map state stays cleanly digital.

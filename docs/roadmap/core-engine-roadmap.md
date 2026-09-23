@@ -89,7 +89,7 @@ complex systems.
 | **Problem** | A CPU-bound per-entity kernel runs single-threaded even though columns can be `SharedArrayBuffer`-backed (`ColumnStore { shared: true }`, shipped). `examples/parallel-kernel` proves the win (13→75 fps at 600k×64, holds 75 fps at 1M), but its worker-splitting logic is **harness-local**, not a reusable primitive. |
 | **Solution** | A reusable `parallelFor(kernel, range)` that splits a shared-column slot range across a worker pool behind a per-frame barrier. The kernel is a **worker-defined module** — JS closures can't cross the worker boundary, so general scheduler auto-dispatch of arbitrary systems is **out** (see the plan); the realizable form is data-parallel over shared columns. |
 | **Unlocks** | ~Nx on genuinely CPU-bound simulation, bounded by core count — a multiplier on the columnar store, only where a kernel is already CPU-bound. |
-| **Complexity** | Mid — the harness already works; promoting it to a module needs a **second consumer** per the promotion rule, plus the cross-origin-isolation (`COOP`/`COEP`) caveat for plain browsers. |
+| **Complexity** | Mid — the harness already works; promoting it to a module needs a **second consumer** (canon here gives a function, not a shape — no engine's parallelism API transfers to a browser worker pool), plus the cross-origin-isolation (`COOP`/`COEP`) caveat for plain browsers. |
 | **Dependencies** | None outstanding — SAB columns and the `modules/worker-pool` helper both shipped. Detail: [../plans/done/ecs-parallelism-and-soa-storage.md](../plans/done/ecs-parallelism-and-soa-storage.md#b2--parallel-system-dispatch-core-needs-b1). |
 
 ---
@@ -164,6 +164,7 @@ its trigger.
 6. **Entity Inspector** (4.2) — dev quality of life
 7. **Plugin Hooks** (4.4) — modding, long-horizon and the largest piece
 8. **Data-Parallel Dispatch** (3.6) — a reusable module over the shipped SAB
-   columns; gated on a second consumer, not effort
+   columns; gated on a second consumer, since no engine's parallelism API
+   transfers to a browser worker pool (a shape gap, not effort)
 9. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest,
    most strategic piece, above the §3.1 cache

@@ -183,11 +183,11 @@ anchor for rect/circle. Extrinsic overlays: `RotationDef`,
 `ScaleDef`, `OpacityDef`, `RenderOrderDef`, per-entity
 `blendMode`.
 
-Deferred (see `docs/roadmap/ecs-module-backlog.md`):
+Not in the module yet (see `docs/roadmap/ecs-module-backlog.md` for status):
 
-- Sprites / textures — needs an asset-loader module first.
-- Tilemap kind — Path-A (wait for a second consumer).
-- Canvas filters (`ctx.filter`) — Path-A.
+- Tilemap kind — the batched `modules/tilemap` V2 entry, marked **ready**
+  (Unity `Tilemap`, Godot `TileMap`, Phaser `Tilemap`).
+- Canvas filters (`ctx.filter`) — deferred; request-driven, no canon pressure.
 - Snake migration — push the cells→pixels scale onto a `CameraDef` `zoom`
   (the `view` hook now exists; snake just needs to adopt it).
 

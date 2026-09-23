@@ -169,10 +169,12 @@ order).
 
 ## Out of scope
 
-- **Rotation** — Godot `Camera2D.rotation`. Deferred: a rotated view needs a
-  full affine transform and a conservative rotated-AABB cull, and 2D
-  top-down/platformers rarely rotate the camera. Add when a consumer needs it.
-- **Parallax layers** — a layer/scroll-factor model; its own follow-up.
+- **Rotation** — Godot `Camera2D.rotation`, Phaser `Camera.rotation`. A `V3`
+  backlog entry, marked **ready**: the shape is canon, so it waits on a build
+  slot, not on a consumer. Building it needs a full affine transform and a
+  conservative rotated-AABB cull, which the axis-aligned cull does not give.
+- **Parallax layers** — a layer/scroll-factor model; the same entry, same
+  status.
 - **Pixel-space / DPI helpers** — stay in app code (DOM/canvas-specific).
 
 Import via `@pierre/ecs/modules/camera`. Depends on
