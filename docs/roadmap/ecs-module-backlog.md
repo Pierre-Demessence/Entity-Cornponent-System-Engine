@@ -120,10 +120,35 @@ matches are shadowcasting math in `grid-based/visibility.ts:45`.
 **Probable shape.** One-way is a per-collider flag consulted in the axis
 sweep (skip the contact when the mover approaches from the disabled side).
 Slopes need the sweep to become normal-aware, or an explicit slope resolver
-after it. `kinematics-3d` gets them separately.
+after it. `kinematics-3d` ships without either; they are its own entry below.
 
 **Canon.** Unity `PlatformEffector2D`, Godot `CharacterBody2D` one-way
 collision, GameMaker, every Celeste-lineage platformer tutorial.
+
+</details>
+
+### `modules/kinematics-3d` V2 — slopes + one-way platforms — deferred
+
+**Scope.** The 3D siblings of the two surface behaviours the
+`modules/kinematics` V2 entry above defers: walking a non-axis-aligned surface
+with the body following its normal, and platforms solid from above but
+pass-through from below.
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** The one the 2D entry names — a platformer that needs them.
+`examples/platformer-3d` climbs flat AABB platforms, so nothing hits them yet.
+
+**Probable shape.** Same in kind as the 2D shape: one-way is a per-collider
+flag consulted in the axis sweep, slopes need the sweep to become
+normal-aware, or an explicit slope resolver after it. Shipping
+`modules/kinematics-3d` without them is deliberate — each is a distinct
+feature, not a missing slice of the character controller.
+
+**Canon.** Godot `CharacterBody3D.floor_max_angle` and
+`CollisionShape3D.one_way_collision`; Unity `CharacterController.slopeLimit`
+for the slope half.
 
 </details>
 
@@ -248,16 +273,15 @@ the 2D stack rather than replacing it.
 <details>
 <summary>Details</summary>
 
-Forward-looking per the 2D-vs-3D strategy in the shipped plan: when 3D lands,
-dimension-sensitive modules ship as **parallel siblings**, not extensions or
-renames (Godot / flecs model). All entries below exist only if a 3D prototype
-is attempted, and none is scheduled.
+Forward-looking per the 2D-vs-3D strategy in the shipped plan: dimension-sensitive
+modules ship as **parallel siblings**, not extensions or
+renames (Godot / flecs model). The entries below are the ones the 3D prototypes
+have not pulled in yet.
 
 | Module | Shape | Canon |
 |---|---|---|
 | `modules/transform-3d` | `Position3DDef {x,y,z}`, quaternion `Rotation3DDef`, `ScaleDef` | Bevy `Transform`, Unity, Godot `Node3D` |
 | `modules/motion-3d` | 3-vector velocity integrator + optional 3D bounds; free-flight attitude control (rate-steered orientation + throttle) | Bevy integrators |
-| `modules/kinematics-3d` | Arcade 3D character controller — gravity + axis-separated resolution against statics | Unity `CharacterController`, Godot `CharacterBody3D` |
 | `modules/render-scene3d` | entity ↔ scene-object sync: create / update / reap by tag — the 3D analogue of `Canvas2DRenderer` | three.js scene graphs, Babylon `Scene` |
 | `modules/navmesh-3d` | Triangle-mesh navigation: bake, regions, links, agent-radius inflation. 2D sibling: `modules/navmesh` | Recast/Detour, Godot `NavigationRegion3D`, Unity `NavMesh` |
 | `modules/render-webgl` | `Renderer<TCtx>` implementation backed by WebGL | three.js, Babylon |
@@ -266,11 +290,11 @@ is attempted, and none is scheduled.
 
 **Trigger for the whole group.** A scoped 3D prototype (matches the
 [prototype ladder](../archived/prototype-games-roadmap.md) — 3D platformer or
-similar). Until then, the 2D stack is the only stack. The gap ledger already
-records the duplicated work, which makes this the largest de-facto demand
-cluster in the file: **4 consumers** hand-roll the entity↔mesh sync
-(platformer-3d, portal, doom, starfighter) and **3** the 3D AABB solver
-(platformer-3d, portal, doom).
+similar), and it has fired: `modules/math-3d`, `modules/collision-3d` and
+`modules/kinematics-3d` all shipped this way, each replacing a hand-rolled
+duplicate. What is left above is dominated by one duplication — **4 consumers**
+hand-roll the three.js entity↔mesh sync (platformer-3d, portal, doom,
+starfighter) — which makes it the largest de-facto demand cluster in the file.
 
 **Rules (re-affirmed from the shipped plan).**
 
@@ -1075,7 +1099,7 @@ signal's absence from this table means it already produced a module.
 | Prototype needing in-game UI widgets | `modules/ui` |
 | Prototype needing branching dialogue (choices, or lines gated on world state) | `modules/dialogue` (speculative) |
 | Prototype needing **3D** picking / hitscan / line-of-sight rays | `modules/collision-3d` (3D group) |
-| Prototype needing slopes or one-way platforms | `modules/kinematics` V2 |
+| Prototype needing slopes or one-way platforms | `modules/kinematics` V2 / `modules/kinematics-3d` V2 |
 | Frame-rate-independent physics determinism | `modules/tick` V2 |
 | A second radial-gravity consumer | `modules/motion` V2 |
 | A game about darkness or light | `modules/lighting` (speculative) |

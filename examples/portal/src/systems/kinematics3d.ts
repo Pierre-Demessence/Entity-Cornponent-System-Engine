@@ -1,148 +1,65 @@
 import type { EntityId, SchedulableSystem } from '@pierre/ecs';
+import type { Aabb3 } from '@pierre/ecs/modules/collision-3d';
 import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import type { GameState } from '../game';
 
+import { makeKinematics3DSystem } from '@pierre/ecs/modules/kinematics-3d';
+
 import {
   DynamicBodyTag,
-  GroundedDef,
   HeldTag,
   Position3DDef,
-  ShapeAabb3DDef,
   StaticBodyTag,
   Velocity3DDef,
 } from '../components';
 import { GRAVITY, MAX_FALL_SPEED, PORTAL_CARVE_DEPTH } from '../game';
 import { localCoords, withinOpening } from './portal-math';
 
-interface Box3 { d: number; h: number; w: number }
-interface Vel3 { vx: number; vy: number; vz: number }
-interface StaticBox { id: EntityId; b: Box3; p: Vec3 }
-
 /**
- * 3D AABB kinematics for every {@link DynamicBodyTag} body (player + cube):
- * gravity → X sweep → Z sweep → Y sweep, penetration-based axis-separated
- * push-out against {@link StaticBodyTag} colliders. Axis order keeps a wall
- * contact from cancelling a same-tick jump.
+ * 3D AABB kinematics for every {@link DynamicBodyTag} body (player + cube) — the
+ * engine's `modules/kinematics-3d`. The two portal-specific collision policies
+ * ride in the injected broadphase:
+ *
+ * - the wall a portal is mounted on is carved away while the body is inside the
+ *   opening, so it can walk through;
+ * - the cube is a one-way collider for the player (you can't walk through it)
+ *   while it rests in the world, and is dropped from the candidate list entirely
+ *   while held.
  *
  * Brute-force over the statics — the single room has a handful, and a 3D
  * broadphase is roadmap work, not example work.
  */
-export const kinematics3dSystem: SchedulableSystem<GameState> = {
+export const kinematics3dSystem: SchedulableSystem<GameState> = makeKinematics3DSystem<GameState>({
   name: 'kinematics3d',
+  broadphase: collidersFor,
+  dynamicTag: DynamicBodyTag,
+  gravity: GRAVITY,
+  positionDef: Position3DDef,
   runAfter: ['input'],
-  run(ctx) {
-    const dt = ctx.dtMs / 1000;
-    const posStore = ctx.world.getStore(Position3DDef);
-    const velStore = ctx.world.getStore(Velocity3DDef);
-    const aabbStore = ctx.world.getStore(ShapeAabb3DDef);
-    const groundedStore = ctx.world.getStore(GroundedDef);
+  terminalVelocity: MAX_FALL_SPEED,
+  velocityDef: Velocity3DDef,
+});
 
-    const statics: StaticBox[] = [];
-    for (const sid of ctx.world.getTag(StaticBodyTag)) {
-      const p = posStore.get(sid);
-      const b = aabbStore.get(sid);
-      if (p && b)
-        statics.push({ id: sid, b, p });
-    }
-
-    // The cube is a one-way collider for the player (you can't walk through it),
-    // but only when it's resting in the world — a held cube is excluded.
-    const heldTag = ctx.world.getTag(HeldTag);
-    let playerColliders = statics;
-    if (ctx.cubeId != null && !heldTag.has(ctx.cubeId)) {
-      const cp = posStore.get(ctx.cubeId);
-      const cb = aabbStore.get(ctx.cubeId);
-      if (cp && cb)
-        playerColliders = statics.concat({ id: ctx.cubeId, b: cb, p: cp });
-    }
-
-    for (const id of ctx.world.getTag(DynamicBodyTag)) {
-      if (heldTag.has(id))
-        continue; // held bodies are kinematic; the carry system positions them
-      const pos = posStore.get(id);
-      const vel = velStore.get(id);
-      const aabb = aabbStore.get(id);
-      if (!pos || !vel || !aabb)
-        continue;
-      const grounded = groundedStore.get(id) ?? undefined;
-      const carved = carvedSurfaces(ctx, pos);
-      const colliders = id === ctx.playerId ? playerColliders : statics;
-
-      // Gravity + terminal velocity (gravity subtracts because +Y is up).
-      vel.vy -= GRAVITY * dt;
-      if (vel.vy < -MAX_FALL_SPEED)
-        vel.vy = -MAX_FALL_SPEED;
-
-      pos.x += vel.vx * dt;
-      resolveAxis(pos, aabb, colliders, 'x', vel, carved);
-
-      pos.z += vel.vz * dt;
-      resolveAxis(pos, aabb, colliders, 'z', vel, carved);
-
-      if (grounded)
-        grounded.onGround = false;
-      pos.y += vel.vy * dt;
-      resolveAxis(pos, aabb, colliders, 'y', vel, carved, grounded);
-    }
-  },
-};
-
-function resolveAxis(
-  pos: Vec3,
-  aabb: Box3,
-  statics: StaticBox[],
-  axis: 'x' | 'y' | 'z',
-  vel: Vel3,
-  carved: Set<EntityId>,
-  grounded?: { onGround: boolean },
-): void {
-  const halfW = aabb.w / 2;
-  const halfH = aabb.h / 2;
-  const halfD = aabb.d / 2;
-
-  for (const { id, b, p } of statics) {
-    if (carved.has(id))
-      continue;
-    const overlapX = halfW + b.w / 2 - Math.abs(pos.x - p.x);
-    const overlapY = halfH + b.h / 2 - Math.abs(pos.y - p.y);
-    const overlapZ = halfD + b.d / 2 - Math.abs(pos.z - p.z);
-    if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0)
-      continue;
-
-    // Only separate along the current axis when it is the *shallowest*
-    // penetration — the correct push-out direction. Without this, a body
-    // overlapping a large thin wall (e.g. a 22-wide room wall) gets flung out
-    // the wall's wide face and tunnels through other geometry. This also stops
-    // the resting floor from spuriously blocking horizontal movement.
-    const minOverlap = Math.min(overlapX, overlapY, overlapZ);
-
-    if (axis === 'x') {
-      if (overlapX > minOverlap)
-        continue;
-      pos.x += pos.x < p.x ? -overlapX : overlapX;
-      vel.vx = 0;
-    }
-    else if (axis === 'z') {
-      if (overlapZ > minOverlap)
-        continue;
-      pos.z += pos.z < p.z ? -overlapZ : overlapZ;
-      vel.vz = 0;
-    }
-    else {
-      if (overlapY > minOverlap)
-        continue;
-      if (pos.y < p.y) {
-        pos.y -= overlapY;
-      }
-      else {
-        pos.y += overlapY;
-        if (grounded)
-          grounded.onGround = true;
-      }
-      vel.vy = 0;
-    }
+/**
+ * Candidate colliders for the body whose axis-projected box is `box`: every
+ * static the body is not currently carving through, plus the resting cube.
+ *
+ * The list *is* the collider set — the module is given no `staticTag` filter,
+ * because the resting cube is a dynamic body that must still block and carries
+ * no `StaticBodyTag`. Yielding the cube for the cube itself is harmless: the
+ * module skips the body it is currently resolving.
+ */
+function collidersFor(ctx: GameState, box: Aabb3): Iterable<EntityId> {
+  const carved = carvedSurfaces(ctx, box.center);
+  const out: EntityId[] = [];
+  for (const sid of ctx.world.getTag(StaticBodyTag)) {
+    if (!carved.has(sid))
+      out.push(sid);
   }
+  if (ctx.cubeId != null && !ctx.world.getTag(HeldTag).has(ctx.cubeId))
+    out.push(ctx.cubeId);
+  return out;
 }
 
 /**

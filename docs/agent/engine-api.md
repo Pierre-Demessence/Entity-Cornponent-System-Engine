@@ -325,6 +325,13 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`KinematicsTickCtx`** _(interface)_ — —
 - **`makeKinematicsSystem`** _(fn)_ — Builds a schedulable system that advances every dynamic body by one physics tick: gravity → X-axis resolve → Y-axis resolve → `onGround` ...
 
+### `@pierre/ecs/modules/kinematics-3d`
+- **`Grounded3`** _(interface)_ — Per-entity ground-contact flag, the 3D sibling of `modules/kinematics`' `Grounded`. Kinematic resolution sets `onGround = true` when the ...
+- **`Grounded3Def`** _(const)_ — —
+- **`Kinematics3DSystemOptions`** _(interface)_ — Options for `makeKinematics3DSystem`, the 3D sibling of `makeKinematicsSystem`. The system iterates every entity carrying `dynamicTag` an...
+- **`Kinematics3DTickCtx`** _(interface)_ — —
+- **`makeKinematics3DSystem`** _(fn)_ — Builds a schedulable system that advances every dynamic body by one physics tick: gravity → X-axis resolve → Z-axis resolve → Y-axis reso...
+
 ### `@pierre/ecs/modules/lifetime`
 - **`Lifetime`** _(type)_ — A countdown-to-destroy timer. A `'once'` Timer.
 - **`LifetimeDef`** _(const)_ — —

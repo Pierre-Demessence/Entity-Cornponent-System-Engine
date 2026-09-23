@@ -10,7 +10,8 @@ export interface Velocity3D { vx: number; vy: number; vz: number }
 // Full extents (not half) along X/Y/Z, centre-based: the engine's shape under
 // this game's own name.
 export { type ShapeAabb3 as ShapeAabb3D, ShapeAabb3Def as ShapeAabb3DDef } from '@pierre/ecs/modules/collision-3d';
-export interface Grounded { onGround: boolean }
+/** Ground contact: the engine's `Grounded3` under this game's own name. */
+export { type Grounded3 as Grounded, Grounded3Def as GroundedDef } from '@pierre/ecs/modules/kinematics-3d';
 
 export const Position3DDef: ComponentDef<Position3D> = simpleComponent<Position3D>(
   'position3d',
@@ -20,11 +21,6 @@ export const Position3DDef: ComponentDef<Position3D> = simpleComponent<Position3
 export const Velocity3DDef: ComponentDef<Velocity3D> = simpleComponent<Velocity3D>(
   'velocity3d',
   { vx: 'number', vy: 'number', vz: 'number' },
-);
-
-export const GroundedDef: ComponentDef<Grounded> = simpleComponent<Grounded>(
-  'grounded',
-  { onGround: 'boolean' },
 );
 
 export const PlayerTag: TagDef = { name: 'player' };

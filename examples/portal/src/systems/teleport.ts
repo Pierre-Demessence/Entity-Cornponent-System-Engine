@@ -4,7 +4,7 @@ import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 import type { Velocity3D } from '../components';
 import type { GameState, Portal } from '../game';
 
-import { DynamicBodyTag, HeldTag, PlayerTag, Position3DDef, Velocity3DDef } from '../components';
+import { DynamicBodyTag, PlayerTag, Position3DDef, Velocity3DDef } from '../components';
 import { MAX_PITCH } from '../game';
 import { forwardVec, localCoords, transformPoint, transformVec, withinOpening } from './portal-math';
 
@@ -30,11 +30,10 @@ export const teleportSystem: SchedulableSystem<GameState> = {
     const posStore = ctx.world.getStore(Position3DDef);
     const velStore = ctx.world.getStore(Velocity3DDef);
     const playerTag = ctx.world.getTag(PlayerTag);
-    const heldTag = ctx.world.getTag(HeldTag);
 
     for (const id of ctx.world.getTag(DynamicBodyTag)) {
-      if (heldTag.has(id))
-        continue; // a held body follows the camera; it doesn't teleport on its own
+      // A held body is not in `DynamicBodyTag` (carry drops it on grab), so it
+      // cannot teleport on its own — carry re-pins it to the eye afterwards.
       const pos = posStore.get(id);
       const vel = velStore.get(id);
       if (!pos || !vel)

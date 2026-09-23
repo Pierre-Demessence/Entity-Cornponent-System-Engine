@@ -198,12 +198,13 @@ and — usefully — `modules/fsm`, `modules/behavior-tree`, and
 without a core change.
 
 **Missing.** The 3D stack above the value level. `transform`, `motion`,
-`collision`, and `kinematics` are all 2D; `modules/math-3d` now ships the
-`Vec3` / `Quat` primitives, but there is no `transform-3d`, no 3D broadphase
-and no mesh renderer. Per the ledger,
+`collision`, and `kinematics` are all 2D, and the 3D books so far cover only
+the lower half of a physics stack: `modules/math-3d` (`Vec3` / `Quat`),
+`modules/collision-3d` (shapes + narrowphase) and `modules/kinematics-3d` (the
+character controller). There is still no `transform-3d`, no 3D broadphase and
+no mesh renderer, so
 `platformer-3d`, `portal`, `doom`, and `starfighter` each hand-roll a
-three.js scene plus entity↔mesh sync; three of them also duplicate a 3D AABB
-solver and two a ray-vs-AABB test. Beyond that: no terrain or
+three.js scene plus entity↔mesh sync. Beyond that: no terrain or
 voxel system, no water or volumetric rendering, no navmesh, no world
 streaming, and no rigid bodies for the submersible.
 

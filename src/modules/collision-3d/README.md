@@ -109,8 +109,9 @@ first if you need depenetration. A zero-length motion never hits.
 ## Not included (by design)
 
 - **Capsules.** Canon for a character controller rather than for a general
-  narrowphase, and it belongs with `modules/kinematics-3d` — the module that
-  wants it.
+  narrowphase, so they wait for `modules/kinematics-3d`'s first capsule-bodied
+  consumer: the shape and its narrowphase land here, and that module adopts
+  them.
 - **Convex hulls, meshes, triangles.** A different layer: these need a
   triangle/barycentric primitive this module does not own.
 - **A broadphase or spatial index.** `modules/spatial` is the 2D answer;

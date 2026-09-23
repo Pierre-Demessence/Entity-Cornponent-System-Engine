@@ -4,16 +4,16 @@ import type { GameState } from '../game';
 
 import { rayVsAabb3 } from '@pierre/ecs/modules/collision-3d';
 
-import { HeldTag, Position3DDef, ShapeAabb3DDef, StaticBodyTag, Velocity3DDef } from '../components';
+import { DynamicBodyTag, HeldTag, Position3DDef, ShapeAabb3DDef, StaticBodyTag, Velocity3DDef } from '../components';
 import { CUBE_SIZE, GRAB_RANGE, HOLD_DIST, PLAYER_EYE } from '../game';
 import { forwardVec, localCoords, withinOpening } from './portal-math';
 
 /**
  * Cube carry. `E` grabs the cube when it's close and roughly in front; pressing
- * `E` again drops it. While held, the cube is tagged {@link HeldTag} (so the
- * physics + teleport systems leave it alone) and is pinned a fixed distance in
- * front of the eye each tick — including straight after a teleport, so it comes
- * through portals with you.
+ * `E` again drops it. While held, the cube is tagged {@link HeldTag} and gives
+ * up its {@link DynamicBodyTag}, so the physics system leaves it alone — it is
+ * pinned a fixed distance in front of the eye each tick, including straight
+ * after a teleport, so it comes through portals with you.
  */
 export const carrySystem: SchedulableSystem<GameState> = {
   name: 'carry',
@@ -25,6 +25,7 @@ export const carrySystem: SchedulableSystem<GameState> = {
     const posStore = ctx.world.getStore(Position3DDef);
     const velStore = ctx.world.getStore(Velocity3DDef);
     const heldTag = ctx.world.getTag(HeldTag);
+    const dynamicTag = ctx.world.getTag(DynamicBodyTag);
     const playerPos = posStore.get(ctx.playerId);
     const cubePos = posStore.get(ctx.cubeId);
     const cubeVel = velStore.get(ctx.cubeId);
@@ -40,6 +41,7 @@ export const carrySystem: SchedulableSystem<GameState> = {
     if (ctx.input.justPressed('grab')) {
       if (held) {
         heldTag.delete(ctx.cubeId);
+        dynamicTag.add(ctx.cubeId); // released — it falls again
         held = false;
       }
       else {
@@ -50,6 +52,7 @@ export const carrySystem: SchedulableSystem<GameState> = {
         const facing = dist > 1e-3 ? (dx * f.x + dy * f.y + dz * f.z) / dist : 1;
         if (dist <= GRAB_RANGE && facing > 0.2) {
           heldTag.add(ctx.cubeId);
+          dynamicTag.delete(ctx.cubeId); // held bodies are kinematic, not simulated
           held = true;
         }
       }
