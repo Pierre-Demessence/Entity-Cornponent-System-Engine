@@ -1,7 +1,8 @@
 import type { SchedulableSystem } from '@pierre/ecs';
-import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import type { GameState } from '../game';
+
+import { aabb3VsAabb3 } from '@pierre/ecs/modules/collision-3d';
 
 import {
   EnemyTag,
@@ -13,8 +14,6 @@ import {
   StaticBodyTag,
   Velocity3DDef,
 } from '../components';
-
-interface Box3 { d: number; h: number; w: number }
 
 /**
  * Advance every {@link ProjectileTag} along its velocity (straight flight, no
@@ -49,8 +48,15 @@ export const projectileSystem: SchedulableSystem<GameState> = {
       for (const eid of ctx.world.getTag(EnemyTag)) {
         const ep = posStore.get(eid);
         const eb = aabbStore.get(eid);
-        if (!ep || !eb || !overlaps(pos, box, ep, eb))
+        if (
+          !ep || !eb
+          || !aabb3VsAabb3(
+            { center: pos, half: { x: box.w / 2, y: box.h / 2, z: box.d / 2 } },
+            { center: ep, half: { x: eb.w / 2, y: eb.h / 2, z: eb.d / 2 } },
+          )
+        ) {
           continue;
+        }
         const h = healthStore.get(eid);
         if (h && h.hp <= 0)
           continue; // corpse pending despawn — pass through it
@@ -67,7 +73,13 @@ export const projectileSystem: SchedulableSystem<GameState> = {
         for (const sid of ctx.world.getTag(StaticBodyTag)) {
           const sp = posStore.get(sid);
           const sb = aabbStore.get(sid);
-          if (sp && sb && overlaps(pos, box, sp, sb)) {
+          if (
+            sp && sb
+            && aabb3VsAabb3(
+              { center: pos, half: { x: box.w / 2, y: box.h / 2, z: box.d / 2 } },
+              { center: sp, half: { x: sb.w / 2, y: sb.h / 2, z: sb.d / 2 } },
+            )
+          ) {
             consumed = true;
             break;
           }
@@ -79,9 +91,3 @@ export const projectileSystem: SchedulableSystem<GameState> = {
     }
   },
 };
-
-function overlaps(pa: Vec3, a: Box3, pb: Vec3, b: Box3): boolean {
-  return Math.abs(pa.x - pb.x) <= (a.w + b.w) / 2
-    && Math.abs(pa.y - pb.y) <= (a.h + b.h) / 2
-    && Math.abs(pa.z - pb.z) <= (a.d + b.d) / 2;
-}

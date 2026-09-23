@@ -3,6 +3,7 @@ import type { EntityId, SchedulableSystem } from '@pierre/ecs';
 import type { GameState } from '../game';
 
 import { makeTriggerSystem } from '@pierre/ecs/modules/collision';
+import { aabb3VsAabb3 } from '@pierre/ecs/modules/collision-3d';
 
 import {
   CoinTag,
@@ -12,31 +13,9 @@ import {
 } from '../components';
 import { despawn } from '../game';
 
-function overlaps3d(
-  ax: number,
-  ay: number,
-  az: number,
-  aw: number,
-  ah: number,
-  ad: number,
-  bx: number,
-  by: number,
-  bz: number,
-  bw: number,
-  bh: number,
-  bd: number,
-): boolean {
-  return (
-    Math.abs(ax - bx) < (aw + bw) / 2
-    && Math.abs(ay - by) < (ah + bh) / 2
-    && Math.abs(az - bz) < (ad + bd) / 2
-  );
-}
-
 /**
- * Player↔coin pickup. Brute-force pairs against the small `CoinTag`
- * set; narrowphase is a 3-axis center-based overlap test
- * (component-local because engine `aabbVsAabb` is 2D).
+ * Player↔coin pickup. Brute-force pairs against the small `CoinTag` set; the
+ * narrowphase is the engine's 3D box overlap.
  */
 export const pickupSystem: SchedulableSystem<GameState> = makeTriggerSystem<GameState>({
   name: 'pickup',
@@ -63,19 +42,9 @@ export const pickupSystem: SchedulableSystem<GameState> = makeTriggerSystem<Game
     const pa = aabbStore.get(player)!;
     const cp = posStore.get(coinId)!;
     const ca = aabbStore.get(coinId)!;
-    return overlaps3d(
-      pp.x,
-      pp.y,
-      pp.z,
-      pa.w,
-      pa.h,
-      pa.d,
-      cp.x,
-      cp.y,
-      cp.z,
-      ca.w,
-      ca.h,
-      ca.d,
+    return aabb3VsAabb3(
+      { center: pp, half: { x: pa.w / 2, y: pa.h / 2, z: pa.d / 2 } },
+      { center: cp, half: { x: ca.w / 2, y: ca.h / 2, z: ca.d / 2 } },
     );
   },
 });

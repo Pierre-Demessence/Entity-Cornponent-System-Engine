@@ -2,9 +2,11 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
+import { rayVsAabb3 } from '@pierre/ecs/modules/collision-3d';
+
 import { HeldTag, Position3DDef, ShapeAabb3DDef, StaticBodyTag, Velocity3DDef } from '../components';
 import { CUBE_SIZE, GRAB_RANGE, HOLD_DIST, PLAYER_EYE } from '../game';
-import { forwardVec, localCoords, rayAabb, withinOpening } from './portal-math';
+import { forwardVec, localCoords, withinOpening } from './portal-math';
 
 /**
  * Cube carry. `E` grabs the cube when it's close and roughly in front; pressing
@@ -67,7 +69,7 @@ export const carrySystem: SchedulableSystem<GameState> = {
         const a = aabbStore.get(sid);
         if (!c || !a)
           continue;
-        const hit = rayAabb(origin, f, c, { x: a.w / 2, y: a.h / 2, z: a.d / 2 });
+        const hit = rayVsAabb3(origin, f, { center: c, half: { x: a.w / 2, y: a.h / 2, z: a.d / 2 } });
         if (!hit)
           continue;
         const hx = origin.x + f.x * hit.t;

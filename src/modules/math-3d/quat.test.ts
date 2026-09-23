@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   QUAT_IDENTITY,
+  quatConjugate,
   quatForward,
   quatFromAxisAngle,
   quatMul,
@@ -27,6 +28,20 @@ describe('the QUAT_IDENTITY constant', () => {
     // Rotating by it changes nothing.
     const v = { x: 3, y: -4, z: 12 };
     expect(quatRotate(QUAT_IDENTITY, v)).toEqual(v);
+  });
+});
+
+describe('quatConjugate', () => {
+  it('negates the imaginary part and keeps the scalar part', () => {
+    expect(quatConjugate({ w: 1, x: 2, y: 3, z: 4 })).toEqual({ w: 1, x: -2, y: -3, z: -4 });
+  });
+
+  it('undoes a rotation when applied after it', () => {
+    const q = quatFromAxisAngle(Y, 0.7);
+    const back = quatRotate(quatConjugate(q), quatRotate(q, { x: 1, y: 2, z: 3 }));
+    expect(back.x).toBeCloseTo(1, 10);
+    expect(back.y).toBeCloseTo(2, 10);
+    expect(back.z).toBeCloseTo(3, 10);
   });
 });
 

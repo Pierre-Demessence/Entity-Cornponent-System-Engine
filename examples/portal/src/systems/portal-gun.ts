@@ -3,6 +3,7 @@ import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import type { GameState, Portal, PortalColor } from '../game';
 
+import { rayVsAabb3 } from '@pierre/ecs/modules/collision-3d';
 import { vec3Cross, vec3Normalize } from '@pierre/ecs/modules/math-3d';
 
 import { PortalableSurfaceTag, Position3DDef, ShapeAabb3DDef } from '../components';
@@ -13,7 +14,7 @@ import {
   PORTAL_SURFACE_OFFSET,
   PORTAL_W,
 } from '../game';
-import { forwardVec, rayAabb } from './portal-math';
+import { forwardVec } from './portal-math';
 
 type Axis = 'x' | 'y' | 'z';
 const AXES: readonly Axis[] = ['x', 'y', 'z'];
@@ -70,7 +71,7 @@ function nearestSurface(ctx: GameState, origin: Vec3, dir: Vec3): SurfaceHit | n
     if (!c || !a)
       continue;
     const half: Vec3 = { x: a.w / 2, y: a.h / 2, z: a.d / 2 };
-    const entry = rayAabb(origin, dir, c, half);
+    const entry = rayVsAabb3(origin, dir, { center: c, half });
     if (!entry || entry.t >= bestT)
       continue;
     bestT = entry.t;

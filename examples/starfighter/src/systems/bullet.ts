@@ -2,6 +2,8 @@ import type { EntityId, SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
+import { sphere3ContainsPoint, sphere3VsSphere3 } from '@pierre/ecs/modules/collision-3d';
+
 import { BulletDef, BulletTag, Position3DDef, RadiusDef, TargetTag, Velocity3DDef } from '../components';
 import { BOUNDS_RADIUS } from '../game';
 
@@ -35,7 +37,7 @@ export const bulletSystem: SchedulableSystem<GameState> = {
       pos.y += vel.vy * dt;
       pos.z += vel.vz * dt;
 
-      if (bullet.ttl <= 0 || Math.hypot(pos.x, pos.y, pos.z) > BOUNDS_RADIUS) {
+      if (bullet.ttl <= 0 || !sphere3ContainsPoint({ x: 0, y: 0, z: 0 }, BOUNDS_RADIUS, pos)) {
         ctx.world.queueDestroy(id);
         continue;
       }
@@ -47,8 +49,7 @@ export const bulletSystem: SchedulableSystem<GameState> = {
         const tr = radStore.get(tid);
         if (!tp || !tr)
           continue;
-        const reach = rad.r + tr.r;
-        if ((pos.x - tp.x) ** 2 + (pos.y - tp.y) ** 2 + (pos.z - tp.z) ** 2 <= reach * reach) {
+        if (sphere3VsSphere3(pos, rad.r, tp, tr.r)) {
           destroyed.add(tid);
           ctx.world.queueDestroy(tid);
           ctx.world.queueDestroy(id);

@@ -257,7 +257,6 @@ is attempted, and none is scheduled.
 |---|---|---|
 | `modules/transform-3d` | `Position3DDef {x,y,z}`, quaternion `Rotation3DDef`, `ScaleDef` | Bevy `Transform`, Unity, Godot `Node3D` |
 | `modules/motion-3d` | 3-vector velocity integrator + optional 3D bounds; free-flight attitude control (rate-steered orientation + throttle) | Bevy integrators |
-| `modules/collision-3d` | `ShapeAabb3Def`, `ShapeSphereDef`, optional `ShapeObbDef`; AABB3 / sphere / OBB narrowphase | Bevy `bevy_rapier3d`, PhysX primitives |
 | `modules/kinematics-3d` | Arcade 3D character controller — gravity + axis-separated resolution against statics | Unity `CharacterController`, Godot `CharacterBody3D` |
 | `modules/render-scene3d` | entity ↔ scene-object sync: create / update / reap by tag — the 3D analogue of `Canvas2DRenderer` | three.js scene graphs, Babylon `Scene` |
 | `modules/navmesh-3d` | Triangle-mesh navigation: bake, regions, links, agent-radius inflation. 2D sibling: `modules/navmesh` | Recast/Detour, Godot `NavigationRegion3D`, Unity `NavMesh` |
@@ -270,8 +269,8 @@ is attempted, and none is scheduled.
 similar). Until then, the 2D stack is the only stack. The gap ledger already
 records the duplicated work, which makes this the largest de-facto demand
 cluster in the file: **4 consumers** hand-roll the entity↔mesh sync
-(platformer-3d, portal, doom, starfighter), **3** the 3D AABB solver
-(platformer-3d, portal, doom), and **2** a ray-vs-AABB test.
+(platformer-3d, portal, doom, starfighter) and **3** the 3D AABB solver
+(platformer-3d, portal, doom).
 
 **Rules (re-affirmed from the shipped plan).**
 

@@ -1,6 +1,7 @@
 export {
   type Quat,
   QUAT_IDENTITY,
+  quatConjugate,
   quatForward,
   quatFromAxisAngle,
   quatMul,

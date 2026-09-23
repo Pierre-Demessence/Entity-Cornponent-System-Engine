@@ -3,6 +3,8 @@ import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import type { GameState } from '../game';
 
+import { rayVsAabb3 } from '@pierre/ecs/modules/collision-3d';
+
 import { EnemyTag, HealthDef, Position3DDef, ShapeAabb3DDef, StaticBodyTag } from '../components';
 import {
   HITSCAN_COOLDOWN_MS,
@@ -12,7 +14,7 @@ import {
   PROJECTILE_COOLDOWN_MS,
   spawnProjectile,
 } from '../game';
-import { forwardVec, rayAabb } from './math';
+import { forwardVec } from './math';
 
 /**
  * Player weapons, fired while {@link GameState.firing} (LMB) and gated by a
@@ -78,7 +80,7 @@ function fireHitscan(ctx: GameState, eye: Vec3, dir: Vec3): void {
     const b = aabbStore.get(sid);
     if (!p || !b)
       continue;
-    const hit = rayAabb(eye, dir, p, { x: b.w / 2, y: b.h / 2, z: b.d / 2 });
+    const hit = rayVsAabb3(eye, dir, { center: p, half: { x: b.w / 2, y: b.h / 2, z: b.d / 2 } });
     if (hit && hit.t < blockT)
       blockT = hit.t;
   }
@@ -94,7 +96,7 @@ function fireHitscan(ctx: GameState, eye: Vec3, dir: Vec3): void {
     const h = healthStore.get(id);
     if (h && h.hp <= 0)
       continue; // already killed this tick (pending despawn)
-    const hit = rayAabb(eye, dir, p, { x: b.w / 2, y: b.h / 2, z: b.d / 2 });
+    const hit = rayVsAabb3(eye, dir, { center: p, half: { x: b.w / 2, y: b.h / 2, z: b.d / 2 } });
     if (hit && hit.t < bestT) {
       bestT = hit.t;
       bestEnemy = id;

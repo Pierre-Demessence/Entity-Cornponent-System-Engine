@@ -22,6 +22,16 @@ export interface Quat { w: number; x: number; y: number; z: number }
 export const QUAT_IDENTITY: Quat = Object.freeze({ w: 1, x: 0, y: 0, z: 0 });
 
 /**
+ * The conjugate `(w, -x, -y, -z)` — the inverse rotation for a **unit**
+ * quaternion, and the cheapest way to undo one. A non-unit `q` would need a
+ * true `q⁻¹ = conjugate(q) / |q|²`, so normalise first; composing unit
+ * quaternions with `quatMul` keeps them unit, so the usual path never needs to.
+ */
+export function quatConjugate(q: Quat): Quat {
+  return { w: q.w, x: -q.x, y: -q.y, z: -q.z };
+}
+
+/**
  * The direction the local `-Z` axis points after applying `q` — the "forward"
  * of the right-handed convention (three.js, Bevy, Godot). Unity is left-handed
  * with a `+Z` forward, so a port to it needs a handedness mirror, not merely a

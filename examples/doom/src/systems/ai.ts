@@ -3,6 +3,7 @@ import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import type { GameState } from '../game';
 
+import { rayVsAabb3 } from '@pierre/ecs/modules/collision-3d';
 import { vec3Normalize } from '@pierre/ecs/modules/math-3d';
 
 import {
@@ -21,7 +22,6 @@ import {
   ENEMY_DETECT_RANGE,
   ENEMY_SPEED,
 } from '../game';
-import { rayAabb } from './math';
 
 interface Box3 { d: number; h: number; w: number }
 interface StaticBox { b: Box3; p: Vec3 }
@@ -117,7 +117,7 @@ export const aiSystem: SchedulableSystem<GameState> = {
 function inSight(from: Vec3, dist: number, dx: number, dy: number, dz: number, statics: StaticBox[]): boolean {
   const dir = vec3Normalize({ x: dx, y: dy, z: dz });
   for (const { b, p } of statics) {
-    const hit = rayAabb(from, dir, p, { x: b.w / 2, y: b.h / 2, z: b.d / 2 });
+    const hit = rayVsAabb3(from, dir, { center: p, half: { x: b.w / 2, y: b.h / 2, z: b.d / 2 } });
     if (hit && hit.t < dist - 0.5)
       return false;
   }
