@@ -13,6 +13,14 @@ import { bulletSystem, shipBoundsSystem, shipSystem, targetSystem, weaponSystem 
 
 const LOGIC_TICK_MS = 1000 / 60;
 
+// The canvas is a replaced element: `inset:0` alone does not stretch it, and
+// assigning `cssText` discards the explicit width/height `renderer.setSize`
+// writes — so it falls back to its intrinsic size (the drawing buffer, which
+// is device-pixel-ratio scaled), overflows the container, and drags the scene
+// centre (where the nose points) off the centred reticle. Sizing it in CSS
+// keeps the two aligned at any DPR.
+const CANVAS_STYLE = 'position:absolute;inset:0;width:100%;height:100%;display:block;cursor:none;';
+
 export function start(container: HTMLElement): () => void {
   container.innerHTML = '';
   container.style.position = 'relative';
@@ -26,7 +34,7 @@ export function start(container: HTMLElement): () => void {
   let { h, w } = sizeOf();
 
   const renderer = makeRenderer(w, h);
-  renderer.domElement.style.cssText = 'position:absolute;inset:0;display:block;cursor:none;';
+  renderer.domElement.style.cssText = CANVAS_STYLE;
   container.append(renderer.domElement);
 
   // Top HUD bar (score + controls hint), overlaid on the scene.
@@ -140,7 +148,7 @@ export function start(container: HTMLElement): () => void {
   const onResize = (): void => {
     ({ h, w } = sizeOf());
     renderer.resize(w, h);
-    renderer.domElement.style.cssText = 'position:absolute;inset:0;display:block;cursor:none;';
+    renderer.domElement.style.cssText = CANVAS_STYLE;
     ringRadius = Math.min(w, h) * 0.16;
     layoutRing();
   };
