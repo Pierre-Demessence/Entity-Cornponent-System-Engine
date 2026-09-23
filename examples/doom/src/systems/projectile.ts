@@ -3,6 +3,7 @@ import type { SchedulableSystem } from '@pierre/ecs';
 import type { GameState } from '../game';
 
 import { aabb3VsAabb3 } from '@pierre/ecs/modules/collision-3d';
+import { makeVelocityIntegration3DSystem } from '@pierre/ecs/modules/motion-3d';
 
 import {
   EnemyTag,
@@ -12,37 +13,42 @@ import {
   ProjectileTag,
   ShapeAabb3DDef,
   StaticBodyTag,
-  Velocity3DDef,
 } from '../components';
 
 /**
- * Advance every {@link ProjectileTag} along its velocity (straight flight, no
- * gravity), damaging the first enemy it overlaps, and despawning on an enemy
- * hit, a wall hit, or when its `ttl` runs out.
+ * Straight-line flight for {@link ProjectileTag} bodies (no gravity), scoped by
+ * tag so it never touches the kinematics-driven player/enemies. Runs after the
+ * weapon so a bolt spawned this tick also moves this tick.
+ */
+export const projectileMotionSystem: SchedulableSystem<GameState>
+  = makeVelocityIntegration3DSystem<GameState>({
+    name: 'projectile-motion',
+    runAfter: ['weapon'],
+    tag: ProjectileTag,
+  });
+
+/**
+ * Damage the first enemy each {@link ProjectileTag} overlaps and despawn it on
+ * an enemy hit, a wall hit, or when its `ttl` runs out. Motion is handled by
+ * {@link projectileMotionSystem}; this reads the already-integrated position.
  */
 export const projectileSystem: SchedulableSystem<GameState> = {
   name: 'projectile',
-  runAfter: ['weapon', 'kinematics3d'],
+  runAfter: ['projectile-motion', 'kinematics3d'],
   run(ctx) {
-    const dt = ctx.dtMs / 1000;
     const posStore = ctx.world.getStore(Position3DDef);
-    const velStore = ctx.world.getStore(Velocity3DDef);
     const aabbStore = ctx.world.getStore(ShapeAabb3DDef);
     const projStore = ctx.world.getStore(ProjectileDef);
     const healthStore = ctx.world.getStore(HealthDef);
 
     for (const id of ctx.world.getTag(ProjectileTag)) {
       const pos = posStore.get(id);
-      const vel = velStore.get(id);
       const proj = projStore.get(id);
       const box = aabbStore.get(id);
-      if (!pos || !vel || !proj || !box)
+      if (!pos || !proj || !box)
         continue;
 
       proj.ttl -= ctx.dtMs;
-      pos.x += vel.vx * dt;
-      pos.y += vel.vy * dt;
-      pos.z += vel.vz * dt;
 
       let consumed = false;
       for (const eid of ctx.world.getTag(EnemyTag)) {

@@ -3,12 +3,13 @@ import type { GameState, StarfighterAction, StarfighterEvent } from './game';
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { QUAT_IDENTITY } from '@pierre/ecs/modules/math-3d';
+import { makeVelocityIntegration3DSystem } from '@pierre/ecs/modules/motion-3d';
 import { makeSeededRng } from '@pierre/ecs/modules/rng';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import { AIM_DEADZONE, makeWorld, resetGame } from './game';
 import { makeRenderer } from './render';
-import { bulletSystem, shipSystem, targetSystem, weaponSystem } from './systems';
+import { bulletSystem, shipBoundsSystem, shipSystem, targetSystem, weaponSystem } from './systems';
 
 const LOGIC_TICK_MS = 1000 / 60;
 
@@ -151,6 +152,8 @@ export function start(container: HTMLElement): () => void {
   const scheduler = new Scheduler<GameState>()
     .add(shipSystem)
     .add(weaponSystem)
+    .add(makeVelocityIntegration3DSystem<GameState>({ name: 'motion', runAfter: ['weapon'] }))
+    .add(shipBoundsSystem)
     .add(bulletSystem)
     .add(targetSystem);
 

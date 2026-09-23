@@ -6,15 +6,14 @@ import { Position3DDef, TargetTag, Velocity3DDef } from '../components';
 import { BOUNDS_RADIUS, spawnTarget, TARGET_CAP, TARGET_RADIUS, TARGET_SPAWN_MS } from '../game';
 
 /**
- * Drifts each target drone along its velocity, bounces it off the spherical
- * boundary, and tops the field back up to {@link TARGET_CAP} on a timer so the
- * arena never empties out.
+ * Bounces each drifting target drone off the spherical boundary and tops the
+ * field back up to {@link TARGET_CAP} on a timer so the arena never empties
+ * out. Position is integrated by the shared `motion` system.
  */
 export const targetSystem: SchedulableSystem<GameState> = {
   name: 'target',
   runAfter: ['bullet'],
   run(ctx) {
-    const dt = ctx.dtMs / 1000;
     const posStore = ctx.world.getStore(Position3DDef);
     const velStore = ctx.world.getStore(Velocity3DDef);
 
@@ -23,10 +22,6 @@ export const targetSystem: SchedulableSystem<GameState> = {
       const vel = velStore.get(id);
       if (!pos || !vel)
         continue;
-
-      pos.x += vel.vx * dt;
-      pos.y += vel.vy * dt;
-      pos.z += vel.vz * dt;
 
       const limit = BOUNDS_RADIUS - TARGET_RADIUS;
       const dist = Math.hypot(pos.x, pos.y, pos.z);

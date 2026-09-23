@@ -1,4 +1,5 @@
 import type { EntityId } from '#entity-id';
+import type { TagDef } from '#index';
 import type { VelocityIntegrationTickCtx } from './motion';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -77,6 +78,20 @@ describe('makeVelocityIntegrationSystem', () => {
     sys.run({ ...ctx, dtMs: 0 });
 
     expect(ctx.world.getStore(PositionDef).get(id)).toEqual({ x: 10, y: 20 });
+  });
+
+  it('with a tag, integrates only tagged entities', () => {
+    const MovingTag: TagDef = { name: 'moving' };
+    ctx.world.registerTag(MovingTag);
+    const sys = makeVelocityIntegrationSystem<Ctx>({ tag: MovingTag });
+    const tagged = spawn(ctx.world, { x: 0, y: 0 }, { vx: 1, vy: 0 });
+    const untagged = spawn(ctx.world, { x: 0, y: 0 }, { vx: 1, vy: 0 });
+    ctx.world.getTag(MovingTag).add(tagged);
+
+    sys.run({ ...ctx, dtMs: 1000 });
+
+    expect(ctx.world.getStore(PositionDef).get(tagged)).toEqual({ x: 1, y: 0 });
+    expect(ctx.world.getStore(PositionDef).get(untagged)).toEqual({ x: 0, y: 0 });
   });
 
   describe('boundary: wrap', () => {

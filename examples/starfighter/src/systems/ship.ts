@@ -25,17 +25,16 @@ import {
  * central deadzone; the ship's angular velocity eases toward it so turns build
  * and settle over time rather than snapping. Roll is on A/D. Throttle (W/S)
  * accelerates the forward speed; the ship always flies along its own nose —
- * no strafing, no vertical thrust. Position is clamped to the spherical
- * boundary.
+ * no strafing, no vertical thrust. Position is integrated by `motion` and
+ * clamped to the spherical boundary by {@link shipBoundsSystem}.
  */
 export const shipSystem: SchedulableSystem<GameState> = {
   name: 'ship',
   run(ctx) {
     if (ctx.playerId == null)
       return;
-    const pos = ctx.world.getStore(Position3DDef).get(ctx.playerId);
     const vel = ctx.world.getStore(Velocity3DDef).get(ctx.playerId);
-    if (!pos || !vel)
+    if (!vel)
       return;
 
     const dt = ctx.dtMs / 1000;
@@ -65,14 +64,28 @@ export const shipSystem: SchedulableSystem<GameState> = {
       ctx.orientation = quatNormalize(quatMul(ctx.orientation, dq));
     }
 
-    // Velocity follows the nose (arcade flight); integrate position.
+    // Velocity follows the nose (arcade flight); `motion` integrates position.
     const fwd = quatForward(ctx.orientation);
     vel.vx = fwd.x * ctx.speed;
     vel.vy = fwd.y * ctx.speed;
     vel.vz = fwd.z * ctx.speed;
-    pos.x += vel.vx * dt;
-    pos.y += vel.vy * dt;
-    pos.z += vel.vz * dt;
+  },
+};
+
+/**
+ * Clamps the ship to the spherical play boundary after `motion` has integrated
+ * it, killing forward speed when it drives into the wall.
+ */
+export const shipBoundsSystem: SchedulableSystem<GameState> = {
+  name: 'ship-bounds',
+  runAfter: ['motion'],
+  run(ctx) {
+    if (ctx.playerId == null)
+      return;
+    const pos = ctx.world.getStore(Position3DDef).get(ctx.playerId);
+    const vel = ctx.world.getStore(Velocity3DDef).get(ctx.playerId);
+    if (!pos || !vel)
+      return;
 
     const limit = BOUNDS_RADIUS - SHIP_RADIUS;
     const dist = Math.hypot(pos.x, pos.y, pos.z);

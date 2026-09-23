@@ -202,6 +202,34 @@ with a computed direction, Godot `Area2D` gravity point).
 
 </details>
 
+### `modules/motion-3d` V2 — attitude control + non-box bounds — deferred
+
+**Scope.** Two shapes V1 deliberately left out: **free-flight attitude control**
+(rate-steered quaternion orientation + a throttle scalar driving velocity along
+the facing vector) and **non-box world bounds** (a spherical clamp / bounce, as
+distinct from V1's axis-aligned `Bounds3D`).
+
+<details>
+<summary>Details</summary>
+
+**Trigger.** A second consumer for either. `examples/starfighter` is the only
+one for both: it steers `orientation: Quat` by an angular-rate vector eased
+toward an input target and integrates it with `quatFromAxisAngle`/`quatMul`
+(`examples/starfighter/src/systems/ship.ts`), and clamps/bounces bodies against
+a sphere (`ship.ts` `shipBoundsSystem`, `target.ts`). Both are stored in
+GameState, not components, and are a single-consumer opinionated shape.
+
+**Why not V1.** Neither is an engine-canon *motion primitive* — Unity / Godot /
+Unreal ship velocity integration and playfield bounds, but a "free-flight
+controller" and a "spherical arena bound" are game-specific things each title
+builds. Velocity integration (V1) is the unanimous-canon part; these wait for a
+second consumer to prove the shape.
+
+**Canon.** Free-flight attitude: Elite / No Man's Sky flight models (game-side).
+Spherical bounds: game-specific; the canonical engine bound is a box (shipped).
+
+</details>
+
 ### `modules/input` event-mode variant — deferred
 
 **Scope.** Event-driven action dispatch for turn-based games (single
@@ -280,7 +308,6 @@ have not pulled in yet.
 
 | Module | Shape | Canon |
 |---|---|---|
-| `modules/motion-3d` | 3-vector velocity integrator + optional 3D bounds; free-flight attitude control (rate-steered orientation + throttle) | Bevy integrators |
 | `modules/render-scene3d` | entity ↔ scene-object sync: create / update / reap by tag — the 3D analogue of `Canvas2DRenderer` | three.js scene graphs, Babylon `Scene` |
 | `modules/navmesh-3d` | Triangle-mesh navigation: bake, regions, links, agent-radius inflation. 2D sibling: `modules/navmesh` | Recast/Detour, Godot `NavigationRegion3D`, Unity `NavMesh` |
 | `modules/render-webgl` | `Renderer<TCtx>` implementation backed by WebGL | three.js, Babylon |
@@ -290,9 +317,9 @@ have not pulled in yet.
 **Trigger for the whole group.** A scoped 3D prototype (matches the
 [prototype ladder](../archived/prototype-games-roadmap.md) — 3D platformer or
 similar), and it has fired: `modules/math-3d`, `modules/collision-3d`,
-`modules/kinematics-3d` and `modules/transform-3d` all shipped this way, each
-replacing a hand-rolled duplicate. What is left above is dominated by one
-duplication — **4 consumers**
+`modules/kinematics-3d`, `modules/transform-3d` and `modules/motion-3d` all
+shipped this way, each replacing a hand-rolled duplicate. What is left above is
+dominated by one duplication — **4 consumers**
 hand-roll the three.js entity↔mesh sync (platformer-3d, portal, doom,
 starfighter) — which makes it the largest de-facto demand cluster in the file.
 
@@ -1143,6 +1170,7 @@ signal's absence from this table means it already produced a module.
 | Prototype needing slopes or one-way platforms | `modules/kinematics` V2 / `modules/kinematics-3d` V2 |
 | Frame-rate-independent physics determinism | `modules/tick` V2 |
 | A second radial-gravity consumer | `modules/motion` V2 |
+| A second consumer needing free-flight attitude control or spherical bounds | `modules/motion-3d` V2 |
 | A game about darkness or light | `modules/lighting` (speculative) |
 | A prototype needing a mirror, monitor, in-world screen, or minimap (RTT surface) | `modules/render-target` |
 | A 2D game whose obstacles aren't grid-aligned, or a world too large for a grid | `modules/navmesh` (speculative) |

@@ -392,6 +392,13 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`VelocityIntegrationOptions`** _(interface)_ — —
 - **`VelocityIntegrationTickCtx`** _(interface)_ — —
 
+### `@pierre/ecs/modules/motion-3d`
+- **`Bounds3D`** _(interface)_ — —
+- **`makeVelocityIntegration3DSystem`** _(fn)_ — —
+- **`VelocityIntegration3DBoundary`** _(type)_ — Boundary behavior when a moving entity's position leaves `[0, width) x [0, height) x [0, depth)` after integration. The 3D sibling of the...
+- **`VelocityIntegration3DOptions`** _(interface)_ — —
+- **`VelocityIntegration3DTickCtx`** _(interface)_ — —
+
 ### `@pierre/ecs/modules/noise`
 - **`fbm1D`** _(fn)_ — Fractal Brownian motion, 1D: octaves of `source` summed at growing frequency and shrinking amplitude, normalized by the summed **absolute...
 - **`Fbm1DOptions`** _(interface)_ — Fractal options for `fbm1D`.

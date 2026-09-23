@@ -29,6 +29,7 @@ interface VelocityIntegrationOptions<TCtx extends VelocityIntegrationTickCtx> {
   name?: string;
   runAfter?: string[];
   boundary?: VelocityIntegrationBoundary;
+  tag?: TagDef; // integrate only entities carrying this tag (Bevy `With<T>`)
   onMove?: (
     ctx: TCtx,
     id: EntityId,

@@ -17,7 +17,7 @@ import {
   ROCKET_AMMO_START,
 } from './game';
 import { makeRenderer } from './render';
-import { aiSystem, elevatorSystem, inputSystem, kinematics3dSystem, pickupSystem, projectileSystem, weaponSystem } from './systems';
+import { aiSystem, elevatorSystem, inputSystem, kinematics3dSystem, pickupSystem, projectileMotionSystem, projectileSystem, weaponSystem } from './systems';
 
 const LOGIC_TICK_MS = 1000 / 60;
 const WIDTH = 800;
@@ -140,6 +140,7 @@ export function start(container: HTMLElement): () => void {
     .add(aiSystem)
     .add(elevatorSystem)
     .add(kinematics3dSystem)
+    .add(projectileMotionSystem)
     .add(projectileSystem)
     .add(pickupSystem);
 
