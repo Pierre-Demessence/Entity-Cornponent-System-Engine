@@ -280,7 +280,6 @@ have not pulled in yet.
 
 | Module | Shape | Canon |
 |---|---|---|
-| `modules/transform-3d` | `Position3DDef {x,y,z}`, quaternion `Rotation3DDef`, `ScaleDef` | Bevy `Transform`, Unity, Godot `Node3D` |
 | `modules/motion-3d` | 3-vector velocity integrator + optional 3D bounds; free-flight attitude control (rate-steered orientation + throttle) | Bevy integrators |
 | `modules/render-scene3d` | entity ↔ scene-object sync: create / update / reap by tag — the 3D analogue of `Canvas2DRenderer` | three.js scene graphs, Babylon `Scene` |
 | `modules/navmesh-3d` | Triangle-mesh navigation: bake, regions, links, agent-radius inflation. 2D sibling: `modules/navmesh` | Recast/Detour, Godot `NavigationRegion3D`, Unity `NavMesh` |
@@ -290,9 +289,10 @@ have not pulled in yet.
 
 **Trigger for the whole group.** A scoped 3D prototype (matches the
 [prototype ladder](../archived/prototype-games-roadmap.md) — 3D platformer or
-similar), and it has fired: `modules/math-3d`, `modules/collision-3d` and
-`modules/kinematics-3d` all shipped this way, each replacing a hand-rolled
-duplicate. What is left above is dominated by one duplication — **4 consumers**
+similar), and it has fired: `modules/math-3d`, `modules/collision-3d`,
+`modules/kinematics-3d` and `modules/transform-3d` all shipped this way, each
+replacing a hand-rolled duplicate. What is left above is dominated by one
+duplication — **4 consumers**
 hand-roll the three.js entity↔mesh sync (platformer-3d, portal, doom,
 starfighter) — which makes it the largest de-facto demand cluster in the file.
 

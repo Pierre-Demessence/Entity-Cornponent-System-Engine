@@ -25,7 +25,10 @@ Entities without the component render at 1:1.
 
 Data-only module. No systems. A velocity integrator ships separately in
 `@pierre/ecs/modules/motion` (M2) so games that only need static
-positions don't carry motion logic.
+positions don't carry motion logic. `VelocityDef` is the *data*; only the
+integrator lives in `motion`. Whether the velocity data itself belongs here or
+in `motion` is unsettled — if it moves, it moves for both `transform` and
+`transform-3d` in one pass so the two dimensions stay aligned.
 
 ## Usage
 
@@ -39,9 +42,9 @@ world.getStore(VelocityDef).set(id, { vx: 1, vy: 0 });
 
 ## Scope
 
-2D only. `angle` is a scalar in radians (no quaternions). For 3D, a
-sibling `@pierre/ecs/modules/transform-3d` will ship with `Position3D`
-(`{x,y,z}`) and a quaternion `Rotation3D`. See
+2D only. `angle` is a scalar in radians (no quaternions). For 3D, the
+sibling `@pierre/ecs/modules/transform-3d` ships `Position3D` (`{x,y,z}`),
+`Velocity3D`, a quaternion `Rotation3D`, and `Scale3D`. See
 [docs/plans/ecs-2d-engine-modules.md](../../../../docs/plans/ecs-2d-engine-modules.md)
 for the parallel-module strategy.
 

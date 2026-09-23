@@ -1,17 +1,14 @@
 import type { ComponentDef, TagDef } from '@pierre/ecs';
-import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import { simpleComponent } from '@pierre/ecs';
 
-/** The 3D position payload: the engine's `Vec3` under the component's own name. */
-export type Position3D = Vec3;
-export interface Velocity3D { vx: number; vy: number; vz: number }
-/** Full extents (not half) along X/Y/Z. AABBs are center-based. */
 // Full extents (not half) along X/Y/Z, centre-based: the engine's shape under
 // this game's own name.
 export { type ShapeAabb3 as ShapeAabb3D, ShapeAabb3Def as ShapeAabb3DDef } from '@pierre/ecs/modules/collision-3d';
 /** Ground contact: the engine's `Grounded3` under this game's own name. */
 export { type Grounded3 as Grounded, Grounded3Def as GroundedDef } from '@pierre/ecs/modules/kinematics-3d';
+/** Position + velocity: the engine's 3D transform components under this game's names. */
+export { type Position3D, Position3DDef, type Velocity3D, Velocity3DDef } from '@pierre/ecs/modules/transform-3d';
 /** A platform that oscillates on Y between `minY` and `maxY`. `dir` is ±1. */
 export interface Elevator { dir: number; maxY: number; minY: number; speed: number }
 /** Per-entity render colour (hex), so surfaces read distinctly by role. */
@@ -26,16 +23,6 @@ export interface Billboard { sprite: number }
 export interface Projectile { damage: number; ttl: number }
 /** A floor pickup. `kind`: 0 health, 1 hitscan ammo, 2 rocket ammo. */
 export interface Pickup { amount: number; kind: number }
-
-export const Position3DDef: ComponentDef<Position3D> = simpleComponent<Position3D>(
-  'position3d',
-  { x: 'number', y: 'number', z: 'number' },
-);
-
-export const Velocity3DDef: ComponentDef<Velocity3D> = simpleComponent<Velocity3D>(
-  'velocity3d',
-  { vx: 'number', vy: 'number', vz: 'number' },
-);
 
 export const ElevatorDef: ComponentDef<Elevator> = simpleComponent<Elevator>(
   'elevator',

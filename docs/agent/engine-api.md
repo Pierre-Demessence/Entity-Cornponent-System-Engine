@@ -582,6 +582,16 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`Velocity`** _(interface)_ — —
 - **`VelocityDef`** _(const)_ — —
 
+### `@pierre/ecs/modules/transform-3d`
+- **`Position3D`** _(type)_ — The 3D position payload: the engine's `Vec3` under the transform name.
+- **`Position3DDef`** _(const)_ — —
+- **`Rotation3D`** _(type)_ — The 3D orientation payload: the engine's `Quat` (scalar `w` first) under the transform name. The 3D counterpart of the 2D `RotationDef`'s...
+- **`Rotation3DDef`** _(const)_ — —
+- **`Scale3D`** _(interface)_ — Per-axis scale multiplier — the 3D sibling of the 2D `Scale` `{x, y}`.
+- **`Scale3DDef`** _(const)_ — —
+- **`Velocity3D`** _(interface)_ — —
+- **`Velocity3DDef`** _(const)_ — —
+
 ### `@pierre/ecs/modules/turn-based`
 - **`TurnCycler`** _(class)_ — Round-robin active-turn cycler for turn-based games. Parameterized by the `controlled` tag (which entities take turns) and the `activeTur...
 - **`TurnCyclerTags`** _(interface)_ — Tag defs the cycler reads & writes. `controlled` is the "whose turn is it" population; `activeTurn` marks the current actor; `cameraTarge...

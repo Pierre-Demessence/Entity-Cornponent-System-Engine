@@ -1,24 +1,12 @@
 import type { ComponentDef, TagDef } from '@pierre/ecs';
-import type { Vec3 } from '@pierre/ecs/modules/math-3d';
 
 import { simpleComponent } from '@pierre/ecs';
 
-/** The 3D position payload: the engine's `Vec3` under the component's own name. */
-export type Position3D = Vec3;
-export interface Velocity3D { vx: number; vy: number; vz: number }
+/** Position + velocity: the engine's 3D transform components under this game's names. */
+export { type Position3D, Position3DDef, type Velocity3D, Velocity3DDef } from '@pierre/ecs/modules/transform-3d';
 export interface Radius { r: number }
 export interface Target { hp: number }
 export interface Bullet { ttl: number }
-
-export const Position3DDef: ComponentDef<Position3D> = simpleComponent<Position3D>(
-  'position3d',
-  { x: 'number', y: 'number', z: 'number' },
-);
-
-export const Velocity3DDef: ComponentDef<Velocity3D> = simpleComponent<Velocity3D>(
-  'velocity3d',
-  { vx: 'number', vy: 'number', vz: 'number' },
-);
 
 export const RadiusDef: ComponentDef<Radius> = simpleComponent<Radius>(
   'radius',
