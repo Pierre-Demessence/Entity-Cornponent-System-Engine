@@ -1,6 +1,6 @@
-import type { Vec2 } from '../motion';
+import type { Vec2 } from '../math';
 
-import { normalize, scaleToSpeed } from '../motion';
+import { vec2Normalize, vec2ScaleToLength } from '../math';
 
 /**
  * A neighbour as steering sees it: a plain position + velocity pair.
@@ -34,7 +34,7 @@ export function truncate(v: Vec2, max: number): Vec2 {
  * — the flocking-quality difference over "just set velocity = desired".
  */
 function steer(dirX: number, dirY: number, maxSpeed: number, vel: Vec2): Vec2 {
-  const desired = scaleToSpeed(dirX, dirY, maxSpeed);
+  const desired = vec2ScaleToLength({ x: dirX, y: dirY }, maxSpeed);
   return { x: desired.x - vel.x, y: desired.y - vel.y };
 }
 
@@ -111,7 +111,7 @@ export interface WanderParams {
 export function wander(vel: Vec2, state: WanderState, params: WanderParams, maxSpeed: number): Vec2 {
   const rand = params.random ?? Math.random;
   state.angle += (rand() * 2 - 1) * params.jitter;
-  const heading = normalize(vel.x, vel.y);
+  const heading = vec2Normalize(vel);
   const hx = heading.x === 0 && heading.y === 0 ? 1 : heading.x;
   const hy = heading.x === 0 && heading.y === 0 ? 0 : heading.y;
   const headingAngle = Math.atan2(hy, hx);

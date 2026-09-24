@@ -2,7 +2,7 @@ import type { GameState, StarfighterAction, StarfighterEvent } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
-import { QUAT_IDENTITY } from '@pierre/ecs/modules/math-3d';
+import { QUAT_IDENTITY } from '@pierre/ecs/modules/math';
 import { makeVelocityIntegration3DSystem } from '@pierre/ecs/modules/motion-3d';
 import { makeSeededRng } from '@pierre/ecs/modules/rng';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';

@@ -19,7 +19,7 @@ const Scale3DDef: ComponentDef<Scale3D>;
 ```
 
 `Position3D` and `Rotation3D` reuse `Vec3` and `Quat` from
-`@pierre/ecs/modules/math-3d` (type-only dependency — the only module this one
+`@pierre/ecs/modules/math` (type-only dependency — the only module this one
 imports from), so the vector and quaternion helpers there apply directly.
 `Rotation3D`'s conventional default is `QUAT_IDENTITY`; an entity without the
 component is unrotated, and one without `Scale3D` renders at 1:1.

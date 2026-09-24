@@ -200,7 +200,7 @@ without a core change.
 
 **Missing.** The 3D stack above the value level. `transform`, `motion`,
 `collision`, and `kinematics` are all 2D, and the 3D books so far cover only
-the lower half of a physics stack: `modules/math-3d` (`Vec3` / `Quat`),
+the lower half of a physics stack: `modules/math` (`Vec3` / `Quat`),
 `modules/collision-3d` (shapes + narrowphase) and `modules/kinematics-3d` (the
 character controller). There is still no `transform-3d`, no 3D broadphase and
 no mesh renderer, so

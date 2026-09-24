@@ -17,7 +17,7 @@ itself. Returning the *force* is what lets multiple behaviours blend with
 momentum — the flocking-quality difference over "just set
 `velocity = dir × speed`". The constant-speed snap case (an enemy that
 instantly points at the player) is the degenerate form and is already
-covered by `motion`'s `scaleToSpeed`; reach for steering when you want
+covered by `math`'s `vec2ScaleToLength`; reach for steering when you want
 **smoothed** or **composed** motion.
 
 Per-tick application (what the consumer does):
@@ -34,7 +34,7 @@ vel = truncate({ x: vel.x + accel.x * dt, y: vel.y + accel.y * dt }, maxSpeed);
 ## API
 
 ```ts
-interface Vec2 { x: number; y: number } // re-used from modules/motion
+interface Vec2 { x: number; y: number } // re-used from modules/math
 interface Neighbor { position: Vec2; velocity: Vec2 }
 interface WeightedForce { force: Vec2; weight: number }
 interface WanderState { angle: number }
@@ -66,10 +66,10 @@ function truncate(v: Vec2, max): Vec2
   component stores. The consumer builds neighbour arrays from its own
   spatial index (e.g. `ContinuousHashGrid2D.queryNear`) and adapts its
   `VelocityDef {vx, vy}` to `Vec2 {x, y}` at the call boundary.
-- **Cross-module dependency.** Imports `normalize` / `scaleToSpeed` /
-  `Vec2` from `@pierre/ecs/modules/motion` (same pattern as
+- **Cross-module dependency.** Imports `vec2Normalize` / `vec2ScaleToLength` /
+  `Vec2` from `@pierre/ecs/modules/math` (same pattern as
   `collision → math`). No other module dependency.
 - **Zero-neighbour safety.** The flocking behaviours return the zero
-  vector when the neighbour list is empty; `normalize` / `scaleToSpeed`
-  return zero for a zero-length input, so degenerate inputs never produce
-  `NaN`.
+  vector when the neighbour list is empty; `vec2Normalize` /
+  `vec2ScaleToLength` return zero for a zero-length input, so degenerate inputs
+  never produce `NaN`.

@@ -1,9 +1,9 @@
 import type { SchedulableSystem } from '@pierre/ecs';
-import type { Vec3 } from '@pierre/ecs/modules/math-3d';
+import type { Vec3 } from '@pierre/ecs/modules/math';
 
 import type { GameState } from '../game';
 
-import { quatForward, quatFromAxisAngle, quatMul, quatNormalize } from '@pierre/ecs/modules/math-3d';
+import { quatForward, quatFromAxisAngle, quatMul, quatNormalize } from '@pierre/ecs/modules/math';
 
 import { Position3DDef, Velocity3DDef } from '../components';
 import {

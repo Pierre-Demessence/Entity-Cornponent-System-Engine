@@ -1,10 +1,10 @@
-import type { Quat, Vec3 } from '../math-3d';
+import type { Quat, Vec3 } from '../math';
 import type { Aabb3 } from './narrowphase3';
 import type { Obb3 } from './obb3';
 
 import { describe, expect, it } from 'vitest';
 
-import { quatFromAxisAngle } from '../math-3d';
+import { quatFromAxisAngle } from '../math';
 import { aabb3VsAabb3 } from './narrowphase3';
 import { aabb3VsObb3, obb3VsObb3, obb3VsSphere3, rayVsObb3 } from './obb3';
 

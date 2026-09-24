@@ -15,7 +15,7 @@
  * involving a sphere uses `<=` (touching counts), and containment is inclusive.
  */
 
-import type { Vec3 } from '../math-3d';
+import type { Vec3 } from '../math';
 
 import { clamp } from '../math';
 

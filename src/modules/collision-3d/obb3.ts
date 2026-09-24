@@ -13,10 +13,10 @@
  * code as the single source of truth for the slab maths.
  */
 
-import type { Quat, Vec3 } from '../math-3d';
+import type { Quat, Vec3 } from '../math';
 import type { Aabb3, RayHit3 } from './narrowphase3';
 
-import { quatConjugate, quatRotate, vec3Cross, vec3Dot, vec3Length, vec3Normalize } from '../math-3d';
+import { quatConjugate, quatRotate, vec3Cross, vec3Dot, vec3Length, vec3Normalize } from '../math';
 import { aabb3VsSphere3, rayVsAabb3 } from './narrowphase3';
 
 /** A world-space oriented box: centre, **half** extents, and its rotation. */

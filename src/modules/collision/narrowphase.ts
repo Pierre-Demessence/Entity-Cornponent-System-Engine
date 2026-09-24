@@ -9,12 +9,12 @@
  * - Circles: centre is `{x,y}`; radius is scalar.
  */
 
+import type { Vec2 } from '../math';
+
 import { clamp } from '../math';
 
-export interface Vec2 {
-  x: number;
-  y: number;
-}
+/** Re-exported from `modules/math` so collision callers share one vector type. */
+export type { Vec2 };
 
 export interface Aabb {
   h: number;

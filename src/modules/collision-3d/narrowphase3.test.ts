@@ -1,4 +1,4 @@
-import type { Vec3 } from '../math-3d';
+import type { Vec3 } from '../math';
 import type { Aabb3, Plane3 } from './narrowphase3';
 
 import { describe, expect, it } from 'vitest';

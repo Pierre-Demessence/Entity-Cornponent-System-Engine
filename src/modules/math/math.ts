@@ -2,8 +2,9 @@
  * Pure scalar-math helpers — the engine's `Mathf` / Godot `Math*` equivalent.
  *
  * Every function is a domain-free, dependency-free pure number op, safe for any
- * module or app to import. Vector helpers live with `modules/motion` (`vec`);
- * this module is scalars only.
+ * module or app to import. This file is the module's scalar block; the `Vec2`,
+ * `Vec3` and `Quat` blocks sit beside it in `vec2.ts`, `vec3.ts` and `quat.ts`,
+ * since no engine splits its math layer by dimension.
  */
 
 /** Constrain `value` to the inclusive range `[min, max]`. */

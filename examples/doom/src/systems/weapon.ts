@@ -1,5 +1,5 @@
 import type { SchedulableSystem } from '@pierre/ecs';
-import type { Vec3 } from '@pierre/ecs/modules/math-3d';
+import type { Vec3 } from '@pierre/ecs/modules/math';
 
 import type { GameState } from '../game';
 

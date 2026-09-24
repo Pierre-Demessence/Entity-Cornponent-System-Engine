@@ -12,3 +12,36 @@ export {
   smoothstep,
   wrap,
 } from './math';
+export {
+  type Quat,
+  QUAT_IDENTITY,
+  quatConjugate,
+  quatForward,
+  quatFromAxisAngle,
+  quatMul,
+  quatNormalize,
+  quatRotate,
+  quatSlerp,
+  quatUp,
+} from './quat';
+export { type Vec2, vec2MoveToward, vec2Normalize, vec2ScaleToLength } from './vec2';
+export {
+  type Vec3,
+  vec3Add,
+  vec3AddScaled,
+  vec3ClampLength,
+  vec3Cross,
+  vec3Distance,
+  vec3Dot,
+  vec3Length,
+  vec3LengthSq,
+  vec3Lerp,
+  vec3MoveToward,
+  vec3Negate,
+  vec3Normalize,
+  vec3RandomUnit,
+  vec3Reflect,
+  vec3Scale,
+  vec3ScaleToLength,
+  vec3Sub,
+} from './vec3';

@@ -1,6 +1,6 @@
 import type { ComponentDef, EntityId, SchedulableSystem, TagDef } from '#index';
 import type { Aabb3 } from '../collision-3d/narrowphase3';
-import type { Vec3 } from '../math-3d/vec3';
+import type { Vec3 } from '../math';
 
 import { aabb3VsAabb3 } from '../collision-3d/narrowphase3';
 import { ShapeAabb3Def } from '../collision-3d/shape-aabb3';

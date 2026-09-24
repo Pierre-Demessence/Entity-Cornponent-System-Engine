@@ -2,7 +2,7 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
-import { quatForward } from '@pierre/ecs/modules/math-3d';
+import { quatForward } from '@pierre/ecs/modules/math';
 
 import { Position3DDef, Velocity3DDef } from '../components';
 import { BULLET_SPEED, FIRE_COOLDOWN_MS, MUZZLE_OFFSET, spawnBullet } from '../game';

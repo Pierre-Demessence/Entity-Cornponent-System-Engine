@@ -1,6 +1,6 @@
 import type { EntityId, SchedulableSystem } from '@pierre/ecs';
 import type { Aabb3 } from '@pierre/ecs/modules/collision-3d';
-import type { Vec3 } from '@pierre/ecs/modules/math-3d';
+import type { Vec3 } from '@pierre/ecs/modules/math';
 
 import type { GameState } from '../game';
 

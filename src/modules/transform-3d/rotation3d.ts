@@ -1,5 +1,5 @@
 import type { ComponentDef } from '#index';
-import type { Quat } from '../math-3d';
+import type { Quat } from '../math';
 
 import { simpleComponent } from '#index';
 
@@ -7,7 +7,7 @@ import { simpleComponent } from '#index';
  * The 3D orientation payload: the engine's `Quat` (scalar `w` first) under the
  * transform name. The 3D counterpart of the 2D `RotationDef`'s scalar `angle` —
  * a quaternion is the canonical way to store a 3-axis attitude without gimbal
- * lock. The conventional default is `QUAT_IDENTITY` from `../math-3d`; an
+ * lock. The conventional default is `QUAT_IDENTITY` from `../math`; an
  * entity without the component is unrotated.
  */
 export type Rotation3D = Quat;

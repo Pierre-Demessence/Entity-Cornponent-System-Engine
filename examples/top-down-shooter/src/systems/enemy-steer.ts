@@ -2,7 +2,7 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
-import { scaleToSpeed } from '@pierre/ecs/modules/motion';
+import { vec2ScaleToLength } from '@pierre/ecs/modules/math';
 
 import { EnemyTag, PositionDef, VelocityDef } from '../components';
 import { ENEMY_SPEED } from '../game';
@@ -38,7 +38,7 @@ export const enemySteerSystem: SchedulableSystem<GameState> = {
         vel.vy = 0;
         continue;
       }
-      const v = scaleToSpeed(dx, dy, ENEMY_SPEED);
+      const v = vec2ScaleToLength({ x: dx, y: dy }, ENEMY_SPEED);
       vel.vx = v.x;
       vel.vy = v.y;
     }

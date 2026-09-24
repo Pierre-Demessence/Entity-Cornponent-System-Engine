@@ -1,6 +1,6 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
-import type { Vec3 } from '@pierre/ecs/modules/math-3d';
+import type { Vec3 } from '@pierre/ecs/modules/math';
 
 import { EcsWorld } from '@pierre/ecs';
 

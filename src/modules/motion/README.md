@@ -69,46 +69,9 @@ scheduler.add(motion);
 
 ## Vector helpers
 
-Pure, allocation-returning 2D vector utilities. No ECS coupling — they
-operate on bare `(x, y)` number pairs so they work for velocities,
-steering deltas, input axes, or any direction vector.
-
-```ts
-interface Vec2 { x: number; y: number }
-
-function normalize(x: number, y: number): Vec2;            // unit vector; (0,0) → (0,0)
-function scaleToSpeed(x: number, y: number, speed: number): Vec2; // length === speed; (0,0) → (0,0)
-function moveToward(current: Vec2, target: Vec2, delta: number): Vec2; // ≤ delta toward target; never overshoots
-```
-
-`scaleToSpeed` is the canonical "normalize then multiply" used to drive a
-body at a fixed speed from an arbitrary direction — a WASD input axis
-(diagonals don't go faster), a seek/steer delta toward a target, or a
-reflected ball velocity. A zero-length input has no direction, so both
-`normalize` and `scaleToSpeed` return `{ x: 0, y: 0 }` instead of `NaN`;
-supply a fallback direction yourself if you need one.
-
-`moveToward` is the constant-speed step toward a point: it advances `delta`
-along the straight line and lands *exactly* on the target rather than stepping
-past it, so a repeated call converges and stays. `delta` is **signed**, as in
-Unity and Godot — a negative one walks *away* from the target, and `0` leaves
-the position unchanged.
-
-Canon: Unity `Vector2.normalized` / `Vector2.MoveTowards`, Godot
-`Vector2.normalized()` / `limit_length()` / `move_toward()`, Bevy
-`Vec2::normalize_or_zero`, Unreal `FMath::VInterpConstantTo`.
-
-```ts
-import { moveToward, scaleToSpeed } from '@pierre/ecs/modules/motion';
-
-const v = scaleToSpeed(dx, dy, PLAYER_SPEED);
-vel.vx = v.x;
-vel.vy = v.y;
-
-const next = moveToward({ x: pos.x, y: pos.y }, waypoint, CHASE_SPEED * dtSeconds);
-pos.x = next.x;
-pos.y = next.y;
-```
+Vector helpers do **not** live here. `@pierre/ecs/modules/math` owns the `Vec2`,
+`Vec3` and `Quat` blocks (`vec2Normalize`, `vec2ScaleToLength`,
+`vec2MoveToward`, `vec3*`, `quat*`) — this module is the integrator only.
 
 ## Scope
 
@@ -122,8 +85,8 @@ pos.y = next.y;
   second consumer converges on one.
 - No acceleration term, gravity, or collision — those belong in
   `modules/kinematics`.
-- The 3D sibling `vec3MoveToward` ships in `@pierre/ecs/modules/math-3d`; the
-  two must agree on every degenerate case.
+- Vector maths used to integrate (`vec2ScaleToLength`, `vec2MoveToward`) comes
+  from `@pierre/ecs/modules/math`.
 - `onMove` is the only extension point. Games that need per-entity
   enable/disable either remove the `VelocityDef` component or set
   `(vx, vy)` to `(0, 0)`.

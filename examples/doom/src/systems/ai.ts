@@ -1,10 +1,10 @@
 import type { SchedulableSystem } from '@pierre/ecs';
-import type { Vec3 } from '@pierre/ecs/modules/math-3d';
+import type { Vec3 } from '@pierre/ecs/modules/math';
 
 import type { GameState } from '../game';
 
 import { rayVsAabb3 } from '@pierre/ecs/modules/collision-3d';
-import { vec3Normalize } from '@pierre/ecs/modules/math-3d';
+import { vec3Normalize } from '@pierre/ecs/modules/math';
 
 import {
   AiDef,

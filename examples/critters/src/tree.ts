@@ -1,6 +1,6 @@
 import type { EntityId } from '@pierre/ecs';
 import type { BtNode } from '@pierre/ecs/modules/behavior-tree';
-import type { Vec2 } from '@pierre/ecs/modules/motion';
+import type { Vec2 } from '@pierre/ecs/modules/math';
 
 import type { GameState } from './game';
 

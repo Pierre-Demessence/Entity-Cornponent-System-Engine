@@ -1,6 +1,6 @@
 import type { EntityId } from '@pierre/ecs';
 import type { PointerState } from '@pierre/ecs/modules/input';
-import type { Vec2 } from '@pierre/ecs/modules/motion';
+import type { Vec2 } from '@pierre/ecs/modules/math';
 import type { WanderState } from '@pierre/ecs/modules/steering';
 
 import { EcsWorld } from '@pierre/ecs';

@@ -98,13 +98,13 @@ first if you need depenetration. A zero-length motion never hits.
 
 - **Signed zero is normalised away** wherever it could appear (a ray starting on
   a plane divides to `-0`), because it leaks into `Object.is` and `1 / v`.
-- **Non-finite input propagates**, as in `modules/math-3d`: a `NaN` coordinate
+- **Non-finite input propagates**, as in `modules/math`: a `NaN` coordinate
   gives `NaN` results rather than a silent zero.
 - **No allocation on the miss path**, and no argument is ever mutated.
-- The only cross-module source dependency is `clamp` from
-  [`modules/math`](../math/README.md), plus the `Vec3` / `Quat` *types* and
-  rotation helpers from [`modules/math-3d`](../math-3d/README.md). Both are
-  deliberate; this module does not re-derive vector maths.
+- The only cross-module source dependency is
+  [`modules/math`](../math/README.md) — `clamp`, plus the `Vec3` / `Quat`
+  *types* and the rotation helpers. That is deliberate; this module does not
+  re-derive vector maths.
 
 ## Not included (by design)
 
@@ -120,7 +120,7 @@ first if you need depenetration. A zero-length motion never hits.
 - **A 3D trigger system.** The 2D `makeTriggerSystem` is dimension-free (see
   above) — do not add a second one.
 - **`bounceOffAabb` / `reflect`.** Those live in the 2D narrowphase file as
-  motion helpers; in 3D, `vec3Reflect` in `modules/math-3d` covers it.
+  motion helpers; in 3D, `vec3Reflect` in `modules/math` covers it.
 
 ## Usage
 

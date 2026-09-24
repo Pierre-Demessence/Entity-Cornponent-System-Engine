@@ -1,11 +1,10 @@
 import type { SchedulableSystem } from '@pierre/ecs';
-import type { Vec2 } from '@pierre/ecs/modules/motion';
+import type { Vec2 } from '@pierre/ecs/modules/math';
 
 import type { GameState, GuardBrain, Wall } from './game';
 
 import { tickFsm } from '@pierre/ecs/modules/fsm';
-import { clamp } from '@pierre/ecs/modules/math';
-import { scaleToSpeed } from '@pierre/ecs/modules/motion';
+import { clamp, vec2ScaleToLength } from '@pierre/ecs/modules/math';
 import { arrive, combine, seek, truncate } from '@pierre/ecs/modules/steering';
 
 import {
@@ -31,7 +30,7 @@ export const playerInputSystem: SchedulableSystem<GameState> = {
       return;
     const dx = (ctx.input.isDown('right') ? 1 : 0) - (ctx.input.isDown('left') ? 1 : 0);
     const dy = (ctx.input.isDown('down') ? 1 : 0) - (ctx.input.isDown('up') ? 1 : 0);
-    const v = scaleToSpeed(dx, dy, PLAYER_SPEED);
+    const v = vec2ScaleToLength({ x: dx, y: dy }, PLAYER_SPEED);
     vel.vx = v.x;
     vel.vy = v.y;
   },
@@ -127,7 +126,7 @@ function avoidWalls(pos: Vec2, vel: Vec2, walls: readonly Wall[], maxSpeed: numb
   }
   if (px === 0 && py === 0)
     return { x: 0, y: 0 };
-  const desired = scaleToSpeed(px, py, maxSpeed);
+  const desired = vec2ScaleToLength({ x: px, y: py }, maxSpeed);
   return { x: desired.x - vel.x, y: desired.y - vel.y };
 }
 

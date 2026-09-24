@@ -3,7 +3,7 @@ import type { InputState } from '@pierre/ecs/modules/input';
 
 import type { GameState, PlayerSlot, ShipAction } from '../game';
 
-import { scaleToSpeed } from '@pierre/ecs/modules/motion';
+import { vec2ScaleToLength } from '@pierre/ecs/modules/math';
 
 import { CooldownDef, PositionDef, ready, RotationDef, trigger, VelocityDef } from '../components';
 import {
@@ -34,7 +34,7 @@ function processShip(
     vel.vy += Math.sin(rot.angle) * SHIP_THRUST * dt;
     const sp = Math.hypot(vel.vx, vel.vy);
     if (sp > SHIP_MAX_SPEED) {
-      const clamped = scaleToSpeed(vel.vx, vel.vy, SHIP_MAX_SPEED);
+      const clamped = vec2ScaleToLength({ x: vel.vx, y: vel.vy }, SHIP_MAX_SPEED);
       vel.vx = clamped.x;
       vel.vy = clamped.y;
     }

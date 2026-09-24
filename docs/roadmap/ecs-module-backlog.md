@@ -433,10 +433,11 @@ doom, starfighter). Both axes are met.
 <details>
 <summary>Details</summary>
 
-Shipped alongside it: `modules/math-3d`, `modules/collision-3d`,
-`modules/kinematics-3d`, `modules/transform-3d`, `modules/motion-3d` — each
-replaced a hand-rolled duplicate. This is the remaining one the fourth
-consumer has not yet pulled in.
+Shipped alongside it: `modules/collision-3d`, `modules/kinematics-3d`,
+`modules/transform-3d` and `modules/motion-3d` — each replaced a hand-rolled
+duplicate. The `Vec3` / `Quat` value blocks they share are not 3D-only, so they
+live with the scalar helpers in `modules/math`. This is the remaining one the
+fourth consumer has not yet pulled in.
 
 </details>
 

@@ -65,7 +65,7 @@ scheduler.add(motion);
 **Dependencies:** consumes `Position3DDef` / `Velocity3DDef` from
 `@pierre/ecs/modules/transform-3d`; no vector helpers are duplicated here —
 `Vec3`, `vec3Normalize`, and `vec3ScaleToLength` live in
-`@pierre/ecs/modules/math-3d`.
+`@pierre/ecs/modules/math`.
 
 Plain velocity integration only, mirroring the 2D module: no acceleration or
 forces (a rigid-body concern), no rotation integration, no gravity/collision.

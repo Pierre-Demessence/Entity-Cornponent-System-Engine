@@ -1,5 +1,5 @@
 import type { ComponentDef } from '#index';
-import type { Vec3 } from '../math-3d';
+import type { Vec3 } from '../math';
 
 import { simpleComponent } from '#index';
 

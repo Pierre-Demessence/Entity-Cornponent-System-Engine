@@ -1,10 +1,10 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
-import type { Quat, Vec3 } from '@pierre/ecs/modules/math-3d';
+import type { Quat, Vec3 } from '@pierre/ecs/modules/math';
 import type { RandomFn } from '@pierre/ecs/modules/rng';
 
 import { EcsWorld } from '@pierre/ecs';
-import { QUAT_IDENTITY, vec3ClampLength, vec3RandomUnit } from '@pierre/ecs/modules/math-3d';
+import { QUAT_IDENTITY, vec3ClampLength, vec3RandomUnit } from '@pierre/ecs/modules/math';
 import { makeSeededRng } from '@pierre/ecs/modules/rng';
 
 import {

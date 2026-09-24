@@ -1,4 +1,4 @@
-import type { Vec2 } from '@pierre/ecs/modules/motion';
+import type { Vec2 } from '@pierre/ecs/modules/math';
 
 import type { GuardBrain, Wall } from './game';
 

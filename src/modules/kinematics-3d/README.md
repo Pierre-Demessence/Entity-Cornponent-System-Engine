@@ -155,7 +155,7 @@ same tick's Y pass rather than blocking the climb.
 
 - [`modules/collision-3d`](../collision-3d/README.md) — `ShapeAabb3Def` and the
   `aabb3VsAabb3` narrowphase.
-- [`modules/math-3d`](../math-3d/README.md) — the `Vec3` *type* only, naming the
+- [`modules/math`](../math/README.md) — the `Vec3` *type* only, naming the
   payload of the injected `positionDef` / `velocityDef`.
 - The **host game** — `dynamicTag`, an optional `staticTag`, the `positionDef` /
   `velocityDef` pair, `gravity`, `stepHeight` and the `broadphase` closure.

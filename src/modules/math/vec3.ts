@@ -1,8 +1,8 @@
 /**
  * Domain-free 3D vector primitives — the `Vec3` sibling of the `Vec2` helpers in
- * `modules/motion/vec`. Every function is pure, returns a new value rather than
- * mutating its inputs, and works on a plain `{x, y, z}` object so it can be used
- * directly on a component payload.
+ * `./vec2`. Every function is pure, returns a new value rather than mutating its
+ * inputs, and works on a plain `{x, y, z}` object so it can be used directly on
+ * a component payload.
  *
  * **Depends on nothing.**
  */
@@ -88,11 +88,11 @@ export function vec3Lerp(a: Vec3, b: Vec3, t: number): Vec3 {
 
 /**
  * `current` stepped `delta` units along the straight line to `target` — the
- * `Vec3` sibling of `modules/motion`'s `moveToward`, matching Unity
- * `Vector3.MoveTowards`, Godot `Vector3.move_toward` and Unreal
- * `FMath::VInterpConstantTo`. A forward mover cannot overshoot: once the
- * remaining distance is within `delta` the target itself is returned, so
- * repeated calls settle on it instead of oscillating around it.
+ * `Vec3` sibling of `vec2MoveToward`, matching Unity `Vector3.MoveTowards`,
+ * Godot `Vector3.move_toward` and Unreal `FMath::VInterpConstantTo`. A forward
+ * mover cannot overshoot: once the remaining distance is within `delta` the
+ * target itself is returned, so repeated calls settle on it instead of
+ * oscillating around it.
  *
  * `delta` is a *signed* step, matching Unity and Godot: a negative one walks
  * away from the target, and `0` leaves the position unchanged.
@@ -116,8 +116,7 @@ export function vec3Negate(v: Vec3): Vec3 {
 /**
  * Unit vector pointing the same way as `v`. A zero-length input has no
  * direction, so it returns `{ 0, 0, 0 }` rather than `NaN` — a caller that
- * wants a fallback direction must supply it. Matches `modules/motion`'s
- * `normalize` for `Vec2`.
+ * wants a fallback direction must supply it. Matches `vec2Normalize`.
  */
 export function vec3Normalize(v: Vec3): Vec3 {
   const mag = Math.hypot(v.x, v.y, v.z);
@@ -165,7 +164,7 @@ export function vec3Scale(v: Vec3, s: number): Vec3 {
  * `v` rescaled so its length equals `length`, direction preserved — the
  * canonical "normalize then multiply" for driving a body at a fixed speed from
  * an arbitrary direction. A zero-length input returns `{ 0, 0, 0 }`. Sibling of
- * `modules/motion`'s `scaleToSpeed`.
+ * `vec2ScaleToLength`.
  */
 export function vec3ScaleToLength(v: Vec3, length: number): Vec3 {
   const mag = Math.hypot(v.x, v.y, v.z);

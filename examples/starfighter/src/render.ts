@@ -2,7 +2,7 @@ import type { EntityId } from '@pierre/ecs';
 
 import type { GameState } from './game';
 
-import { vec3RandomUnit } from '@pierre/ecs/modules/math-3d';
+import { vec3RandomUnit } from '@pierre/ecs/modules/math';
 import * as THREE from 'three';
 
 import { BulletTag, Position3DDef, RadiusDef, TargetTag } from './components';

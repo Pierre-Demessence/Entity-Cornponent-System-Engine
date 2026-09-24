@@ -2,7 +2,7 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
-import { scaleToSpeed } from '@pierre/ecs/modules/motion';
+import { vec2ScaleToLength } from '@pierre/ecs/modules/math';
 
 import { CooldownDef, PositionDef, ready, RotationDef, trigger, VelocityDef } from '../components';
 import {
@@ -42,7 +42,7 @@ export const inputSystem: SchedulableSystem<GameState> = {
       dy -= 1;
     if (ctx.input.isDown('down'))
       dy += 1;
-    const move = scaleToSpeed(dx, dy, PLAYER_SPEED);
+    const move = vec2ScaleToLength({ x: dx, y: dy }, PLAYER_SPEED);
     vel.vx = move.x;
     vel.vy = move.y;
 

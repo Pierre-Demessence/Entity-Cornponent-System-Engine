@@ -1,6 +1,6 @@
 import type { EntityId } from '@pierre/ecs';
 import type { GoapAction } from '@pierre/ecs/modules/goap';
-import type { Vec2 } from '@pierre/ecs/modules/motion';
+import type { Vec2 } from '@pierre/ecs/modules/math';
 
 import { EcsWorld } from '@pierre/ecs';
 import { PositionDef, VelocityDef } from '@pierre/ecs/modules/transform';

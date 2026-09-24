@@ -1,7 +1,7 @@
 import type { EntityId } from '@pierre/ecs';
 import type { Fsm } from '@pierre/ecs/modules/fsm';
 import type { InputState } from '@pierre/ecs/modules/input';
-import type { Vec2 } from '@pierre/ecs/modules/motion';
+import type { Vec2 } from '@pierre/ecs/modules/math';
 
 import { EcsWorld } from '@pierre/ecs';
 import { makeFsm } from '@pierre/ecs/modules/fsm';

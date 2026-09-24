@@ -1,5 +1,5 @@
 import type { FsmStates } from '@pierre/ecs/modules/fsm';
-import type { Vec2 } from '@pierre/ecs/modules/motion';
+import type { Vec2 } from '@pierre/ecs/modules/math';
 
 import type { GameState, GuardBrain, GuardStateKey } from './game';
 
