@@ -142,7 +142,6 @@ pinned. `speculative` = shape undetermined or canon split.
 | `modules/tilemap` V2 (batched renderable) | ready | Scheduling — a large authored grid |
 | `modules/pathfinding` V2 | deferred | Shape — per-algorithm triggers |
 | `modules/navmesh` (2D) | deferred | Shape — a 2D consumer the grid cannot serve |
-| `modules/noise` V2 (3D samplers) | ready | Scheduling — 3D consumer |
 | `modules/noise` V3 (extra fractal types, families) | deferred | Shape — a consumer needing them |
 | `modules/grid-based` V2 | deferred | Shape — second consumer needing another algorithm |
 | `modules/debug` | ready | Scheduling — build slot (dev-only) |
@@ -876,17 +875,6 @@ agent-radius-inflated polygon graph are different jobs.
 Godot `NavigationRegion3D` and Unity `NavMesh` agree on the shape there.
 
 </details>
-
-### `modules/noise` V2 — 3D samplers — ready
-
-**Scope.** The 3D forms of V1's value / Perlin / simplex samplers.
-
-**Status.** Ready — Godot (`FastNoiseLite.get_noise_3d`), `noise-rs` and
-`simplex-noise` / three.js all expose 3D samplers of the same shape as the
-shipped 1D/2D surface, and the dimension-sensitive modules ship as parallel
-siblings by project rule.
-
-**Gate.** Scheduling — a 3D prototype that samples noise.
 
 ### `modules/noise` V3 — extra fractal types + algorithm families — deferred
 
