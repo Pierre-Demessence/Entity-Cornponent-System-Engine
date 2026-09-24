@@ -289,6 +289,7 @@ describe('parseTmx', () => {
 
 describe('gidToFrame', () => {
   const tileset: TmxTileset = {
+    name: 'test',
     columns: 3,
     firstgid: 1,
     imageHeight: 53,

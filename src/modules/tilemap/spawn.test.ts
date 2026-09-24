@@ -1,3 +1,4 @@
+import type { Renderable } from '@pierre/ecs/modules/render-canvas2d';
 import type { TmxLayer, TmxMap, TmxTileset } from '@pierre/ecs/modules/tmx';
 
 import { RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
@@ -56,6 +57,12 @@ function setupWorld() {
   world.registerComponent(RenderableDef);
   world.registerComponent(RenderOrderDef);
   return world;
+}
+
+function asSprite(r: Renderable | undefined) {
+  if (r?.kind !== 'sprite')
+    throw new Error('expected a sprite renderable');
+  return r;
 }
 
 describe('spawnTilemap', () => {
@@ -124,7 +131,7 @@ describe('spawnTilemap', () => {
 
     const renderables = world.getStore(RenderableDef);
     const id = world.query(RenderableDef).run()[0]![0];
-    const r = renderables.get(id)!;
+    const r = asSprite(renderables.get(id));
     expect(r.flipH).toBe(true);
     expect(r.flipV).toBeUndefined();
   });
@@ -136,8 +143,9 @@ describe('spawnTilemap', () => {
 
     const renderables = world.getStore(RenderableDef);
     const id = world.query(RenderableDef).run()[0]![0];
-    expect(renderables.get(id)!.flipV).toBe(true);
-    expect(renderables.get(id)!.flipH).toBeUndefined();
+    const r = asSprite(renderables.get(id));
+    expect(r.flipV).toBe(true);
+    expect(r.flipH).toBeUndefined();
   });
 
   it('resolves H+V to both flipH and flipV', () => {
@@ -147,8 +155,9 @@ describe('spawnTilemap', () => {
 
     const renderables = world.getStore(RenderableDef);
     const id = world.query(RenderableDef).run()[0]![0];
-    expect(renderables.get(id)!.flipH).toBe(true);
-    expect(renderables.get(id)!.flipV).toBe(true);
+    const r = asSprite(renderables.get(id));
+    expect(r.flipH).toBe(true);
+    expect(r.flipV).toBe(true);
   });
 
   it('does not set flipH/flipV when flags are 0', () => {
@@ -158,8 +167,9 @@ describe('spawnTilemap', () => {
 
     const renderables = world.getStore(RenderableDef);
     const id = world.query(RenderableDef).run()[0]![0];
-    expect(renderables.get(id)!.flipH).toBeUndefined();
-    expect(renderables.get(id)!.flipV).toBeUndefined();
+    const r = asSprite(renderables.get(id));
+    expect(r.flipH).toBeUndefined();
+    expect(r.flipV).toBeUndefined();
   });
 
   it('calls onTile for each spawned entity', () => {
@@ -215,8 +225,9 @@ describe('spawnTilemap', () => {
 
     const renderables = world.getStore(RenderableDef);
     const id = world.query(RenderableDef).run()[0]![0];
-    expect(renderables.get(id)!.flipH).toBeUndefined();
-    expect(renderables.get(id)!.flipV).toBeUndefined();
+    const r = asSprite(renderables.get(id));
+    expect(r.flipH).toBeUndefined();
+    expect(r.flipV).toBeUndefined();
   });
 
   it('handles a 2D grid correctly', () => {

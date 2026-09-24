@@ -41,7 +41,7 @@ describe('gamepadProvider', () => {
   });
 
   it('maps the standard button indices to named codes', () => {
-    const buttons = Array.from({ length: 17 }).fill(0);
+    const buttons = Array.from<number>({ length: 17 }).fill(0);
     buttons[9] = 1; // Start
     buttons[12] = 1; // DpadUp
     const provider = new GamepadProvider({ source: () => [pad(buttons)] });

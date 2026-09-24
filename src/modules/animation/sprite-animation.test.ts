@@ -1,4 +1,5 @@
 import type { EntityId } from '#entity-id';
+import type { Renderable } from '#modules/render-canvas2d/index';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -20,6 +21,12 @@ function setup(): Ctx {
   world.registerComponent(SpriteAnimationDef);
   world.registerComponent(RenderableDef);
   return { dtMs: 16, world };
+}
+
+function asSprite(r: Renderable | undefined) {
+  if (r?.kind !== 'sprite')
+    throw new Error('expected a sprite renderable');
+  return r;
 }
 
 describe('makeSpriteAnimation', () => {
@@ -159,7 +166,7 @@ describe('makeSpriteAnimationSystem', () => {
     expect(anim.currentIndex).toBe(2);
     expect(anim.elapsedMs).toBe(0);
 
-    const r = ctx.world.getStore(RenderableDef).get(eid)!;
+    const r = asSprite(ctx.world.getStore(RenderableDef).get(eid));
     expect(r.frame).toBe('c');
   });
 
@@ -168,7 +175,7 @@ describe('makeSpriteAnimationSystem', () => {
     ctx.dtMs = 100;
     sys.run(ctx);
 
-    const r = ctx.world.getStore(RenderableDef).get(eid)!;
+    const r = asSprite(ctx.world.getStore(RenderableDef).get(eid));
     expect(r.kind).toBe('sprite');
     expect(r.atlas).toBe('test');
     expect(r.anchor).toBe('center');
@@ -193,7 +200,7 @@ describe('makeSpriteAnimationSystem', () => {
     ctx.dtMs = 400; // advance 4 frames, wrap
     sys.run(ctx);
 
-    const r = ctx.world.getStore(RenderableDef).get(eid)!;
+    const r = asSprite(ctx.world.getStore(RenderableDef).get(eid));
     expect(r.frame).toBe('b'); // 0→1→2→0→1 after 4 advances
   });
 });

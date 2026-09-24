@@ -1166,9 +1166,10 @@ describe('canvas2DRenderer screen-space overlay', () => {
     const rec = makeRecorder();
     renderer.render({ ctx2d: rec.ctx2d, world });
     const dc = drawCalls(rec.calls);
-    expect(dc).toHaveLength(2);
-    expect(dc[0]!.fillStyle).toBe('#888');
-    expect(dc[1]!.fillStyle).toBe('#fff');
+    expect(dc).toEqual([
+      { fillStyle: '#888', h: 10, op: 'fillRect', w: 10, x: 0, y: 0 },
+      { fillStyle: '#fff', h: 10, op: 'fillRect', w: 10, x: 0, y: 0 },
+    ]);
   });
 
   it('skips overlay pass when no entity has ScreenSpaceDef', () => {

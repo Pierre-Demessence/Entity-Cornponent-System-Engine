@@ -1,4 +1,4 @@
-import type { ComponentStore } from '#component-store';
+import type { ComponentStoreLike } from '#component-store';
 import type { RenderOrder } from '../render-canvas2d';
 import type { DomRenderable } from './dom-renderable';
 
@@ -89,9 +89,9 @@ class FakeDocument {
 }
 
 interface TestHarness {
-  orders: ComponentStore<RenderOrder>;
-  positions: ComponentStore<{ x: number; y: number }>;
-  renderables: ComponentStore<DomRenderable>;
+  orders: ComponentStoreLike<RenderOrder>;
+  positions: ComponentStoreLike<{ x: number; y: number }>;
+  renderables: ComponentStoreLike<DomRenderable>;
   root: FakeElement;
   world: EcsWorld;
 }

@@ -1,3 +1,5 @@
+import type { Renderable } from '../render-canvas2d';
+
 import { describe, expect, it } from 'vitest';
 
 import { EcsWorld } from '#world';
@@ -33,6 +35,12 @@ function makeWorld(): EcsWorld {
   return world;
 }
 
+function asRect(r: Renderable | undefined) {
+  if (r?.kind !== 'rect')
+    throw new Error('expected a rect renderable');
+  return r;
+}
+
 describe('burst', () => {
   it('spawns `count` tagged particles with the core components', () => {
     const world = makeWorld();
@@ -50,7 +58,7 @@ describe('burst', () => {
       expect(world.getStore(PositionDef).get(id)).toEqual({ x: 50, y: 50 });
       expect(world.getStore(VelocityDef).get(id)).toBeDefined();
       expect(world.getStore(LifetimeDef).get(id)).toBeDefined();
-      const r = world.getStore(RenderableDef).get(id)!;
+      const r = asRect(world.getStore(RenderableDef).get(id));
       expect(r.kind).toBe('rect');
       expect(r.fill).toBe('#fff');
     }

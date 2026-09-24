@@ -1,9 +1,3 @@
----
-last-updated: 2026-06-05
-applicable: ["src/**", "examples/**", "scripts/**"]
-owner: agent
----
-
 # Agent Operational Doc
 
 ## Purpose
@@ -16,14 +10,14 @@ owner: agent
 
 - `npm run lint` — ESLint check (`eslint --cache .`)
 - `npm run lint:fix` — ESLint with autofix
+- `npm run typecheck` — Type-check only (`src/` via `tsconfig.json`, then `scripts/` and the root configs via `tsconfig.node.json`; no build step, the package ships as TypeScript source consumed via `file:` install)
 - `npm test` — Vitest tests (`vitest run`)
 - `npm run test:watch` — Vitest in watch mode
-- `npx tsc --noEmit` — Type-check only (no build step; package ships as TypeScript source consumed via `file:` install)
 
 ## Git Hooks (Husky)
 
 - **pre-commit**: `CI=1 npx lint-staged` — ESLint --fix on staged `.ts`/`.tsx`/`.yml`/`.yaml` files
-- **pre-push**: `npm test` — full Vitest run
+- **pre-push**: `npm run typecheck && npm test` — type-check then full Vitest run
 
 ## Key Paths
 
