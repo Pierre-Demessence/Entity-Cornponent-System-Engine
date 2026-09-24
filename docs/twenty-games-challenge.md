@@ -9,6 +9,8 @@ unmodified `@pierre/ecs`.
 ## How we work this list
 
 - Build games **in list order**. Skip only games that are **already fully made**.
+  When a game could go either way, let [engine usage](agent/engine-usage.md)
+  break the tie: it ranks the modules whose value exports no example reaches yet.
 - For each new game, open its detail page (linked below) and implement
   **everything in that page's _Goals_ section**. _Stretch Goals_ are optional —
   pick up only the ones that are genuinely interesting or that exercise a new

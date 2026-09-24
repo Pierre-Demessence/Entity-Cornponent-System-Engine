@@ -14,6 +14,8 @@
 - `npm run typecheck:examples` — Type-check every `examples/*` workspace (`npm exec --workspaces -- tsc --noEmit`, ~20s). CI runs this; it is deliberately not in the Husky hooks, where 20s is too slow for every push.
 - `npm test` — Vitest tests (`vitest run`)
 - `npm run test:watch` — Vitest in watch mode
+- `npm run docs:api` — regenerate the API-surface catalog (`docs/agent/engine-api.md`)
+- `npm run docs:usage` — regenerate the usage report (`docs/agent/engine-usage.md`)
 
 ## Git Hooks (Husky)
 
@@ -39,6 +41,10 @@ reinventing shipped primitives).
 
 - Regenerate after changing any public export: `npm run docs:api`.
 - A drift test (`scripts/engine-api.test.ts`) fails `npm test` if it is stale.
+- [`engine-usage.md`](engine-usage.md) is its counterpart: which files
+  reference each export, bucketed as example / unit test / other engine source.
+  Read it when choosing what to build next. Regenerate with `npm run docs:usage`;
+  a drift test (`scripts/engine-usage.test.ts`) fails `npm test` if it is stale.
 
 ### Modules (`src/modules/<name>/`, exported as `@pierre/ecs/modules/<name>`)
 

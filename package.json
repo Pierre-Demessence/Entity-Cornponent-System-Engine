@@ -39,6 +39,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "docs:api": "jiti scripts/engine-api.gen.ts",
+    "docs:usage": "jiti scripts/engine-usage.gen.ts",
     "prepare": "husky || true"
   },
   "workspaces": [

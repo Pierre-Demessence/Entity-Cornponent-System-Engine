@@ -7,6 +7,10 @@ Project-agnostic ECS primitives in `src/`. These modules have
 one-line-per-symbol catalog of every public export with its type-level
 signature and JSDoc summary. Read it before hand-rolling a helper.
 
+Its counterpart is [Engine usage](agent/engine-usage.md) — the same surface
+read the other way: which files reference each export (examples, unit tests,
+other engine source), and which nothing references yet.
+
 ## Primitives
 
 - [Component Store](component-store.md) — `ComponentDef<T>`, `TagDef`, `ComponentStore<T>`, `TagStore`, dev-mode validation
@@ -45,7 +49,9 @@ End-to-end prototypes that exercise the engine in different genres. Each
 subfolder of [`../examples/`](../examples/) is one runnable example; see
 [`../examples/README.md`](../examples/README.md) for the guided tour and
 the [20 Games Challenge](twenty-games-challenge.md) for what each one
-proves. Engine gaps these prototypes surface are tracked in the
+proves, and [Engine usage](agent/engine-usage.md) for which parts of the
+surface no prototype reaches yet. Engine gaps these prototypes surface are
+tracked in the
 [engine gap ledger](roadmap/engine-gap-ledger.md), and the closed rows of
 past triage passes are frozen under [archived/audits/](archived/audits/).
 

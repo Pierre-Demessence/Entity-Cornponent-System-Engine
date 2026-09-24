@@ -116,9 +116,16 @@ false-positive gaps in the ledger. Regenerate it with `npm run docs:api`
 whenever you add, remove, or rename a public export — a drift test fails
 `npm test` if it goes stale.
 
+[`docs/agent/engine-usage.md`](docs/agent/engine-usage.md) is the inverse view:
+which files reference each export, bucketed as example / unit test / other
+engine source, plus a ranking of the value exports no prototype reaches. Read it
+when choosing what to prove next. Regenerate with `npm run docs:usage` (also
+drift-guarded by `npm test`).
+
 ## See also
 
 - [`docs/agent/engine-api.md`](docs/agent/engine-api.md) — generated catalog of the whole public API surface, signature + summary per symbol (read before hand-rolling in a consumer)
+- [`docs/agent/engine-usage.md`](docs/agent/engine-usage.md) — generated report of which files reference each export (examples / tests / other source), for choosing what to prove next
 - [`docs/README.md`](docs/README.md) — full docs map
 - [`docs/extending-the-engine.md`](docs/extending-the-engine.md) — promotion paths + layering principles + tradeoffs
 - [`docs/roadmap/core-engine-roadmap.md`](docs/roadmap/core-engine-roadmap.md) — open core-internals work
