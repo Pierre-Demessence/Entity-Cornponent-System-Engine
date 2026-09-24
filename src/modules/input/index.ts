@@ -1,4 +1,9 @@
 export {
+  createEventInput,
+  type EventInput,
+  type InputEvent,
+} from './event-input';
+export {
   Gamepad,
   type GamepadCode,
   GamepadProvider,
@@ -16,6 +21,7 @@ export {
   type KeyboardCode,
 } from './key-codes';
 export {
+  type KeyboardEmitSource,
   KeyboardProvider,
   type KeyboardProviderOptions,
 } from './keyboard-provider';

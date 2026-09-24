@@ -1,4 +1,5 @@
 import type { InputProvider, InputRawEvent } from '#input-source';
+import type { KeyboardProviderOptions } from './keyboard-provider';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -199,9 +200,9 @@ describe('createInput', () => {
 });
 
 describe('keyboardProvider', () => {
-  function keyEvent(type: 'keydown' | 'keyup', code: string, repeat = false): Event {
+  function keyEvent(type: 'keydown' | 'keyup', code: string, repeat = false, key = code): Event {
     const e = new Event(type);
-    Object.assign(e, { code, repeat });
+    Object.assign(e, { code, key, repeat });
     return e;
   }
 
@@ -256,5 +257,85 @@ describe('keyboardProvider', () => {
       if (originalWindow !== undefined)
         globalRef.window = originalWindow;
     }
+  });
+
+  it('emits KeyboardEvent.key instead of code when emit is key', () => {
+    const target = new EventTarget();
+    const kb = new KeyboardProvider({ emit: 'key', preventDefaultCodes: [], target });
+    const received: InputRawEvent[] = [];
+    kb.subscribe(r => received.push(r));
+
+    target.dispatchEvent(keyEvent('keydown', 'Period', false, '>'));
+    target.dispatchEvent(keyEvent('keyup', 'Period', false, '>'));
+    target.dispatchEvent(keyEvent('keydown', 'ArrowDown', false, 'ArrowDown'));
+
+    expect(received).toEqual([
+      { code: '>', kind: 'down' },
+      { code: '>', kind: 'up' },
+      { code: 'ArrowDown', kind: 'down' },
+    ]);
+  });
+
+  it('keeps down and up symmetric when the modifier state changes between them', () => {
+    const target = new EventTarget();
+    const kb = new KeyboardProvider({ emit: 'key', preventDefaultCodes: [], target });
+    const received: InputRawEvent[] = [];
+    kb.subscribe(r => received.push(r));
+
+    // Shift+Period emits '>' on keydown; releasing Shift first makes the
+    // keyup for the same physical key report '.'.
+    target.dispatchEvent(keyEvent('keydown', 'Period', false, '>'));
+    target.dispatchEvent(keyEvent('keyup', 'Period', false, '.'));
+
+    expect(received).toEqual([
+      { code: '>', kind: 'down' },
+      { code: '>', kind: 'up' },
+    ]);
+  });
+
+  it('re-press after a modifier-changed release still reports down', () => {
+    const target = new EventTarget();
+    const kb = new KeyboardProvider({ emit: 'key', preventDefaultCodes: [], target });
+    const received: InputRawEvent[] = [];
+    kb.subscribe(r => received.push(r));
+
+    target.dispatchEvent(keyEvent('keydown', 'Period', false, '>'));
+    target.dispatchEvent(keyEvent('keyup', 'Period', false, '.'));
+    target.dispatchEvent(keyEvent('keydown', 'Period', false, '>'));
+
+    expect(received).toEqual([
+      { code: '>', kind: 'down' },
+      { code: '>', kind: 'up' },
+      { code: '>', kind: 'down' },
+    ]);
+  });
+
+  it('falls back to the event field for a keyup with no preceding keydown', () => {
+    const target = new EventTarget();
+    const kb = new KeyboardProvider({ emit: 'key', preventDefaultCodes: [], target });
+    const received: InputRawEvent[] = [];
+    kb.subscribe(r => received.push(r));
+
+    target.dispatchEvent(keyEvent('keyup', 'Period', false, '>'));
+
+    expect(received).toEqual([{ code: '>', kind: 'up' }]);
+  });
+
+  it('matches preventDefaultCodes against the field emit selects', () => {
+    function pressWith(options: KeyboardProviderOptions): boolean {
+      const target = new EventTarget();
+      const provider = new KeyboardProvider({ target, ...options });
+      provider.subscribe(() => {});
+      const event = new Event('keydown', { cancelable: true });
+      Object.assign(event, { code: 'Period', key: '>', repeat: false });
+      target.dispatchEvent(event);
+      provider.dispose();
+      return event.defaultPrevented;
+    }
+
+    expect(pressWith({ emit: 'key', preventDefaultCodes: ['>'] })).toBe(true);
+    expect(pressWith({ emit: 'key', preventDefaultCodes: ['Period'] })).toBe(false);
+    expect(pressWith({ preventDefaultCodes: ['Period'] })).toBe(true);
+    expect(pressWith({ preventDefaultCodes: ['>'] })).toBe(false);
   });
 });

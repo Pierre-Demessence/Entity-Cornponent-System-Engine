@@ -120,7 +120,6 @@ pinned. `speculative` = shape undetermined or canon split.
 | `modules/tick` V2 (fixed-step accumulator) | ready | Scheduling — consumer needs catch-up |
 | `modules/motion` V2 (radial force fields) | deferred | Shape — second radial consumer |
 | `modules/motion-3d` V2 (attitude, spherical bounds) | deferred | Shape — second consumer for either |
-| `modules/input` event-mode variant | ready | Scheduling — consumer needs event dispatch |
 | `modules/camera` V3 (rotation, parallax) | ready | Scheduling — consumer needs it; snake zoom adoption |
 | `modules/render-scene3d` | ready | Scheduling — 4 consumers already hand-roll it |
 | `modules/camera-3d` | ready | Scheduling — build slot |
@@ -366,45 +365,6 @@ wait for a second consumer to prove the shape.
 
 **Canon.** Free-flight attitude: Elite / No Man's Sky flight models (game-side).
 Spherical bounds: game-specific; the canonical engine bound is a box (shipped).
-
-</details>
-
-### `modules/input` event-mode variant — ready
-
-**Scope.** Event-driven action dispatch for turn-based games (single
-keypress = single turn), complementary to the shipped poll-on-tick
-`createInput`.
-
-**Status.** Ready — every major engine ships both input modes: Godot
-`_input`/`_unhandled_input` signals alongside `Input.is_action_pressed`,
-Unity `Input.GetKeyDown` edges alongside `GetKey`, Phaser keyboard events
-alongside its polled key objects. The same shape (subscribe to the keydown
-edge, dispatch an action) in three engines.
-
-**Gate.** Scheduling — a consumer that needs event dispatch rather than
-polling.
-
-<details>
-<summary>Details</summary>
-
-**Probable shape.** An `EventInput<TAction>` that wraps `InputProvider`,
-applies the same `InputMap`, and dispatches to a subscriber callback on the
-keydown edge.
-
-**Rationale.** The shipped `createInput` is calibrated for real-time games
-(snake / asteroids / platformer): poll-based, flat-action enum,
-`KeyboardEvent.code` (layout-independent, no modifier awareness). The
-roguelike's input is event-driven (keydown emits the turn-action
-immediately), action-with-payload (move dx/dy), and uses `KeyboardEvent.key`
-(so `>` for descend works as Shift+Period on a US layout without explicit
-modifier tracking). Forcing the roguelike onto `createInput` either produces
-glue code that fights the engine model (split move into 4 directional
-actions, manually combine `ShiftLeft`+`Period` for `>`, run a tick loop just
-to poll), or settles for using `KeyboardProvider` only and bringing the
-entire mapping layer back in-app — which saves ~5 lines and is not a real
-win. The honest split is `createInput` for real-time, `EventInput` for
-turn-based. Until then, the roguelike keeps its existing `src/ui/input.ts`
-mapping layer and DOM listeners — the right shape for that game.
 
 </details>
 
