@@ -8,6 +8,7 @@ import {
   quatMul,
   quatNormalize,
   quatRotate,
+  quatSlerp,
   quatUp,
 } from './quat';
 import { vec3Cross, vec3Dot, vec3Length } from './vec3';
@@ -163,6 +164,76 @@ describe('quatRotate', () => {
     expect(back.x).toBeCloseTo(v.x, 10);
     expect(back.y).toBeCloseTo(v.y, 10);
     expect(back.z).toBeCloseTo(v.z, 10);
+  });
+});
+
+describe('quatSlerp', () => {
+  const quarterY = quatFromAxisAngle(Y, QUARTER_TURN);
+
+  it('returns the endpoints at t = 0 and t = 1', () => {
+    expect(quatSlerp(QUAT_IDENTITY, quarterY, 0)).toEqual(QUAT_IDENTITY);
+    expect(quatSlerp(QUAT_IDENTITY, quarterY, 1)).toEqual(quarterY);
+  });
+
+  it('halves the angle at the midpoint of a quarter turn', () => {
+    const mid = quatSlerp(QUAT_IDENTITY, quarterY, 0.5);
+    const expected = quatFromAxisAngle(Y, QUARTER_TURN / 2);
+    expect(mid.w).toBeCloseTo(expected.w, 12);
+    expect(mid.y).toBeCloseTo(expected.y, 12);
+    expect(mid.x).toBeCloseTo(0, 12);
+    expect(mid.z).toBeCloseTo(0, 12);
+  });
+
+  it('takes the shortest path when the inputs are more than a half turn apart', () => {
+    // -90° about +Y is the same rotation as +270°, whose quaternion is the
+    // negation of -90°'s and so has a negative dot with the identity. The
+    // blend must go the short way (-45°), not ease through +135°.
+    const far = quatFromAxisAngle(Y, -QUARTER_TURN);
+    const asLongWay = quatFromAxisAngle(Y, 3 * QUARTER_TURN);
+    expect(asLongWay.w).toBeCloseTo(-far.w, 12);
+    expect(asLongWay.y).toBeCloseTo(-far.y, 12);
+
+    const mid = quatSlerp(QUAT_IDENTITY, asLongWay, 0.5);
+    const expected = quatFromAxisAngle(Y, -QUARTER_TURN / 2);
+    expect(mid.w).toBeCloseTo(expected.w, 12);
+    expect(mid.y).toBeCloseTo(expected.y, 12);
+  });
+
+  it('lands on the negated target at the far end of a shortest-path blend', () => {
+    const asLongWay = quatFromAxisAngle(Y, 3 * QUARTER_TURN);
+    // The negation lives in the target, so t = 1 copies -b. That is the same
+    // rotation as b (a quaternion and its negation differ by a full turn about
+    // every axis), so it is a different object, not a different orientation.
+    const end = quatSlerp(QUAT_IDENTITY, asLongWay, 1);
+    expect(end.w).toBeCloseTo(-asLongWay.w, 12);
+    expect(end.y).toBeCloseTo(-asLongWay.y, 12);
+  });
+
+  it('falls back to a normalised blend for identical inputs, however they are signed', () => {
+    const q = quatFromAxisAngle(Y, 0.7);
+    const same = quatSlerp(q, q, 0.5);
+    expect(same.w).toBeCloseTo(q.w, 12);
+    expect(same.y).toBeCloseTo(q.y, 12);
+
+    // q and -q are the same rotation, so the shortest path negates one and the
+    // two collapse into the parallel branch rather than dividing by sin(0).
+    const negated = quatSlerp(q, { w: -q.w, x: -q.x, y: -q.y, z: -q.z }, 0.5);
+    expect(negated.w).toBeCloseTo(q.w, 12);
+    expect(negated.y).toBeCloseTo(q.y, 12);
+    expect(Number.isNaN(negated.w)).toBe(false);
+  });
+
+  it('extrapolates for t outside [0, 1] and still lands on the unit sphere', () => {
+    const doubled = quatSlerp(QUAT_IDENTITY, quarterY, 2);
+    const expected = quatFromAxisAngle(Y, HALF_TURN);
+    expect(doubled.w).toBeCloseTo(expected.w, 12);
+    expect(doubled.y).toBeCloseTo(expected.y, 12);
+
+    const a = quatFromAxisAngle({ x: 1, y: 2, z: 3 }, 0.4);
+    const b = quatFromAxisAngle({ x: -2, y: 1, z: 0.5 }, 2.1);
+    for (const t of [-1, 0, 0.25, 0.5, 1, 1.75]) {
+      expect(len(quatSlerp(a, b, t))).toBeCloseTo(1, 12);
+    }
   });
 });
 

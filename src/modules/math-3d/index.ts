@@ -7,6 +7,7 @@ export {
   quatMul,
   quatNormalize,
   quatRotate,
+  quatSlerp,
   quatUp,
 } from './quat';
 export {

@@ -98,6 +98,54 @@ export function quatRotate(q: Quat, v: Vec3): Vec3 {
   };
 }
 
+/**
+ * Spherical linear interpolation from `a` to `b`: the blend that turns at a
+ * **constant angular speed**, so an eased camera sweep does not accelerate
+ * through the middle the way a component-wise lerp does.
+ *
+ * Takes the **shortest path**: when `a·b < 0`, `b` is negated first, so a
+ * quarter turn stays a quarter turn instead of running the long way round —
+ * and `t = 1` then yields `-b`, the same rotation rather than the same
+ * components. Nearly-parallel inputs (`a·b ≥ 1 - 1e-6`) leave the rotation axis
+ * undefined, so that branch blends component-wise and renormalises rather than
+ * dividing by `sin(theta) ≈ 0`.
+ *
+ * `t` is **unclamped** (`t = 2` is a legal extrapolation), matching `lerp`,
+ * `lerpAngle` and `vec3Lerp`; compose with `modules/math`'s `clamp01` for a
+ * bounded blend.
+ *
+ * Both inputs must be **unit** quaternions — normalise at the boundary. The
+ * result is unit for unit inputs, so it can be fed straight back in.
+ */
+export function quatSlerp(a: Quat, b: Quat, t: number): Quat {
+  let dot = a.w * b.w + a.x * b.x + a.y * b.y + a.z * b.z;
+  let target = b;
+  if (dot < 0) {
+    dot = -dot;
+    target = { w: -b.w, x: -b.x, y: -b.y, z: -b.z };
+  }
+
+  if (dot >= 1 - 1e-6) {
+    return quatNormalize({
+      w: a.w + (target.w - a.w) * t,
+      x: a.x + (target.x - a.x) * t,
+      y: a.y + (target.y - a.y) * t,
+      z: a.z + (target.z - a.z) * t,
+    });
+  }
+
+  const theta = Math.acos(dot);
+  const sinTheta = Math.sin(theta);
+  const weightA = Math.sin((1 - t) * theta) / sinTheta;
+  const weightB = Math.sin(t * theta) / sinTheta;
+  return {
+    w: a.w * weightA + target.w * weightB,
+    x: a.x * weightA + target.x * weightB,
+    y: a.y * weightA + target.y * weightB,
+    z: a.z * weightA + target.z * weightB,
+  };
+}
+
 /** The direction the local `+Y` axis points after applying `q`. */
 export function quatUp(q: Quat): Vec3 {
   return quatRotate(q, { x: 0, y: 1, z: 0 });

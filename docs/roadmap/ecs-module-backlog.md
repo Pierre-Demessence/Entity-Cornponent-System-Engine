@@ -91,7 +91,7 @@ surface, not to queue a phase two.
 **A single missing operation is not a version.** When the leftover is one
 named operation rather than a coherent slice, it gets a `<module> — <op>` entry
 in [Existing-module gaps](#existing-module-gaps) instead of a version suffix:
-`modules/motion` V2 is a slice, `modules/math-3d` — `quatSlerp` is one
+`modules/motion` V2 is a slice, `modules/motion` — `moveToward` is one
 function.
 
 ### Engine extension rule-book
@@ -159,7 +159,6 @@ pinned. `speculative` = shape undetermined or canon split.
 | App-host mount / teardown helper | speculative | Shape — second app host |
 | `modules/destructible-terrain` | ready | Scheduling — depends on `modules/tilemap` V2 |
 | `modules/card-interaction` | ready | Scheduling — build slot |
-| `modules/math-3d` — `quatSlerp` | ready | Scheduling — build slot |
 | `modules/motion` — `moveToward` (vector form) | ready | Scheduling — build slot |
 | `modules/input` — wheel + multi-touch | deferred | Shape — wheel model and multi-pointer set unpinned |
 | `modules/spatial` — `QuadTree` / `BVH` backends | deferred | Shape — one consumer a uniform grid cannot serve |
@@ -1244,21 +1243,6 @@ drag plugins, every card-game tutorial's hand-rolled pile manager.
 Capabilities missing from a module that already ships — a leftover operation,
 or a leftover slice, but not a new module. Each was left out of its V1 for a
 reason worth recording, and the status says whether that reason still holds.
-
-### `modules/math-3d` — `quatSlerp` — ready
-
-**Scope.** Spherical linear interpolation between two `Quat` values.
-
-**Status.** Ready — canon-unanimous (Unity `Quaternion.Slerp`, Godot
-`Quaternion.slerp`, three.js `Quaternion.slerp`). Nothing exercises it today:
-the one call site (`examples/starfighter/src/render.ts`) already holds a
-three.js `Quaternion` and calls its own `slerp`.
-
-**Gate.** Scheduling — build slot.
-
-**Divergence to resolve.** Unity's `Quaternion.Slerp` clamps `t` to `[0, 1]`
-where Godot's and three.js's do not; this module's lerp convention is
-unclamped, so the build has to pick a side rather than copy one engine.
 
 ### `modules/motion` — `moveToward` (vector form) — ready
 
