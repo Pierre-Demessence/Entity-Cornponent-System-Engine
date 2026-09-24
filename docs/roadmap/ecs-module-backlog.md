@@ -159,7 +159,6 @@ pinned. `speculative` = shape undetermined or canon split.
 | App-host mount / teardown helper | speculative | Shape — second app host |
 | `modules/destructible-terrain` | ready | Scheduling — depends on `modules/tilemap` V2 |
 | `modules/card-interaction` | ready | Scheduling — build slot |
-| `modules/motion` — `moveToward` (vector form) | ready | Scheduling — build slot |
 | `modules/input` — wheel + multi-touch | deferred | Shape — wheel model and multi-pointer set unpinned |
 | `modules/spatial` — `QuadTree` / `BVH` backends | deferred | Shape — one consumer a uniform grid cannot serve |
 
@@ -1243,17 +1242,6 @@ drag plugins, every card-game tutorial's hand-rolled pile manager.
 Capabilities missing from a module that already ships — a leftover operation,
 or a leftover slice, but not a new module. Each was left out of its V1 for a
 reason worth recording, and the status says whether that reason still holds.
-
-### `modules/motion` — `moveToward` (vector form) — ready
-
-**Scope.** Move a vector a fixed distance toward a target each step — the
-*vector* form of move-toward, as distinct from the scalar form `modules/math`
-already answers with a clamp/lerp pair.
-
-**Status.** Ready — the same shape in Unity (`Vector3.MoveTowards`), Godot
-(`Vector2.move_toward`) and Unreal (`FMath::VInterpConstantTo`).
-
-**Gate.** Scheduling — build slot.
 
 ### `modules/input` — wheel + multi-touch — deferred
 

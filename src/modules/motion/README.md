@@ -78,24 +78,35 @@ interface Vec2 { x: number; y: number }
 
 function normalize(x: number, y: number): Vec2;            // unit vector; (0,0) → (0,0)
 function scaleToSpeed(x: number, y: number, speed: number): Vec2; // length === speed; (0,0) → (0,0)
+function moveToward(current: Vec2, target: Vec2, delta: number): Vec2; // ≤ delta toward target; never overshoots
 ```
 
 `scaleToSpeed` is the canonical "normalize then multiply" used to drive a
 body at a fixed speed from an arbitrary direction — a WASD input axis
 (diagonals don't go faster), a seek/steer delta toward a target, or a
 reflected ball velocity. A zero-length input has no direction, so both
-helpers return `{ x: 0, y: 0 }` instead of `NaN`; supply a fallback
-direction yourself if you need one.
+`normalize` and `scaleToSpeed` return `{ x: 0, y: 0 }` instead of `NaN`;
+supply a fallback direction yourself if you need one.
 
-Canon: Unity `Vector2.normalized`, Godot `Vector2.normalized()` /
-`limit_length()`, Bevy `Vec2::normalize_or_zero`.
+`moveToward` is the constant-speed step toward a point: it advances at most
+`delta` along the straight line and lands *exactly* on the target rather than
+stepping past it, so a repeated call converges and stays. A non-positive
+`delta` returns the current position unchanged.
+
+Canon: Unity `Vector2.normalized` / `Vector2.MoveTowards`, Godot
+`Vector2.normalized()` / `limit_length()` / `move_toward()`, Bevy
+`Vec2::normalize_or_zero`, Unreal `FMath::VInterpConstantTo`.
 
 ```ts
-import { scaleToSpeed } from '@pierre/ecs/modules/motion';
+import { moveToward, scaleToSpeed } from '@pierre/ecs/modules/motion';
 
 const v = scaleToSpeed(dx, dy, PLAYER_SPEED);
 vel.vx = v.x;
 vel.vy = v.y;
+
+const next = moveToward({ x: pos.x, y: pos.y }, waypoint, CHASE_SPEED * dtSeconds);
+pos.x = next.x;
+pos.y = next.y;
 ```
 
 ## Scope
@@ -110,10 +121,8 @@ vel.vy = v.y;
   second consumer converges on one.
 - No acceleration term, gravity, or collision — those belong in
   `modules/kinematics`.
-- No vector move-toward helper (`Vector2.move_toward`) yet — canon (Unity
-  `Vector3.MoveTowards`, Godot `Vector2.move_toward`, Unreal
-  `FMath::VInterpConstantTo`), tracked as an existing-module gap in the
-  [module backlog](../../../docs/roadmap/ecs-module-backlog.md).
+- The 3D sibling `vec3MoveToward` ships in `@pierre/ecs/modules/math-3d`; the
+  two must agree on every degenerate case.
 - `onMove` is the only extension point. Games that need per-entity
   enable/disable either remove the `VelocityDef` component or set
   `(vx, vy)` to `(0, 0)`.

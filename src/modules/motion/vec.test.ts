@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { normalize, scaleToSpeed } from './vec';
+import { moveToward, normalize, scaleToSpeed } from './vec';
 
 describe('normalize', () => {
   it('returns a unit vector for a non-zero input', () => {
@@ -47,5 +47,46 @@ describe('scaleToSpeed', () => {
   it('a diagonal axis input is not faster than a cardinal one', () => {
     const diag = scaleToSpeed(1, 1, 5);
     expect(Math.hypot(diag.x, diag.y)).toBeCloseTo(5);
+  });
+});
+
+describe('moveToward', () => {
+  it('steps the full delta along the line to the target', () => {
+    const v = moveToward({ x: 0, y: 0 }, { x: 10, y: 0 }, 3);
+    expect(v).toEqual({ x: 3, y: 0 });
+  });
+
+  it('steps diagonally at the requested distance', () => {
+    const v = moveToward({ x: 0, y: 0 }, { x: 3, y: 4 }, 2.5);
+    expect(v.x).toBeCloseTo(1.5);
+    expect(v.y).toBeCloseTo(2);
+    expect(Math.hypot(v.x, v.y)).toBeCloseTo(2.5);
+  });
+
+  it('lands exactly on the target when delta equals the distance', () => {
+    expect(moveToward({ x: 0, y: 0 }, { x: 3, y: 4 }, 5)).toEqual({ x: 3, y: 4 });
+  });
+
+  it('does not overshoot when delta exceeds the distance', () => {
+    expect(moveToward({ x: 0, y: 0 }, { x: 3, y: 4 }, 100)).toEqual({ x: 3, y: 4 });
+  });
+
+  it('stays put on a zero distance', () => {
+    expect(moveToward({ x: 2, y: 2 }, { x: 2, y: 2 }, 1)).toEqual({ x: 2, y: 2 });
+  });
+
+  it('settles on the target across repeated calls', () => {
+    let p = { x: 0, y: 0 };
+    for (let i = 0; i < 10; i++)
+      p = moveToward(p, { x: 4, y: 0 }, 1);
+    expect(p).toEqual({ x: 4, y: 0 });
+  });
+
+  it('returns the current position for delta = 0', () => {
+    expect(moveToward({ x: 1, y: -1 }, { x: 5, y: 5 }, 0)).toEqual({ x: 1, y: -1 });
+  });
+
+  it('returns the current position for a negative delta', () => {
+    expect(moveToward({ x: 1, y: -1 }, { x: 5, y: 5 }, -2)).toEqual({ x: 1, y: -1 });
   });
 });

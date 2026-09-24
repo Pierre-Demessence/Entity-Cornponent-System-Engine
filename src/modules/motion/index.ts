@@ -5,4 +5,4 @@ export {
   type VelocityIntegrationOptions,
   type VelocityIntegrationTickCtx,
 } from './motion';
-export { normalize, scaleToSpeed, type Vec2 } from './vec';
+export { moveToward, normalize, scaleToSpeed, type Vec2 } from './vec';
