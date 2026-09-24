@@ -10,6 +10,7 @@ import {
   vec3Length,
   vec3LengthSq,
   vec3Lerp,
+  vec3MoveToward,
   vec3Negate,
   vec3Normalize,
   vec3RandomUnit,
@@ -62,6 +63,7 @@ describe('vec3 arithmetic', () => {
     vec3AddScaled(a, b, 2);
     vec3Negate(a);
     vec3Lerp(a, b, 0.5);
+    vec3MoveToward(a, b, 1);
     vec3Normalize(a);
     vec3ScaleToLength(a, 5);
     vec3ClampLength(a, 1);
@@ -202,5 +204,60 @@ describe('vec3RandomUnit', () => {
     // A uniform sphere puts ~25% of its area in each polar cap.
     expect(below).toBeGreaterThan(60);
     expect(above).toBeGreaterThan(60);
+  });
+});
+
+describe('vec3MoveToward', () => {
+  it('steps the full delta along the line to the target', () => {
+    expect(vec3MoveToward({ x: 0, y: 0, z: 0 }, { x: 10, y: 0, z: 0 }, 3))
+      .toEqual({ x: 3, y: 0, z: 0 });
+  });
+
+  it('steps along a diagonal at the requested distance', () => {
+    const v = vec3MoveToward({ x: 0, y: 0, z: 0 }, { x: 1, y: 2, z: 2 }, 1.5);
+    expect(vec3Length(v)).toBeCloseTo(1.5, 12);
+    expect(v.x).toBeCloseTo(0.5, 12);
+    expect(v.y).toBeCloseTo(1, 12);
+  });
+
+  it('lands exactly on the target when delta equals the distance', () => {
+    expect(vec3MoveToward({ x: 0, y: 0, z: 0 }, { x: 1, y: 2, z: 2 }, 3))
+      .toEqual({ x: 1, y: 2, z: 2 });
+  });
+
+  it('does not overshoot when delta exceeds the distance', () => {
+    expect(vec3MoveToward({ x: 0, y: 0, z: 0 }, { x: 1, y: 2, z: 2 }, 100))
+      .toEqual({ x: 1, y: 2, z: 2 });
+  });
+
+  it('stays put on a zero distance', () => {
+    expect(vec3MoveToward({ x: 2, y: 3, z: 4 }, { x: 2, y: 3, z: 4 }, 1))
+      .toEqual({ x: 2, y: 3, z: 4 });
+  });
+
+  it('settles on the target across repeated calls, without drift', () => {
+    let p = { x: 0, y: 0, z: 0 };
+    for (let i = 0; i < 10; i++)
+      p = vec3MoveToward(p, { x: 0, y: 4, z: 0 }, 1);
+    expect(p).toEqual({ x: 0, y: 4, z: 0 });
+  });
+
+  it('returns the current position for delta = 0', () => {
+    expect(vec3MoveToward({ x: 1, y: -1, z: 2 }, { x: 5, y: 5, z: 5 }, 0))
+      .toEqual({ x: 1, y: -1, z: 2 });
+  });
+
+  it('returns the current position for a negative delta, without reversing', () => {
+    expect(vec3MoveToward({ x: 1, y: -1, z: 2 }, { x: 5, y: 5, z: 5 }, -2))
+      .toEqual({ x: 1, y: -1, z: 2 });
+  });
+
+  it('agrees with the 2D twin on the planar case', () => {
+    // Same inputs, same arithmetic — the two modules must not drift apart.
+    // (1,1) → (4,5) is a 3-4-5 triangle, so half the distance is (2.5, 3).
+    const stepped = vec3MoveToward({ x: 1, y: 1, z: 0 }, { x: 4, y: 5, z: 0 }, 2.5);
+    expect(stepped.x).toBeCloseTo(2.5, 12);
+    expect(stepped.y).toBeCloseTo(3, 12);
+    expect(stepped.z).toBe(0);
   });
 });

@@ -21,6 +21,7 @@ export {
   vec3Length,
   vec3LengthSq,
   vec3Lerp,
+  vec3MoveToward,
   vec3Negate,
   vec3Normalize,
   vec3RandomUnit,

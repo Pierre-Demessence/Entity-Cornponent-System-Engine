@@ -24,6 +24,7 @@ vec3AddScaled(a, b, s)         vec3Negate(v)             vec3Lerp(a, b, t)
 vec3Dot(a, b)                  vec3Cross(a, b)
 vec3Length(v)                  vec3LengthSq(v)           vec3Distance(a, b)
 vec3Normalize(v)               vec3ScaleToLength(v, length)
+vec3MoveToward(current, target, delta)
 vec3Reflect(v, normal)         vec3ClampLength(v, max)   vec3RandomUnit(rand?)
 
 interface Quat { w: number; x: number; y: number; z: number }
@@ -78,6 +79,13 @@ quatForward(q)                 quatUp(q)                 quatSlerp(a, b, t)
   it itself.
 - **`vec3Lerp`'s `t` is unclamped**, so `t = 2` is a legal extrapolation.
   Compose with `modules/math`'s `clamp01` when a bounded blend is wanted.
+- **`vec3MoveToward` mirrors `modules/motion`'s `moveToward`** — the same
+  degenerate-case contract, one dimension up: a non-positive `delta` returns
+  `current` unchanged (a negative budget means "no distance allowed", not
+  "move backwards"), a target already within `delta` is returned *exactly*, so a
+  mover cannot overshoot or drift, and a zero distance returns the target rather
+  than `NaN`. Canon: Unity `Vector3.MoveTowards`, Godot `Vector3.move_toward`,
+  Unreal `FMath::VInterpConstantTo`.
 - **`vec3RandomUnit`'s `rand` is typed `() => number` structurally**, so the
   module needs no import for it. Pass a seeded `modules/rng` generator when the
   distribution must be reproducible.
@@ -108,13 +116,16 @@ Deliberate exclusions.
 
 ```ts
 import { makeSeededRng } from '@pierre/ecs/modules/rng';
-import { quatForward, quatFromAxisAngle, quatMul, vec3AddScaled, vec3RandomUnit, vec3ScaleToLength } from '@pierre/ecs/modules/math-3d';
+import { quatForward, quatFromAxisAngle, quatMul, vec3AddScaled, vec3MoveToward, vec3RandomUnit, vec3ScaleToLength } from '@pierre/ecs/modules/math-3d';
 
 // Integrate gravity into a velocity each tick.
 const next = vec3AddScaled(vel, GRAVITY, dt);
 
 // Drive a body at a fixed speed along an arbitrary direction.
 const chase = vec3ScaleToLength({ x: dx, y: 0, z: dz }, ENEMY_SPEED);
+
+// Walk a point toward a waypoint at a constant speed, landing exactly on it.
+const stepped = vec3MoveToward(pos, waypoint, SPEED * dt);
 
 // Build an orientation from a yaw about +Y and a pitch about local +X, then
 // read the forward direction back out.
