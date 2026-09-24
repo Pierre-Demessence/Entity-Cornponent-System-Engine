@@ -11,6 +11,7 @@
 - `npm run lint` — ESLint check (`eslint --cache .`)
 - `npm run lint:fix` — ESLint with autofix
 - `npm run typecheck` — Type-check only (`src/` via `tsconfig.json`, then `scripts/` and the root configs via `tsconfig.node.json`; no build step, the package ships as TypeScript source consumed via `file:` install)
+- `npm run typecheck:examples` — Type-check every `examples/*` workspace (`npm exec --workspaces -- tsc --noEmit`, ~20s). CI runs this; it is deliberately not in the Husky hooks, where 20s is too slow for every push.
 - `npm test` — Vitest tests (`vitest run`)
 - `npm run test:watch` — Vitest in watch mode
 

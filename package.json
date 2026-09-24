@@ -35,6 +35,7 @@
     "lint": "eslint --cache .",
     "lint:fix": "eslint --cache --fix .",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.node.json",
+    "typecheck:examples": "npm exec --workspaces -- tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "docs:api": "jiti scripts/engine-api.gen.ts",
