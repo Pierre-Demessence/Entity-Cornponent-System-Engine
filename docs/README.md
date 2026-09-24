@@ -9,7 +9,9 @@ signature and JSDoc summary. Read it before hand-rolling a helper.
 
 Its counterpart is [Engine usage](agent/engine-usage.md) — the same surface
 read the other way: which files reference each export (examples, unit tests,
-other engine source), and which nothing references yet.
+other engine source), and which nothing references yet. The same model ships as
+`engine-usage.json`, and `npm run docs:usage` writes a sortable HTML view next to
+it (generated, not committed).
 
 ## Primitives
 

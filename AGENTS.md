@@ -120,7 +120,8 @@ whenever you add, remove, or rename a public export — a drift test fails
 which files reference each export, bucketed as example / unit test / other
 engine source, plus a ranking of the value exports no prototype reaches. Read it
 when choosing what to prove next. Regenerate with `npm run docs:usage` (also
-drift-guarded by `npm test`).
+drift-guarded by `npm test`) — that writes the versioned markdown and JSON model
+alongside a generated, gitignored HTML view with sortable tables.
 
 ## See also
 

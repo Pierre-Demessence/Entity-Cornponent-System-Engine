@@ -14,6 +14,9 @@ coverage
 .eslintcache
 *.local
 
+# Generated from the usage model; the versioned artifacts are the .md and .json.
+docs/agent/engine-usage.html
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

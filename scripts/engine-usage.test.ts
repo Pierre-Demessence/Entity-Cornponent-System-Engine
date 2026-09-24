@@ -1,25 +1,36 @@
+import type { UsageReport } from './engine-usage';
+
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import ts from 'typescript';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { readEntries } from './engine-surface';
 import {
+  buildUsageReport,
   classifyConsumer,
   declarationNameNodes,
   ENGINE_USAGE_DOC,
-  generateEngineUsageMarkdown,
+  ENGINE_USAGE_JSON_DOC,
   isImported,
   isPlumbing,
   isSelfConsumption,
   isTypePosition,
   referenceMode,
+  renderUsageJson,
+  renderUsageMarkdown,
 } from './engine-usage';
 
 const root = resolve(fileURLToPath(import.meta.url), '../..');
+
+// Normalize line endings: git autocrlf may check files out as CRLF while the
+// generators always emit LF, which must not fail a drift comparison.
+const normalize = (text: string): string => text.replace(/\r\n/g, '\n');
+
+const committed = (doc: string): string => readFileSync(join(root, doc), 'utf8');
 
 /** Every identifier with this text in a parsed source. */
 function identifiersIn(source: ts.SourceFile, name: string): ts.Identifier[] {
@@ -43,19 +54,34 @@ function identifierIn(sourceText: string, name: string): ts.Identifier {
 }
 
 describe('engine usage report', () => {
-  it('is in sync with the source (run `npm run docs:usage` if this fails)', () => {
-    const committed = readFileSync(join(root, ENGINE_USAGE_DOC), 'utf8');
-    // Normalize line endings: git autocrlf may check the file out as CRLF while
-    // the generator always emits LF, which must not fail the drift comparison.
-    const normalize = (s: string): string => s.replace(/\r\n/g, '\n');
-    expect(normalize(generateEngineUsageMarkdown())).toBe(normalize(committed));
+  let report: UsageReport;
+  beforeAll(() => {
+    report = buildUsageReport();
   }, 30_000);
 
+  it('markdown is in sync with the source (run `npm run docs:usage` if this fails)', () => {
+    expect(normalize(renderUsageMarkdown(report))).toBe(normalize(committed(ENGINE_USAGE_DOC)));
+  });
+
+  it('json is in sync with the source (run `npm run docs:usage` if this fails)', () => {
+    expect(normalize(renderUsageJson(report))).toBe(normalize(committed(ENGINE_USAGE_JSON_DOC)));
+  });
+
+  it('renders the markdown from the committed json, so the two cannot drift apart', () => {
+    const fromJson = JSON.parse(committed(ENGINE_USAGE_JSON_DOC)) as UsageReport;
+    expect(normalize(renderUsageMarkdown(fromJson))).toBe(normalize(committed(ENGINE_USAGE_DOC)));
+  });
+
+  it('keeps the model JSON-round-trippable', () => {
+    // A Set or Map creeping into the model would serialize to `{}` and break
+    // both the JSON contract and the HTML lens.
+    expect(JSON.parse(JSON.stringify(report))).toEqual(report);
+  });
+
   it('covers every public entry of the exports map', () => {
-    const markdown = readFileSync(join(root, ENGINE_USAGE_DOC), 'utf8');
-    for (const entry of readEntries())
-      expect(markdown).toContain(`### \`${entry.importPath}\``);
-  }, 30_000);
+    const expected = readEntries().map(entry => entry.importPath).sort();
+    expect(report.entries.map(entry => entry.importPath).sort()).toEqual(expected);
+  });
 });
 
 describe('classifyConsumer', () => {

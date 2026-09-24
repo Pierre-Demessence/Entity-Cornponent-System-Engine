@@ -1,14 +1,19 @@
 import type { Entry, SymbolKind } from './engine-surface';
 
 /**
- * Generates the engine usage report (`docs/agent/engine-usage.md`): for every
- * public export, which files reference it, bucketed by consumer kind — an
- * example package, a unit test, or other engine source. The inverse view of
- * `engine-api.ts`: that catalog says what exists, this says what is used.
+ * Generates the engine usage report: for every public export, which files
+ * reference it, bucketed by consumer kind — an example package, a unit test, or
+ * other engine source. The inverse view of `engine-api.ts`: that catalog says
+ * what exists, this says what is used.
  *
- * Pure: writes nothing. The CLI wrapper (`engine-usage.gen.ts`) writes the file;
- * the drift test (`engine-usage.test.ts`) compares the committed file against a
- * fresh generation.
+ * Analysis and rendering are separate: `buildUsageReport()` returns a plain
+ * JSON-able model, which three renderers turn into the committed markdown, the
+ * committed JSON contract, and a generated HTML lens (not committed — see
+ * `.gitignore`).
+ *
+ * Pure: writes nothing. The CLI wrapper (`engine-usage.gen.ts`) writes the
+ * files; the drift test (`engine-usage.test.ts`) compares each committed file
+ * against a fresh generation.
  */
 import { existsSync, readdirSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
@@ -24,8 +29,11 @@ import {
   ROOT,
 } from './engine-surface';
 
-/** Repo-relative path of the generated report. */
+/** Repo-relative paths of the generated artifacts. */
 export const ENGINE_USAGE_DOC = 'docs/agent/engine-usage.md';
+export const ENGINE_USAGE_JSON_DOC = 'docs/agent/engine-usage.json';
+/** Generated and gitignored: a local lens over the JSON, not a versioned artifact. */
+export const ENGINE_USAGE_HTML_DOC = 'docs/agent/engine-usage.html';
 
 /**
  * `examples/hub` renders every other example, so counting it would credit all
@@ -38,16 +46,18 @@ const MAX_LISTED = 8;
 
 type Bucket = 'example' | 'test' | 'other';
 
-interface BucketUsage {
+/** Live accumulator for one bucket; its serializable form is `BucketUsage`. */
+interface MutableBucket {
   consumers: Set<string>;
   type: boolean;
   value: boolean;
 }
 
+/** The three live buckets collected for one symbol, before serialization. */
 interface Usage {
-  example: BucketUsage;
-  other: BucketUsage;
-  test: BucketUsage;
+  example: MutableBucket;
+  other: MutableBucket;
+  test: MutableBucket;
 }
 
 interface Target {
@@ -67,6 +77,84 @@ interface Target {
 interface Consumer {
   bucket: Bucket;
   label: string;
+}
+
+/*
+ * The serializable model. Everything from here to `buildUsageReport()` is plain
+ * JSON-able data — arrays, never `Set`/`Map`, every list already sorted — so the
+ * JSON artifact is byte-stable and the markdown and HTML renderers cannot
+ * disagree about what the data means.
+ */
+
+/** One consumer bucket in the model: who references a symbol, and how. */
+export interface BucketUsage {
+  /** Consumer labels, sorted. */
+  consumers: string[];
+  /** For a value symbol: every reference in this bucket is in type position. */
+  typeOnly: boolean;
+}
+
+export interface SymbolUsage {
+  name: string;
+  /** A value symbol needs a value-position example reference to count. */
+  coveredByExample: boolean;
+  example: BucketUsage;
+  isValue: boolean;
+  kind: SymbolKind;
+  /** Nothing outside the symbol's own source references it. */
+  noExternalConsumer: boolean;
+  other: BucketUsage;
+  test: BucketUsage;
+}
+
+export interface EntryUsage {
+  coveredByExample: boolean;
+  /** Unions across the entry's symbols, sorted. */
+  examples: string[];
+  importPath: string;
+  isModule: boolean;
+  other: string[];
+  symbols: SymbolUsage[];
+  tests: string[];
+  typeTotal: number;
+  typeUsedByExample: number;
+  valueTotal: number;
+  valueUsedByExample: number;
+}
+
+export interface ExampleUsage {
+  name: string;
+  entries: number;
+  type: number;
+  value: number;
+}
+
+export interface CandidateUsage {
+  importPath: string;
+  missing: number;
+  total: number;
+}
+
+export interface UsageReport {
+  /** Modules ranked by unreferenced value exports. */
+  candidates: CandidateUsage[];
+  /** Sorted by import path. */
+  entries: EntryUsage[];
+  /** Sorted by reach, then name. */
+  examples: ExampleUsage[];
+  headline: {
+    entries: number;
+    coreEntries: number;
+    modules: number;
+    symbols: number;
+    valueSymbols: number;
+    typeSymbols: number;
+    entriesWithExample: number;
+    entriesWithoutExample: number;
+    valueWithoutExample: number;
+    valueWithNoConsumer: number;
+    noExternalConsumer: number;
+  };
 }
 
 /**
@@ -238,7 +326,7 @@ function barrelFiles(entries: Entry[]): Set<string> {
   return barrels;
 }
 
-function emptyBucket(): BucketUsage {
+function emptyBucket(): MutableBucket {
   return { consumers: new Set(), type: false, value: false };
 }
 
@@ -369,10 +457,6 @@ function noExternalConsumer(target: Target): boolean {
     && target.usage.other.consumers.size === 0;
 }
 
-function kindOfTarget(target: Target): Mode {
-  return isValueKind(target.kind) ? 'value' : 'type';
-}
-
 function listNames(names: string[]): string {
   if (names.length === 0)
     return '—';
@@ -380,11 +464,11 @@ function listNames(names: string[]): string {
   return names.length > MAX_LISTED ? `${head} +${names.length - MAX_LISTED} more` : head;
 }
 
-function describeBucket(usage: BucketUsage, kind: SymbolKind): string {
-  if (usage.consumers.size === 0)
+function describeBucket(bucket: BucketUsage, isValue: boolean): string {
+  if (bucket.consumers.length === 0)
     return '—';
-  const typeOnly = isValueKind(kind) && !usage.value ? ' (type only)' : '';
-  return `${listNames([...usage.consumers].sort(compareNames))}${typeOnly}`;
+  const typeOnly = isValue && bucket.typeOnly ? ' (type only)' : '';
+  return `${listNames(bucket.consumers)}${typeOnly}`;
 }
 
 function unionConsumers(symbols: Target[], bucket: Bucket): string[] {
@@ -396,79 +480,145 @@ function unionConsumers(symbols: Target[], bucket: Bucket): string[] {
   return [...names].sort(compareNames);
 }
 
-function symbolLine(target: Target): string {
-  const label = `- **\`${target.name}\`** _(${target.kind})_`;
-  if (noExternalConsumer(target))
+function symbolLine(symbol: SymbolUsage): string {
+  const label = `- **\`${symbol.name}\`** _(${symbol.kind})_`;
+  if (symbol.noExternalConsumer)
     return `${label} — no external consumer`;
-  return `${label} — examples: ${describeBucket(target.usage.example, target.kind)}`
-    + ` · tests: ${describeBucket(target.usage.test, target.kind)}`
-    + ` · other: ${describeBucket(target.usage.other, target.kind)}`;
+  return `${label} — examples: ${describeBucket(symbol.example, symbol.isValue)}`
+    + ` · tests: ${describeBucket(symbol.test, symbol.isValue)}`
+    + ` · other: ${describeBucket(symbol.other, symbol.isValue)}`;
 }
 
-interface EntrySection {
-  entry: Entry;
-  symbols: Target[];
+function entrySummary(entry: EntryUsage): string {
+  return `value ${entry.valueUsedByExample}/${entry.valueTotal} · type ${entry.typeUsedByExample}/${entry.typeTotal}`
+    + ` · examples: ${listNames(entry.examples)}`
+    + ` · tests: ${entry.tests.length || '—'}`
+    + ` · other: ${listNames(entry.other)}`;
 }
 
-function buildSections(entries: Entry[], targets: Target[]): EntrySection[] {
-  return [...entries]
-    .sort((a, b) => compareNames(a.importPath, b.importPath))
-    .map(entry => ({
-      entry,
-      symbols: targets
-        .filter(target => target.entry === entry)
-        .sort((a, b) => compareNames(a.name, b.name)),
-    }));
+/** Serialize one live bucket: sorted consumers, plus how they referenced it. */
+function toBucketUsage(bucket: MutableBucket): BucketUsage {
+  return {
+    consumers: [...bucket.consumers].sort(compareNames),
+    typeOnly: !bucket.value && bucket.type,
+  };
 }
 
-function entrySummary(symbols: Target[]): string {
-  const used = (kind: Mode): number => symbols.filter(s => kindOfTarget(s) === kind && exampleCovered(s)).length;
-  const total = (kind: Mode): number => symbols.filter(s => kindOfTarget(s) === kind).length;
-  const tests = unionConsumers(symbols, 'test');
-  return `value ${used('value')}/${total('value')} · type ${used('type')}/${total('type')}`
-    + ` · examples: ${listNames(unionConsumers(symbols, 'example'))}`
-    + ` · tests: ${tests.length || '—'}`
-    + ` · other: ${listNames(unionConsumers(symbols, 'other'))}`;
+function toSymbolUsage(target: Target): SymbolUsage {
+  return {
+    name: target.name,
+    coveredByExample: exampleCovered(target),
+    example: toBucketUsage(target.usage.example),
+    isValue: isValueKind(target.kind),
+    kind: target.kind,
+    noExternalConsumer: noExternalConsumer(target),
+    other: toBucketUsage(target.usage.other),
+    test: toBucketUsage(target.usage.test),
+  };
 }
 
-interface ExampleCoverage {
-  entries: Set<string>;
-  type: number;
-  value: number;
+function toEntryUsage(entry: Entry, symbols: Target[]): EntryUsage {
+  const values = symbols.filter(t => isValueKind(t.kind));
+  const types = symbols.filter(t => !isValueKind(t.kind));
+  return {
+    coveredByExample: symbols.some(exampleCovered),
+    examples: unionConsumers(symbols, 'example'),
+    importPath: entry.importPath,
+    isModule: entry.isModule,
+    other: unionConsumers(symbols, 'other'),
+    symbols: [...symbols].sort((a, b) => compareNames(a.name, b.name)).map(toSymbolUsage),
+    tests: unionConsumers(symbols, 'test'),
+    typeTotal: types.length,
+    typeUsedByExample: types.filter(exampleCovered).length,
+    valueTotal: values.length,
+    valueUsedByExample: values.filter(exampleCovered).length,
+  };
 }
 
-function coverageByExample(targets: Target[]): Map<string, ExampleCoverage> {
-  const map = new Map<string, ExampleCoverage>();
+function toExampleUsages(targets: Target[]): ExampleUsage[] {
+  const seenEntries = new Map<string, Set<string>>();
+  const coverage = new Map<string, ExampleUsage>();
   for (const target of targets) {
     for (const name of target.usage.example.consumers) {
-      const existing = map.get(name);
-      const coverage = existing ?? { entries: new Set<string>(), type: 0, value: 0 };
-      map.set(name, coverage);
-      coverage.entries.add(target.entry.importPath);
-      if (kindOfTarget(target) === 'value' && target.usage.example.value)
-        coverage.value++;
+      const usage = coverage.get(name) ?? { name, entries: 0, type: 0, value: 0 };
+      coverage.set(name, usage);
+      const seen = seenEntries.get(name) ?? new Set<string>();
+      seenEntries.set(name, seen);
+      if (!seen.has(target.entry.importPath)) {
+        seen.add(target.entry.importPath);
+        usage.entries++;
+      }
+      if (isValueKind(target.kind) && target.usage.example.value)
+        usage.value++;
       else
-        coverage.type++;
+        usage.type++;
     }
   }
-  return map;
+  return [...coverage.values()]
+    .sort((a, b) => (b.value + b.type) - (a.value + a.type) || compareNames(a.name, b.name));
 }
 
-/** Build the full markdown report as a deterministic string. */
-export function generateEngineUsageMarkdown(): string {
+/** Assemble the serializable model from the collected references. */
+function toReport(entries: Entry[], targets: Target[]): UsageReport {
+  const byEntry = new Map<Entry, Target[]>();
+  for (const target of targets) {
+    const list = byEntry.get(target.entry);
+    if (list)
+      list.push(target);
+    else
+      byEntry.set(target.entry, [target]);
+  }
+
+  const entryUsages = [...entries]
+    .sort((a, b) => compareNames(a.importPath, b.importPath))
+    .map(entry => toEntryUsage(entry, byEntry.get(entry) ?? []));
+  const values = targets.filter(t => isValueKind(t.kind));
+  const valueWithoutExample = values.filter(t => !exampleCovered(t));
+
+  return {
+    entries: entryUsages,
+    examples: toExampleUsages(targets),
+    candidates: entryUsages
+      .filter(e => e.isModule)
+      .map(e => ({ importPath: e.importPath, missing: e.valueTotal - e.valueUsedByExample, total: e.valueTotal }))
+      .filter(c => c.missing > 0)
+      .sort((a, b) => b.missing - a.missing || compareNames(a.importPath, b.importPath)),
+    headline: {
+      coreEntries: entryUsages.filter(e => !e.isModule).length,
+      entries: entryUsages.length,
+      entriesWithExample: entryUsages.filter(e => e.coveredByExample).length,
+      entriesWithoutExample: entryUsages.filter(e => !e.coveredByExample).length,
+      modules: entryUsages.filter(e => e.isModule).length,
+      noExternalConsumer: targets.filter(noExternalConsumer).length,
+      symbols: targets.length,
+      typeSymbols: targets.length - values.length,
+      valueSymbols: values.length,
+      valueWithNoConsumer: valueWithoutExample.filter(noExternalConsumer).length,
+      valueWithoutExample: valueWithoutExample.length,
+    },
+  };
+}
+
+/**
+ * Build the whole report: one compiler program, one AST pass, then the
+ * serializable model that every renderer shares.
+ */
+export function buildUsageReport(): UsageReport {
   const program = createUsageProgram();
   const checker = program.getTypeChecker();
   const entries = readEntries();
   const targets = buildTargets(program, checker, entries);
   assertExamplesResolved(program, collectReferences(program, targets));
+  return toReport(entries, targets);
+}
 
-  const sections = buildSections(entries, targets);
-  const modules = sections.filter(s => s.entry.isModule);
-  const withExample = sections.filter(s => s.symbols.some(exampleCovered));
-  const withoutExample = sections.filter(s => !s.symbols.some(exampleCovered));
-  const valueTargets = targets.filter(t => kindOfTarget(t) === 'value');
-  const valueNoExample = valueTargets.filter(t => !exampleCovered(t));
-  const never = targets.filter(noExternalConsumer);
+/** Build the full markdown report as a deterministic string. */
+/** Render the committed markdown. Deterministic: byte-stable across machines. */
+export function renderUsageMarkdown(report: UsageReport): string {
+  const { headline } = report;
+  const entries = report.entries;
+  const modules = entries.filter(e => e.isModule);
+  const withoutExample = entries.filter(e => !e.coveredByExample);
 
   const lines: string[] = [
     '<!-- GENERATED by scripts/engine-usage.gen.ts — do not edit by hand. Run `npm run docs:usage`. -->',
@@ -511,10 +661,10 @@ export function generateEngineUsageMarkdown(): string {
     '',
     '## Headline',
     '',
-    `- ${sections.length} public entries (${sections.length - modules.length} core, ${modules.length} modules) · ${targets.length} symbols (${valueTargets.length} value, ${targets.length - valueTargets.length} type)`,
-    `- ${withExample.length} entries referenced by at least one example · ${withoutExample.length} with none`,
-    `- ${valueNoExample.length} value symbols referenced by no example (${valueNoExample.filter(noExternalConsumer).length} of them with no external consumer at all)`,
-    `- ${never.length} symbols with no external consumer`,
+    `- ${headline.entries} public entries (${headline.coreEntries} core, ${headline.modules} modules) · ${headline.symbols} symbols (${headline.valueSymbols} value, ${headline.typeSymbols} type)`,
+    `- ${headline.entriesWithExample} entries referenced by at least one example · ${headline.entriesWithoutExample} with none`,
+    `- ${headline.valueWithoutExample} value symbols referenced by no example (${headline.valueWithNoConsumer} of them with no external consumer at all)`,
+    `- ${headline.noExternalConsumer} symbols with no external consumer`,
     '',
     '## Entries with no example reference',
     '',
@@ -528,10 +678,9 @@ export function generateEngineUsageMarkdown(): string {
     lines.push('None — every entry has an example consumer.', '');
   }
   else {
-    for (const section of withoutExample) {
-      const tests = unionConsumers(section.symbols, 'test');
+    for (const entry of withoutExample) {
       lines.push(
-        `- \`${section.entry.importPath}\` — tests: ${tests.length || '—'} · other: ${listNames(unionConsumers(section.symbols, 'other'))}`,
+        `- \`${entry.importPath}\` — tests: ${entry.tests.length || '—'} · other: ${listNames(entry.other)}`,
       );
     }
     lines.push('');
@@ -546,21 +695,12 @@ export function generateEngineUsageMarkdown(): string {
     '',
   );
 
-  const candidates = modules
-    .map(section => ({
-      missing: section.symbols.filter(t => kindOfTarget(t) === 'value' && !exampleCovered(t)).length,
-      section,
-      total: section.symbols.filter(t => kindOfTarget(t) === 'value').length,
-    }))
-    .filter(c => c.missing > 0)
-    .sort((a, b) => b.missing - a.missing || compareNames(a.section.entry.importPath, b.section.entry.importPath));
-
-  if (candidates.length === 0) {
+  if (report.candidates.length === 0) {
     lines.push('None — every module has at least one value export used by an example.', '');
   }
   else {
-    for (const c of candidates)
-      lines.push(`- \`${c.section.entry.importPath}\` — ${c.missing} of ${c.total} value exports unreferenced by any example`);
+    for (const candidate of report.candidates)
+      lines.push(`- \`${candidate.importPath}\` — ${candidate.missing} of ${candidate.total} value exports unreferenced by any example`);
     lines.push('');
   }
 
@@ -574,25 +714,245 @@ export function generateEngineUsageMarkdown(): string {
     '| example | entries | value | type |',
     '|---|---|---|---|',
   );
-  const coverage = [...coverageByExample(targets)]
-    .sort((a, b) => (b[1].value + b[1].type) - (a[1].value + a[1].type) || compareNames(a[0], b[0]));
-  for (const [name, cov] of coverage)
-    lines.push(`| ${name} | ${cov.entries.size} | ${cov.value} | ${cov.type} |`);
-  if (coverage.length === 0)
+  for (const example of report.examples)
+    lines.push(`| ${example.name} | ${example.entries} | ${example.value} | ${example.type} |`);
+  if (report.examples.length === 0)
     lines.push('| — | — | — | — |');
   lines.push('');
 
-  const renderGroup = (title: string, group: EntrySection[]): void => {
+  const renderGroup = (title: string, group: EntryUsage[]): void => {
     lines.push('---', '', `## ${title}`, '');
-    for (const section of group) {
-      lines.push(`### \`${section.entry.importPath}\``, '', entrySummary(section.symbols), '');
-      for (const symbol of section.symbols)
+    for (const entry of group) {
+      lines.push(`### \`${entry.importPath}\``, '', entrySummary(entry), '');
+      for (const symbol of entry.symbols)
         lines.push(symbolLine(symbol));
       lines.push('');
     }
   };
-  renderGroup('Core primitives', sections.filter(s => !s.entry.isModule));
+  renderGroup('Core primitives', entries.filter(e => !e.isModule));
   renderGroup('Modules', modules);
 
   return `${lines.join('\n')}\n`;
+}
+
+/** Render the committed JSON contract: the model itself, pretty-printed. */
+export function renderUsageJson(report: UsageReport): string {
+  return `${JSON.stringify(report, null, 2)}\n`;
+}
+
+/** Inline JSON without letting a `</script>` sequence escape the script tag. */
+function inlineJson(data: unknown): string {
+  return JSON.stringify(data).replaceAll('<', '\\u003c');
+}
+
+/**
+ * Render the HTML lens: one self-contained file with the model inlined (no
+ * network, so it opens straight from disk), sortable columns and a filter. It is
+ * generated and gitignored — a way to look at the data, not a versioned artifact.
+ */
+export function renderUsageHtml(report: UsageReport): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engine usage report</title>
+<style>
+:root { color-scheme: light dark; --line: #c9c9c9; --gap: #b03030; }
+* { box-sizing: border-box; }
+body { margin: 0 auto; padding: 1.5rem; max-width: 1200px; font: 14px/1.55 ui-sans-serif, system-ui, sans-serif; }
+h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
+h2 { font-size: 1rem; margin: 2rem 0 .5rem; }
+.sub { margin: 0 0 1rem; }
+code { font-family: ui-monospace, SFMono-Regular, monospace; }
+.muted { opacity: .55; }
+.stats { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+.stats li { border: 1px solid var(--line); border-radius: .4rem; padding: .3rem .6rem; }
+.stats b { font-variant-numeric: tabular-nums; }
+.controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: .75rem; }
+input[type='search'] { flex: 1 1 16rem; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: .4rem; background: transparent; color: inherit; }
+.controls label { display: flex; gap: .35rem; align-items: center; white-space: nowrap; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { cursor: pointer; user-select: none; white-space: nowrap; }
+th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+th, td.ellipsis { white-space: nowrap; }
+td.ellipsis { max-width: 16rem; overflow: hidden; text-overflow: ellipsis; }
+tbody tr.entry { cursor: pointer; }
+tbody tr:hover { background: rgba(127, 127, 127, .12); }
+tr.detail td { padding: 0 0 .75rem 1.5rem; border-bottom: none; }
+tr.detail table { font-size: 13px; }
+tr.gap td:last-child { color: var(--gap); font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>Engine usage report</h1>
+<p class="sub">References, not exercise. Generated by <code>npm run docs:usage</code>; the versioned
+artifacts are <code>engine-usage.md</code> and <code>engine-usage.json</code>.
+Click a row for its symbols, a header to sort.</p>
+<ul class="stats" id="stats"></ul>
+<div class="controls">
+<input id="filter" type="search" placeholder="filter entries and symbols">
+<label><input id="gaps" type="checkbox">only entries with no example</label>
+<label><input id="modules" type="checkbox">modules only</label>
+</div>
+<table>
+<thead><tr id="head"></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+<h2>Coverage by example</h2>
+<table>
+<thead><tr><th>example</th><th class="num">entries</th><th class="num">value</th><th class="num">type</th></tr></thead>
+<tbody id="examples"></tbody>
+</table>
+<script>
+const REPORT = ${inlineJson(report)};
+const COLUMNS = [
+  { key: 'name', label: 'entry', sort: e => e.importPath, text: e => e.importPath },
+  { key: 'value', label: 'value', cls: 'num', sort: e => e.valueTotal ? e.valueUsedByExample / e.valueTotal : 0, text: e => e.valueUsedByExample + '/' + e.valueTotal },
+  { key: 'type', label: 'type', cls: 'num', sort: e => e.typeTotal ? e.typeUsedByExample / e.typeTotal : 0, text: e => e.typeUsedByExample + '/' + e.typeTotal },
+  { key: 'examples', label: 'examples', cls: 'ellipsis', sort: e => e.examples.length, text: e => list(e.examples), title: e => e.examples.join(', ') },
+  { key: 'tests', label: 'tests', cls: 'num', sort: e => e.tests.length, text: e => e.tests.length || '\u2014' },
+  { key: 'other', label: 'other', cls: 'ellipsis', sort: e => e.other.length, text: e => list(e.other), title: e => e.other.join(', ') },
+  { key: 'gaps', label: 'no example', cls: 'num', sort: e => e.valueTotal - e.valueUsedByExample, text: e => (e.valueTotal - e.valueUsedByExample) + '/' + e.valueTotal },
+];
+const state = { filter: '', gaps: false, modules: false, sort: 'gaps', dir: -1, open: {} };
+
+function list(names) {
+  if (!names.length) return '\u2014';
+  return names.length > 6 ? names.slice(0, 6).join(', ') + ' +' + (names.length - 6) + ' more' : names.join(', ');
+}
+function bucket(b, isValue) {
+  if (!b.consumers.length) return '\u2014';
+  return list(b.consumers) + (isValue && b.typeOnly ? ' (type only)' : '');
+}
+function bucketCell(text, b) {
+  const cell = el('td', text, 'ellipsis');
+  cell.title = b.consumers.join(', ');
+  return cell;
+}
+function el(tag, text, cls) {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text;
+  if (cls) node.className = cls;
+  return node;
+}
+function matches(entry) {
+  if (state.modules && !entry.isModule) return false;
+  if (state.gaps && entry.coveredByExample) return false;
+  if (!state.filter) return true;
+  const q = state.filter.toLowerCase();
+  return entry.importPath.toLowerCase().includes(q) || entry.symbols.some(s => s.name.toLowerCase().includes(q));
+}
+function sorted() {
+  const column = COLUMNS.find(c => c.key === state.sort) || COLUMNS[0];
+  const rows = REPORT.entries.filter(matches);
+  return rows.sort((a, b) => {
+    const x = column.sort(a);
+    const y = column.sort(b);
+    if (x === y) return a.importPath < b.importPath ? -1 : 1;
+    return (x < y ? -1 : 1) * state.dir;
+  });
+}
+function detailRow(entry) {
+  const row = el('tr', undefined, 'detail');
+  const cell = el('td');
+  cell.colSpan = COLUMNS.length;
+  const tableEl = document.createElement('table');
+  const headEl = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  for (const label of ['symbol', 'kind', 'examples', 'tests', 'other']) headRow.appendChild(el('th', label));
+  headEl.appendChild(headRow);
+  tableEl.appendChild(headEl);
+  const bodyEl = document.createElement('tbody');
+  for (const symbol of entry.symbols) {
+    const symbolRow = document.createElement('tr');
+    const nameCell = el('td', symbol.name, symbol.noExternalConsumer ? 'muted' : undefined);
+    nameCell.title = symbol.noExternalConsumer ? 'no external consumer' : '';
+    symbolRow.appendChild(nameCell);
+    symbolRow.appendChild(el('td', symbol.kind));
+    symbolRow.appendChild(bucketCell(bucket(symbol.example, symbol.isValue), symbol.example));
+    symbolRow.appendChild(bucketCell(bucket(symbol.test, symbol.isValue), symbol.test));
+    symbolRow.appendChild(bucketCell(bucket(symbol.other, symbol.isValue), symbol.other));
+    bodyEl.appendChild(symbolRow);
+  }
+  tableEl.appendChild(bodyEl);
+  cell.appendChild(tableEl);
+  row.appendChild(cell);
+  return row;
+}
+function renderHead() {
+  const head = document.getElementById('head');
+  head.textContent = '';
+  for (const column of COLUMNS) {
+    const arrow = state.sort === column.key ? (state.dir > 0 ? ' \u25B2' : ' \u25BC') : '';
+    const th = el('th', column.label + arrow, column.cls);
+    th.addEventListener('click', () => {
+      if (state.sort === column.key) state.dir = -state.dir;
+      else { state.sort = column.key; state.dir = column.cls === 'num' ? -1 : 1; }
+      renderHead();
+      renderRows();
+    });
+    head.appendChild(th);
+  }
+}
+function renderRows() {
+  const body = document.getElementById('rows');
+  body.textContent = '';
+  for (const entry of sorted()) {
+    const row = el('tr', undefined, 'entry' + (entry.coveredByExample ? '' : ' gap'));
+    row.appendChild(el('td', (state.open[entry.importPath] ? '\u25BE ' : '\u25B8 ') + entry.importPath));
+    for (const column of COLUMNS.slice(1)) {
+      const cell = el('td', String(column.text(entry)), column.cls);
+      if (column.title) cell.title = column.title(entry);
+      row.appendChild(cell);
+    }
+    row.addEventListener('click', () => {
+      state.open[entry.importPath] = !state.open[entry.importPath];
+      renderRows();
+    });
+    body.appendChild(row);
+    if (state.open[entry.importPath]) body.appendChild(detailRow(entry));
+  }
+}
+function renderStats() {
+  const h = REPORT.headline;
+  const items = [
+    ['entries', h.entries], ['modules', h.modules], ['symbols', h.symbols],
+    ['value exports', h.valueSymbols], ['no example ref', h.valueWithoutExample],
+    ['no external consumer', h.noExternalConsumer], ['entries without example', h.entriesWithoutExample],
+  ];
+  const stats = document.getElementById('stats');
+  for (const item of items) {
+    const li = document.createElement('li');
+    li.appendChild(document.createTextNode(item[0] + ' '));
+    const value = document.createElement('b');
+    value.textContent = String(item[1]);
+    li.appendChild(value);
+    stats.appendChild(li);
+  }
+}
+function renderExamples() {
+  const body = document.getElementById('examples');
+  for (const example of REPORT.examples) {
+    const row = document.createElement('tr');
+    row.appendChild(el('td', example.name));
+    row.appendChild(el('td', String(example.entries), 'num'));
+    row.appendChild(el('td', String(example.value), 'num'));
+    row.appendChild(el('td', String(example.type), 'num'));
+    body.appendChild(row);
+  }
+}
+
+document.getElementById('filter').addEventListener('input', event => { state.filter = event.target.value; renderRows(); });
+document.getElementById('gaps').addEventListener('change', event => { state.gaps = event.target.checked; renderRows(); });
+document.getElementById('modules').addEventListener('change', event => { state.modules = event.target.checked; renderRows(); });
+renderStats();
+renderHead();
+renderRows();
+renderExamples();
+</script>
+</body>
+</html>
+`;
 }

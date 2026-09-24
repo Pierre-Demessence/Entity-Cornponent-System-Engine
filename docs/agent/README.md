@@ -45,6 +45,10 @@ reinventing shipped primitives).
   reference each export, bucketed as example / unit test / other engine source.
   Read it when choosing what to build next. Regenerate with `npm run docs:usage`;
   a drift test (`scripts/engine-usage.test.ts`) fails `npm test` if it is stale.
+- `npm run docs:usage` writes three artifacts from one model: `engine-usage.md`
+  (versioned, for reading), `engine-usage.json` (versioned, the data contract
+  other tools can consume), and `engine-usage.html` (generated and gitignored —
+  sortable and filterable, opens straight from disk).
 
 ### Modules (`src/modules/<name>/`, exported as `@pierre/ecs/modules/<name>`)
 
