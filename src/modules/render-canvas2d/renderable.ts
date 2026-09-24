@@ -2,6 +2,14 @@ import type { ComponentDef } from '#index';
 
 import { asArray, asBoolean, asNumber, asObject, asString } from '#validation';
 
+/** What `PositionDef` anchors to on a `rect`: its top-left corner or its centre. */
+export type RectAnchor = 'center' | 'top-left';
+
+/** What `PositionDef` anchors to on a `circle`: its centre or its bounding box's top-left. */
+export type CircleAnchor = 'center' | 'top-left';
+
+export interface PolygonPoint { x: number; y: number }
+
 /**
  * Discriminated union of drawable shapes the default Canvas2D renderer
  * understands.
@@ -23,11 +31,6 @@ import { asArray, asBoolean, asNumber, asObject, asString } from '#validation';
  * draws nothing. Supplying both draws fill first, then stroke on top.
  * `sprite` ignores fill/stroke entirely.
  */
-export type RectAnchor = 'center' | 'top-left';
-export type CircleAnchor = 'center' | 'top-left';
-
-export interface PolygonPoint { x: number; y: number }
-
 export type Renderable
   = | {
     kind: 'rect';
