@@ -32,9 +32,10 @@ primitive also has a dedicated page under [`docs/`](../).
 
 [`engine-api.md`](engine-api.md) is a generated, one-line-per-symbol catalog
 of the **entire public surface** — every `@pierre/ecs/*` and
-`@pierre/ecs/modules/*` export plus its JSDoc summary. Read it first to find an
-existing helper before hand-rolling one in an example (the cheap alternative to
-opening every module README, and the fix for reinventing shipped primitives).
+`@pierre/ecs/modules/*` export with its type-level signature and JSDoc
+summary. Read it first to find an existing helper before hand-rolling one in an
+example (the cheap alternative to opening every module README, and the fix for
+reinventing shipped primitives).
 
 - Regenerate after changing any public export: `npm run docs:api`.
 - A drift test (`scripts/engine-api.test.ts`) fails `npm test` if it is stale.

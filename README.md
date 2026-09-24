@@ -108,9 +108,9 @@ Longer walkthrough and full API in [`docs/`](./docs/).
 ## Documentation
 
 **Start here:** [Engine API surface](./docs/agent/engine-api.md) — a flat,
-one-line-per-symbol catalog of every public export, grouped by import path.
-The fastest way to find an existing helper before hand-rolling one
-(regenerate with `npm run docs:api`).
+one-line-per-symbol catalog of every public export with its signature and
+JSDoc summary, grouped by import path. The fastest way to find an existing
+helper before hand-rolling one (regenerate with `npm run docs:api`).
 
 See [`docs/`](./docs/) for per-primitive deep dives:
 

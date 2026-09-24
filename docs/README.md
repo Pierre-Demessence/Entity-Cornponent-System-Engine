@@ -3,6 +3,10 @@
 Project-agnostic ECS primitives in `src/`. These modules have
 **zero imports from game-specific code** and can be reused in any project.
 
+**Start here:** [Engine API surface](agent/engine-api.md) — generated
+one-line-per-symbol catalog of every public export with its type-level
+signature and JSDoc summary. Read it before hand-rolling a helper.
+
 ## Primitives
 
 - [Component Store](component-store.md) — `ComponentDef<T>`, `TagDef`, `ComponentStore<T>`, `TagStore`, dev-mode validation

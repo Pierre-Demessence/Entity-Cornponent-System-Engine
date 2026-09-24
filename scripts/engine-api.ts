@@ -2,7 +2,8 @@
  * Generates the engine API-surface catalog (`docs/agent/engine-api.md`): a
  * terse, one-line-per-symbol map of every public export, grouped by import
  * path. Source of truth is `package.json` `exports` + each symbol's JSDoc
- * summary (re-export aliases are resolved to their original declaration).
+ * summary (re-export aliases are resolved to their original declaration),
+ * plus its type-level shape where one fits on a single line.
  *
  * Pure: this module writes nothing. The CLI wrapper (`engine-api.gen.ts`)
  * writes the file; the drift test (`engine-api.test.ts`) compares the committed
@@ -83,6 +84,59 @@ function summaryOf(s: ts.Symbol, checker: ts.TypeChecker): string {
   return raw.length > 140 ? `${raw.slice(0, 137)}...` : raw;
 }
 
+const SIGNATURE_MAX = 120;
+
+/**
+ * `UseAliasDefinedOutsideCurrentScope` is load-bearing: without it a type
+ * declared in a sibling file expands to its full structural shape, and a
+ * one-line signature becomes a wall of inline object types.
+ */
+const SIGNATURE_FLAGS = ts.TypeFormatFlags.NoTruncation
+  | ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope;
+
+const typePrinter = ts.createPrinter({ removeComments: true });
+
+/** Truncate at a word boundary so a capped shape never ends mid-identifier. */
+function cap(text: string): string {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  if (flat.length <= SIGNATURE_MAX)
+    return flat;
+  const head = flat.slice(0, SIGNATURE_MAX);
+  const lastSpace = head.lastIndexOf(' ');
+  return `${(lastSpace > 0 ? head.slice(0, lastSpace) : head).trimEnd()}…`;
+}
+
+/**
+ * A symbol's type-level shape on one line: the signature of a callable, the
+ * constructor of a class, or the right-hand side of a type alias. Empty when
+ * none applies (interfaces, plain consts) — expanding those would break the
+ * one-line-per-symbol contract, and the JSDoc summary points at the rest.
+ */
+function signatureOf(s: ts.Symbol, checker: ts.TypeChecker): string {
+  const decl = s.getDeclarations()?.[0];
+  if (!decl)
+    return '';
+
+  if (ts.isTypeAliasDeclaration(decl)) {
+    const source = decl.getSourceFile();
+    const rhs = typePrinter.printNode(ts.EmitHint.Unspecified, decl.type, source);
+    const params = decl.typeParameters?.map(p => p.getText(source)).join(', ');
+    return cap(params ? `<${params}>${rhs}` : rhs);
+  }
+
+  const type = checker.getTypeOfSymbolAtLocation(s, decl);
+  const [call] = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
+  if (call)
+    return cap(checker.signatureToString(call, decl, SIGNATURE_FLAGS, ts.SignatureKind.Call));
+
+  const [construct] = checker.getSignaturesOfType(type, ts.SignatureKind.Construct);
+  if (!construct)
+    return '';
+  return cap(
+    checker.signatureToString(construct, decl, SIGNATURE_FLAGS, ts.SignatureKind.Construct),
+  );
+}
+
 /**
  * Case-insensitive comparison that is independent of the host ICU/locale data
  * (uses Unicode default case mapping + code-unit order), so the generated
@@ -115,8 +169,16 @@ export function generateEngineApiMarkdown(): string {
     '',
     'A flat, one-line-per-symbol catalog of every public export, grouped by import',
     'path. **Read this first when authoring a consumer** to find an existing helper',
-    'before hand-rolling one. Generated from `package.json` exports + JSDoc;',
-    'regenerate with `npm run docs:api`.',
+    'before hand-rolling one. Generated from `package.json` exports, the type',
+    'checker (signatures), and JSDoc; regenerate with `npm run docs:api`.',
+    '',
+    'Each entry reads `Name (kind) shape — summary`. `shape` is the type-level',
+    'signature, emitted where one fits on a single line: parameters and return type',
+    'for a callable, the constructor for a class (its members are not listed — see',
+    'the module README), the right-hand side for a type alias. It is capped at 120',
+    'characters with `…`, so a capped shape means "read the source for the rest".',
+    'A plain interface or non-callable const has no such signature, so its summary',
+    'is the pointer into the module README.',
     '',
     'Most core symbols are also re-exported from the `@pierre/ecs` root (a few are',
     'subpath-only). A `— —` marks an export whose JSDoc summary is missing.',
@@ -133,12 +195,20 @@ export function generateEngineApiMarkdown(): string {
     const rows = exps
       .map((exp) => {
         const resolved = exp.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(exp) : exp;
-        return { name: exp.getName(), kind: kindOf(resolved), summary: summaryOf(resolved, checker) };
+        return {
+          name: exp.getName(),
+          kind: kindOf(resolved),
+          signature: signatureOf(resolved, checker),
+          summary: summaryOf(resolved, checker),
+        };
       })
       .sort((a, b) => compareNames(a.name, b.name));
     lines.push('', `### \`${e.importPath}\``);
-    for (const r of rows)
-      lines.push(`- **\`${r.name}\`** _(${r.kind})_${r.summary ? ` — ${r.summary}` : ' — —'}`);
+    for (const r of rows) {
+      const shape = r.signature ? ` \`${r.signature}\`` : '';
+      const tail = r.summary ? ` — ${r.summary}` : ' — —';
+      lines.push(`- **\`${r.name}\`** _(${r.kind})_${shape}${tail}`);
+    }
   };
 
   lines.push('', '---', '', '## Core primitives');

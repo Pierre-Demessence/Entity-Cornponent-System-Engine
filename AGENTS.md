@@ -109,7 +109,8 @@ works on tracked files; for plans created in the same session, either
 Before hand-rolling a helper in a consumer (`examples/*`), check
 [`docs/agent/engine-api.md`](docs/agent/engine-api.md) — a generated,
 one-line-per-symbol catalog of the whole public surface (every
-`@pierre/ecs/*` + `@pierre/ecs/modules/*` export and its JSDoc summary).
+`@pierre/ecs/*` + `@pierre/ecs/modules/*` export with its signature and
+JSDoc summary).
 Reinventing a shipped primitive listed there is the #1 cause of
 false-positive gaps in the ledger. Regenerate it with `npm run docs:api`
 whenever you add, remove, or rename a public export — a drift test fails
@@ -117,7 +118,7 @@ whenever you add, remove, or rename a public export — a drift test fails
 
 ## See also
 
-- [`docs/agent/engine-api.md`](docs/agent/engine-api.md) — generated catalog of the whole public API surface (read before hand-rolling in a consumer)
+- [`docs/agent/engine-api.md`](docs/agent/engine-api.md) — generated catalog of the whole public API surface, signature + summary per symbol (read before hand-rolling in a consumer)
 - [`docs/README.md`](docs/README.md) — full docs map
 - [`docs/extending-the-engine.md`](docs/extending-the-engine.md) — promotion paths + layering principles + tradeoffs
 - [`docs/roadmap/core-engine-roadmap.md`](docs/roadmap/core-engine-roadmap.md) — open core-internals work
