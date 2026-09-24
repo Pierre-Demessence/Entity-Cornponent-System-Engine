@@ -30,9 +30,12 @@ stale.
 
 Entry sections read `value used/total · type used/total · examples: … ·
 tests n · other …`, where "used" means referenced by at least one example — a
-value export referenced only from a type position does not count. Symbol
-lines list every consumer; `no external consumer` means nothing outside the
-symbol's own source references it.
+value export referenced only from a type position does not count, `examples`
+names the example packages that reach the entry, `other` names engine source
+outside it (other modules, or core files) and `tests` counts the unit-test
+files that reference it. Symbol lines list every consumer;
+`no external consumer` means nothing outside the symbol's own source
+references it.
 
 ---
 
