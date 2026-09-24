@@ -80,12 +80,12 @@ quatForward(q)                 quatUp(q)                 quatSlerp(a, b, t)
 - **`vec3Lerp`'s `t` is unclamped**, so `t = 2` is a legal extrapolation.
   Compose with `modules/math`'s `clamp01` when a bounded blend is wanted.
 - **`vec3MoveToward` mirrors `modules/motion`'s `moveToward`** — the same
-  degenerate-case contract, one dimension up: a non-positive `delta` returns
-  `current` unchanged (a negative budget means "no distance allowed", not
-  "move backwards"), a target already within `delta` is returned *exactly*, so a
-  mover cannot overshoot or drift, and a zero distance returns the target rather
-  than `NaN`. Canon: Unity `Vector3.MoveTowards`, Godot `Vector3.move_toward`,
-  Unreal `FMath::VInterpConstantTo`.
+  contract, one dimension up: `delta` is a **signed** step along the line to the
+  target, a target already within a positive `delta` is returned *exactly* (so a
+  mover cannot overshoot or drift), a negative `delta` moves **away** from the
+  target (Unity and Godot both do this), and a zero distance returns the target
+  rather than `NaN`. Canon: Unity `Vector3.MoveTowards`, Godot
+  `Vector3.move_toward`, Unreal `FMath::VInterpConstantTo`.
 - **`vec3RandomUnit`'s `rand` is typed `() => number` structurally**, so the
   module needs no import for it. Pass a seeded `modules/rng` generator when the
   distribution must be reproducible.

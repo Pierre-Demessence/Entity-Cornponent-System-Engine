@@ -242,14 +242,21 @@ describe('vec3MoveToward', () => {
     expect(p).toEqual({ x: 0, y: 4, z: 0 });
   });
 
-  it('returns the current position for delta = 0', () => {
+  it('leaves the position unchanged for delta = 0', () => {
     expect(vec3MoveToward({ x: 1, y: -1, z: 2 }, { x: 5, y: 5, z: 5 }, 0))
       .toEqual({ x: 1, y: -1, z: 2 });
   });
 
-  it('returns the current position for a negative delta, without reversing', () => {
-    expect(vec3MoveToward({ x: 1, y: -1, z: 2 }, { x: 5, y: 5, z: 5 }, -2))
-      .toEqual({ x: 1, y: -1, z: 2 });
+  it('moves away from the target for a negative delta, as Unity and Godot do', () => {
+    // 10 units out along +y; a -3 step lands 13 units from the target.
+    const v = vec3MoveToward({ x: 0, y: 0, z: 0 }, { x: 0, y: 10, z: 0 }, -3);
+    expect(v).toEqual({ x: 0, y: -3, z: 0 });
+    expect(vec3Length(v)).toBeCloseTo(3, 12);
+  });
+
+  it('returns the target rather than NaN for a negative delta at zero distance', () => {
+    expect(vec3MoveToward({ x: 2, y: 3, z: 4 }, { x: 2, y: 3, z: 4 }, -1))
+      .toEqual({ x: 2, y: 3, z: 4 });
   });
 
   it('agrees with the 2D twin on the planar case', () => {

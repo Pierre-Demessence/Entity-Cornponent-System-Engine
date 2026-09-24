@@ -87,25 +87,22 @@ export function vec3Lerp(a: Vec3, b: Vec3, t: number): Vec3 {
 }
 
 /**
- * `current` advanced at most `delta` units along the straight line to
- * `target` — the `Vec3` sibling of `modules/motion`'s `moveToward`, matching
- * Unity `Vector3.MoveTowards`, Godot `Vector3.move_toward` and Unreal
- * `FMath::VInterpConstantTo`. A mover cannot overshoot: once the remaining
- * distance is within `delta` the target itself is returned, so repeated calls
- * settle on it instead of oscillating around it.
+ * `current` stepped `delta` units along the straight line to `target` — the
+ * `Vec3` sibling of `modules/motion`'s `moveToward`, matching Unity
+ * `Vector3.MoveTowards`, Godot `Vector3.move_toward` and Unreal
+ * `FMath::VInterpConstantTo`. A forward mover cannot overshoot: once the
+ * remaining distance is within `delta` the target itself is returned, so
+ * repeated calls settle on it instead of oscillating around it.
  *
- * A non-positive `delta` means "no movement" and returns `current`, matching
- * the module's other degenerate-input guards (a negative budget means "no
- * distance allowed", not "move backwards").
+ * `delta` is a *signed* step, matching Unity and Godot: a negative one walks
+ * away from the target, and `0` leaves the position unchanged.
  */
 export function vec3MoveToward(current: Vec3, target: Vec3, delta: number): Vec3 {
-  if (delta <= 0)
-    return { x: current.x, y: current.y, z: current.z };
   const dx = target.x - current.x;
   const dy = target.y - current.y;
   const dz = target.z - current.z;
   const distance = Math.hypot(dx, dy, dz);
-  if (distance <= delta)
+  if (distance === 0 || distance <= delta)
     return { x: target.x, y: target.y, z: target.z };
   const k = delta / distance;
   return { x: current.x + dx * k, y: current.y + dy * k, z: current.z + dz * k };

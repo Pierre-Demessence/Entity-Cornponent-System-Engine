@@ -30,22 +30,20 @@ export function scaleToSpeed(x: number, y: number, speed: number): Vec2 {
 }
 
 /**
- * `current` advanced at most `delta` units along the straight line to
- * `target` — Unity `Vector2.MoveTowards`, Godot `Vector2.move_toward`,
- * Unreal `FMath::VInterpConstantTo`. A mover cannot overshoot: once the
- * remaining distance is within `delta` the target itself is returned,
- * so repeated calls settle on it instead of oscillating around it.
+ * `current` stepped `delta` units along the straight line to `target` —
+ * Unity `Vector2.MoveTowards`, Godot `Vector2.move_toward`, Unreal
+ * `FMath::VInterpConstantTo`. A forward mover cannot overshoot: once the
+ * remaining distance is within `delta` the target itself is returned, so
+ * repeated calls settle on it instead of oscillating around it.
  *
- * A non-positive `delta` means "no movement" and returns `current`,
- * matching the module's degenerate-input guards elsewhere.
+ * `delta` is a *signed* step, matching Unity and Godot: a negative one walks
+ * away from the target, and `0` leaves the position unchanged.
  */
 export function moveToward(current: Vec2, target: Vec2, delta: number): Vec2 {
-  if (delta <= 0)
-    return { x: current.x, y: current.y };
   const dx = target.x - current.x;
   const dy = target.y - current.y;
   const dist = Math.hypot(dx, dy);
-  if (dist <= delta)
+  if (dist === 0 || dist <= delta)
     return { x: target.x, y: target.y };
   const k = delta / dist;
   return { x: current.x + dx * k, y: current.y + dy * k };

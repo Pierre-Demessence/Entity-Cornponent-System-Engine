@@ -88,10 +88,11 @@ reflected ball velocity. A zero-length input has no direction, so both
 `normalize` and `scaleToSpeed` return `{ x: 0, y: 0 }` instead of `NaN`;
 supply a fallback direction yourself if you need one.
 
-`moveToward` is the constant-speed step toward a point: it advances at most
-`delta` along the straight line and lands *exactly* on the target rather than
-stepping past it, so a repeated call converges and stays. A non-positive
-`delta` returns the current position unchanged.
+`moveToward` is the constant-speed step toward a point: it advances `delta`
+along the straight line and lands *exactly* on the target rather than stepping
+past it, so a repeated call converges and stays. `delta` is **signed**, as in
+Unity and Godot — a negative one walks *away* from the target, and `0` leaves
+the position unchanged.
 
 Canon: Unity `Vector2.normalized` / `Vector2.MoveTowards`, Godot
 `Vector2.normalized()` / `limit_length()` / `move_toward()`, Bevy

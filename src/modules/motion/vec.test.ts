@@ -82,11 +82,18 @@ describe('moveToward', () => {
     expect(p).toEqual({ x: 4, y: 0 });
   });
 
-  it('returns the current position for delta = 0', () => {
+  it('leaves the position unchanged for delta = 0', () => {
     expect(moveToward({ x: 1, y: -1 }, { x: 5, y: 5 }, 0)).toEqual({ x: 1, y: -1 });
   });
 
-  it('returns the current position for a negative delta', () => {
-    expect(moveToward({ x: 1, y: -1 }, { x: 5, y: 5 }, -2)).toEqual({ x: 1, y: -1 });
+  it('moves away from the target for a negative delta, as Unity and Godot do', () => {
+    // 10 units out along +y; a -3 step lands 13 units from the target.
+    const v = moveToward({ x: 0, y: 0 }, { x: 0, y: 10 }, -3);
+    expect(v).toEqual({ x: 0, y: -3 });
+    expect(Math.hypot(v.x, v.y - 10)).toBeCloseTo(13);
+  });
+
+  it('returns the target rather than NaN for a negative delta at zero distance', () => {
+    expect(moveToward({ x: 2, y: 2 }, { x: 2, y: 2 }, -1)).toEqual({ x: 2, y: 2 });
   });
 });
