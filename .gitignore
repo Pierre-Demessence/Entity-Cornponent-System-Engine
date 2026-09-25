@@ -17,8 +17,11 @@ coverage
 # Generated from the usage model; the versioned artifacts are the .md and .json.
 docs/agent/engine-usage.html
 
-# Assembled by the Pages workflow and deployed as an artifact, never committed.
-_site/
+# Starlight site: generated content and build output, never committed.
+website/dist/
+website/.astro/
+website/src/content/docs/manual/
+website/src/content/docs/api/
 
 # Editor directories and files
 .vscode/*

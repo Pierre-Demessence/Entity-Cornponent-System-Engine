@@ -24,13 +24,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Build the API reference
+      - name: Build the site
         run: npm run docs:site
-      - name: Assemble the site
-        run: cp -r website/. _site/
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: website/dist
 
   deploy:
     name: Deploy

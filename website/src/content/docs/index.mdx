@@ -1,0 +1,67 @@
+---
+title: '@pierre/ecs'
+description: Entity-Component-System primitives for 2D games and simulations.
+template: splash
+hero:
+  tagline: Typed Entity-Component-System primitives for 2D games and simulations — component stores, queries, a spatial index, a scheduler, and opt-in modules.
+  actions:
+    - text: Read the Manual
+      link: manual/
+      icon: right-arrow
+      variant: primary
+    - text: API reference
+      link: api/
+      icon: external
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+The core is domain-neutral: it knows nothing about players, enemies, or tiles.
+Genre-specific helpers live in modules you opt into, each a separate subpath
+import, so unused code stays out of your bundle.
+
+<CardGrid>
+  <Card title="Manual" icon="open-book">
+    What each module is for, when you would reach for it, and how it fits with
+    the rest of the engine.
+  </Card>
+  <Card title="API reference" icon="seti:typescript">
+    Every public export, with its full type signature, its JSDoc summary, and a
+    link to the exact source line.
+  </Card>
+</CardGrid>
+
+## Getting started
+
+The engine is pre-release (`0.0.0`) and not published to npm. Consume it as a
+sibling folder via a `file:` install — the package's `exports` map points at
+TypeScript sources, so no build step is needed for a TS-aware bundler.
+
+```ts
+import { EcsWorld } from '@pierre/ecs/world';
+import type { ComponentDef } from '@pierre/ecs/component-store';
+
+interface Pos { x: number; y: number }
+const PosDef: ComponentDef<Pos> = {
+  name: 'pos',
+  serialize: v => v,
+  deserialize: raw => raw as Pos,
+};
+
+const world = new EcsWorld();
+world.registerComponent(PosDef);
+world.enableSpatial(PosDef);
+
+const id = world.spawn({ name: 'marker', components: { pos: { x: 0, y: 0 } } });
+world.move(id, 3, 4);
+
+for (const [entity, pos] of world.query(PosDef)) {
+  console.log(entity, pos.x, pos.y);
+}
+```
+
+<LinkCard
+  title="Browse the modules"
+  href="manual/"
+  description="A guide for every opt-in module."
+/>

@@ -1,28 +1,27 @@
 /**
- * Renders the consumer-facing Manual: one guide page per module, built from
- * that module's own `src/modules/<name>/README.md`, plus an index. Pure — the
- * CLI wrapper (`manual.gen.ts`) writes the files.
+ * Generates the Manual content for the Starlight site: one markdown page per
+ * module, from that module's own `src/modules/<name>/README.md`. Starlight owns
+ * the layout, sidebar, search and syntax highlighting from there.
  *
- * The READMEs are written for readers *inside* the repo, so links are rewritten
- * for the published site: sibling guides become Manual pages, example links
- * point at GitHub, and `docs/**` links are dropped because that tree is
- * internal and must not be advertised from the public site.
+ * The READMEs are the single source — nothing is copied by hand, and no
+ * frontmatter is added to them. Links are rewritten because they are written for
+ * readers *inside* the repo, not for the published site.
+ *
+ * Pure: this module writes nothing. The CLI wrapper (`manual.gen.ts`) writes the
+ * files; the test (`manual.test.ts`) asserts the same output.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { marked } from 'marked';
-
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const MODULE_DIR = join(ROOT, 'src/modules');
 const REPO_URL = 'https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine';
 const SUMMARY_MAX = 160;
-const INDEX_DESCRIPTION = 'Task-oriented guides for the @pierre/ecs engine: what each module is for, and when to reach for it.';
 
 export interface ManualPage {
-  html: string;
-  /** Output path relative to `_site/`, e.g. `manual/math.html`. */
+  markdown: string;
+  /** Path relative to Starlight's content directory, e.g. `manual/math.md`. */
   outPath: string;
 }
 
@@ -51,8 +50,8 @@ function listGuides(): Guide[] {
 }
 
 /**
- * Module directories that ship without a README, so the build can say so
- * rather than silently publishing an incomplete Manual.
+ * Module directories that ship without a README, so the build can say so rather
+ * than silently publishing an incomplete Manual.
  */
 export function modulesWithoutReadme(): string[] {
   return readdirSync(MODULE_DIR, { withFileTypes: true })
@@ -62,18 +61,10 @@ export function modulesWithoutReadme(): string[] {
     .sort(byName);
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 /**
- * The README's first paragraph, flattened to one line for the index. Markup is
- * unwrapped rather than deleted: a blanket strip of `*` and `_` mangles real
- * text such as `A\* pathfinding` or `bevy_pathfinding`.
+ * The README's first paragraph, flattened to one line for the sidebar and meta
+ * description. Markup is unwrapped rather than deleted: a blanket strip of `*`
+ * and `_` mangles real text such as `A\* pathfinding` or `bevy_pathfinding`.
  */
 function summaryOf(markdown: string): string {
   const body = markdown.replace(/^#.*$/m, '').trim();
@@ -95,14 +86,6 @@ function summaryOf(markdown: string): string {
   return `${(lastSpace > 0 ? head.slice(0, lastSpace) : head).trimEnd()}...`;
 }
 
-/** The README's `# Title`, with backticks and markup stripped. */
-function titleOf(markdown: string): string {
-  const line = markdown.split('\n').find(entry => entry.startsWith('#'));
-  if (!line)
-    return '';
-  return line.replace(/^#+/, '').replace(/`/g, '').trim();
-}
-
 function githubUrl(absolutePath: string): string {
   const rel = relative(ROOT, absolutePath).split(sep).join('/');
   const kind = statSync(absolutePath).isDirectory() ? 'tree' : 'blob';
@@ -117,15 +100,15 @@ function resolveLink(target: string, fromDir: string, moduleNames: Set<string>):
   if (/^(?:[a-z][a-z0-9+.-]*:|\/|#)/i.test(target))
     return target;
 
-  // Matched on shape, not on resolution: some READMEs overshoot the repo root
-  // by a level, so an unresolvable `docs/` path must still be dropped rather
-  // than published as a dead link.
+  // Matched on shape, not on resolution: some READMEs overshoot the repo root by
+  // a level, so an unresolvable `docs/` path must still be dropped rather than
+  // published as a dead link.
   if (/(?:^|\/)docs\//.test(target))
     return null;
 
   const sibling = /^\.\.\/([^/]+)\/README\.md$/.exec(target);
   if (sibling && moduleNames.has(sibling[1]))
-    return `/manual/${sibling[1]}.html`;
+    return `../${sibling[1]}/`;
 
   const absolute = resolve(fromDir, target);
   if (relative(ROOT, absolute).startsWith('..'))
@@ -163,90 +146,60 @@ function rewriteLinks(markdown: string, readmePath: string, moduleNames: Set<str
     .join('\n');
 }
 
-function page(title: string, description: string, bodyHtml: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(title)} — @pierre/ecs Manual</title>
-<meta name="description" content="${escapeHtml(description)}">
-<link rel="stylesheet" href="../style.css">
-<link rel="stylesheet" href="../manual.css">
-</head>
-<body class="manual">
-
-<header class="site-header">
-  <p class="eyebrow"><a href="../index.html">@pierre/ecs</a> &middot; Manual</p>
-  <nav class="actions" aria-label="Primary">
-    <a class="button" href="index.html">All guides</a>
-    <a class="button" href="../api/">API reference</a>
-    <a class="button" href="${REPO_URL}">GitHub</a>
-  </nav>
-</header>
-
-<main>
-${bodyHtml}
-</main>
-
-<footer>
-  <p>
-    MIT licensed &middot;
-    <a href="../index.html">Overview</a> &middot;
-    <a href="index.html">Manual</a> &middot;
-    <a href="../api/">API reference</a> &middot;
-    <a href="${REPO_URL}">GitHub</a>
-  </p>
-</footer>
-
-</body>
-</html>
-`;
+/** Drop the README's own `# Title`; Starlight renders the frontmatter title instead. */
+function bodyOf(markdown: string): string {
+  const lines = markdown.split('\n');
+  const first = lines.findIndex(line => line.trim() !== '');
+  if (first !== -1 && lines[first].startsWith('#'))
+    lines.splice(first, 1);
+  return lines.join('\n').trim();
 }
 
-function indexBody(guides: Guide[]): string {
-  const items = guides
-    .map((guide) => {
-      const summary = summaryOf(guide.markdown);
-      const description = summary ? `\n    <p>${escapeHtml(summary)}</p>` : '';
-      return `  <li>
-    <a href="./${escapeHtml(guide.name)}.html"><code>${escapeHtml(guide.name)}</code></a>${description}
-  </li>`;
-    })
-    .join('\n');
-
-  return `<h1>Manual</h1>
-
-<p>Task-oriented guides: what each module is for, when you would reach for it,
-and how it fits with the rest of the engine. Every guide links to the
-<a href="../api/">API reference</a> for exact signatures.</p>
-
-<p>Pre-1.0, so the guides describe intent and the API reference is the current
-truth.</p>
-
-<h2>Modules</h2>
-
-<ul class="guide-list">
-${items}
-</ul>
-`;
+/**
+ * YAML frontmatter, with the description quoted so prose punctuation is inert.
+ * `hidden` keeps a page out of the sidebar while still publishing its route.
+ */
+function frontmatter(title: string, description: string, hidden = false): string {
+  const quoted = (value: string): string =>
+    `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  const sidebar = hidden ? 'sidebar:\n  hidden: true\n' : '';
+  return `---\ntitle: ${quoted(title)}\ndescription: ${quoted(description)}\n${sidebar}---\n\n`;
 }
 
-/** Build every Manual page, ready to be written under `_site/`. */
+/**
+ * The section landing page. Without it nothing exists at `/manual/`, so the
+ * section root — linked from the home page and the README — would 404.
+ */
+function renderIndexPage(guides: Guide[]): ManualPage {
+  const list = guides.map((guide) => {
+    const summary = summaryOf(guide.markdown);
+    const link = `- [${guide.name}](./${guide.name}/)`;
+    return summary ? `${link} — ${summary}` : link;
+  }).join('\n');
+
+  return {
+    outPath: 'manual/index.md',
+    markdown: `${frontmatter('Manual', 'One guide per engine module, generated from its own README.', true)}`
+      + `Every engine module ships a guide here, generated from that module's own \`README.md\`.\n\n`
+      + `${list}\n\n`
+      + `Every exported symbol is documented in the [API reference](../api/).\n`,
+  };
+}
+
+/** Build every Manual page, ready to be written into the Starlight content directory. */
 export function renderManualPages(): ManualPage[] {
   const guides = listGuides();
   const moduleNames = new Set(guides.map(guide => guide.name));
 
   const pages = guides.map((guide) => {
-    const body = marked.parse(rewriteLinks(guide.markdown, guide.readmePath, moduleNames)) as string;
-    const title = titleOf(guide.markdown) || guide.name;
     const description = summaryOf(guide.markdown) || `Guide for the ${guide.name} module.`;
-    return { html: page(title, description, body), outPath: `manual/${guide.name}.html` };
+    const body = rewriteLinks(bodyOf(guide.markdown), guide.readmePath, moduleNames);
+    const intro = `Import from \`@pierre/ecs/modules/${guide.name}\`.\n\n`;
+    return {
+      markdown: `${frontmatter(guide.name, description)}${intro}${body}\n`,
+      outPath: `manual/${guide.name}.md`,
+    };
   });
 
-  pages.unshift({
-    html: page('Manual', INDEX_DESCRIPTION, indexBody(guides)),
-    outPath: 'manual/index.html',
-  });
-  return pages;
+  return [renderIndexPage(guides), ...pages];
 }

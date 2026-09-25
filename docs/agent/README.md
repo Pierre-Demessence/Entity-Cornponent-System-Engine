@@ -10,13 +10,14 @@
 
 - `npm run lint` — ESLint check (`eslint --cache .`)
 - `npm run lint:fix` — ESLint with autofix
-- `npm run typecheck` — Type-check only (`src/` via `tsconfig.json`, then `scripts/` and the root configs via `tsconfig.node.json`; no build step, the package ships as TypeScript source consumed via `file:` install)
+- `npm run typecheck` — Type-check only, in three legs: `src/` via `tsconfig.json`, `scripts/` and the root configs via `tsconfig.node.json`, then the site via `website/tsconfig.json`. The site leg runs after `astro sync --root website`, which emits the `astro:content` types the site imports; without that sync step the site fails to type-check on a fresh clone. No build step: the package ships as TypeScript source consumed via `file:` install.
 - `npm run typecheck:examples` — Type-check every `examples/*` workspace (`npm exec --workspaces -- tsc --noEmit`, ~20s). CI runs this; it is deliberately not in the Husky hooks, where 20s is too slow for every push.
 - `npm test` — Vitest tests (`vitest run`)
 - `npm run test:watch` — Vitest in watch mode
-- `npm run docs:site` — build the whole published site: `_site/api` (TypeDoc)
-  and `_site/manual` (the module guides)
-- `npm run docs:manual` — build just the Manual into `_site/manual`
+- `npm run docs:site` — build the whole published site (Starlight) into
+  `website/dist`
+- `npm run docs:dev` — run the site locally with hot reload
+- `npm run docs:manual` — regenerate just the generated Manual content
 - `npm run docs:api` — regenerate the API-surface catalog (`docs/agent/engine-api.md`)
 - `npm run docs:usage` — regenerate the usage report (`docs/agent/engine-usage.md`)
 
@@ -73,27 +74,46 @@ capability map across all modules, use [`engine-api.md`](engine-api.md).
 - [`docs/twenty-games-challenge.md`](../twenty-games-challenge.md) — proof-via-prototypes ladder
 - `docs/<primitive>.md` — per-primitive docs (component-store, event-bus, query, scheduler, spatial-structure, template, tick, world)
 
-### Published site (`website/`, `typedoc.json`, `scripts/manual.ts`)
+### Published site (`website/`, Astro + Starlight)
 
-A consumer-facing GitHub Pages site with three sections:
+A consumer-facing GitHub Pages site with three sections, all sharing one theme,
+sidebar and search index:
 
-- `/` — the landing page (`website/index.html`).
-- `/manual/` — one guide per module, rendered from `src/modules/<name>/README.md`
-  by `scripts/manual.ts`. The READMEs are the single source: nothing is copied
-  into `website/`, and no frontmatter is added to them.
-- `/api/` — the TypeDoc reference (`typedoc.json`).
+- `/` — the home page (`website/src/content/docs/index.mdx`).
+- `/manual/` — one guide per module, **generated** from
+  `src/modules/<name>/README.md` by `scripts/manual.ts` into
+  `website/src/content/docs/manual/` (gitignored). The READMEs are the single
+  source: nothing is copied by hand and no frontmatter is added to them.
+- `/api/` — the TypeDoc reference, rendered as Starlight pages by
+  `starlight-typedoc`, whose entry points are derived from `package.json`
+  `exports` so they cannot drift. Landing page: `website/src/content/docs/api.md`.
 
-- It is all **built in CI and never committed**. `npm run docs:site` writes
-  `_site/api` and `_site/manual` (gitignored); `.github/workflows/pages.yml`
-  assembles `_site` and deploys it as a Pages artifact.
-- Local preview: `npm run docs:site`, then copy `website/` into `_site/` and
-  open `_site/index.html`.
-- The Manual rewrites README links for the site: sibling
-  `../<module>/README.md` becomes a guide link, repo-relative paths point at
+`typeDocSidebarGroup` is an empty placeholder that `starlight-typedoc` swaps for
+the generated sidebar group by matching its **label**. It must sit in the sidebar
+untouched: spreading its `items` (or renaming it) at config-eval time silently
+drops the entire API tree from navigation while every API page still builds. Nest
+it inside a labelled group instead if the group needs a label of its own.
+
+TypeDoc also emits the repo `README.md` as `/api/readme/` even with `readme:
+'none'`. Nothing links to it and it is not in the sidebar, so it is a duplicate
+page reachable only by URL.
+
+- `npm run docs:site` regenerates the Manual, runs TypeDoc, and builds the site
+  into `website/dist` — **generated output is never committed**. `.github/workflows/pages.yml`
+  deploys that directory as a Pages artifact.
+- `npm run docs:dev` for local work; it regenerates the Manual first, because
+  `website/src/content/docs/manual/` does not exist in a fresh clone.
+- The generator rewrites README links for the site: sibling
+  `../<module>/README.md` becomes a guide route, repo-relative paths point at
   GitHub, and `docs/**` links are dropped. `scripts/manual.test.ts` guards those
   rules, so a README link into `docs/` can never reach the published site.
-- A module with no README is skipped and named in the build output (`attach`
-  today) rather than silently missing.
+- Every module has a README, so every module has a guide. A new module added
+  without one is skipped and named in the build output rather than silently
+  missing — `modulesWithoutReadme()` is what reports it.
+- The generator also emits `manual/index.md`, the `/manual/` landing page
+  (`sidebar: hidden`, so it is a route without being its own sidebar entry).
+- Remember: `docs/**` is **internal** and is not published. The site shows the
+  home page, the Manual and the API reference only.
 - The deploy requires repo Settings → Pages → Source = **GitHub Actions**.
 
 ## Invariants

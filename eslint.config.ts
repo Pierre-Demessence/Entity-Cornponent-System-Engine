@@ -3,9 +3,19 @@ import * as pluginImportX from 'eslint-plugin-import-x';
 
 export default antfu(
   {
-    ignores: ['docs/**', 'coverage/**', 'examples/**/dist/**', 'examples/assets/**'],
     markdown: false,
     typescript: true,
+    ignores: [
+      'docs/**',
+      'coverage/**',
+      'examples/**/dist/**',
+      'examples/assets/**',
+      // Starlight site: build output and regenerated content, never authored.
+      'website/dist/**',
+      'website/.astro/**',
+      'website/src/content/docs/manual/**',
+      'website/src/content/docs/api/**',
+    ],
     stylistic: {
       indent: 2,
       quotes: 'single',
@@ -22,7 +32,9 @@ export default antfu(
       'import-x': pluginImportX,
     },
     rules: {
-      'import-x/no-unresolved': 'error',
+      // `astro:` ids are virtual modules resolved by the Astro compiler, not by
+      // the TypeScript resolver ESLint uses.
+      'import-x/no-unresolved': ['error', { ignore: ['^astro:'] }],
     },
     settings: {
       'import-x/resolver': {
