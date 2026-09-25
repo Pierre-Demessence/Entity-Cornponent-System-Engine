@@ -14,6 +14,8 @@
 - `npm run typecheck:examples` — Type-check every `examples/*` workspace (`npm exec --workspaces -- tsc --noEmit`, ~20s). CI runs this; it is deliberately not in the Husky hooks, where 20s is too slow for every push.
 - `npm test` — Vitest tests (`vitest run`)
 - `npm run test:watch` — Vitest in watch mode
+- `npm run docs:site` — build the TypeDoc API reference into `_site/api`
+  (local preview of the published site)
 - `npm run docs:api` — regenerate the API-surface catalog (`docs/agent/engine-api.md`)
 - `npm run docs:usage` — regenerate the usage report (`docs/agent/engine-usage.md`)
 
@@ -69,6 +71,21 @@ capability map across all modules, use [`engine-api.md`](engine-api.md).
 - [`docs/roadmap/ecs-module-backlog.md`](../roadmap/ecs-module-backlog.md) — open module work
 - [`docs/twenty-games-challenge.md`](../twenty-games-challenge.md) — proof-via-prototypes ladder
 - `docs/<primitive>.md` — per-primitive docs (component-store, event-bus, query, scheduler, spatial-structure, template, tick, world)
+
+### Published site (`website/`, `typedoc.json`)
+
+A consumer-facing GitHub Pages site: the landing page in `website/`, plus the
+TypeDoc API reference served at `/api/`.
+
+- The API HTML is **built in CI and never committed**. `npm run docs:site`
+  writes it to `_site/api` (gitignored); `.github/workflows/pages.yml`
+  assembles `_site` (landing + api) and deploys it as a Pages artifact.
+- Local preview: `npm run docs:site`, then copy `website/` into `_site/` and
+  open `_site/index.html`.
+- `docs/**` is **internal** and is not published — the site shows only the
+  landing page and the API reference. Keep it that way: nothing in `docs/`
+  should be linked from the site.
+- The deploy requires repo Settings → Pages → Source = **GitHub Actions**.
 
 ## Invariants
 

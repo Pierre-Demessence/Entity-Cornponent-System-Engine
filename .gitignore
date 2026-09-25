@@ -17,6 +17,9 @@ coverage
 # Generated from the usage model; the versioned artifacts are the .md and .json.
 docs/agent/engine-usage.html
 
+# Assembled by the Pages workflow and deployed as an artifact, never committed.
+_site/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
