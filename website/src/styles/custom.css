@@ -1,0 +1,55 @@
+/*
+ * Home page: the two section cards are whole-card links.
+ *
+ * `LinkCard` has no icon prop (it hardcodes a right-arrow), so the cards are
+ * Starlight's `Card` — which does take an icon — wrapped in an anchor. Two
+ * consequences are handled here:
+ *
+ * - The wrapper replaces the card as the grid child, so it has to bring the
+ *   link affordance `LinkCard` would have provided.
+ * - `Card` colours its icon chip from `:nth-child`, but every card is now the
+ *   only child of its wrapper, so the cycle is re-derived from the wrapper's
+ *   position. Without this every card on the page renders in the same colour.
+ *   The mapping mirrors `Card.astro`'s; if Starlight changes its own, the
+ *   failure mode is cosmetic (all cards take the default purple).
+ */
+.card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.card-link > .card {
+  height: 100%;
+  transition: border-color 150ms ease;
+}
+
+.card-link:hover > .card,
+.card-link:focus-visible > .card {
+  border-color: var(--sl-color-accent);
+}
+
+.card-link:nth-child(4n + 1) > .card {
+  --sl-card-bg: var(--sl-color-orange-low);
+  --sl-card-border: var(--sl-color-orange);
+}
+
+.card-link:nth-child(4n + 2) > .card {
+  --sl-card-bg: var(--sl-color-purple-low);
+  --sl-card-border: var(--sl-color-purple);
+}
+
+.card-link:nth-child(4n + 3) > .card {
+  --sl-card-bg: var(--sl-color-green-low);
+  --sl-card-border: var(--sl-color-green);
+}
+
+.card-link:nth-child(4n + 4) > .card {
+  --sl-card-bg: var(--sl-color-red-low);
+  --sl-card-border: var(--sl-color-red);
+}
+
+.card-link:nth-child(4n + 5) > .card {
+  --sl-card-bg: var(--sl-color-blue-low);
+  --sl-card-border: var(--sl-color-blue);
+}

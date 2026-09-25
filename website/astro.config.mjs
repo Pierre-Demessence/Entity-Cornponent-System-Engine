@@ -6,6 +6,7 @@ import { defineConfig } from 'astro/config';
 import starlightTypeDoc, { typeDocSidebarGroup } from 'starlight-typedoc';
 
 const REPO = 'https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine';
+const BASE = '/Entity-Cornponent-System-Engine/';
 
 /**
  * The core subpaths are derived from the package's own `exports` map, so the
@@ -23,13 +24,14 @@ function coreEntryPoints() {
 }
 
 export default defineConfig({
-  base: '/Entity-Cornponent-System-Engine/',
+  base: BASE,
   // Served from a project path, so `base` keeps every generated link correct.
   site: 'https://pierre-demessence.github.io',
   integrations: [
     starlight({
+      customCss: ['./src/styles/custom.css'],
       description: 'Entity-Component-System primitives for 2D games and simulations.',
-      social: [{ href: REPO, icon: 'github', label: 'GitHub' }],
+      routeMiddleware: './src/site-route-data.ts',
       title: '@pierre/ecs',
       plugins: [
         starlightTypeDoc({
@@ -52,9 +54,16 @@ export default defineConfig({
         {
           // `typeDocSidebarGroup` is a placeholder the plugin swaps for the generated
           // group by matching its label, so it must stay in the tree untouched.
+          // The route middleware in `src/site-route-data.ts` splits this superset into
+          // the two per-section sidebars.
           items: [{ label: 'Overview', link: '/api/' }, typeDocSidebarGroup],
           label: 'API reference',
         },
+      ],
+      social: [
+        { href: `${BASE}manual/`, icon: 'open-book', label: 'Manual' },
+        { href: `${BASE}api/`, icon: 'puzzle', label: 'API reference' },
+        { href: REPO, icon: 'github', label: 'GitHub' },
       ],
     }),
   ],

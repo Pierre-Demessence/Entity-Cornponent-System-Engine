@@ -167,22 +167,17 @@ function frontmatter(title: string, description: string, hidden = false): string
 }
 
 /**
- * The section landing page. Without it nothing exists at `/manual/`, so the
- * section root — linked from the home page and the README — would 404.
+ * The section landing page — the Overview entry in the Manual sidebar. Its prose
+ * is authored in `website/manual-overview.md`, the one site source outside this
+ * generator; frontmatter and the hidden-sidebar flag are added here so that
+ * everything under `manual/` stays generated and nothing is hand-placed there.
  */
-function renderIndexPage(guides: Guide[]): ManualPage {
-  const list = guides.map((guide) => {
-    const summary = summaryOf(guide.markdown);
-    const link = `- [${guide.name}](./${guide.name}/)`;
-    return summary ? `${link} — ${summary}` : link;
-  }).join('\n');
-
+function renderIndexPage(): ManualPage {
+  const source = readFileSync(join(ROOT, 'website/manual-overview.md'), 'utf8').trim();
+  const description = summaryOf(source) || 'How the Manual is organised.';
   return {
+    markdown: `${frontmatter('Overview', description, true)}${source}\n`,
     outPath: 'manual/index.md',
-    markdown: `${frontmatter('Manual', 'One guide per engine module, generated from its own README.', true)}`
-      + `Every engine module ships a guide here, generated from that module's own \`README.md\`.\n\n`
-      + `${list}\n\n`
-      + `Every exported symbol is documented in the [API reference](../api/).\n`,
   };
 }
 
@@ -201,5 +196,5 @@ export function renderManualPages(): ManualPage[] {
     };
   });
 
-  return [renderIndexPage(guides), ...pages];
+  return [renderIndexPage(), ...pages];
 }
