@@ -164,7 +164,7 @@ export class EcsWorld {
    * events emitted by destruction are dispatched in the same flush pass.
    *
    * Prefer this over calling both manually in game loops that do not use
-   * {@link TickRunner} (which already sequences these internally).
+   * {@link tick-runner!TickRunner} (which already sequences these internally).
    */
   endOfTick(): void {
     this.flushDestroys();

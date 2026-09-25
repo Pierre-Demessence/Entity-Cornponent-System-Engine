@@ -27,8 +27,8 @@ export interface SpawnTilemapOptions {
   /**
    * Called for each spawned tile entity after the standard components are
    * written. Consumers use this to add extra components — for example
-   * {@link RotationDef} + {@link ScaleDef} resolved from the full D4
-   * dihedral group via {@link tileTransform}.
+   * {@link modules/transform!RotationDef} + {@link modules/transform!ScaleDef}
+   * resolved from the full D4 dihedral group via {@link tileTransform}.
    *
    * @param id       The newly created entity.
    * @param gid      The flag-masked global tile ID (0 = empty, skipped).
@@ -48,7 +48,7 @@ export interface SpawnTilemapOptions {
  * they cannot be expressed as `flipH` + `flipV` alone. Consumers needing
  * the full 8-orientation D4 dihedral group should set `anchor: 'center'`,
  * register `RotationDef` + `ScaleDef`, and apply {@link tileTransform}
- * inside the {@link onTile} callback.
+ * inside the {@link SpawnTilemapOptions#onTile} callback.
  *
  * @returns The number of tile entities spawned.
  */

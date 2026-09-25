@@ -10,5 +10,18 @@
   },
   "excludeInternal": true,
   "githubPages": false,
-  "headings": { "readme": false }
+  "headings": { "readme": false },
+  "highlightLanguages": [
+    "bash",
+    "console",
+    "css",
+    "html",
+    "javascript",
+    "json",
+    "jsonc",
+    "json5",
+    "tsx",
+    "typescript",
+    "xml"
+  ]
 }
