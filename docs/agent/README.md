@@ -119,9 +119,18 @@ the guide links.
 The section is chosen from the URL path relative to `import.meta.env.BASE_URL`,
 not from the page id, so `/manual/` itself classifies correctly.
 
-Header links (Manual, API reference, GitHub) come from Starlight's `social`
-option, which renders icon links; there is no free-form nav list, so a text
-button would need a component override.
+#### Header links
+
+The header's two section links and the active-section highlight come from
+`website/src/components/Header.astro`, registered as `components.Header`. It is a
+copy of Starlight's default header with a nav added *inside* the search column:
+at ≥50rem the header is a three-column grid, so a fourth child would wrap onto a
+second row. Starlight's own styles are reproduced verbatim there — keep that file
+in step when upgrading Starlight, and re-check the layout at a narrow width, where
+the links (like the right-hand icons) are hidden.
+
+The home page's section cards are `Card`s wrapped in an anchor rather than
+`LinkCard`s: `LinkCard` has no `icon` prop, so passing one silently does nothing.
 
 - `npm run docs:site` regenerates the Manual, runs TypeDoc, and builds the site
   into `website/dist` — **generated output is never committed**. `.github/workflows/pages.yml`

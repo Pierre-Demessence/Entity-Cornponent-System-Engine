@@ -29,9 +29,12 @@ export default defineConfig({
   site: 'https://pierre-demessence.github.io',
   integrations: [
     starlight({
+      // The header's section links are text, not icons, which needs an override.
+      components: { Header: './src/components/Header.astro' },
       customCss: ['./src/styles/custom.css'],
       description: 'Entity-Component-System primitives for 2D games and simulations.',
       routeMiddleware: './src/site-route-data.ts',
+      social: [{ href: REPO, icon: 'github', label: 'GitHub' }],
       title: '@pierre/ecs',
       plugins: [
         starlightTypeDoc({
@@ -59,11 +62,6 @@ export default defineConfig({
           items: [{ label: 'Overview', link: '/api/' }, typeDocSidebarGroup],
           label: 'API reference',
         },
-      ],
-      social: [
-        { href: `${BASE}manual/`, icon: 'open-book', label: 'Manual' },
-        { href: `${BASE}api/`, icon: 'puzzle', label: 'API reference' },
-        { href: REPO, icon: 'github', label: 'GitHub' },
       ],
     }),
   ],

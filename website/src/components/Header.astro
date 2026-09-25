@@ -1,0 +1,156 @@
+---
+/**
+ * Copy of Starlight's `Header.astro` with the two section links added next to
+ * the search box.
+ *
+ * The links sit inside the search column. At ≥50rem the header is a three-column
+ * grid (title / search / right items), so a fourth child would wrap onto a second
+ * row. Starlight's own search button caps itself at `22rem`, so the rest of the
+ * `1fr` column stays empty — that free space is what separates these links from
+ * the right-hand icons.
+ *
+ * The copied styles are Starlight's own; the rules after them are ours. Keep
+ * this file in step when upgrading Starlight.
+ */
+import config from 'virtual:starlight/user-config';
+
+import LanguageSelect from 'virtual:starlight/components/LanguageSelect';
+import Search from 'virtual:starlight/components/Search';
+import SiteTitle from 'virtual:starlight/components/SiteTitle';
+import SocialIcons from 'virtual:starlight/components/SocialIcons';
+import ThemeSelect from 'virtual:starlight/components/ThemeSelect';
+
+/**
+ * Render the `Search` component if Pagefind is enabled or the default search component has been overridden.
+ */
+const shouldRenderSearch
+  = config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro';
+
+const base = import.meta.env.BASE_URL;
+const { id } = Astro.locals.starlightRoute;
+
+// Ordered as they appear in the header: the Manual is the reader's entry point.
+const sections = [
+  { href: `${base}manual/`, label: 'Manual', slug: 'manual' },
+  { href: `${base}api/`, label: 'API reference', slug: 'api' },
+];
+
+const isCurrent = (slug: string): boolean => id === slug || id.startsWith(`${slug}/`);
+---
+
+<div class="header">
+	<div class="title-wrapper sl-flex">
+		<SiteTitle />
+	</div>
+	<div class="sl-flex print:hidden header-search">
+		{shouldRenderSearch && <Search />}
+		<nav class="sl-hidden md:sl-flex header-links" aria-label="Sections">
+			{sections.map(section => (
+				<a href={section.href} aria-current={isCurrent(section.slug) ? 'page' : undefined}>
+					{section.label}
+				</a>
+			))}
+		</nav>
+	</div>
+	<div class="sl-hidden md:sl-flex print:hidden right-group">
+		<div class="sl-flex social-icons">
+			<SocialIcons />
+		</div>
+		<ThemeSelect />
+		<LanguageSelect />
+	</div>
+</div>
+
+<style>
+	@layer starlight.core {
+		.header {
+			display: flex;
+			gap: var(--sl-nav-gap);
+			justify-content: space-between;
+			align-items: center;
+			height: 100%;
+		}
+
+		.title-wrapper {
+			/* Prevent long titles overflowing and covering the search and menu buttons on narrow viewports. */
+			overflow: clip;
+			/* Avoid clipping focus ring around link inside title wrapper. */
+			padding: 0.25rem;
+			margin: -0.25rem;
+			min-width: 0;
+		}
+
+		.right-group,
+		.social-icons {
+			gap: 1rem;
+			align-items: center;
+		}
+		.social-icons::after {
+			content: '';
+			height: 2rem;
+			border-inline-end: 1px solid var(--sl-color-gray-5);
+		}
+
+		/* Section links: inside the search column, so they sit right of the box. */
+		.header-search {
+			gap: 1rem;
+			align-items: center;
+		}
+		.header-links {
+			gap: 1.25rem;
+			align-items: center;
+		}
+		.header-links a {
+			color: var(--sl-color-gray-2);
+			font-size: var(--sl-text-sm);
+			font-weight: 500;
+			line-height: 1;
+			text-decoration: none;
+			white-space: nowrap;
+		}
+		.header-links a:hover,
+		.header-links a[aria-current='page'] {
+			color: var(--sl-color-white);
+		}
+		.header-links a[aria-current='page'] {
+			text-decoration: underline;
+			text-underline-offset: 0.35rem;
+		}
+		.header-links a:focus-visible {
+			outline: 2px solid var(--sl-color-accent);
+			outline-offset: 3px;
+			border-radius: 0.15rem;
+		}
+
+		@media (min-width: 50rem) {
+			:global(:root[data-has-sidebar]) {
+				--__sidebar-pad: calc(2 * var(--sl-nav-pad-x));
+			}
+			:global(:root:not([data-has-toc])) {
+				--__toc-width: 0rem;
+			}
+			.header {
+				--__sidebar-width: max(0rem, var(--sl-content-inline-start, 0rem) - var(--sl-nav-pad-x));
+				--__main-column-fr: calc(
+					(
+							100% + var(--__sidebar-pad, 0rem) - var(--__toc-width, var(--sl-sidebar-width)) -
+								(2 * var(--__toc-width, var(--sl-nav-pad-x))) - var(--sl-content-inline-start, 0rem) -
+								var(--sl-content-width)
+						) / 2
+				);
+				display: grid;
+				grid-template-columns:
+        /* 1 (site title): runs up until the main content column’s left edge or the width of the title, whichever is the largest  */
+					minmax(
+						calc(var(--__sidebar-width) + max(0rem, var(--__main-column-fr) - var(--sl-nav-gap))),
+						auto
+					)
+					/* 2 (search box): all free space that is available. */
+					1fr
+					/* 3 (right items): use the space that these need. */
+					auto;
+				align-content: center;
+			}
+		}
+	}
+</style>
