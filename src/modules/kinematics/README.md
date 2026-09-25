@@ -60,8 +60,11 @@ the AABB is the expected shape:
 makeKinematicsSystem<GameState>({
   broadphase: (ctx, x, y, w, h) => {
     const out = new Set<EntityId>();
-    for (const c of cellsForAabb(x, y, w, h)) {
-      const ids = ctx.grid.getAt(c.x, c.y);
+    // `cellsForAabb` yields *cell keys*, so query the integer-cell grid.
+    // A ContinuousHashGrid2D exposes it as `.grid`; its own `getAt` takes
+    // world coords and would re-project these keys. CELL_SIZE is the grid's.
+    for (const c of cellsForAabb(x, y, w, h, CELL_SIZE)) {
+      const ids = ctx.grid.grid.getAt(c.x, c.y);
       if (ids) for (const id of ids) out.add(id);
     }
     return out;

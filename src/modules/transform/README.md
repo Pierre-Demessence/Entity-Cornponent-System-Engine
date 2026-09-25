@@ -35,7 +35,10 @@ in `motion` is unsettled — if it moves, it moves for both `transform` and
 ```ts
 import { PositionDef, VelocityDef } from '@pierre/ecs/modules/transform';
 
-const id = world.spawn();
+world.registerComponent(PositionDef);
+world.registerComponent(VelocityDef);
+
+const id = world.spawn({ name: 'blob' });
 world.getStore(PositionDef).set(id, { x: 0, y: 0 });
 world.getStore(VelocityDef).set(id, { vx: 1, vy: 0 });
 ```

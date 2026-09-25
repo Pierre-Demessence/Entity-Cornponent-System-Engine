@@ -70,7 +70,8 @@ import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { easeOutQuad } from '@pierre/ecs/modules/easing';
 
 // register Position/Velocity/Lifetime/Renderable/RenderOrder/ParticleDef
-// (+ Opacity/Scale/Rotation if you use fade/shrink/spin), and ParticleTag.
+// (+ ParticleEmitterDef for the emitter below, Opacity/Scale/Rotation if you
+// use fade/shrink/spin), and ParticleTag.
 
 // Explosion with fade-out:
 burst(world, {
@@ -87,6 +88,7 @@ scheduler
 Continuous emitter (e.g. a thruster that only spouts while active):
 
 ```ts
+import { ParticleEmitterDef } from '@pierre/ecs/modules/particles';
 import { makeSpawner } from '@pierre/ecs/modules/spawner';
 
 world.getStore(ParticleEmitterDef).set(playerId, {

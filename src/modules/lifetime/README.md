@@ -51,7 +51,8 @@ scheduler.add(makeLifetimeSystem({ runAfter: ['movement'] }));
 
 // spawn a projectile that vanishes after 2s
 world.spawn({
-  components: [{ def: LifetimeDef, value: makeLifetime(2000) }, /* ... */],
+  name: 'bullet',
+  components: { lifetime: makeLifetime(2000) },
 });
 ```
 

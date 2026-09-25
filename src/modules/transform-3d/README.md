@@ -33,6 +33,9 @@ carry motion logic.
 ```ts
 import { Position3DDef, Velocity3DDef } from '@pierre/ecs/modules/transform-3d';
 
+world.registerComponent(Position3DDef);
+world.registerComponent(Velocity3DDef);
+
 const id = world.createEntity();
 world.getStore(Position3DDef).set(id, { x: 0, y: 0, z: 0 });
 world.getStore(Velocity3DDef).set(id, { vx: 1, vy: 0, vz: 0 });

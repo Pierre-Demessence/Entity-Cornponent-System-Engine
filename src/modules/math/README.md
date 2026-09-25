@@ -174,7 +174,7 @@ const spawnMs = remap(scrollSpeed, slow, fast, slowIntervalMs, fastIntervalMs);
 const v = vec2ScaleToLength({ x: dx, y: dy }, PLAYER_SPEED);
 
 // Integrate gravity into a velocity each tick.
-const next = vec3AddScaled(vel, GRAVITY, dt);
+const next = vec3AddScaled(vel, { x: 0, y: -1, z: 0 }, GRAVITY * dt);
 
 // Build an orientation from a yaw about +Y and a pitch about local +X.
 const yaw = quatFromAxisAngle({ x: 0, y: 1, z: 0 }, 0.8);

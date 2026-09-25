@@ -83,6 +83,9 @@ import { PositionDef } from '@pierre/ecs/modules/transform';
 world.registerComponent(PositionDef);
 world.registerComponent(RenderableDef);
 
+world.getStore(PositionDef).set(coinId, { x: 120, y: 200 });
+world.getStore(PositionDef).set(platformId, { x: 320, y: 400 });
+
 // Data-driven draws
 world.getStore(RenderableDef).set(coinId, {
   kind: 'circle', radius: 6, fill: '#f4c542',
@@ -169,8 +172,9 @@ renderer.render({ ctx2d, world, view: { x: camX, y: camY, zoom: 2 } });
 
 ## Validation
 
-- `RenderableDef` declares `requires: ['position']` — registering it
-  without `PositionDef` also registered throws at registration time.
+- `RenderableDef` declares `requires: ['position']` — not enforced at
+  registration, and the renderer only draws entities carrying both. In
+  development, setting a `renderable` without a `position` logs a warning.
 - Polygons require at least 2 points. Open polygons (`closed: false`)
   may not set `fill` — Canvas2D's `fill()` auto-closes paths, which
   would produce an unintended shape; the validator rejects this with
@@ -193,8 +197,6 @@ Not in the module yet (see `docs/roadmap/ecs-module-backlog.md` for status):
 
 Notes:
 
-- `RenderableDef` declares `requires: ['position']` — registering it
-  without `PositionDef` also registered throws at registration time.
 - An entity whose `Renderable` has neither `fill` nor `stroke` set is
   skipped (nothing drawn). Supply at least one to make a shape visible.
 - The renderer wraps its draw loop in `ctx2d.save()` / `restore()` so

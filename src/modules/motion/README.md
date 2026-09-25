@@ -57,8 +57,8 @@ const motion = makeVelocityIntegrationSystem<GameTickCtx>({
   boundary: { mode: 'wrap', bounds: { width: 800, height: 600 } },
   onMove(ctx, id, prev, next) {
     // Keep a HashGrid2D in sync with the integrated position.
-    const p = cellOfPoint(prev.x, prev.y);
-    const n = cellOfPoint(next.x, next.y);
+    const p = cellOfPoint(prev.x, prev.y, CELL_SIZE);
+    const n = cellOfPoint(next.x, next.y, CELL_SIZE);
     if (p.x !== n.x || p.y !== n.y)
       ctx.grid.move(id, p, n);
   },
@@ -66,6 +66,9 @@ const motion = makeVelocityIntegrationSystem<GameTickCtx>({
 
 scheduler.add(motion);
 ```
+
+`modules/spatial` packages this projection as
+`makeGridSyncOnMove({ grid, cellSize })`, which returns an `onMove` callback.
 
 ## Vector helpers
 

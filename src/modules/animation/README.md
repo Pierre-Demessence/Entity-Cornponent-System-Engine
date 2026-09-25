@@ -40,13 +40,17 @@ remains deferred.
 ```typescript
 import { SpriteAnimationDef, makeSpriteAnimation, makeSpriteAnimationSystem } from '@pierre/ecs/modules/animation';
 import { RenderableDef } from '@pierre/ecs/modules/render-canvas2d';
+import { PositionDef } from '@pierre/ecs/modules/transform';
 
-// Register
+// Register — Renderable requires position
+world.registerComponent(PositionDef);
+world.registerComponent(RenderableDef);
 world.registerComponent(SpriteAnimationDef);
-world.scheduleSystem(makeSpriteAnimationSystem());
+scheduler.add(makeSpriteAnimationSystem());
 
 // Create an animated sprite entity
 const eid = world.createEntity();
+world.getStore(PositionDef).set(eid, { x: 0, y: 0 });
 world.getStore(SpriteAnimationDef).set(eid, makeSpriteAnimation(
   ['walk-down-0', 'walk-down-1', 'walk-down-2'],
   8,   // 8 fps

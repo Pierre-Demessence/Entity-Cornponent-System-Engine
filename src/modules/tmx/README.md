@@ -33,7 +33,7 @@ Async (it awaits `DecompressionStream`). Returns a `TmxMap`:
 const map = await parseTmx(tmxText);
 // map.width / map.height        — grid size in tiles
 // map.tileWidth / map.tileHeight
-// map.tileset                   — the single TmxTileset
+// map.tilesets                  — TmxTileset[], ordered by firstgid
 // map.layers                    — TmxLayer[] in file order (bottom-most first)
 ```
 
@@ -47,7 +47,7 @@ tileset image, accounting for `margin`, `spacing`, and the derived
 column count:
 
 ```ts
-const frame = gidToFrame(gid, map.tileset);
+const frame = gidToFrame(gid, map.tilesets[0]);
 // → { x, y, w, h } in tileset-image pixels
 ```
 
@@ -70,7 +70,7 @@ const frames: Record<string, TmxFrame> = {};
 for (const layer of map.layers)
   for (const gid of layer.gids)
     if (gid !== 0 && frames[String(gid)] === undefined)
-      frames[String(gid)] = gidToFrame(gid, map.tileset);
+      frames[String(gid)] = gidToFrame(gid, map.tilesets[0]);
 registry.add('level', image, frames);
 
 // spawn one sprite entity per non-empty cell, ordered by layer index…
