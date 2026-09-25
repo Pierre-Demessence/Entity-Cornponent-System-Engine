@@ -6,6 +6,7 @@
   "titleLink": "https://pierre-demessence.github.io/Entity-Cornponent-System-Engine/",
   "navigationLinks": {
     "Home": "https://pierre-demessence.github.io/Entity-Cornponent-System-Engine/",
+    "Manual": "https://pierre-demessence.github.io/Entity-Cornponent-System-Engine/manual/",
     "GitHub": "https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine"
   },
   "excludeInternal": true,

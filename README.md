@@ -108,7 +108,8 @@ Longer walkthrough and full API in [`docs/`](./docs/).
 ## Documentation
 
 Published site: [pierre-demessence.github.io/Entity-Cornponent-System-Engine](https://pierre-demessence.github.io/Entity-Cornponent-System-Engine/)
-— an engine overview plus the full [API reference](https://pierre-demessence.github.io/Entity-Cornponent-System-Engine/api/).
+— an engine overview, a [Manual](https://pierre-demessence.github.io/Entity-Cornponent-System-Engine/manual/)
+with a guide per module, and the full [API reference](https://pierre-demessence.github.io/Entity-Cornponent-System-Engine/api/).
 
 **Start here:** [Engine API surface](./docs/agent/engine-api.md) — a flat,
 one-line-per-symbol catalog of every public export with its signature and
