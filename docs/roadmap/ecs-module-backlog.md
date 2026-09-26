@@ -125,8 +125,9 @@ pinned. `speculative` = shape undetermined or canon split.
 | `modules/navmesh-3d` | ready | Scheduling — 3D consumer |
 | `modules/render-webgl` / `render-webgpu` | deferred | Shape — three.js covers 3D today |
 | Rigid-body physics | deferred | Shape — no single canon API; demand + backend choice |
-| `modules/audio` V2 spatial listener | ready | Scheduling — build slot |
 | `modules/audio` V2 event adapters, clip loading | deferred | Shape — a second consumer's convention |
+| `modules/audio` V3 3D HRTF panning | deferred | Shape — a 3D consumer that needs positional audio |
+| `modules/audio` occlusion (muffle behind walls) | speculative | Shape — no canon API; needs geometry + lowpass |
 | `modules/animation` V2 clip registry | ready | Scheduling — build slot |
 | `modules/animation` V2 rig, `TweenDef` component | deferred | Shape — 2D rig canon thin; no component consumer |
 | `modules/ui` | speculative | Shape — ECS-vs-scene-graph UI is a split decision |
@@ -478,17 +479,6 @@ spent without a game design that demands it.
 
 ## Standard engine modules
 
-### `modules/audio` V2 — spatial listener — ready
-
-**Scope.** Listener-aware playback: a listener position/orientation on the
-world and distance/pan attenuation on each source.
-
-**Status.** Ready — the same shape in Unity (`AudioSource` /
-`AudioListener`), Godot `AudioStream*`, Phaser `SoundManager` and Bevy
-`bevy_audio`.
-
-**Gate.** Scheduling — build slot.
-
 ### `modules/audio` V2 — event adapters, clip loading — deferred
 
 **Scope.** Bus-driven one-shot event adapters, and clip loading orchestration
@@ -499,6 +489,34 @@ than a primitive, and each engine's wiring differs.
 
 **Gate.** Shape — a second consumer sharing the same event wiring or
 clip-binding flow.
+
+### `modules/audio` V3 — 3D HRTF panning — deferred
+
+**Scope.** Full 3D positional audio: a `PannerNode` (HRTF) driven by the
+listener's position *and orientation* plus a source's 3D position, as distinct
+from the shipped 2D stereo pan.
+
+**Status.** Deferred — canon exists (Unity `AudioSource` spatialBlend + 3D
+settings, Godot `AudioStreamPlayer3D`, Web Audio `PannerNode`), but the shipped
+V2 already covers distance attenuation for 2D and 3D (Euclidean), so only the
+*panning* is 2D-specific. A 3D consumer would prove the listener-orientation
+shape.
+
+**Gate.** Shape — a 3D consumer that needs positional (not just distance-
+attenuated) audio.
+
+### `modules/audio` — occlusion (muffle behind walls) — speculative
+
+**Scope.** Softening a source when geometry blocks the line to the listener —
+"occlusion / obstruction".
+
+**Status.** Speculative — no engine ships it built-in (Unity needs a raycast +
+lowpass you wire yourself; Godot leans on area/reverb effects), and it requires
+the audio system to know level geometry *and* apply a per-voice lowpass filter.
+No single canonical API.
+
+**Gate.** Shape — a consumer with the geometry model and a concrete
+occlusion-filter request.
 
 ### `modules/animation` V2 — clip registry — ready
 

@@ -25,7 +25,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 ### `@pierre/ecs/audio-provider`
 - **`AudioHandle`** _(type)_ `string` — Opaque handle to one active playback, returned by AudioProvider.play and passed to `stop`.
 - **`AudioPlayOptions`** _(interface)_ — Per-playback options: target `channel`, start `delayMs`, `loop`, and `volume`.
-- **`AudioProvider`** _(interface)_ — The audio backend a game supplies: play/stop clips, set per-channel volume, and dispose. `modules/audio` ships a Web Audio implementation.
+- **`AudioProvider`** _(interface)_ — The audio backend a game supplies: play/stop clips, set per-channel volume, retune an active playback (for spatial attenuation/pan), and ...
 
 ### `@pierre/ecs/component-store`
 - **`ColumnField`** _(interface)_ — One columnar field: its name and typed-array element kind.
@@ -150,15 +150,18 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`makeAttachSystem`** _(fn)_ `<TCtx extends AttachTickCtx>(options?: AttachSystemOptions): SchedulableSystem<TCtx>` — Build a system that syncs attached entities to their parents each tick. For each entity carrying AttachDef: - `inheritVelocity` — adds `p...
 
 ### `@pierre/ecs/modules/audio`
+- **`AudioListener`** _(interface)_ — Listener position spatial sources are attenuated and panned against.
 - **`AudioOneShot`** _(interface)_ — A queued one-shot sound: a `clipId` and optional AudioPlayOptions.
 - **`AudioQueue`** _(class)_ `new (): AudioQueue` — A FIFO of one-shot sound requests the audio system drains each tick. `play` enqueues a clip; the system `drain`s the queue and, when a cl...
-- **`AudioSource`** _(interface)_ — Audio-source component: the `clipId` to play, plus optional `channel`, `loop`, and `volume`.
+- **`AudioSource`** _(interface)_ — Audio-source component: the `clipId` to play, plus optional `channel`, `loop`, `volume`, and `spatial` placement.
 - **`AudioSourceDef`** _(const)_ — —
+- **`AudioSpatial`** _(interface)_ — Spatial placement for an `AudioSource`: a world `x`/`y` position plus optional inverse-distance falloff tuning (`refDistance`, `maxDistan...
 - **`AudioSystemError`** _(interface)_ — A provider failure surfaced to `onError`: the `kind`, the underlying `error`, and the `clipId`/`entityId` involved.
 - **`AudioSystemErrorKind`** _(type)_ `'one-shot-play' | 'source-play' | 'source-stop'` — Which audio operation failed: a one-shot play, or a source's play or stop.
-- **`AudioSystemOptions`** _(interface)_ — Options for makeAudioSystem: the `provider`, an optional one-shot `queue` and `sourceDef`, plus `name`/`runAfter`/`onError`.
+- **`AudioSystemOptions`** _(interface)_ — Options for makeAudioSystem: the `provider`, an optional one-shot `queue` and `sourceDef`, spatial `getListener`/`spatialDefaults`, plus ...
 - **`AudioTickCtx`** _(interface)_ — The tick-context makeAudioSystem reads: `world`.
-- **`makeAudioSystem`** _(fn)_ `<TCtx extends AudioTickCtx>(options: AudioSystemOptions): SchedulableSystem<TCtx>` — A `SchedulableSystem` that drives an `AudioProvider` from the world's `AudioSource` components plus a one-shot `AudioQueue`: it starts pl...
+- **`makeAudioSystem`** _(fn)_ `<TCtx extends AudioTickCtx>(options: AudioSystemOptions<TCtx>): SchedulableSystem<TCtx>` — A `SchedulableSystem` that drives an `AudioProvider` from the world's `AudioSource` components plus a one-shot `AudioQueue`: it starts pl...
+- **`SpatialDefaults`** _(interface)_ — Inverse-distance falloff tuning applied when a spatial source omits its own.
 - **`WebAudioProvider`** _(class)_ `new (options?: WebAudioProviderOptions): WebAudioProvider` — An `AudioProvider` backed by the browser's Web Audio API: clips are pre-decoded `AudioBuffer`s (supplied up front or resolved on demand),...
 - **`WebAudioProviderOptions`** _(interface)_ — WebAudioProvider options: preloaded `clips`, an existing `context` to reuse, `masterVolume`, and an on-demand `resolveClip`.
 

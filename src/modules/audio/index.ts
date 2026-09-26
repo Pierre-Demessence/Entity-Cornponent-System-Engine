@@ -1,8 +1,10 @@
 export {
   type AudioSource,
   AudioSourceDef,
+  type AudioSpatial,
 } from './audio-source';
 export {
+  type AudioListener,
   type AudioOneShot,
   AudioQueue,
   type AudioSystemError,
@@ -10,6 +12,7 @@ export {
   type AudioSystemOptions,
   type AudioTickCtx,
   makeAudioSystem,
+  type SpatialDefaults,
 } from './audio-system';
 export {
   WebAudioProvider,

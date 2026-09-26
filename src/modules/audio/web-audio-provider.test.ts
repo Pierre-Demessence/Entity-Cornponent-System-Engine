@@ -10,6 +10,14 @@ interface FakeGainNode {
   disconnect: () => void;
 }
 
+interface FakeStereoPannerNode {
+  connectCalls: number;
+  disconnectCalls: number;
+  pan: { value: number };
+  connect: (_target: unknown) => void;
+  disconnect: () => void;
+}
+
 interface FakeBufferSourceNode {
   buffer: AudioBuffer | null;
   connectCalls: number;
@@ -28,9 +36,11 @@ function createFakeAudioContext(currentTime = 1.5): {
   closeCalls: { count: number };
   context: AudioContext;
   gains: FakeGainNode[];
+  panners: FakeStereoPannerNode[];
   sources: FakeBufferSourceNode[];
 } {
   const gains: FakeGainNode[] = [];
+  const panners: FakeStereoPannerNode[] = [];
   const sources: FakeBufferSourceNode[] = [];
   const closeCalls = { count: 0 };
 
@@ -87,12 +97,28 @@ function createFakeAudioContext(currentTime = 1.5): {
       gains.push(gain);
       return gain as unknown as GainNode;
     },
+    createStereoPanner: () => {
+      const panner: FakeStereoPannerNode = {
+        connectCalls: 0,
+        disconnectCalls: 0,
+        pan: { value: 0 },
+        connect: () => {
+          panner.connectCalls += 1;
+        },
+        disconnect: () => {
+          panner.disconnectCalls += 1;
+        },
+      };
+      panners.push(panner);
+      return panner as unknown as StereoPannerNode;
+    },
   } as unknown as AudioContext;
 
   return {
     closeCalls,
     context,
     gains,
+    panners,
     sources,
   };
 }
@@ -155,6 +181,55 @@ describe('webAudioProvider', () => {
     expect(gains[0]?.disconnectCalls).toBeGreaterThan(0);
     expect(gains.some(g => g.disconnectCalls > 0)).toBe(true);
     expect(closeCalls.count).toBe(0);
+  });
+
+  it('routes each voice through a stereo panner', () => {
+    const { context, panners } = createFakeAudioContext();
+    const provider = new WebAudioProvider({ clips: { click: {} as AudioBuffer }, context });
+
+    provider.play('click');
+
+    expect(panners).toHaveLength(1);
+    expect(panners[0]?.connectCalls).toBe(1);
+  });
+
+  it('setPlaybackVolume and setPlaybackPan retune the active voice, clamped', () => {
+    const { context, gains, panners } = createFakeAudioContext();
+    const provider = new WebAudioProvider({ clips: { click: {} as AudioBuffer }, context });
+
+    const handle = provider.play('click');
+    const voiceGain = gains.at(-1);
+
+    provider.setPlaybackVolume(handle, 0.25);
+    expect(voiceGain?.gain.value).toBe(0.25);
+    provider.setPlaybackVolume(handle, 5);
+    expect(voiceGain?.gain.value).toBe(1);
+    provider.setPlaybackVolume(handle, -2);
+    expect(voiceGain?.gain.value).toBe(0);
+
+    provider.setPlaybackPan(handle, -0.5);
+    expect(panners[0]?.pan.value).toBe(-0.5);
+    provider.setPlaybackPan(handle, 9);
+    expect(panners[0]?.pan.value).toBe(1);
+    provider.setPlaybackPan(handle, Number.NaN);
+    expect(panners[0]?.pan.value).toBe(0);
+  });
+
+  it('setPlaybackVolume maps non-finite input to 0', () => {
+    const { context, gains } = createFakeAudioContext();
+    const provider = new WebAudioProvider({ clips: { click: {} as AudioBuffer }, context });
+
+    const handle = provider.play('click');
+    provider.setPlaybackVolume(handle, Number.NaN);
+    expect(gains.at(-1)?.gain.value).toBe(0);
+  });
+
+  it('setPlaybackVolume and setPlaybackPan ignore unknown handles', () => {
+    const { context } = createFakeAudioContext();
+    const provider = new WebAudioProvider({ clips: { click: {} as AudioBuffer }, context });
+
+    expect(() => provider.setPlaybackVolume('nope', 0.5)).not.toThrow();
+    expect(() => provider.setPlaybackPan('nope', 0.5)).not.toThrow();
   });
 
   it('closes owned contexts during dispose', () => {

@@ -53,14 +53,37 @@ export class AudioQueue {
   }
 }
 
-/** Options for {@link makeAudioSystem}: the `provider`, an optional one-shot `queue` and `sourceDef`, plus `name`/`runAfter`/`onError`. */
-export interface AudioSystemOptions {
+/** Options for {@link makeAudioSystem}: the `provider`, an optional one-shot `queue` and `sourceDef`, spatial `getListener`/`spatialDefaults`, plus `name`/`runAfter`/`onError`. */
+export interface AudioSystemOptions<TCtx extends AudioTickCtx = AudioTickCtx> {
   name?: string;
   provider: AudioProvider;
   queue?: AudioQueue;
   runAfter?: string[];
   sourceDef?: ComponentDef<AudioSource>;
+  /** Falloff defaults for spatial sources that omit their own. Web Audio canon: `refDistance 1`, `maxDistance 10000`, `rolloff 1`. */
+  spatialDefaults?: SpatialDefaults;
+  /** Listener position for spatial sources; sources with a `spatial` field are attenuated/panned relative to it. Return `undefined` to leave spatial sources at base volume. */
+  getListener?: (ctx: TCtx) => AudioListener | undefined;
   onError?: (error: AudioSystemError) => void;
+}
+
+/** Listener position spatial sources are attenuated and panned against. */
+export interface AudioListener {
+  x: number;
+  y: number;
+}
+
+/** Inverse-distance falloff tuning applied when a spatial source omits its own. */
+export interface SpatialDefaults {
+  maxDistance?: number;
+  refDistance?: number;
+  rolloff?: number;
+}
+
+interface ResolvedFalloff {
+  maxDistance: number;
+  refDistance: number;
+  rolloff: number;
 }
 
 interface ActivePlayback {
@@ -80,6 +103,49 @@ function sourceToPlayOptions(source: AudioSource): AudioPlayOptions {
   };
 }
 
+/** Inverse-distance attenuation × base volume, clamped to `[0, 1]`; Web Audio's `PannerNode` inverse model. */
+function spatialVolume(source: AudioSource, listener: AudioListener, falloff: ResolvedFalloff): number {
+  const spatial = source.spatial;
+  if (spatial === undefined)
+    return source.volume ?? 1;
+  const dist = Math.hypot(spatial.x - listener.x, spatial.y - listener.y);
+  const ref = spatial.refDistance ?? falloff.refDistance;
+  const max = spatial.maxDistance ?? falloff.maxDistance;
+  const rolloff = spatial.rolloff ?? falloff.rolloff;
+  const clamped = dist < ref ? ref : dist > max ? max : dist;
+  const atten = ref / (ref + rolloff * (clamped - ref));
+  const volume = (source.volume ?? 1) * atten;
+  if (!Number.isFinite(volume))
+    return 0;
+  return volume < 0 ? 0 : volume > 1 ? 1 : volume;
+}
+
+/** Horizontal offset from the listener mapped into `[-1, 1]`, saturating at `maxDistance`. */
+function spatialPan(source: AudioSource, listener: AudioListener, falloff: ResolvedFalloff): number {
+  const spatial = source.spatial;
+  if (spatial === undefined)
+    return 0;
+  const max = spatial.maxDistance ?? falloff.maxDistance;
+  const pan = (spatial.x - listener.x) / max;
+  return pan < -1 ? -1 : pan > 1 ? 1 : pan;
+}
+
+/** Resolve and validate the system-wide falloff defaults, filling Web Audio canon where omitted. */
+function resolveFalloff(defaults: SpatialDefaults | undefined): ResolvedFalloff {
+  const refDistance = defaults?.refDistance ?? 1;
+  const maxDistance = defaults?.maxDistance ?? 10000;
+  const rolloff = defaults?.rolloff ?? 1;
+  if (!Number.isFinite(refDistance) || refDistance <= 0)
+    throw new Error('makeAudioSystem: spatialDefaults.refDistance must be positive.');
+  if (!Number.isFinite(maxDistance) || maxDistance <= 0)
+    throw new Error('makeAudioSystem: spatialDefaults.maxDistance must be positive.');
+  if (maxDistance < refDistance)
+    throw new Error('makeAudioSystem: spatialDefaults.maxDistance must be greater than or equal to refDistance.');
+  if (!Number.isFinite(rolloff) || rolloff < 0)
+    throw new Error('makeAudioSystem: spatialDefaults.rolloff must be greater than or equal to 0.');
+  return { maxDistance, refDistance, rolloff };
+}
+
 /**
  * A `SchedulableSystem` that drives an `AudioProvider` from the world's
  * `AudioSource` components plus a one-shot `AudioQueue`: it starts playback for
@@ -88,16 +154,20 @@ function sourceToPlayOptions(source: AudioSource): AudioPlayOptions {
  * to `onError` rather than thrown, so a bad clip cannot halt the tick.
  */
 export function makeAudioSystem<TCtx extends AudioTickCtx>(
-  options: AudioSystemOptions,
+  options: AudioSystemOptions<TCtx>,
 ): SchedulableSystem<TCtx> {
   const {
     name = 'audio',
+    getListener,
     onError,
     provider,
     queue = new AudioQueue(),
     runAfter,
     sourceDef = AudioSourceDef,
+    spatialDefaults,
   } = options;
+
+  const falloff = resolveFalloff(spatialDefaults);
 
   const active = new Map<EntityId, ActivePlayback>();
   const pendingStops = new Set<AudioHandle>();
@@ -130,45 +200,52 @@ export function makeAudioSystem<TCtx extends AudioTickCtx>(
 
       const store = ctx.world.getStore(sourceDef);
       const seen = new Set<EntityId>();
+      const listener = getListener?.(ctx);
 
       for (const [id, source] of store.entries()) {
         seen.add(id);
 
         const signature = sourceSignature(source);
         const current = active.get(id);
-        if (current?.signature === signature)
-          continue;
+        let handle = current?.handle;
 
-        let nextHandle: AudioHandle;
-        try {
-          nextHandle = provider.play(source.clipId, sourceToPlayOptions(source));
+        if (current?.signature !== signature) {
+          let nextHandle: AudioHandle;
+          try {
+            nextHandle = provider.play(source.clipId, sourceToPlayOptions(source));
+          }
+          catch (error) {
+            onError?.({
+              clipId: source.clipId,
+              entityId: id,
+              error,
+              kind: 'source-play',
+            });
+            continue;
+          }
+
+          active.set(id, { handle: nextHandle, signature });
+          handle = nextHandle;
+
+          if (current) {
+            try {
+              provider.stop(current.handle);
+            }
+            catch (error) {
+              pendingStops.add(current.handle);
+              onError?.({
+                clipId: source.clipId,
+                entityId: id,
+                error,
+                kind: 'source-stop',
+              });
+            }
+          }
         }
-        catch (error) {
-          onError?.({
-            clipId: source.clipId,
-            entityId: id,
-            error,
-            kind: 'source-play',
-          });
-          continue;
-        }
 
-        active.set(id, { handle: nextHandle, signature });
-
-        if (!current)
-          continue;
-
-        try {
-          provider.stop(current.handle);
-        }
-        catch (error) {
-          pendingStops.add(current.handle);
-          onError?.({
-            clipId: source.clipId,
-            entityId: id,
-            error,
-            kind: 'source-stop',
-          });
+        if (handle !== undefined && source.spatial !== undefined && listener !== undefined) {
+          provider.setPlaybackVolume(handle, spatialVolume(source, listener, falloff));
+          provider.setPlaybackPan(handle, spatialPan(source, listener, falloff));
         }
       }
 

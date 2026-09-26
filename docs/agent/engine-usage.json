@@ -1786,6 +1786,25 @@
       "other": [],
       "symbols": [
         {
+          "name": "AudioListener",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "AudioOneShot",
           "coveredByExample": false,
           "example": {
@@ -1866,6 +1885,25 @@
             "consumers": [
               "src/modules/audio/audio.test.ts"
             ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "AudioSpatial",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
             "typeOnly": false
           }
         },
@@ -1971,6 +2009,25 @@
           }
         },
         {
+          "name": "SpatialDefaults",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "WebAudioProvider",
           "coveredByExample": true,
           "example": {
@@ -2019,7 +2076,7 @@
         "src/modules/audio/audio.test.ts",
         "src/modules/audio/web-audio-provider.test.ts"
       ],
-      "typeTotal": 7,
+      "typeTotal": 10,
       "typeUsedByExample": 0,
       "valueTotal": 4,
       "valueUsedByExample": 4
@@ -13400,9 +13457,9 @@
     "entriesWithExample": 41,
     "entriesWithoutExample": 17,
     "modules": 42,
-    "noExternalConsumer": 143,
-    "symbols": 503,
-    "typeSymbols": 219,
+    "noExternalConsumer": 146,
+    "symbols": 506,
+    "typeSymbols": 222,
     "valueSymbols": 284,
     "valueWithNoConsumer": 5,
     "valueWithoutExample": 159

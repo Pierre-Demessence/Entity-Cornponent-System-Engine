@@ -13,6 +13,8 @@ interface Ctx { world: EcsWorld }
 class FakeAudioProvider implements AudioProvider {
   private nextHandle = 1;
 
+  pans: Array<{ handle: AudioHandle; value: number }> = [];
+  playbackVolumes: Array<{ handle: AudioHandle; value: number }> = [];
   plays: Array<{ clipId: string; options?: AudioPlayOptions }> = [];
   stops: AudioHandle[] = [];
   throwOnPlayFor = new Set<string>();
@@ -25,6 +27,14 @@ class FakeAudioProvider implements AudioProvider {
       throw new Error(`play failed for ${clipId}`);
     this.plays.push({ clipId, options });
     return `h${this.nextHandle++}`;
+  }
+
+  setPlaybackPan(handle: AudioHandle, value: number): void {
+    this.pans.push({ handle, value });
+  }
+
+  setPlaybackVolume(handle: AudioHandle, value: number): void {
+    this.playbackVolumes.push({ handle, value });
   }
 
   setVolume(_channel: string, _value: number): void {}
@@ -71,6 +81,41 @@ describe('audioSourceDef', () => {
   it('rejects empty channel', () => {
     expect(() => AudioSourceDef.deserialize({ channel: '  ', clipId: 'laser' }, 'audioSource'))
       .toThrow(/channel/);
+  });
+
+  it('round-trips the spatial field', () => {
+    const value = {
+      clipId: 'engine',
+      spatial: { maxDistance: 50, refDistance: 2, rolloff: 1.5, x: 10, y: -4 },
+    };
+    const restored = AudioSourceDef.deserialize(AudioSourceDef.serialize(value), 'audioSource');
+    expect(restored).toEqual(value);
+  });
+
+  it('round-trips a spatial field with only x/y', () => {
+    const value = { clipId: 'engine', spatial: { x: 3, y: 7 } };
+    const restored = AudioSourceDef.deserialize(AudioSourceDef.serialize(value), 'audioSource');
+    expect(restored).toEqual(value);
+  });
+
+  it('rejects non-finite spatial coordinates', () => {
+    expect(() => AudioSourceDef.deserialize({ clipId: 'a', spatial: { x: Number.NaN, y: 0 } }, 'audioSource'))
+      .toThrow(/spatial\.x/);
+  });
+
+  it('rejects non-positive refDistance', () => {
+    expect(() => AudioSourceDef.deserialize({ clipId: 'a', spatial: { refDistance: 0, x: 0, y: 0 } }, 'audioSource'))
+      .toThrow(/refDistance/);
+  });
+
+  it('rejects maxDistance below refDistance', () => {
+    expect(() => AudioSourceDef.deserialize({ clipId: 'a', spatial: { maxDistance: 1, refDistance: 5, x: 0, y: 0 } }, 'audioSource'))
+      .toThrow(/maxDistance/);
+  });
+
+  it('rejects negative rolloff', () => {
+    expect(() => AudioSourceDef.deserialize({ clipId: 'a', spatial: { rolloff: -1, x: 0, y: 0 } }, 'audioSource'))
+      .toThrow(/rolloff/);
   });
 });
 
@@ -265,5 +310,135 @@ describe('makeAudioSystem', () => {
 
     expect(errors[0]).toEqual(expect.objectContaining({ entityId: id, kind: 'source-stop' }));
     expect(provider.stops).toEqual(['h1']);
+  });
+
+  it('attenuates and pans a spatial source relative to the listener each tick', () => {
+    const { ctx, provider } = setup();
+    const system = makeAudioSystem<Ctx>({
+      provider,
+      spatialDefaults: { maxDistance: 100, refDistance: 1, rolloff: 1 },
+      getListener: () => ({ x: 0, y: 0 }),
+    });
+    const store = ctx.world.getStore(AudioSourceDef);
+
+    const id = ctx.world.createEntity();
+    store.set(id, { clipId: 'engine', loop: true, spatial: { x: 10, y: 0 } });
+    system.run(ctx);
+
+    // atten = 1 / (1 + 1 * (10 - 1)) = 0.1; base volume default 1.
+    expect(provider.playbackVolumes.at(-1)).toEqual({ handle: 'h1', value: 0.1 });
+    // pan = 10 / 100 = 0.1 (source to the right).
+    expect(provider.pans.at(-1)).toEqual({ handle: 'h1', value: 0.1 });
+  });
+
+  it('does not restart a moving spatial source (spatial params stay out of the signature)', () => {
+    const { ctx, provider } = setup();
+    const system = makeAudioSystem<Ctx>({
+      provider,
+      spatialDefaults: { maxDistance: 100, refDistance: 1, rolloff: 1 },
+      getListener: () => ({ x: 0, y: 0 }),
+    });
+    const store = ctx.world.getStore(AudioSourceDef);
+
+    const id = ctx.world.createEntity();
+    store.set(id, { clipId: 'engine', loop: true, spatial: { x: 10, y: 0 } });
+    system.run(ctx);
+    store.set(id, { clipId: 'engine', loop: true, spatial: { x: 40, y: 0 } });
+    system.run(ctx);
+
+    expect(provider.plays).toHaveLength(1);
+    // Farther away → quieter: 1 / (1 + 39) ≈ 0.025 < 0.1.
+    const last = provider.playbackVolumes.at(-1);
+    expect(last?.handle).toBe('h1');
+    expect(last?.value).toBeLessThan(0.1);
+  });
+
+  it('leaves spatial sources untouched when no listener is supplied', () => {
+    const { ctx, provider } = setup();
+    const system = makeAudioSystem<Ctx>({ provider });
+    const store = ctx.world.getStore(AudioSourceDef);
+
+    const id = ctx.world.createEntity();
+    store.set(id, { clipId: 'engine', loop: true, spatial: { x: 10, y: 0 } });
+    system.run(ctx);
+
+    expect(provider.playbackVolumes).toEqual([]);
+    expect(provider.pans).toEqual([]);
+  });
+
+  it('does not apply spatial updates to non-spatial sources', () => {
+    const { ctx, provider } = setup();
+    const system = makeAudioSystem<Ctx>({ provider, getListener: () => ({ x: 0, y: 0 }) });
+    const store = ctx.world.getStore(AudioSourceDef);
+
+    const id = ctx.world.createEntity();
+    store.set(id, { clipId: 'ui', volume: 0.5 });
+    system.run(ctx);
+
+    expect(provider.playbackVolumes).toEqual([]);
+    expect(provider.pans).toEqual([]);
+  });
+
+  it('pans left for a source to the listener’s left', () => {
+    const { ctx, provider } = setup();
+    const system = makeAudioSystem<Ctx>({
+      provider,
+      spatialDefaults: { maxDistance: 100, refDistance: 1, rolloff: 1 },
+      getListener: () => ({ x: 0, y: 0 }),
+    });
+    const store = ctx.world.getStore(AudioSourceDef);
+
+    const id = ctx.world.createEntity();
+    store.set(id, { clipId: 'engine', loop: true, spatial: { x: -25, y: 0 } });
+    system.run(ctx);
+
+    expect(provider.pans.at(-1)?.value).toBeLessThan(0);
+  });
+
+  it('plays a spatial source at full volume within refDistance', () => {
+    const { ctx, provider } = setup();
+    const system = makeAudioSystem<Ctx>({
+      provider,
+      spatialDefaults: { maxDistance: 100, refDistance: 10, rolloff: 1 },
+      getListener: () => ({ x: 0, y: 0 }),
+    });
+    const store = ctx.world.getStore(AudioSourceDef);
+
+    const id = ctx.world.createEntity();
+    store.set(id, { clipId: 'engine', loop: true, spatial: { x: 5, y: 0 }, volume: 0.8 });
+    system.run(ctx);
+
+    // dist 5 < refDistance 10 → attenuation 1 → effective = base volume 0.8.
+    expect(provider.playbackVolumes.at(-1)).toEqual({ handle: 'h1', value: 0.8 });
+  });
+
+  it('honours per-source falloff over the system defaults', () => {
+    const { ctx, provider } = setup();
+    const system = makeAudioSystem<Ctx>({
+      provider,
+      spatialDefaults: { maxDistance: 100, refDistance: 1, rolloff: 1 },
+      getListener: () => ({ x: 0, y: 0 }),
+    });
+    const store = ctx.world.getStore(AudioSourceDef);
+
+    const id = ctx.world.createEntity();
+    // Per-source refDistance 10 keeps a distance-10 source at full volume,
+    // overriding the default refDistance 1 that would attenuate it to 0.1.
+    store.set(id, { clipId: 'engine', loop: true, spatial: { refDistance: 10, x: 10, y: 0 } });
+    system.run(ctx);
+
+    expect(provider.playbackVolumes.at(-1)?.value).toBeCloseTo(1);
+  });
+
+  it('rejects a misconfigured spatialDefaults', () => {
+    const { provider } = setup();
+    expect(() => makeAudioSystem<Ctx>({ provider, spatialDefaults: { refDistance: 0 } }))
+      .toThrow(/refDistance/);
+    expect(() => makeAudioSystem<Ctx>({ provider, spatialDefaults: { maxDistance: 0 } }))
+      .toThrow(/maxDistance/);
+    expect(() => makeAudioSystem<Ctx>({ provider, spatialDefaults: { maxDistance: 1, refDistance: 5 } }))
+      .toThrow(/maxDistance/);
+    expect(() => makeAudioSystem<Ctx>({ provider, spatialDefaults: { rolloff: -1 } }))
+      .toThrow(/rolloff/);
   });
 });

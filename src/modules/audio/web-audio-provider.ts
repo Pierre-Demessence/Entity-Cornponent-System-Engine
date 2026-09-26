@@ -5,6 +5,7 @@ interface AudioContextCtor {
 }
 
 interface ActiveSource {
+  panner: StereoPannerNode;
   source: AudioBufferSourceNode;
   voiceGain: GainNode;
 }
@@ -15,6 +16,13 @@ function clamp01(value: number, label: string): number {
   if (value < 0 || value > 1)
     throw new Error(`${label} must be in [0, 1].`);
   return value;
+}
+
+/** Clamp a pan value into `[-1, 1]`, tolerating out-of-range input rather than throwing. */
+function clampPan(value: number): number {
+  if (!Number.isFinite(value))
+    return 0;
+  return value < -1 ? -1 : value > 1 ? 1 : value;
 }
 
 function parseDelayMs(value: number | undefined): number {
@@ -142,11 +150,14 @@ export class WebAudioProvider implements AudioProvider {
     const voiceGain = this.context.createGain();
     voiceGain.gain.value = clamp01(options.volume ?? 1, 'WebAudioProvider.play.volume');
 
+    const panner = this.context.createStereoPanner();
+
     source.connect(voiceGain);
-    voiceGain.connect(this.getChannelNode(channel));
+    voiceGain.connect(panner);
+    panner.connect(this.getChannelNode(channel));
 
     const handle = `a${this.nextHandle++}`;
-    this.active.set(handle, { source, voiceGain });
+    this.active.set(handle, { panner, source, voiceGain });
 
     source.onended = () => {
       this.release(handle);
@@ -163,6 +174,21 @@ export class WebAudioProvider implements AudioProvider {
     this.active.delete(handle);
     entry.source.disconnect();
     entry.voiceGain.disconnect();
+    entry.panner.disconnect();
+  }
+
+  setPlaybackPan(handle: AudioHandle, value: number): void {
+    const entry = this.active.get(handle);
+    if (!entry)
+      return;
+    entry.panner.pan.value = clampPan(value);
+  }
+
+  setPlaybackVolume(handle: AudioHandle, value: number): void {
+    const entry = this.active.get(handle);
+    if (!entry)
+      return;
+    entry.voiceGain.gain.value = !Number.isFinite(value) ? 0 : value < 0 ? 0 : value > 1 ? 1 : value;
   }
 
   setVolume(channel: string, value: number): void {

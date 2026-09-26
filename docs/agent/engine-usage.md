@@ -41,10 +41,10 @@ references it.
 
 ## Headline
 
-- 58 public entries (16 core, 42 modules) · 503 symbols (284 value, 219 type)
+- 58 public entries (16 core, 42 modules) · 506 symbols (284 value, 222 type)
 - 41 entries referenced by at least one example · 17 with none
 - 159 value symbols referenced by no example (5 of them with no external consumer at all)
-- 143 symbols with no external consumer
+- 146 symbols with no external consumer
 
 ## Entries with no example reference
 
@@ -331,17 +331,20 @@ value 2/2 · type 0/3 · examples: asteroids, spacewar · tests: 1 · other: —
 
 ### `@pierre/ecs/modules/audio`
 
-value 4/4 · type 0/7 · examples: solitaire, spacewar, top-down-shooter · tests: 2 · other: —
+value 4/4 · type 0/10 · examples: solitaire, spacewar, top-down-shooter · tests: 2 · other: —
 
+- **`AudioListener`** _(interface)_ — no external consumer
 - **`AudioOneShot`** _(interface)_ — no external consumer
 - **`AudioQueue`** _(class)_ — examples: top-down-shooter · tests: src/modules/audio/audio.test.ts · other: —
 - **`AudioSource`** _(interface)_ — no external consumer
 - **`AudioSourceDef`** _(const)_ — examples: top-down-shooter · tests: src/modules/audio/audio.test.ts · other: —
+- **`AudioSpatial`** _(interface)_ — no external consumer
 - **`AudioSystemError`** _(interface)_ — examples: — · tests: src/modules/audio/audio.test.ts · other: —
 - **`AudioSystemErrorKind`** _(type)_ — no external consumer
 - **`AudioSystemOptions`** _(interface)_ — no external consumer
 - **`AudioTickCtx`** _(interface)_ — no external consumer
 - **`makeAudioSystem`** _(fn)_ — examples: top-down-shooter · tests: src/modules/audio/audio.test.ts · other: —
+- **`SpatialDefaults`** _(interface)_ — no external consumer
 - **`WebAudioProvider`** _(class)_ — examples: solitaire, spacewar, top-down-shooter · tests: src/modules/audio/web-audio-provider.test.ts · other: —
 - **`WebAudioProviderOptions`** _(interface)_ — no external consumer
 

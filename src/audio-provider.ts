@@ -11,11 +11,16 @@ export interface AudioPlayOptions {
 
 /**
  * The audio backend a game supplies: play/stop clips, set per-channel volume,
- * and dispose. `modules/audio` ships a Web Audio implementation.
+ * retune an active playback (for spatial attenuation/pan), and dispose.
+ * `modules/audio` ships a Web Audio implementation.
  */
 export interface AudioProvider {
   dispose: () => void;
   play: (clipId: string, options?: AudioPlayOptions) => AudioHandle;
+  /** Set the stereo pan of one active playback, in `[-1, 1]`. Unknown handles are ignored. */
+  setPlaybackPan: (handle: AudioHandle, value: number) => void;
+  /** Set the volume of one active playback, in `[0, 1]`. Unknown handles are ignored. */
+  setPlaybackVolume: (handle: AudioHandle, value: number) => void;
   setVolume: (channel: string, value: number) => void;
   stop: (handle: AudioHandle) => void;
 }
