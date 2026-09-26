@@ -47,6 +47,7 @@ function resolveAudioContextCtor(): AudioContextCtor | null {
   return globalRef.AudioContext ?? globalRef.webkitAudioContext ?? null;
 }
 
+/** {@link WebAudioProvider} options: preloaded `clips`, an existing `context` to reuse, `masterVolume`, and an on-demand `resolveClip`. */
 export interface WebAudioProviderOptions {
   clips?: ReadonlyMap<string, AudioBuffer> | Readonly<Record<string, AudioBuffer>>;
   context?: AudioContext;

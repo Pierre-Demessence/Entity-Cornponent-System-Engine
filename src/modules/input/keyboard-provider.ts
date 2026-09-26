@@ -21,6 +21,7 @@ import type { InputProvider, InputRawEvent } from '#input-source';
  */
 export type KeyboardEmitSource = 'code' | 'key';
 
+/** Options for {@link KeyboardProvider}. */
 export interface KeyboardProviderOptions {
   /**
    * Field supplying the emitted `code`. Defaults to `'code'`.

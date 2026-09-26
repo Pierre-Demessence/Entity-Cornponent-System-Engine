@@ -14,6 +14,7 @@ export interface CollisionGrid {
   width: number;
 }
 
+/** Options for {@link buildCollisionGrid}. */
 export interface BuildCollisionGridOptions {
   /**
    * GIDs that define walkable ground (typically the bottom layer's floor

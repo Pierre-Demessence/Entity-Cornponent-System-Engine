@@ -1,4 +1,5 @@
 type RawBlob = Record<string, unknown>;
+/** A save-migration step: transforms a raw save blob from one schema version to the next. */
 export type MigrateFn = (blob: RawBlob) => RawBlob;
 
 interface MigrationStep {

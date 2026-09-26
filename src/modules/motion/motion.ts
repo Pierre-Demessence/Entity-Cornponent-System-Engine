@@ -6,6 +6,7 @@ import { ColumnStore } from '#column-store';
 import { PositionDef } from '../transform/position';
 import { VelocityDef } from '../transform/velocity';
 
+/** A rectangular play-field size (`width` / `height`) for boundary wrap/clamp. */
 export interface Bounds { height: number; width: number }
 
 /**
@@ -19,12 +20,14 @@ export type VelocityIntegrationBoundary
   = | { mode: 'wrap'; bounds: Bounds }
     | { mode: 'clamp'; bounds: Bounds };
 
+/** The tick-context fields {@link makeVelocityIntegrationSystem} reads: `world` and `dtMs`. */
 export interface VelocityIntegrationTickCtx {
   /** Elapsed time since the previous tick, in milliseconds. */
   dtMs: number;
   world: import('#index').EcsWorld;
 }
 
+/** Options for {@link makeVelocityIntegrationSystem}: `name`, an optional `boundary`, `tag`-scoping, and `onMove` / `runAfter` hooks. */
 export interface VelocityIntegrationOptions<TCtx extends VelocityIntegrationTickCtx> {
   name?: string;
   boundary?: VelocityIntegrationBoundary;

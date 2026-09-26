@@ -6,6 +6,7 @@ import { aabb3VsAabb3 } from '../collision-3d/narrowphase3';
 import { ShapeAabb3Def } from '../collision-3d/shape-aabb3';
 import { Grounded3Def } from './grounded';
 
+/** The tick-context {@link makeKinematics3DSystem} reads: `dtMs` and `world`. */
 export interface Kinematics3DTickCtx {
   /** Elapsed time since the previous tick, in milliseconds. */
   readonly dtMs: number;

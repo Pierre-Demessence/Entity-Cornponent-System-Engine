@@ -8,6 +8,7 @@ export interface WorkerLike {
   terminate: () => void;
 }
 
+/** Options for a `WorkerPool`: the number of workers (`size`, default `navigator.hardwareConcurrency`). */
 export interface WorkerPoolOptions {
   /** Number of workers. Defaults to `navigator.hardwareConcurrency` (or 4). */
   size?: number;

@@ -52,7 +52,9 @@ export interface TagDef {
 
 /** Handler signatures for `ComponentStore.subscribe`. */
 export type StoreSetHandler<T> = (id: EntityId, value: T) => void;
+/** A `subscribe('delete')` handler: the removed entity and the value it held. */
 export type StoreDeleteHandler<T> = (id: EntityId, oldValue: T) => void;
+/** A `subscribe('validate')` handler: an entity whose stored value should be re-checked. */
 export type StoreValidateHandler = (id: EntityId) => void;
 
 /**
@@ -400,6 +402,11 @@ export type RegistryComponentValue<TValue, TValueKey extends string> = {
   readonly [K in TValueKey]: TValue;
 };
 
+/**
+ * Options for a registry-backed component: how to (de)serialize a looked-up
+ * value by its registry id — `lookup`/`selectId` bridge value ↔ id, and
+ * `idKey`/`idKind`/`valueKey` name the serialized fields.
+ */
 export interface RegistryComponentOptions<
   TValue,
   TId extends number | string,

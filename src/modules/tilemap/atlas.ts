@@ -3,6 +3,7 @@ import type { TmxMap } from '@pierre/ecs/modules/tmx';
 import { TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
 import { gidToFrame } from '@pierre/ecs/modules/tmx';
 
+/** Options for {@link buildTilemapAtlas}. */
 export interface BuildTilemapAtlasOptions {
   /** Atlas registry key set on every spawned sprite's `RenderableDef.atlas`. */
   name: string;

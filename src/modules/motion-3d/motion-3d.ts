@@ -6,6 +6,7 @@ import { ColumnStore } from '#column-store';
 import { Position3DDef } from '../transform-3d/position3d';
 import { Velocity3DDef } from '../transform-3d/velocity3d';
 
+/** A box play-volume size (`width` / `height` / `depth`) for 3D boundary wrap/clamp. */
 export interface Bounds3D { depth: number; height: number; width: number }
 
 /**
@@ -18,12 +19,14 @@ export type VelocityIntegration3DBoundary
   = | { mode: 'wrap'; bounds: Bounds3D }
     | { mode: 'clamp'; bounds: Bounds3D };
 
+/** The tick-context fields {@link makeVelocityIntegration3DSystem} reads: `world` and `dtMs`. */
 export interface VelocityIntegration3DTickCtx {
   /** Elapsed time since the previous tick, in milliseconds. */
   dtMs: number;
   world: import('#index').EcsWorld;
 }
 
+/** Options for {@link makeVelocityIntegration3DSystem}: `name`, an optional `boundary`, `tag`-scoping, and `onMove` / `runAfter` hooks. */
 export interface VelocityIntegration3DOptions<TCtx extends VelocityIntegration3DTickCtx> {
   name?: string;
   boundary?: VelocityIntegration3DBoundary;

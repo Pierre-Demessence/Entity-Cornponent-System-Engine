@@ -23,9 +23,9 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 ## Core primitives
 
 ### `@pierre/ecs/audio-provider`
-- **`AudioHandle`** _(type)_ `string` — —
-- **`AudioPlayOptions`** _(interface)_ — —
-- **`AudioProvider`** _(interface)_ — —
+- **`AudioHandle`** _(type)_ `string` — Opaque handle to one active playback, returned by AudioProvider.play and passed to `stop`.
+- **`AudioPlayOptions`** _(interface)_ — Per-playback options: target `channel`, start `delayMs`, `loop`, and `volume`.
+- **`AudioProvider`** _(interface)_ — The audio backend a game supplies: play/stop clips, set per-channel volume, and dispose. `modules/audio` ships a Web Audio implementation.
 
 ### `@pierre/ecs/component-store`
 - **`ColumnField`** _(interface)_ — One columnar field: its name and typed-array element kind.
@@ -35,16 +35,16 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`ComponentStoreLike`** _(interface)_ — The storage-agnostic access surface shared by the object-backed ComponentStore and the columnar `ColumnStore`. `world`, `QueryBuilder`, t...
 - **`NumericColumnKind`** _(type)_ `'f32' | 'f64' | 'i8' | 'u8' | 'i16' | 'u16' | 'i32' | 'u32'` — Element type for a columnar (Structure-of-Arrays) numeric field, mapping to a JS typed array. `f32`/`f64` are floating-point; the integer...
 - **`registryComponent`** _(fn)_ `<TValue, TId extends number | string, TValueKey extends string = "def">(name: string, options:…` — Build a ComponentDef for registry-backed references. The generated serializer stores only an id field (default: `{ id }`), and deserializ...
-- **`RegistryComponentOptions`** _(interface)_ — —
+- **`RegistryComponentOptions`** _(interface)_ — Options for a registry-backed component: how to (de)serialize a looked-up value by its registry id — `lookup`/`selectId` bridge value ↔ i...
 - **`RegistryComponentValue`** _(type)_ `<TValue, TValueKey extends string>{ readonly [K in TValueKey]: TValue; }` — Shape produced by registryComponent: a single registry-backed field.
 - **`RegistryIdKind`** _(type)_ `'number' | 'string'` — Primitive id kind supported by registryComponent.
 - **`simpleComponent`** _(fn)_ `<T extends { [K in keyof T]: boolean | number | string; }>(name: string, schema: SimpleSchema<T>, options?:…` — Build a ComponentDef from a flat schema of primitives. For a component type `T` whose every field is a `number`, `boolean`, or `string`, ...
 - **`SimpleComponentOptions`** _(interface)_ — Optional extras carried onto the generated ComponentDef.
 - **`SimpleFieldKind`** _(type)_ `'boolean' | 'number' | 'string' | NumericColumnKind` — Schema token for simpleComponent. `boolean` / `string` keep the component on the object store; every numeric kind (`'number'` = `f64`, pl...
 - **`SimpleSchema`** _(type)_ `<T>{ readonly [K in keyof T]: SimpleFieldKind; }` — Schema map: for every field `K` of `T`, specify its primitive kind. The helper uses this to auto-generate `serialize` and `deserialize`.
-- **`StoreDeleteHandler`** _(type)_ `<T>(id: EntityId, oldValue: T) => void` — —
+- **`StoreDeleteHandler`** _(type)_ `<T>(id: EntityId, oldValue: T) => void` — A `subscribe('delete')` handler: the removed entity and the value it held.
 - **`StoreSetHandler`** _(type)_ `<T>(id: EntityId, value: T) => void` — Handler signatures for `ComponentStore.subscribe`.
-- **`StoreValidateHandler`** _(type)_ `(id: EntityId) => void` — —
+- **`StoreValidateHandler`** _(type)_ `(id: EntityId) => void` — A `subscribe('validate')` handler: an entity whose stored value should be re-checked.
 - **`TagDef`** _(interface)_ — Schema definition for a boolean tag (presence/absence, no associated data).
 - **`TagStore`** _(class)_ `new (): TagStore` — Boolean-only store — tracks entity presence without associated data. Supports dirty-tracking.
 
@@ -72,7 +72,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`ComponentRef`** _(interface)_ — A component-like reference for declaring data access on a system. Only `name` is read.
 - **`SchedulableSystem`** _(interface)_ — Contract for a system that can be scheduled with dependency ordering.
 - **`Scheduler`** _(class)_ `new <TCtx>(options?: SchedulerOptions): Scheduler<TCtx>` — Topologically sorts systems by their declared dependencies and runs them in order. Uses Kahn's algorithm with stable insertion-order tieb...
-- **`SchedulerOptions`** _(interface)_ — —
+- **`SchedulerOptions`** _(interface)_ — Construction options for Scheduler: an optional ordered `phases` list that switches it into phase mode.
 
 ### `@pierre/ecs/spatial-structure`
 - **`SpatialStructure`** _(interface)_ — Generic spatial index contract. Every spatial backend — hash-grid, quadtree, octree, R-tree, BVH, brute-force — implements this minimum s...
@@ -90,7 +90,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 ### `@pierre/ecs/tick-runner`
 - **`TickFlushableEvents`** _(interface)_ — Minimal event-bus contract the runner needs for post-tick flushing. Kept structural so the runner doesn't force consumers onto any specif...
 - **`TickRunner`** _(class)_ `new <TCtx>(opts: TickRunnerOptions<TCtx>): TickRunner<TCtx>` — Drives the per-tick ceremony in response to a `TickSource`. Consolidates the sequence that every per-tick consumer would otherwise hand-r...
-- **`TickRunnerOptions`** _(interface)_ — —
+- **`TickRunnerOptions`** _(interface)_ — Wiring for the tick runner: the `scheduler` and `source` to drive, how to build the per-tick context and resolve the world/events, plus o...
 
 ### `@pierre/ecs/tick-source`
 - **`TickInfo`** _(interface)_ — Monotonic, source-specific per-tick snapshot. Passed to subscribers. - `tickNumber` is a source-local counter that starts at 0 and increm...
@@ -116,51 +116,51 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`makeSpriteAnimationSystem`** _(fn)_ `<TCtx extends SpriteAnimationTickCtx>(options?: SpriteAnimationSystemOptions): SchedulableSystem<TCtx>` — Build a schedulable system that advances every SpriteAnimationDef and writes the current frame name into the entity's `RenderableDef`. Th...
 - **`SpriteAnimation`** _(interface)_ — Ordered frame names (atlas frame keys) cycled at `fps` frames per second.
 - **`SpriteAnimationDef`** _(const)_ — —
-- **`SpriteAnimationSystemOptions`** _(interface)_ — —
-- **`SpriteAnimationTickCtx`** _(interface)_ — —
+- **`SpriteAnimationSystemOptions`** _(interface)_ — Options for makeSpriteAnimationSystem.
+- **`SpriteAnimationTickCtx`** _(interface)_ — The tick-context makeSpriteAnimationSystem reads: `dtMs` and `world`.
 - **`tickSpriteAnimation`** _(fn)_ `(anim: SpriteAnimation, dtMs: number): void` — Advance the animation by `dtMs`, mutating it in place.
 
 ### `@pierre/ecs/modules/asset-loader`
 - **`arrayBufferAsset`** _(fn)_ `(url: string): AssetHandle<ArrayBuffer>` — An `AssetHandle` that fetches its URL as a raw `ArrayBuffer`.
-- **`AssetBatchLoadOptions`** _(interface)_ — —
-- **`AssetBatchProgress`** _(interface)_ — —
-- **`AssetHandle`** _(interface)_ — —
-- **`AssetKind`** _(type)_ `'array-buffer' | 'audio-buffer' | 'font-face' | 'image' | 'json' | 'text' | (string & {})` — —
-- **`AssetLoadContext`** _(interface)_ — —
+- **`AssetBatchLoadOptions`** _(interface)_ — Options for `AssetLoader.loadMany`: an `AbortSignal` plus an `onProgress` callback.
+- **`AssetBatchProgress`** _(interface)_ — Progress for one asset in an `AssetLoader.loadMany` batch: `completed`/`total`, the `url`/`kind`, and whether it came `fromCache`.
+- **`AssetHandle`** _(interface)_ — A typed, cacheable reference to one asset: its `kind`, `url`, cache `identity`, and a `load` function. Build one with the `*Asset` helper...
+- **`AssetKind`** _(type)_ `'array-buffer' | 'audio-buffer' | 'font-face' | 'image' | 'json' | 'text' | (string & {})` — The built-in asset kinds (`'image'`, `'json'`, `'audio-buffer'`, …), plus any custom string kind.
+- **`AssetLoadContext`** _(interface)_ — The fetch/decode helpers a handle's `load` receives from the loader, so a handle never touches `fetch` directly.
 - **`AssetLoader`** _(class)_ `new (options?: AssetLoaderOptions): AssetLoader` — A URL-keyed asset cache with in-flight de-duplication: `load`ing the same handle again returns the cached value or joins the pending requ...
-- **`AssetLoaderOptions`** _(interface)_ — —
-- **`AssetLoadOptions`** _(interface)_ — —
-- **`AssetValue`** _(type)_ `<THandle extends AssetHandle<unknown>>THandle extends AssetHandle<infer TValue> ? TValue : never` — —
+- **`AssetLoaderOptions`** _(interface)_ — AssetLoader construction options: override `fetch`, the URL allow-list, or the image/font loaders (e.g. for tests or a non-DOM host).
+- **`AssetLoadOptions`** _(interface)_ — Per-load options passed to a handle's `load`: an `AbortSignal` for cancellation.
+- **`AssetValue`** _(type)_ `<THandle extends AssetHandle<unknown>>THandle extends AssetHandle<infer TValue> ? TValue : never` — Extracts the value a handle resolves to: `AssetValue<AssetHandle<T>>` is `T`.
 - **`audioBufferAsset`** _(fn)_ `(url: string, context: BaseAudioContext): AssetHandle<AudioBuffer>` — An `AssetHandle` that fetches its URL and decodes it into an `AudioBuffer` with the supplied `BaseAudioContext` (Web Audio decoding is co...
 - **`createAssetHandle`** _(fn)_ `<TValue>(input: { kind: AssetKind; url: string; load: (context: AssetLoadContext, options: AssetLoadOptions) =>…` — The low-level `AssetHandle` factory: pairs a `kind` + `url` with a `load` function and a normalized cache identity. The typed helpers bel...
 - **`fontFaceAsset`** _(fn)_ `(url: string, family: string, options?: FontFaceAssetOptions): AssetHandle<FontFace>` — An `AssetHandle` that loads a web font into a `FontFace` for the given `family`. Unless `addToDocument` is `false`, the loaded face is re...
-- **`FontFaceAssetOptions`** _(interface)_ — —
-- **`FontLoaderOptions`** _(interface)_ — —
+- **`FontFaceAssetOptions`** _(interface)_ — fontFaceAsset options: whether to `addToDocument` and the `FontFace` `descriptors`.
+- **`FontLoaderOptions`** _(interface)_ — Options for a custom AssetLoaderOptions `fontLoader` — the FontFaceAssetOptions fields.
 - **`imageAsset`** _(fn)_ `(url: string, options?: ImageAssetOptions): AssetHandle<HTMLImageElement>` — An `AssetHandle` that decodes its URL into an `HTMLImageElement`. `crossOrigin` defaults to `'anonymous'` so the image can be used as a c...
-- **`ImageAssetOptions`** _(interface)_ — —
-- **`ImageLoaderOptions`** _(interface)_ — —
+- **`ImageAssetOptions`** _(interface)_ — imageAsset options: the `crossOrigin` attribute to set on the image.
+- **`ImageLoaderOptions`** _(interface)_ — Options for a custom AssetLoaderOptions `imageLoader` — image and load options combined.
 - **`jsonAsset`** _(fn)_ `<TValue = unknown>(url: string): AssetHandle<TValue>` — An `AssetHandle` that fetches its URL and parses the response as JSON.
 - **`textAsset`** _(fn)_ `(url: string): AssetHandle<string>` — An `AssetHandle` that fetches its URL as text.
 
 ### `@pierre/ecs/modules/attach`
 - **`Attach`** _(interface)_ — Component data: which entity to follow and how.
 - **`AttachDef`** _(const)_ — —
-- **`AttachSystemOptions`** _(interface)_ — —
+- **`AttachSystemOptions`** _(interface)_ — Options for makeAttachSystem: system `name` and `runAfter` ordering.
 - **`AttachTickCtx`** _(interface)_ — Minimal tick context required by the attach system.
 - **`makeAttachSystem`** _(fn)_ `<TCtx extends AttachTickCtx>(options?: AttachSystemOptions): SchedulableSystem<TCtx>` — Build a system that syncs attached entities to their parents each tick. For each entity carrying AttachDef: - `inheritVelocity` — adds `p...
 
 ### `@pierre/ecs/modules/audio`
-- **`AudioOneShot`** _(interface)_ — —
+- **`AudioOneShot`** _(interface)_ — A queued one-shot sound: a `clipId` and optional AudioPlayOptions.
 - **`AudioQueue`** _(class)_ `new (): AudioQueue` — A FIFO of one-shot sound requests the audio system drains each tick. `play` enqueues a clip; the system `drain`s the queue and, when a cl...
-- **`AudioSource`** _(interface)_ — —
+- **`AudioSource`** _(interface)_ — Audio-source component: the `clipId` to play, plus optional `channel`, `loop`, and `volume`.
 - **`AudioSourceDef`** _(const)_ — —
-- **`AudioSystemError`** _(interface)_ — —
-- **`AudioSystemErrorKind`** _(type)_ `'one-shot-play' | 'source-play' | 'source-stop'` — —
-- **`AudioSystemOptions`** _(interface)_ — —
-- **`AudioTickCtx`** _(interface)_ — —
+- **`AudioSystemError`** _(interface)_ — A provider failure surfaced to `onError`: the `kind`, the underlying `error`, and the `clipId`/`entityId` involved.
+- **`AudioSystemErrorKind`** _(type)_ `'one-shot-play' | 'source-play' | 'source-stop'` — Which audio operation failed: a one-shot play, or a source's play or stop.
+- **`AudioSystemOptions`** _(interface)_ — Options for makeAudioSystem: the `provider`, an optional one-shot `queue` and `sourceDef`, plus `name`/`runAfter`/`onError`.
+- **`AudioTickCtx`** _(interface)_ — The tick-context makeAudioSystem reads: `world`.
 - **`makeAudioSystem`** _(fn)_ `<TCtx extends AudioTickCtx>(options: AudioSystemOptions): SchedulableSystem<TCtx>` — A `SchedulableSystem` that drives an `AudioProvider` from the world's `AudioSource` components plus a one-shot `AudioQueue`: it starts pl...
 - **`WebAudioProvider`** _(class)_ `new (options?: WebAudioProviderOptions): WebAudioProvider` — An `AudioProvider` backed by the browser's Web Audio API: clips are pre-decoded `AudioBuffer`s (supplied up front or resolved on demand),...
-- **`WebAudioProviderOptions`** _(interface)_ — —
+- **`WebAudioProviderOptions`** _(interface)_ — WebAudioProvider options: preloaded `clips`, an existing `context` to reuse, `masterVolume`, and an on-demand `resolveClip`.
 
 ### `@pierre/ecs/modules/behavior-tree`
 - **`action`** _(fn)_ `<TCtx>(fn: (ctx: TCtx) => BtStatus): BtNode<TCtx>` — Leaf: run `fn` and use its status. Return `success` for an instant effect, `running` for a behaviour that spans ticks (travel, wait), or ...
@@ -175,8 +175,8 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`Camera`** _(interface)_ — A 2D camera, modelled on Godot's `Camera2D`. `(x, y)` is the anchor centre in world coords; the rendered view is centred there plus `(off...
 - **`CAMERA_NO_LIMIT`** _(const)_ — Default "no limit" sentinel for Camera bounds — a large finite value (mirrors Godot's `10000000`). Finite so it survives JSON serializati...
 - **`CameraDef`** _(const)_ — —
-- **`CameraFollowOptions`** _(interface)_ — —
-- **`CameraFollowTickCtx`** _(interface)_ — —
+- **`CameraFollowOptions`** _(interface)_ — Options for makeFollowCameraSystem.
+- **`CameraFollowTickCtx`** _(interface)_ — The tick-context makeFollowCameraSystem reads: `world` and optional `dtMs`.
 - **`CameraOptions`** _(interface)_ — Options for makeCamera; only position + viewport are required.
 - **`cameraToView`** _(fn)_ `(cam: Camera): { x: number; y: number; zoom: number; }` — Renderer input: the viewport's top-left in world coords plus `zoom`.
 - **`cameraViewRect`** _(fn)_ `(cam: Camera): { h: number; w: number; x: number; y: number; }` — The world-space rectangle the camera currently sees (`w = viewportW / zoom`).
@@ -187,29 +187,29 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`worldToView`** _(fn)_ `(wx: number, wy: number, cam: Camera): { vx: number; vy: number; }` — World → view transform. `vx` / `vy` is the **screen-pixel** offset from the viewport's top-left corner (zoom- and offset-aware). A world ...
 
 ### `@pierre/ecs/modules/collision`
-- **`Aabb`** _(interface)_ — —
-- **`AabbAxis`** _(type)_ `'x' | 'y'` — —
+- **`Aabb`** _(interface)_ — Axis-aligned bounding box: top-left `x` / `y` plus width `w` and height `h`.
+- **`AabbAxis`** _(type)_ `'x' | 'y'` — Which face of an AABB a hit is on — `'x'` (a vertical face) or `'y'` (a horizontal face).
 - **`aabbVsAabb`** _(fn)_ `(a: Aabb, b: Aabb): boolean` — Two AABBs overlap when their projections on both axes overlap. Edge contact does NOT count as overlap.
 - **`aabbVsAabbSwept`** _(fn)_ `(a: Aabb, motionA: Vec2, b: Aabb): SweptHit` — Swept AABB: `a` moves by `motionA` toward static `b`. Returns the first fraction of motion at which they touch (`tEntry ∈ [0, 1]`) and th...
 - **`aabbVsCircle`** _(fn)_ `(a: Aabb, c: Vec2, r: number): boolean` — Circle–AABB overlap: closest point on the AABB to the circle centre lies within the radius.
 - **`bounceOffAabb`** _(fn)_ `(mover: Aabb, vel: Vec2, obstacle: Aabb): BounceResult | null` — Resolve an AABB overlap with a pure velocity reflection on the minimum-separation axis. Returns `null` when the two boxes are **not** ove...
-- **`BounceResult`** _(interface)_ — —
+- **`BounceResult`** _(interface)_ — A collision resolution: `pushOut` to separate the mover from the obstacle, and its reflected `velocity`.
 - **`circleVsCircle`** _(fn)_ `(pa: Vec2, ra: number, pb: Vec2, rb: number): boolean` — Two circles overlap (or touch) when the distance between centres ≤ sum of radii.
 - **`makeTriggerSystem`** _(fn)_ `<TCtx>(options: TriggerSystemOptions<TCtx>): SchedulableSystem<TCtx>` — Builds a schedulable system that iterates a broadphase, runs an optional narrowphase filter, and invokes `onOverlap` for each surviving p...
-- **`RayHit`** _(interface)_ — —
+- **`RayHit`** _(interface)_ — Result of a ray-vs-AABB hit: the entry `axis` and parametric distance `t` along `dir`.
 - **`rayVsAabb`** _(fn)_ `(origin: Vec2, dir: Vec2, box: Aabb): RayHit | null` — Ray vs AABB, slab method. Returns the entry `t` (strictly positive) and the axis of the face it enters through, or `null` when the ray mi...
 - **`reflect`** _(fn)_ `(v: Vec2, normal: Vec2): Vec2` — Reflect a velocity vector off a surface normal using the standard formula `v' = v - 2(v·n)n`. The caller must supply a **unit-length** no...
 - **`ShapeAabb`** _(interface)_ — Axis-aligned bounding box shape. Anchored at `PositionDef.{x,y}` as the top-left corner — matches the platformer's physics convention. Wi...
 - **`ShapeAabbDef`** _(const)_ — —
 - **`ShapeCircle`** _(interface)_ — Circle shape. Anchored at `PositionDef.{x,y}` as the circle's centre — matches the asteroids convention where rocks, bullets, and the shi...
 - **`ShapeCircleDef`** _(const)_ — —
-- **`SweptHit`** _(interface)_ — —
+- **`SweptHit`** _(interface)_ — Result of a swept AABB test: whether it `hit`, the surface `normal`, and `tEntry` (fraction of the motion travelled before impact).
 - **`TriggerSystemOptions`** _(interface)_ — Options for `makeTriggerSystem`. The system factory accepts a broadphase (which pairs to consider), an optional narrowphase (which pairs ...
 - **`Vec2`** _(interface)_ — A plain 2D vector value object.
 
 ### `@pierre/ecs/modules/collision-3d`
 - **`Aabb3`** _(interface)_ — A world-space axis-aligned box: centre plus **half** extents.
-- **`Aabb3Axis`** _(type)_ `'x' | 'y' | 'z'` — —
+- **`Aabb3Axis`** _(type)_ `'x' | 'y' | 'z'` — Which face of a 3D AABB a hit is on — `'x'`, `'y'`, or `'z'`.
 - **`aabb3ContainsPoint`** _(fn)_ `(box: Aabb3, p: Vec3): boolean` — True when `p` lies within the box or exactly on its boundary.
 - **`aabb3VsAabb3`** _(fn)_ `(a: Aabb3, b: Aabb3): boolean` — True when the boxes' three axis projections all overlap. Edge contact does NOT count.
 - **`aabb3VsAabb3Swept`** _(fn)_ `(a: Aabb3, motionA: Vec3, b: Aabb3): SweptHit3` — Swept AABB: `a` moves by `motionA` toward static `b`. Returns the fraction of the motion at which they first touch (`tEntry ∈ [0, 1]`) an...
@@ -221,7 +221,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`obb3VsSphere3`** _(fn)_ `(obb: Obb3, center: Vec3, radius: number): boolean` — Oriented-box vs sphere: transform the centre into the box's frame, then it is the axis-aligned test.
 - **`Plane3`** _(interface)_ — An oriented plane, `normal·p + constant = 0` (the three.js / Godot layout). Distances are only true distances when `normal` is unit-lengt...
 - **`plane3DistanceToPoint`** _(fn)_ `(plane: Plane3, p: Vec3): number` — Signed distance from the plane to `p` — a true distance only for a unit `normal`.
-- **`RayHit3`** _(interface)_ — —
+- **`RayHit3`** _(interface)_ — Result of a ray-vs-`Aabb3` hit: the entry `axis` and parametric distance `t` along the ray.
 - **`rayVsAabb3`** _(fn)_ `(origin: Vec3, dir: Vec3, box: Aabb3): RayHit3 | null` — Ray vs centre-based AABB, by the slab method. Returns the entry distance and the axis of the entry face, or `null` when the ray misses, t...
 - **`rayVsObb3`** _(fn)_ `(origin: Vec3, dir: Vec3, obb: Obb3): RayHit3 | null` — Ray vs oriented box. Same contract as `rayVsAabb3` — including the `t` convention that makes `t <= 1` a segment test — but the reported `...
 - **`rayVsPlane3`** _(fn)_ `(origin: Vec3, dir: Vec3, plane: Plane3): number | null` — Ray vs plane: the `t` at which the ray meets the plane, or `null` when the ray runs parallel to it or the plane lies behind the origin. `...
@@ -232,13 +232,13 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`sphere3ContainsPoint`** _(fn)_ `(center: Vec3, radius: number, p: Vec3): boolean` — True when `p` lies within the sphere or exactly on its surface.
 - **`sphere3VsPlane3`** _(fn)_ `(center: Vec3, radius: number, plane: Plane3): boolean` — Sphere–plane overlap: the centre is no further from the plane than the radius.
 - **`sphere3VsSphere3`** _(fn)_ `(aCenter: Vec3, aRadius: number, bCenter: Vec3, bRadius: number): boolean` — Two spheres overlap (or touch) when the centre distance is at most the sum of radii.
-- **`SweptHit3`** _(interface)_ — —
+- **`SweptHit3`** _(interface)_ — Result of a swept `Aabb3` test: whether it `hit`, the surface `normal`, and `tEntry` (fraction of the motion before impact).
 
 ### `@pierre/ecs/modules/cooldown`
 - **`Cooldown`** _(type)_ `Timer` — An action-gating cooldown. A `'once'` Timer that starts ready.
 - **`CooldownDef`** _(const)_ — —
-- **`CooldownSystemOptions`** _(interface)_ — —
-- **`CooldownTickCtx`** _(interface)_ — —
+- **`CooldownSystemOptions`** _(interface)_ — Options for makeCooldownSystem.
+- **`CooldownTickCtx`** _(interface)_ — The tick-context makeCooldownSystem reads: `dtMs` and `world`.
 - **`makeCooldown`** _(fn)_ `(durationMs: number): Cooldown` — Create a Cooldown of `durationMs` that starts **ready** to fire.
 - **`makeCooldownSystem`** _(fn)_ `<TCtx extends CooldownTickCtx>(options?: CooldownSystemOptions): SchedulableSystem<TCtx>` — Build a schedulable system that advances every CooldownDef each tick. Consumers poll ready and re-arm with trigger.
 - **`ready`** _(fn)_ `(c: Cooldown): boolean` — Whether the cooldown has elapsed and the gated action may fire.
@@ -294,17 +294,17 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`bresenhamLine`** _(fn)_ `(x0: number, y0: number, x1: number, y1: number): Point[]` — The integer grid cells a straight line from `(x0, y0)` to `(x1, y1)` crosses, in order and inclusive of both endpoints (Bresenham). Handy...
 - **`computeFieldOfView`** _(fn)_ `(grid: VisibilityGrid, originX: number, originY: number, radius: number): Point[]` — Compute field-of-view tiles using recursive shadowcasting over 8 octants. Returns the visible tile coordinates for the current cast, incl...
 - **`hasLineOfSight`** _(fn)_ `(grid: VisibilityGrid, x0: number, y0: number, x1: number, y1: number): boolean` — Returns true when all intermediate line tiles are both in-bounds and transparent. Origin and destination tiles are ignored for blocking c...
-- **`Point`** _(interface)_ — —
-- **`VisibilityGrid`** _(interface)_ — —
+- **`Point`** _(interface)_ — An integer grid cell — `x` / `y`.
+- **`VisibilityGrid`** _(interface)_ — The grid the visibility/line helpers query: `blocksSight(x, y)` and `isInBounds(x, y)`.
 
 ### `@pierre/ecs/modules/input`
 - **`createEventInput`** _(fn)_ `<TAction extends string>(map: InputMap<TAction>, providers: readonly InputProvider[]): EventInput<TAction>` — Wires one or more `InputProvider`s to an action map and returns an event-dispatched `EventInput`. Edges are **action-level** and identica...
 - **`createInput`** _(fn)_ `<TAction extends string>(map: InputMap<TAction>, providers: readonly InputProvider[]): InputState<TAction>` — Wires one or more `InputProvider`s to an action map and returns a tick-boundary edge-detected `InputState`. Edge semantics are **action-l...
 - **`EventInput`** _(interface)_ — Event-driven action dispatch, for consumers with no tick to poll. Complementary to `InputState`: same `InputMap`, same action-level edge ...
 - **`Gamepad`** _(const)_ — Frozen record of Web Gamepad codes emitted by GamepadProvider, sibling to `Key` and `Pointer`. Use inside a `createInput` map to bind a c...
-- **`GamepadCode`** _(type)_ `typeof Gamepad[keyof typeof Gamepad]` — —
+- **`GamepadCode`** _(type)_ `typeof Gamepad[keyof typeof Gamepad]` — A gamepad button/axis code from the `Gamepad` code map.
 - **`GamepadProvider`** _(class)_ `new (options?: GamepadProviderOptions): GamepadProvider` — Web Gamepad API adapter. Unlike the event-driven keyboard/pointer providers, gamepads are poll-only: the consumer must call GamepadProvid...
-- **`GamepadProviderOptions`** _(interface)_ — —
+- **`GamepadProviderOptions`** _(interface)_ — Options for GamepadProvider.
 - **`GamepadSnapshot`** _(interface)_ — Minimal structural view of a `Gamepad` snapshot — only the fields the provider reads. Real consumers get this from `navigator.getGamepads...
 - **`GamepadSource`** _(type)_ `() => readonly (GamepadSnapshot | null)[]` — Returns the current per-slot gamepad snapshots (nulls for empty slots). Defaults to `navigator.getGamepads()`; inject a stub for tests/he...
 - **`InputEvent`** _(type)_ `<TAction extends string>ActionEdge<TAction>` — A committed action transition handed to `EventInput.subscribe` handlers — the event-mode counterpart of `InputState.justPressed` / `justR...
@@ -314,7 +314,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`KeyboardCode`** _(type)_ `typeof Key[keyof typeof Key]` — String-literal union of every value in the `Key` record. Use this to constrain map values when you want compile-time enforcement that eve...
 - **`KeyboardEmitSource`** _(type)_ `'code' | 'key'` — Which `KeyboardEvent` field supplies the emitted `code`. - `'code'` (default) — physical key position, labelled after US-QWERTY. It is la...
 - **`KeyboardProvider`** _(class)_ `new (options?: KeyboardProviderOptions): KeyboardProvider` — DOM keyboard adapter. Emits raw `down`/`up` events keyed by either `KeyboardEvent.code` (default) or `KeyboardEvent.key` — see `KeyboardP...
-- **`KeyboardProviderOptions`** _(interface)_ — —
+- **`KeyboardProviderOptions`** _(interface)_ — Options for KeyboardProvider.
 - **`LockSource`** _(interface)_ — Document-like source of lock state: the provider listens here for `pointerlockchange` / `pointermove` and asks it which element is locked...
 - **`LookDelta`** _(interface)_ — Relative motion since the previous event, already scaled by `sensitivity`.
 - **`MouseLookOptions`** _(interface)_ — Options for MouseLookProvider.
@@ -322,10 +322,10 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`MouseLookState`** _(interface)_ — Read-only view of the provider's lock state, owned by the provider.
 - **`MouseLookTarget`** _(interface)_ — The element to capture — an `HTMLElement` (usually the canvas) in a browser. Headless environments may omit the DOM methods entirely; the...
 - **`Pointer`** _(const)_ — Frozen record of pointer-button codes, sibling to `Key`. Use `Pointer.LeftButton` inside a `createInput` map to bind a mouse button along...
-- **`PointerCode`** _(type)_ `typeof Pointer[keyof typeof Pointer]` — —
+- **`PointerCode`** _(type)_ `typeof Pointer[keyof typeof Pointer]` — A pointer button code from the `Pointer` code map.
 - **`PointerProjector`** _(type)_ `(ev: PointerEvent, target: PointerTarget) => { x: number; y: number; }` — Custom coordinate projector: given a raw `PointerEvent` and the target element, return the `{x, y}` the consumer wants stored on `Pointer...
 - **`PointerProvider`** _(class)_ `new (options: PointerProviderOptions): PointerProvider` — DOM pointer adapter. Reports button down/up events as raw `InputRawEvent`s keyed by `Pointer.*` codes (so they plug into `createInput` ac...
-- **`PointerProviderOptions`** _(interface)_ — —
+- **`PointerProviderOptions`** _(interface)_ — Options for PointerProvider.
 - **`PointerState`** _(interface)_ — Live, read-only view of the pointer's continuous state. Consumers read this every tick (or every render frame) to drive aim vectors, curs...
 - **`PointerTarget`** _(interface)_ — Structural target interface: any object exposing DOM event-target semantics plus `getBoundingClientRect`. Real consumers pass an `HTMLEle...
 - **`projectPointer`** _(fn)_ `(ev: { clientX: number; clientY: number; }, target: PointerTarget): { x: number; y: number; }` — The default DPI-aware canvas projection: maps an event's client coordinates to the target's **backing-pixel** coordinates. For a canvas-l...
@@ -334,21 +334,21 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`Grounded`** _(interface)_ — Per-entity ground contact flag. Kinematic resolution sets `onGround = true` when the body lands on a static during a downward sweep; clea...
 - **`GroundedDef`** _(const)_ — —
 - **`KinematicsSystemOptions`** _(interface)_ — Options for `makeKinematicsSystem`. The system iterates every entity that carries all of `Position`, `Velocity`, `ShapeAabb`, and `Ground...
-- **`KinematicsTickCtx`** _(interface)_ — —
+- **`KinematicsTickCtx`** _(interface)_ — The tick-context makeKinematicsSystem reads: `dtMs` and `world`.
 - **`makeKinematicsSystem`** _(fn)_ `<TCtx extends KinematicsTickCtx>(options: KinematicsSystemOptions<TCtx>): SchedulableSystem<TCtx>` — Builds a schedulable system that advances every dynamic body by one physics tick: gravity → X-axis resolve → Y-axis resolve → `onGround` ...
 
 ### `@pierre/ecs/modules/kinematics-3d`
 - **`Grounded3`** _(interface)_ — Per-entity ground-contact flag, the 3D sibling of `modules/kinematics`' `Grounded`. Kinematic resolution sets `onGround = true` when the ...
 - **`Grounded3Def`** _(const)_ — —
 - **`Kinematics3DSystemOptions`** _(interface)_ — Options for `makeKinematics3DSystem`, the 3D sibling of `makeKinematicsSystem`. The system iterates every entity carrying `dynamicTag` an...
-- **`Kinematics3DTickCtx`** _(interface)_ — —
+- **`Kinematics3DTickCtx`** _(interface)_ — The tick-context makeKinematics3DSystem reads: `dtMs` and `world`.
 - **`makeKinematics3DSystem`** _(fn)_ `<TCtx extends Kinematics3DTickCtx>(options: Kinematics3DSystemOptions<TCtx>): SchedulableSystem<TCtx>` — Builds a schedulable system that advances every dynamic body by one physics tick: gravity → X-axis resolve → Z-axis resolve → Y-axis reso...
 
 ### `@pierre/ecs/modules/lifetime`
 - **`Lifetime`** _(type)_ `Timer` — A countdown-to-destroy timer. A `'once'` Timer.
 - **`LifetimeDef`** _(const)_ — —
-- **`LifetimeSystemOptions`** _(interface)_ — —
-- **`LifetimeTickCtx`** _(interface)_ — —
+- **`LifetimeSystemOptions`** _(interface)_ — Options for makeLifetimeSystem: system `name`, `runAfter`, and an optional `onExpire` handler.
+- **`LifetimeTickCtx`** _(interface)_ — The tick-context makeLifetimeSystem reads: `dtMs` and `world`.
 - **`makeLifetime`** _(fn)_ `(durationMs: number): Lifetime` — Create a Lifetime that expires after `durationMs`.
 - **`makeLifetimeSystem`** _(fn)_ `<TCtx extends LifetimeTickCtx>(options?: LifetimeSystemOptions<TCtx>): SchedulableSystem<TCtx>` — A `SchedulableSystem` that counts each entity's `Lifetime` timer down by the tick's `dtMs` and, when one reaches zero, queues the entity ...
 
@@ -399,18 +399,18 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`wrap`** _(fn)_ `(value: number, min: number, max: number): number` — Wrap `value` into the half-open range `[min, max)` — the toroidal topology used for looping coordinates and angles. Returns `min` for a d...
 
 ### `@pierre/ecs/modules/motion`
-- **`Bounds`** _(interface)_ — —
+- **`Bounds`** _(interface)_ — A rectangular play-field size (`width` / `height`) for boundary wrap/clamp.
 - **`makeVelocityIntegrationSystem`** _(fn)_ `<TCtx extends VelocityIntegrationTickCtx>(options?: VelocityIntegrationOptions<TCtx>): SchedulableSystem<TCtx>` — A `SchedulableSystem` that advances each entity's `Position` by its `Velocity` scaled by the tick's `dt`, with optional boundary `wrap`/`...
 - **`VelocityIntegrationBoundary`** _(type)_ `{ mode: 'wrap'; bounds: Bounds; } | { mode: 'clamp'; bounds: Bounds; }` — Boundary behavior when a moving entity's position leaves `[0, width) x [0, height)` after integration. `wrap` is the toroidal topology us...
-- **`VelocityIntegrationOptions`** _(interface)_ — —
-- **`VelocityIntegrationTickCtx`** _(interface)_ — —
+- **`VelocityIntegrationOptions`** _(interface)_ — Options for makeVelocityIntegrationSystem: `name`, an optional `boundary`, `tag`-scoping, and `onMove` / `runAfter` hooks.
+- **`VelocityIntegrationTickCtx`** _(interface)_ — The tick-context fields makeVelocityIntegrationSystem reads: `world` and `dtMs`.
 
 ### `@pierre/ecs/modules/motion-3d`
-- **`Bounds3D`** _(interface)_ — —
+- **`Bounds3D`** _(interface)_ — A box play-volume size (`width` / `height` / `depth`) for 3D boundary wrap/clamp.
 - **`makeVelocityIntegration3DSystem`** _(fn)_ `<TCtx extends VelocityIntegration3DTickCtx>(options?: VelocityIntegration3DOptions<TCtx>): SchedulableSystem<TCtx>` — The 3D sibling of `makeVelocityIntegrationSystem`: advances `Position3D` by `Velocity3D` each tick, with optional 3D boundary `wrap`/`cla...
 - **`VelocityIntegration3DBoundary`** _(type)_ `{ mode: 'wrap'; bounds: Bounds3D; } | { mode: 'clamp'; bounds: Bounds3D; }` — Boundary behavior when a moving entity's position leaves `[0, width) x [0, height) x [0, depth)` after integration. The 3D sibling of the...
-- **`VelocityIntegration3DOptions`** _(interface)_ — —
-- **`VelocityIntegration3DTickCtx`** _(interface)_ — —
+- **`VelocityIntegration3DOptions`** _(interface)_ — Options for makeVelocityIntegration3DSystem: `name`, an optional `boundary`, `tag`-scoping, and `onMove` / `runAfter` hooks.
+- **`VelocityIntegration3DTickCtx`** _(interface)_ — The tick-context fields makeVelocityIntegration3DSystem reads: `world` and `dtMs`.
 
 ### `@pierre/ecs/modules/noise`
 - **`fbm1D`** _(fn)_ `(x: number, options?: Fbm1DOptions): number` — Fractal Brownian motion, 1D: octaves of `source` summed at growing frequency and shrinking amplitude, normalized by the summed **absolute...
@@ -441,25 +441,25 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`ParticleDef`** _(const)_ — —
 - **`ParticleEmitter`** _(interface)_ — A continuous particle source: emits `config` on each `spawner` interval.
 - **`ParticleEmitterDef`** _(const)_ — Runtime-only component (holds live `Spawner` / config callbacks, so it is not serializable — emitters are re-created on load, like any ot...
-- **`ParticleEmitterSystemOptions`** _(interface)_ — —
-- **`ParticleEmitterTickCtx`** _(interface)_ — —
-- **`ParticleSystemOptions`** _(interface)_ — —
+- **`ParticleEmitterSystemOptions`** _(interface)_ — Options for makeParticleEmitterSystem.
+- **`ParticleEmitterTickCtx`** _(interface)_ — The tick-context makeParticleEmitterSystem reads: `dtMs` and `world`.
+- **`ParticleSystemOptions`** _(interface)_ — Options for makeParticleSystem.
 - **`ParticleTag`** _(const)_ — Tag attached to every particle this module spawns.
-- **`ParticleTickCtx`** _(interface)_ — —
+- **`ParticleTickCtx`** _(interface)_ — The tick-context makeParticleSystem reads: `dtMs` and `world`.
 - **`Range`** _(type)_ `readonly [ min: number, max: number ]` — Inclusive `[min, max]` range sampled uniformly per particle.
 
 ### `@pierre/ecs/modules/pathfinding`
 - **`findPath`** _(fn)_ `(options: FindPathOptions): PathNode[] | null` — A* pathfinding on an abstract 2D grid. Returns the ordered waypoints **excluding** the start and **including** the goal, or `null` if unr...
-- **`FindPathOptions`** _(interface)_ — —
-- **`PathNode`** _(interface)_ — —
+- **`FindPathOptions`** _(interface)_ — Inputs to findPath: `from`/`to` and a `traversable` test, plus optional `cost`, `heuristic`, `neighbors`, and `maxCost` overrides.
+- **`PathNode`** _(interface)_ — An integer grid cell on a path — `x` / `y`.
 
 ### `@pierre/ecs/modules/render-canvas2d`
-- **`Canvas2DRenderContext`** _(interface)_ — —
+- **`Canvas2DRenderContext`** _(interface)_ — The context a Canvas2D render pass draws from: the `ctx2d`, the `world`, optional sprite `atlases`, and an optional camera `view`.
 - **`Canvas2DRenderer`** _(class)_ `new (): Canvas2DRenderer` — Draws every entity carrying `PositionDef + RenderableDef`. Optional reads: `RotationDef`, `ScaleDef`, `OpacityDef`, `RenderOrderDef`, `Sc...
 - **`CircleAnchor`** _(type)_ `'center' | 'top-left'` — What `PositionDef` anchors to on a `circle`: its centre or its bounding box's top-left.
 - **`Opacity`** _(interface)_ — Per-entity opacity multiplier in [0, 1]. Renderer applies via `globalAlpha`. Canon: Pixi `alpha`, Phaser `alpha`, CSS `opacity`, Unity `C...
 - **`OpacityDef`** _(const)_ — —
-- **`PolygonPoint`** _(interface)_ — —
+- **`PolygonPoint`** _(interface)_ — A 2D polygon vertex — `x` / `y`.
 - **`RectAnchor`** _(type)_ `'center' | 'top-left'` — What `PositionDef` anchors to on a `rect`: its top-left corner or its centre.
 - **`Renderable`** _(type)_ `{ kind: 'rect'; w: number; h: number; anchor?: RectAnchor; fill?: string; stroke?: string; lineWidth?: number;…` — Discriminated union of drawable shapes the default Canvas2D renderer understands. Anchor convention: - `rect`: `anchor` chooses `'top-lef...
 - **`RenderableDef`** _(const)_ — Component def for `Renderable`. Entities carrying this component plus a `PositionDef` will be drawn automatically by `Canvas2DRenderer`.
@@ -472,11 +472,11 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`SpriteFrameSource`** _(interface)_ — Minimal contract the renderer needs to draw `sprite` renderables: resolve an `atlas` + `frame` name to a drawable image and source rect. ...
 
 ### `@pierre/ecs/modules/render-dom`
-- **`DomRenderable`** _(interface)_ — —
+- **`DomRenderable`** _(interface)_ — DOM-renderable component: the element `tag`, `className`, `text`, `hidden` flag, and `attributes`/`dataset`/`style` maps.
 - **`DomRenderableDef`** _(const)_ — —
-- **`DomRenderContext`** _(interface)_ — —
+- **`DomRenderContext`** _(interface)_ — The context DomRenderer draws from: the `root` element to mount into and the `world`.
 - **`DomRenderer`** _(class)_ `new (options?: DomRendererOptions): DomRenderer` — A `Renderer` that reconciles `DomRenderable` components to real DOM nodes — one element per entity, created, re-tagged, or removed to mat...
-- **`DomRendererOptions`** _(interface)_ — —
+- **`DomRendererOptions`** _(interface)_ — DomRenderer options: a `reconcile` hook to apply per-entity attributes or content the renderer does not manage itself.
 
 ### `@pierre/ecs/modules/rng`
 - **`makeSeededRng`** _(fn)_ `(seed: number): RandomFn` — Deterministic `[0, 1)` generator (mulberry32). The same `seed` always yields the same sequence, so games can record a seed for replays an...
@@ -489,18 +489,18 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`computeChecksum`** _(fn)_ `(data: string): Promise<string>` — SHA-256 hex digest of a string, via the Web Crypto `SubtleCrypto` API.
 - **`createEnvelope`** _(fn)_ `(data: string, header?: unknown): Promise<SaveEnvelope>` — Wrap a payload string with its checksum (and an optional `header`) into a `SaveEnvelope`, so a later `verifyEnvelope` can detect corrupti...
 - **`IndexedDBBackend`** _(class)_ `new (options?: IndexedDbSaveOptions): IndexedDBBackend` — IndexedDB-backed SaveStorage implementation.
-- **`IndexedDbSaveOptions`** _(interface)_ — —
+- **`IndexedDbSaveOptions`** _(interface)_ — Options for the IndexedDB save backend: the `dbName`, `dbVersion`, and object `storeName`.
 - **`LocalStorageBackend`** _(class)_ `new (): LocalStorageBackend` — localStorage-backed SaveStorage implementation using tmp-write verification to reduce corruption risk.
-- **`MigrateFn`** _(type)_ `(blob: RawBlob) => RawBlob` — —
+- **`MigrateFn`** _(type)_ `(blob: RawBlob) => RawBlob` — A save-migration step: transforms a raw save blob from one schema version to the next.
 - **`MigrationRegistry`** _(class)_ `new (): MigrationRegistry` — Version-to-version migration chain for versioned save payloads. - Exactly one outgoing migration is allowed per version to keep paths det...
-- **`SaveEnvelope`** _(interface)_ — —
+- **`SaveEnvelope`** _(interface)_ — A saved payload plus its integrity `checksum` and optional `header`.
 - **`SaveStorage`** _(class)_ `new (): SaveStorage` — Abstract save store with integrity checks, backup rotation, and orphan recovery, backed by a key-value implementation.
 - **`verifyEnvelope`** _(fn)_ `(envelope: SaveEnvelope): Promise<boolean>` — `true` when the envelope's payload still matches its stored checksum.
 
 ### `@pierre/ecs/modules/scene-transition`
 - **`SceneTransitionQueue`** _(class)_ `new (): SceneTransitionQueue` — Tick-boundary transition queue. Game code enqueues world swaps during a tick, then applies them between ticks via applyNext().
 - **`transferEntities`** _(fn)_ `(to: EcsWorld, from: EcsWorld, ids: readonly EntityId[], componentNames?: readonly string[]): void` — Transfer a set of entity IDs from one world to another using the world's existing transferEntity semantics.
-- **`TransitionApplier`** _(type)_ `() => void` — —
+- **`TransitionApplier`** _(type)_ `() => void` — A zero-arg callback that performs the scene swap at the transition's midpoint.
 
 ### `@pierre/ecs/modules/spatial`
 - **`CellKey`** _(interface)_ — World-space → grid-cell projection helpers. These are pure functions: they project continuous coordinates onto an integer cell grid of a ...
@@ -509,7 +509,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`cellsForCircle`** _(fn)_ `(cx: number, cy: number, r: number, cellSize: number): Generator<CellKey>` — Yield every cell key overlapped by the bounding box of a circle. This is a coarse over-estimate (square enclosing the circle); callers ne...
 - **`ContinuousHashGrid2D`** _(class)_ `new (cellSize: number): ContinuousHashGrid2D` — A HashGrid2D wrapper that accepts **continuous** `{x, y}` world-space positions and projects them to integer cell keys internally via `Ma...
 - **`GridSyncOnMove`** _(type)_ `<TCtx>(ctx: TCtx, id: EntityId, prev: Pos, next: Pos) => void` — Shape matches `VelocityIntegrationOptions<TCtx>['onMove']` exactly so the returned callback plugs straight into a velocity integration sy...
-- **`GridSyncOnMoveOptions`** _(interface)_ — —
+- **`GridSyncOnMoveOptions`** _(interface)_ — Options for makeGridSyncOnMove: the `grid` to keep in sync and its `cellSize`.
 - **`HashGrid2D`** _(class)_ `new (): HashGrid2D` — Grid-based spatial index mapping integer `(x, y)` cells to sets of entity IDs. Implements SpatialStructure with `TPos = {x, y}`. Suitable...
 - **`makeGridSyncOnMove`** _(fn)_ `(options: GridSyncOnMoveOptions): GridSyncOnMove` — Build an `onMove` callback that keeps a HashGrid2D in sync with per-entity position changes produced by `makeVelocityIntegrationSystem`. ...
 
@@ -540,7 +540,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`separation`** _(fn)_ `(pos: Vec2, neighbors: readonly Neighbor[], vel: Vec2, maxSpeed: number): Vec2` — Steer away from crowding, weighted by inverse distance (closer = stronger).
 - **`truncate`** _(fn)_ `(v: Vec2, max: number): Vec2` — Clamp a vector's magnitude to `max`, preserving direction.
 - **`wander`** _(fn)_ `(vel: Vec2, state: WanderState, params: WanderParams, maxSpeed: number): Vec2` — Reynolds wander: jitter an angle each tick, project a point on a circle ahead of the agent's heading, and steer toward it. Produces smoot...
-- **`WanderParams`** _(interface)_ — —
+- **`WanderParams`** _(interface)_ — Tuning for wander: the wander circle's `distance` and `radius`, per-call `jitter`, and an optional `random` source.
 - **`WanderState`** _(interface)_ — Per-agent wander state: the current offset angle on the wander circle.
 - **`WeightedForce`** _(interface)_ — One steering force with a blend weight, consumed by combine.
 
@@ -559,12 +559,12 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 
 ### `@pierre/ecs/modules/tilemap`
 - **`buildCollisionGrid`** _(fn)_ `(map: TmxMap, opts: BuildCollisionGridOptions): CollisionGrid` — Derives a walkability mask from layered tile GIDs using two allowlists (floor + walkable props). More robust than enumerating every wall ...
-- **`BuildCollisionGridOptions`** _(interface)_ — —
+- **`BuildCollisionGridOptions`** _(interface)_ — Options for buildCollisionGrid.
 - **`buildTilemapAtlas`** _(fn)_ `(opts: BuildTilemapAtlasOptions): TextureAtlasRegistry` — Collects every unique GID across all visible tile layers, resolves each to its source rectangle via gidToFrame, and registers the frames ...
-- **`BuildTilemapAtlasOptions`** _(interface)_ — —
+- **`BuildTilemapAtlasOptions`** _(interface)_ — Options for buildTilemapAtlas.
 - **`CollisionGrid`** _(interface)_ — A walkability mask for tile-based collision queries. Row-major, with `1` meaning solid/blocked and `0` meaning walkable. Consumers query ...
 - **`spawnTilemap`** _(fn)_ `(opts: SpawnTilemapOptions): number` — Spawns one sprite entity per non-empty tile across every visible layer of the map. Each entity receives `PositionDef` (grid-aligned), `Re...
-- **`SpawnTilemapOptions`** _(interface)_ — —
+- **`SpawnTilemapOptions`** _(interface)_ — Options for spawnTilemap.
 - **`TileTransform`** _(interface)_ — A tile's flip flags resolved to the canvas transform the renderer applies about a centre-anchored sprite: `translate(x, y) → rotate(angle...
 - **`tileTransform`** _(fn)_ `(flag: number): TileTransform` — Resolves a per-tile flip-flag bitfield (`TmxLayer.flags[i]`) to the canvas render transform that reproduces Tiled's flip/rotate behaviour...
 
@@ -599,13 +599,13 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`TmxTileset`** _(interface)_ — A single image-based tileset cut into a uniform grid.
 
 ### `@pierre/ecs/modules/transform`
-- **`Position`** _(interface)_ — —
+- **`Position`** _(interface)_ — 2D position component — world-space `x` / `y`.
 - **`PositionDef`** _(const)_ — —
-- **`Rotation`** _(interface)_ — —
+- **`Rotation`** _(interface)_ — 2D rotation component — `angle` in radians.
 - **`RotationDef`** _(const)_ — —
-- **`Scale`** _(interface)_ — —
+- **`Scale`** _(interface)_ — 2D scale component — per-axis `x` / `y` multipliers.
 - **`ScaleDef`** _(const)_ — —
-- **`Velocity`** _(interface)_ — —
+- **`Velocity`** _(interface)_ — 2D velocity component — `vx` / `vy` per second, integrated by `makeVelocityIntegrationSystem`.
 - **`VelocityDef`** _(const)_ — —
 
 ### `@pierre/ecs/modules/transform-3d`
@@ -615,7 +615,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`Rotation3DDef`** _(const)_ — —
 - **`Scale3D`** _(interface)_ — Per-axis scale multiplier — the 3D sibling of the 2D `Scale` `{x, y}`.
 - **`Scale3DDef`** _(const)_ — —
-- **`Velocity3D`** _(interface)_ — —
+- **`Velocity3D`** _(interface)_ — 3D velocity component — `vx` / `vy` / `vz` per second.
 - **`Velocity3DDef`** _(const)_ — —
 
 ### `@pierre/ecs/modules/turn-based`
@@ -634,4 +634,4 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`handleJobs`** _(fn)_ `<TIn, TOut>(fn: (input: TIn) => Promise<TOut> | TOut): void` — Worker-side counterpart to WorkerPool: wires the message protocol so the worker script only supplies the job function. Handles both sync ...
 - **`WorkerLike`** _(interface)_ — Minimal Worker surface the pool needs — satisfied by a real DOM `Worker`, and easy to fake in tests.
 - **`WorkerPool`** _(class)_ `new <TIn, TOut>(spawn: () => WorkerLike, options?: WorkerPoolOptions): WorkerPool<TIn, TOut>` — A fixed pool of Web Workers that runs jobs off the main thread. Pass a spawn function (typically `() => new Worker(new URL('./job.worker....
-- **`WorkerPoolOptions`** _(interface)_ — —
+- **`WorkerPoolOptions`** _(interface)_ — Options for a `WorkerPool`: the number of workers (`size`, default `navigator.hardwareConcurrency`).

@@ -1,5 +1,6 @@
 import { SaveStorage } from './save-storage';
 
+/** Options for the IndexedDB save backend: the `dbName`, `dbVersion`, and object `storeName`. */
 export interface IndexedDbSaveOptions {
   dbName?: string;
   dbVersion?: number;

@@ -5,6 +5,7 @@ import { RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas
 import { TMX_FLIP_H, TMX_FLIP_V } from '@pierre/ecs/modules/tmx';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
+/** Options for {@link spawnTilemap}. */
 export interface SpawnTilemapOptions {
   /**
    * Anchor for spawned tile sprites. `'top-left'` (default) places the

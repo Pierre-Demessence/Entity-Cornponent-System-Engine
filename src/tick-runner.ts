@@ -11,6 +11,11 @@ export interface TickFlushableEvents {
   flush: () => void;
 }
 
+/**
+ * Wiring for the tick runner: the `scheduler` and `source` to drive, how to
+ * build the per-tick context and resolve the world/events, plus optional
+ * tick-boundary hooks.
+ */
 export interface TickRunnerOptions<TCtx> {
   scheduler: Scheduler<TCtx>;
   source: TickSource;

@@ -29,6 +29,7 @@ export interface AttachTickCtx {
   world: EcsWorld;
 }
 
+/** Options for {@link makeAttachSystem}: system `name` and `runAfter` ordering. */
 export interface AttachSystemOptions {
   /** Custom system name. Defaults to `'attach'`. */
   name?: string;

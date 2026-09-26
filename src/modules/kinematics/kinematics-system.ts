@@ -6,6 +6,7 @@ import { PositionDef } from '../transform/position';
 import { VelocityDef } from '../transform/velocity';
 import { GroundedDef } from './grounded';
 
+/** The tick-context {@link makeKinematicsSystem} reads: `dtMs` and `world`. */
 export interface KinematicsTickCtx {
   /** Elapsed time since the previous tick, in milliseconds. */
   readonly dtMs: number;

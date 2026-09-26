@@ -45,6 +45,7 @@ export interface RenderView {
   zoom?: number;
 }
 
+/** The context a Canvas2D render pass draws from: the `ctx2d`, the `world`, optional sprite `atlases`, and an optional camera `view`. */
 export interface Canvas2DRenderContext {
   atlases?: SpriteFrameSource;
   ctx2d: CanvasRenderingContext2D;

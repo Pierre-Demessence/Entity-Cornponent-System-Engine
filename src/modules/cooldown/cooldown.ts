@@ -30,8 +30,10 @@ export function trigger(c: Cooldown, durationMs?: number): void {
   restart(c, durationMs);
 }
 
+/** The tick-context {@link makeCooldownSystem} reads: `dtMs` and `world`. */
 export interface CooldownTickCtx { dtMs: number; world: EcsWorld }
 
+/** Options for {@link makeCooldownSystem}. */
 export interface CooldownSystemOptions {
   name?: string;
   runAfter?: string[];

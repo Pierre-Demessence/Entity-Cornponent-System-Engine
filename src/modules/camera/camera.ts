@@ -142,8 +142,10 @@ function chaseAxis(camCenter: number, target: number, deadzone: number): number 
   return camCenter + (d - Math.sign(d) * deadzone);
 }
 
+/** The tick-context {@link makeFollowCameraSystem} reads: `world` and optional `dtMs`. */
 export interface CameraFollowTickCtx { dtMs?: number; world: EcsWorld }
 
+/** Options for {@link makeFollowCameraSystem}. */
 export interface CameraFollowOptions {
   name?: string;
   cameraTag: TagDef;

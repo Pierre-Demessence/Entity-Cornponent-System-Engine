@@ -1,6 +1,7 @@
 import type { EntityId } from '#entity-id';
 import type { EcsWorld } from '#world';
 
+/** A zero-arg callback that performs the scene swap at the transition's midpoint. */
 export type TransitionApplier = () => void;
 
 /**

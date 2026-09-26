@@ -91,8 +91,10 @@ export function currentFrame(anim: SpriteAnimation): string {
   return anim.frames[anim.currentIndex]!;
 }
 
+/** The tick-context {@link makeSpriteAnimationSystem} reads: `dtMs` and `world`. */
 export interface SpriteAnimationTickCtx { dtMs: number; world: EcsWorld }
 
+/** Options for {@link makeSpriteAnimationSystem}. */
 export interface SpriteAnimationSystemOptions {
   name?: string;
   runAfter?: string[];

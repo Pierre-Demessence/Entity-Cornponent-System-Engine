@@ -2,6 +2,7 @@ import type { ComponentDef } from '#component-store';
 
 import { asBoolean, asNumber, asObject, asString } from '#validation';
 
+/** Audio-source component: the `clipId` to play, plus optional `channel`, `loop`, and `volume`. */
 export interface AudioSource {
   channel?: string;
   clipId: string;

@@ -16,6 +16,7 @@ import { clamp } from '../math';
 /** Re-exported from `modules/math` so collision callers share one vector type. */
 export type { Vec2 };
 
+/** Axis-aligned bounding box: top-left `x` / `y` plus width `w` and height `h`. */
 export interface Aabb {
   h: number;
   w: number;
@@ -48,6 +49,7 @@ export function aabbVsCircle(a: Aabb, c: Vec2, r: number): boolean {
   return dx * dx + dy * dy <= r * r;
 }
 
+/** Result of a swept AABB test: whether it `hit`, the surface `normal`, and `tEntry` (fraction of the motion travelled before impact). */
 export interface SweptHit {
   readonly hit: boolean;
   /** Collision normal on `b`'s surface (unit vector). `{0,0}` when no collision. */
@@ -135,8 +137,10 @@ export function aabbVsAabbSwept(a: Aabb, motionA: Vec2, b: Aabb): SweptHit {
   return { hit: true, normal, tEntry: entry };
 }
 
+/** Which face of an AABB a hit is on — `'x'` (a vertical face) or `'y'` (a horizontal face). */
 export type AabbAxis = 'x' | 'y';
 
+/** Result of a ray-vs-AABB hit: the entry `axis` and parametric distance `t` along `dir`. */
 export interface RayHit {
   /** The face the ray entered through. */
   readonly axis: AabbAxis;
@@ -216,6 +220,7 @@ export function rayVsAabb(origin: Vec2, dir: Vec2, box: Aabb): RayHit | null {
   return { axis, t: tEnter };
 }
 
+/** A collision resolution: `pushOut` to separate the mover from the obstacle, and its reflected `velocity`. */
 export interface BounceResult {
   /** Displacement to add to the mover's position to separate the two AABBs. */
   pushOut: Vec2;

@@ -219,8 +219,10 @@ export function burst(world: EcsWorld, config: BurstConfig): EntityId[] {
   return ids;
 }
 
+/** The tick-context {@link makeParticleSystem} reads: `dtMs` and `world`. */
 export interface ParticleTickCtx { dtMs: number; world: EcsWorld }
 
+/** Options for {@link makeParticleSystem}. */
 export interface ParticleSystemOptions {
   name?: string;
   /** Curve for the `fadeOut` alpha ramp. Default `linear`. */
@@ -317,8 +319,10 @@ export const ParticleEmitterDef: ComponentDef<ParticleEmitter> = {
   },
 };
 
+/** The tick-context {@link makeParticleEmitterSystem} reads: `dtMs` and `world`. */
 export interface ParticleEmitterTickCtx { dtMs: number; world: EcsWorld }
 
+/** Options for {@link makeParticleEmitterSystem}. */
 export interface ParticleEmitterSystemOptions {
   name?: string;
   runAfter?: string[];

@@ -25,6 +25,7 @@ export interface Aabb3 {
   readonly half: Vec3;
 }
 
+/** Which face of a 3D AABB a hit is on — `'x'`, `'y'`, or `'z'`. */
 export type Aabb3Axis = 'x' | 'y' | 'z';
 
 /**
@@ -37,11 +38,13 @@ export interface Plane3 {
   readonly normal: Vec3;
 }
 
+/** Result of a ray-vs-`Aabb3` hit: the entry `axis` and parametric distance `t` along the ray. */
 export interface RayHit3 {
   readonly axis: Aabb3Axis;
   readonly t: number;
 }
 
+/** Result of a swept `Aabb3` test: whether it `hit`, the surface `normal`, and `tEntry` (fraction of the motion before impact). */
 export interface SweptHit3 {
   readonly hit: boolean;
   /** Unit normal on `b`'s surface at contact. Zero vector when there is no hit. */

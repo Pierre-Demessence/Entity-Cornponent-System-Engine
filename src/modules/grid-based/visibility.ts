@@ -1,8 +1,10 @@
+/** An integer grid cell — `x` / `y`. */
 export interface Point {
   x: number;
   y: number;
 }
 
+/** The grid the visibility/line helpers query: `blocksSight(x, y)` and `isInBounds(x, y)`. */
 export interface VisibilityGrid {
   blocksSight: (x: number, y: number) => boolean;
   isInBounds: (x: number, y: number) => boolean;

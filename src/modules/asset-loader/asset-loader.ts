@@ -1,6 +1,7 @@
 const DISALLOWED_URL_SCHEME_RE = /^(?:javascript|file):/i;
 const WINDOWS_ABSOLUTE_PATH_RE = /^[A-Z]:[\\/]/i;
 
+/** The built-in asset kinds (`'image'`, `'json'`, `'audio-buffer'`, …), plus any custom string kind. */
 export type AssetKind
   = | 'array-buffer'
     | 'audio-buffer'
@@ -10,23 +11,29 @@ export type AssetKind
     | 'text'
     | (string & {});
 
+/** Per-load options passed to a handle's `load`: an `AbortSignal` for cancellation. */
 export interface AssetLoadOptions {
   signal?: AbortSignal;
 }
 
+/** {@link imageAsset} options: the `crossOrigin` attribute to set on the image. */
 export interface ImageAssetOptions {
   crossOrigin?: string | null;
 }
 
+/** {@link fontFaceAsset} options: whether to `addToDocument` and the `FontFace` `descriptors`. */
 export interface FontFaceAssetOptions {
   addToDocument?: boolean;
   descriptors?: FontFaceDescriptors;
 }
 
+/** Options for a custom {@link AssetLoaderOptions} `fontLoader` — the {@link FontFaceAssetOptions} fields. */
 export interface FontLoaderOptions extends FontFaceAssetOptions {}
 
+/** Options for a custom {@link AssetLoaderOptions} `imageLoader` — image and load options combined. */
 export interface ImageLoaderOptions extends AssetLoadOptions, ImageAssetOptions {}
 
+/** Progress for one asset in an `AssetLoader.loadMany` batch: `completed`/`total`, the `url`/`kind`, and whether it came `fromCache`. */
 export interface AssetBatchProgress {
   completed: number;
   fromCache: boolean;
@@ -35,10 +42,12 @@ export interface AssetBatchProgress {
   url: string;
 }
 
+/** Options for `AssetLoader.loadMany`: an `AbortSignal` plus an `onProgress` callback. */
 export interface AssetBatchLoadOptions extends AssetLoadOptions {
   onProgress?: (progress: AssetBatchProgress) => void;
 }
 
+/** The fetch/decode helpers a handle's `load` receives from the loader, so a handle never touches `fetch` directly. */
 export interface AssetLoadContext {
   fetchArrayBuffer: (url: string, options?: AssetLoadOptions) => Promise<ArrayBuffer>;
   fetchJson: <T = unknown>(url: string, options?: AssetLoadOptions) => Promise<T>;
@@ -47,6 +56,7 @@ export interface AssetLoadContext {
   loadImage: (url: string, options?: ImageLoaderOptions) => Promise<HTMLImageElement>;
 }
 
+/** A typed, cacheable reference to one asset: its `kind`, `url`, cache `identity`, and a `load` function. Build one with the `*Asset` helpers or {@link createAssetHandle}. */
 export interface AssetHandle<TValue> {
   readonly identity: string;
   readonly kind: AssetKind;
@@ -54,10 +64,12 @@ export interface AssetHandle<TValue> {
   readonly load: (context: AssetLoadContext, options: AssetLoadOptions) => Promise<TValue>;
 }
 
+/** Extracts the value a handle resolves to: `AssetValue<AssetHandle<T>>` is `T`. */
 export type AssetValue<THandle extends AssetHandle<unknown>> = THandle extends AssetHandle<infer TValue>
   ? TValue
   : never;
 
+/** {@link AssetLoader} construction options: override `fetch`, the URL allow-list, or the image/font loaders (e.g. for tests or a non-DOM host). */
 export interface AssetLoaderOptions {
   fetch?: typeof fetch;
   isUrlAllowed?: (url: string) => boolean;

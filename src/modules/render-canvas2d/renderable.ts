@@ -8,6 +8,7 @@ export type RectAnchor = 'center' | 'top-left';
 /** What `PositionDef` anchors to on a `circle`: its centre or its bounding box's top-left. */
 export type CircleAnchor = 'center' | 'top-left';
 
+/** A 2D polygon vertex — `x` / `y`. */
 export interface PolygonPoint { x: number; y: number }
 
 /**

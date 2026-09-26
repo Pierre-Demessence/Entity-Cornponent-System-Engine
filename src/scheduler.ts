@@ -35,6 +35,7 @@ export interface SchedulableSystem<TCtx> {
   run: (ctx: TCtx) => void;
 }
 
+/** Construction options for {@link Scheduler}: an optional ordered `phases` list that switches it into phase mode. */
 export interface SchedulerOptions {
   /**
    * Ordered list of phase names. When provided, every system must declare a

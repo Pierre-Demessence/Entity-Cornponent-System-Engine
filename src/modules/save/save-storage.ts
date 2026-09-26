@@ -1,3 +1,4 @@
+/** A saved payload plus its integrity `checksum` and optional `header`. */
 export interface SaveEnvelope {
   checksum: string;
   header?: unknown;

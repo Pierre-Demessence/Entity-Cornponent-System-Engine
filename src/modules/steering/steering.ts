@@ -91,6 +91,7 @@ export interface WanderState {
   angle: number;
 }
 
+/** Tuning for {@link wander}: the wander circle's `distance` and `radius`, per-call `jitter`, and an optional `random` source. */
 export interface WanderParams {
   /** How far ahead of the agent the wander circle is projected. */
   distance: number;

@@ -44,6 +44,7 @@ export const Gamepad = {
   Y: 'Gamepad.Y',
 } as const;
 
+/** A gamepad button/axis code from the `Gamepad` code map. */
 export type GamepadCode = typeof Gamepad[keyof typeof Gamepad];
 
 /** Standard-mapping button index → emitted code. */
@@ -92,6 +93,7 @@ export interface GamepadSnapshot {
  */
 export type GamepadSource = () => readonly (GamepadSnapshot | null)[];
 
+/** Options for {@link GamepadProvider}. */
 export interface GamepadProviderOptions {
   /**
    * Analog button activation threshold (triggers). A button counts as down

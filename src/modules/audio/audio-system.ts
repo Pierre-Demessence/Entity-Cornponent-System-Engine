@@ -7,15 +7,19 @@ import type { AudioSource } from './audio-source';
 
 import { AudioSourceDef } from './audio-source';
 
+/** The tick-context {@link makeAudioSystem} reads: `world`. */
 export interface AudioTickCtx { world: EcsWorld }
 
+/** A queued one-shot sound: a `clipId` and optional {@link AudioPlayOptions}. */
 export interface AudioOneShot {
   clipId: string;
   options?: AudioPlayOptions;
 }
 
+/** Which audio operation failed: a one-shot play, or a source's play or stop. */
 export type AudioSystemErrorKind = 'one-shot-play' | 'source-play' | 'source-stop';
 
+/** A provider failure surfaced to `onError`: the `kind`, the underlying `error`, and the `clipId`/`entityId` involved. */
 export interface AudioSystemError {
   clipId?: string;
   entityId?: EntityId;
@@ -49,6 +53,7 @@ export class AudioQueue {
   }
 }
 
+/** Options for {@link makeAudioSystem}: the `provider`, an optional one-shot `queue` and `sourceDef`, plus `name`/`runAfter`/`onError`. */
 export interface AudioSystemOptions {
   name?: string;
   provider: AudioProvider;

@@ -1,8 +1,10 @@
+/** An integer grid cell on a path — `x` / `y`. */
 export interface PathNode {
   x: number;
   y: number;
 }
 
+/** Inputs to {@link findPath}: `from`/`to` and a `traversable` test, plus optional `cost`, `heuristic`, `neighbors`, and `maxCost` overrides. */
 export interface FindPathOptions {
   from: PathNode;
   /** Abort and return `null` if accumulated `g` exceeds this. Defaults to `Infinity`. */

@@ -25,11 +25,13 @@ interface NodeRecord {
   tag: string;
 }
 
+/** The context {@link DomRenderer} draws from: the `root` element to mount into and the `world`. */
 export interface DomRenderContext {
   root: HTMLElement;
   world: EcsWorld;
 }
 
+/** {@link DomRenderer} options: a `reconcile` hook to apply per-entity attributes or content the renderer does not manage itself. */
 export interface DomRendererOptions {
   reconcile?: (args: {
     entityId: EntityId;

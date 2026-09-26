@@ -5,6 +5,7 @@ import { asBoolean, asObject, asString } from '#validation';
 const ENTITY_ID_ATTR = 'data-entity-id';
 const TAG_NAME_RE = /^[a-z][a-z0-9-]*$/;
 
+/** DOM-renderable component: the element `tag`, `className`, `text`, `hidden` flag, and `attributes`/`dataset`/`style` maps. */
 export interface DomRenderable {
   attributes?: Record<string, string>;
   className?: string;

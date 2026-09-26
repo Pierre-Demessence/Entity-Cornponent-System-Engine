@@ -8,6 +8,7 @@ interface Pos {
   readonly y: number;
 }
 
+/** Options for {@link makeGridSyncOnMove}: the `grid` to keep in sync and its `cellSize`. */
 export interface GridSyncOnMoveOptions {
   /** Projection size in world units per cell. */
   readonly cellSize: number;

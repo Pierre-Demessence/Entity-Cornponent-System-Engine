@@ -47,9 +47,10 @@ reinventing shipped primitives).
 - A drift test (`scripts/engine-api.test.ts`) fails `npm test` if it is stale.
 - The `— —` rows (exports with no JSDoc summary) are the doc-coverage backlog. A
   ratchet (`scripts/jsdoc-coverage.test.ts`) fails `npm test` if any public
-  **function or class** lacks a summary, or if the total undocumented count rises
-  above its baseline — so a new export must be documented and the backlog only
-  shrinks. Lower the baseline as you document interfaces/types/consts.
+  **function, class, interface, or type** lacks a summary, or if the total
+  undocumented count rises above its baseline — so a new export must be
+  documented and the backlog only shrinks. The remaining backlog is runtime
+  `const`s; lower the baseline as you document them.
 - [`engine-usage.md`](engine-usage.md) is its counterpart: which files
   reference each export, bucketed as example / unit test / other engine source.
   Read it when choosing what to build next. Regenerate with `npm run docs:usage`;

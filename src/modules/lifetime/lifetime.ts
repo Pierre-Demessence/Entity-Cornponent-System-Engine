@@ -18,8 +18,10 @@ export function makeLifetime(durationMs: number): Lifetime {
   return makeTimer(durationMs, 'once');
 }
 
+/** The tick-context {@link makeLifetimeSystem} reads: `dtMs` and `world`. */
 export interface LifetimeTickCtx { dtMs: number; world: EcsWorld }
 
+/** Options for {@link makeLifetimeSystem}: system `name`, `runAfter`, and an optional `onExpire` handler. */
 export interface LifetimeSystemOptions<TCtx extends LifetimeTickCtx> {
   name?: string;
   runAfter?: string[];

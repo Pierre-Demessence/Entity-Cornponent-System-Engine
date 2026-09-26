@@ -22,6 +22,7 @@ export const Pointer = {
   RightButton: 'Pointer.Right',
 } as const;
 
+/** A pointer button code from the `Pointer` code map. */
 export type PointerCode = typeof Pointer[keyof typeof Pointer];
 
 type PointerButton = 0 | 1 | 2;
@@ -81,6 +82,7 @@ export interface PointerTarget extends EventTarget {
   };
 }
 
+/** Options for {@link PointerProvider}. */
 export interface PointerProviderOptions {
   /**
    * Buttons to emit as digital events. Defaults to `[0, 1, 2]`
