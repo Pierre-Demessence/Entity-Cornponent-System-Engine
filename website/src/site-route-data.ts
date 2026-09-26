@@ -40,8 +40,14 @@ function collapsedGroup(label: string, entries: SidebarEntry[]): SidebarEntry {
 }
 
 function manualSidebar(entries: SidebarEntry[], href: string, isCurrent: boolean): SidebarEntry[] {
-  const guides = findGroup(entries, MANUAL_GROUP)?.entries ?? [];
-  return [overviewLink(href, isCurrent), collapsedGroup('Modules', guides)];
+  const manual = findGroup(entries, MANUAL_GROUP)?.entries ?? [];
+  const core = findGroup(manual, 'Core')?.entries ?? [];
+  const modules = findGroup(manual, 'Modules')?.entries ?? [];
+  return [
+    overviewLink(href, isCurrent),
+    collapsedGroup('Core', core),
+    collapsedGroup('Modules', modules),
+  ];
 }
 
 function apiSidebar(entries: SidebarEntry[], href: string, isCurrent: boolean): SidebarEntry[] {
