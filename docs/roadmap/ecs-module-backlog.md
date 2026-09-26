@@ -117,7 +117,6 @@ pinned. `speculative` = shape undetermined or canon split.
 | `RenderableDef` billboard + Canvas filters | deferred | Shape — a second billboard consumer; a concrete `ctx.filter` request |
 | `modules/kinematics` V2 (slopes, one-way) | ready | Scheduling — consumer exercises it |
 | `modules/kinematics-3d` V2 (slopes, one-way) | ready | Scheduling — consumer exercises it |
-| `modules/tick` V2 (fixed-step accumulator) | ready | Scheduling — consumer needs catch-up |
 | `modules/motion` V2 (radial force fields) | deferred | Shape — second radial consumer |
 | `modules/motion-3d` V2 (attitude, spherical bounds) | deferred | Shape — second consumer for either |
 | `modules/camera` V3 (rotation, parallax) | ready | Scheduling — consumer needs it; snake zoom adoption |
@@ -272,36 +271,6 @@ flag consulted in the axis sweep, slopes need the sweep to become
 normal-aware, or an explicit slope resolver after it. Shipping
 `modules/kinematics-3d` without them was not a deliberate scope call against
 canon — it is the same slice-V1 gap as the 2D half.
-
-</details>
-
-### `modules/tick` V2 — fixed-timestep accumulator + interpolation — ready
-
-**Scope.** A tick source that consumes real elapsed time, advances the world
-at a fixed `dt` with catch-up steps, and exposes an interpolation factor so
-the renderer can draw between the last two simulation states.
-
-**Status.** Ready — the same shape in Godot (`_physics_process` +
-`Engine.physics_ticks_per_second`), Unity (`FixedUpdate` +
-`Rigidbody.interpolation`) and Bevy (`FixedUpdate`). Both shipped sources
-deliberately sidestep it, which makes this a slice-V1 gap, not a new idea.
-
-**Gate.** Scheduling — a consumer whose physics needs frame-rate-independent
-determinism at a varying display rate.
-
-<details>
-<summary>Details</summary>
-
-**Evidence.** `AnimationFrameTickSource` emits variable
-dt@`src/modules/tick/animation-frame-tick-source.ts:27` and its own docs say
-consumers needing catch-up "layer an accumulator on top";
-`FixedIntervalTickSource` is *nominal* fixed
-dt@`src/modules/tick/fixed-interval-tick-source.ts:7`.
-
-**Probable shape.** `FixedAccumulatorTickSource { fixedDtMs, maxStepsPerFrame }`
-yielding `{ dt, alpha }` — systems keep reading a fixed `dt`, the renderer
-lerps by `alpha`. The spiral-of-death clamp (`maxStepsPerFrame`) is the
-load-bearing detail, not the loop.
 
 </details>
 

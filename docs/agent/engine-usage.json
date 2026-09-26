@@ -10170,6 +10170,46 @@
           }
         },
         {
+          "name": "FixedAccumulatorTickSource",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "class",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/tick/fixed-accumulator-tick-source.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "FixedAccumulatorTickSourceOptions",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "FixedIntervalTickSource",
           "coveredByExample": true,
           "example": {
@@ -10237,12 +10277,13 @@
       ],
       "tests": [
         "src/modules/tick/animation-frame-tick-source.test.ts",
+        "src/modules/tick/fixed-accumulator-tick-source.test.ts",
         "src/modules/tick/fixed-interval-tick-source.test.ts",
         "src/modules/tick/manual-tick-source.test.ts"
       ],
-      "typeTotal": 1,
+      "typeTotal": 2,
       "typeUsedByExample": 0,
-      "valueTotal": 3,
+      "valueTotal": 4,
       "valueUsedByExample": 3
     },
     {
@@ -12539,6 +12580,7 @@
           "test": {
             "consumers": [
               "src/modules/stats/timed-tick-source.test.ts",
+              "src/modules/tick/fixed-accumulator-tick-source.test.ts",
               "src/modules/tick/fixed-interval-tick-source.test.ts",
               "src/modules/tick/manual-tick-source.test.ts",
               "src/tick-runner.test.ts"
@@ -12577,6 +12619,7 @@
       ],
       "tests": [
         "src/modules/stats/timed-tick-source.test.ts",
+        "src/modules/tick/fixed-accumulator-tick-source.test.ts",
         "src/modules/tick/fixed-interval-tick-source.test.ts",
         "src/modules/tick/manual-tick-source.test.ts",
         "src/tick-runner.test.ts"
@@ -13202,6 +13245,11 @@
       "total": 4
     },
     {
+      "importPath": "@pierre/ecs/modules/tick",
+      "missing": 1,
+      "total": 4
+    },
+    {
       "importPath": "@pierre/ecs/modules/turn-based",
       "missing": 1,
       "total": 1
@@ -13213,11 +13261,11 @@
     "entriesWithExample": 41,
     "entriesWithoutExample": 17,
     "modules": 42,
-    "noExternalConsumer": 138,
-    "symbols": 494,
-    "typeSymbols": 214,
-    "valueSymbols": 280,
+    "noExternalConsumer": 139,
+    "symbols": 496,
+    "typeSymbols": 215,
+    "valueSymbols": 281,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 155
+    "valueWithoutExample": 156
   }
 }

@@ -58,6 +58,28 @@ should layer a fixed accumulator on top.
 `start()` / `stop()` are idempotent; `stop()` cancels the pending rAF and
 resets the timing baseline, so the next `start()` begins cleanly.
 
+## `FixedAccumulatorTickSource` — fixed timestep + interpolation
+
+Consumes real elapsed frame time via `advance(frameDeltaMs)` and emits zero or
+more ticks, each advancing the world by a constant `fixedDtMs`. Suitable for:
+
+- Physics that must be frame-rate-independent and deterministic while the
+  display refresh rate varies.
+- Render loops that want to draw between the last two simulation states.
+
+Caller-pumped: drive `advance()` from the app's existing render loop (typically
+an `AnimationFrameTickSource` subscriber), so this source owns no timer of its
+own. `start()` / `stop()` are no-ops for interface parity, mirroring
+`ManualTickSource`.
+
+Emits `TickInfo { kind: 'fixed', deltaMs: fixedDtMs, tickNumber }`. The leftover
+time is exposed as the `alpha` property (in `[0, 1)`), which the renderer reads
+at draw time to interpolate between simulation states.
+
+`maxStepsPerFrame` (default `8`) caps catch-up ticks per call; excess
+accumulated time is dropped, not carried, so a slow frame cannot cascade into
+an ever-growing backlog — the spiral-of-death guard.
+
 ## Choosing between them
 
 | Situation | Pick |
@@ -66,12 +88,6 @@ resets the timing baseline, so the next `start()` begins cleanly.
 | Real-time prototype, "simulate at N Hz" | `FixedIntervalTickSource` |
 | Headless / lockstep / replays | `ManualTickSource` |
 | Need precise wall-time deltas | `AnimationFrameTickSource` |
-
-## Future
-
-A fixed-timestep accumulator with interpolation is the `modules/tick` V2
-backlog entry, marked **ready** — the shape is canon (Godot
-`_physics_process`, Unity `FixedUpdate`, Bevy `FixedUpdate`), so it waits on a
-build slot, not on a consumer.
+| Frame-rate-independent physics + render interpolation | `FixedAccumulatorTickSource` |
 
 Import via `@pierre/ecs/modules/tick`.

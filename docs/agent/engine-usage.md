@@ -41,10 +41,10 @@ references it.
 
 ## Headline
 
-- 58 public entries (16 core, 42 modules) · 494 symbols (280 value, 214 type)
+- 58 public entries (16 core, 42 modules) · 496 symbols (281 value, 215 type)
 - 41 entries referenced by at least one example · 17 with none
-- 155 value symbols referenced by no example (5 of them with no external consumer at all)
-- 138 symbols with no external consumer
+- 156 value symbols referenced by no example (5 of them with no external consumer at all)
+- 139 symbols with no external consumer
 
 ## Entries with no example reference
 
@@ -101,6 +101,7 @@ the shortlist for the next game in
 - `@pierre/ecs/modules/pathfinding` — 1 of 1 value exports unreferenced by any example
 - `@pierre/ecs/modules/render-canvas2d` — 1 of 5 value exports unreferenced by any example
 - `@pierre/ecs/modules/rng` — 1 of 4 value exports unreferenced by any example
+- `@pierre/ecs/modules/tick` — 1 of 4 value exports unreferenced by any example
 - `@pierre/ecs/modules/turn-based` — 1 of 1 value exports unreferenced by any example
 
 ## Coverage by example
@@ -255,9 +256,9 @@ value 1/1 · type 0/2 · examples: asteroids, boids, breakout, card-battler, cri
 
 ### `@pierre/ecs/tick-source`
 
-value 0/0 · type 2/2 · examples: rhythm · tests: 4 · other: stats, tick, tick-runner.ts
+value 0/0 · type 2/2 · examples: rhythm · tests: 5 · other: stats, tick, tick-runner.ts
 
-- **`TickInfo`** _(interface)_ — examples: rhythm · tests: src/modules/stats/timed-tick-source.test.ts, src/modules/tick/fixed-interval-tick-source.test.ts, src/modules/tick/manual-tick-source.test.ts, src/tick-runner.test.ts · other: stats, tick, tick-runner.ts
+- **`TickInfo`** _(interface)_ — examples: rhythm · tests: src/modules/stats/timed-tick-source.test.ts, src/modules/tick/fixed-accumulator-tick-source.test.ts, src/modules/tick/fixed-interval-tick-source.test.ts, src/modules/tick/manual-tick-source.test.ts, src/tick-runner.test.ts · other: stats, tick, tick-runner.ts
 - **`TickSource`** _(interface)_ — examples: rhythm · tests: src/modules/stats/timed-tick-source.test.ts, src/tick-runner.test.ts · other: stats, tick, tick-runner.ts
 
 ### `@pierre/ecs/validation`
@@ -822,10 +823,12 @@ value 2/2 · type 0/3 · examples: rpg, solitaire, tilemap · tests: 1 · other:
 
 ### `@pierre/ecs/modules/tick`
 
-value 3/3 · type 0/1 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +13 more · tests: 3 · other: —
+value 3/4 · type 0/2 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +13 more · tests: 4 · other: —
 
 - **`AnimationFrameTickSource`** _(class)_ — examples: asteroids, breakout, card-battler, doom, flappy, frogger, jetpack, local-pong +8 more · tests: src/modules/tick/animation-frame-tick-source.test.ts · other: —
 - **`AnimationFrameTickSourceOptions`** _(interface)_ — no external consumer
+- **`FixedAccumulatorTickSource`** _(class)_ — examples: — · tests: src/modules/tick/fixed-accumulator-tick-source.test.ts · other: —
+- **`FixedAccumulatorTickSourceOptions`** _(interface)_ — no external consumer
 - **`FixedIntervalTickSource`** _(class)_ — examples: asteroids, boids, breakout, critters, doom, flappy, frogger, jetpack +12 more · tests: src/modules/tick/fixed-interval-tick-source.test.ts · other: —
 - **`ManualTickSource`** _(class)_ — examples: card-battler · tests: src/modules/tick/manual-tick-source.test.ts · other: —
 
