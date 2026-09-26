@@ -8,3 +8,16 @@ export {
   type SpriteAnimationTickCtx,
   tickSpriteAnimation,
 } from './sprite-animation';
+export {
+  currentAnimatorFrame,
+  makeSpriteAnimator,
+  makeSpriteClipAnimationSystem,
+  playClip,
+  type SpriteAnimator,
+  SpriteAnimatorDef,
+  type SpriteClip,
+  type SpriteClipAnimationSystemOptions,
+  type SpriteClipAnimationTickCtx,
+  SpriteClipRegistry,
+  tickSpriteAnimator,
+} from './sprite-clip';

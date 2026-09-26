@@ -128,7 +128,6 @@ pinned. `speculative` = shape undetermined or canon split.
 | `modules/audio` V2 event adapters, clip loading | deferred | Shape — a second consumer's convention |
 | `modules/audio` V3 3D HRTF panning | deferred | Shape — a 3D consumer that needs positional audio |
 | `modules/audio` occlusion (muffle behind walls) | speculative | Shape — no canon API; needs geometry + lowpass |
-| `modules/animation` V2 clip registry | ready | Scheduling — build slot |
 | `modules/animation` V2 rig, `TweenDef` component | deferred | Shape — 2D rig canon thin; no component consumer |
 | `modules/ui` | speculative | Shape — ECS-vs-scene-graph UI is a split decision |
 | `modules/dialogue` | speculative | Shape — choices/world-gating unproven by a linear consumer |
@@ -517,18 +516,6 @@ No single canonical API.
 
 **Gate.** Shape — a consumer with the geometry model and a concrete
 occlusion-filter request.
-
-### `modules/animation` V2 — clip registry — ready
-
-**Scope.** A clip registry: named animation clips shared across entities,
-lookup by key, playback control.
-
-**Status.** Ready — the same shape in Unity (`AnimationClip`), Godot
-(`Animation`), Bevy (`AnimationClip`) and Phaser (named anims): a named clip
-resource shared across entities and selected by key. V1 ships the per-entity
-`SpriteAnimationDef` only, which is a slice of the canonical surface.
-
-**Gate.** Scheduling — build slot.
 
 ### `modules/animation` V2 — 2D rig, `TweenDef` component — deferred
 

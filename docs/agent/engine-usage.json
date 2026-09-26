@@ -703,6 +703,7 @@
       "importPath": "@pierre/ecs/entity-id",
       "isModule": false,
       "other": [
+        "animation",
         "attach",
         "audio",
         "collision",
@@ -763,6 +764,7 @@
           "noExternalConsumer": false,
           "other": {
             "consumers": [
+              "animation",
               "attach",
               "audio",
               "collision",
@@ -791,6 +793,7 @@
           "test": {
             "consumers": [
               "src/modules/animation/sprite-animation.test.ts",
+              "src/modules/animation/sprite-clip.test.ts",
               "src/modules/collision/trigger.test.ts",
               "src/modules/cooldown/cooldown.test.ts",
               "src/modules/kinematics-3d/kinematics3d-system.test.ts",
@@ -807,6 +810,7 @@
       ],
       "tests": [
         "src/modules/animation/sprite-animation.test.ts",
+        "src/modules/animation/sprite-clip.test.ts",
         "src/modules/collision/trigger.test.ts",
         "src/modules/cooldown/cooldown.test.ts",
         "src/modules/kinematics-3d/kinematics3d-system.test.ts",
@@ -1042,6 +1046,27 @@
       "other": [],
       "symbols": [
         {
+          "name": "currentAnimatorFrame",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/animation/sprite-clip.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "currentFrame",
           "coveredByExample": false,
           "example": {
@@ -1104,6 +1129,69 @@
           "test": {
             "consumers": [
               "src/modules/animation/sprite-animation.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "makeSpriteAnimator",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/animation/sprite-clip.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "makeSpriteClipAnimationSystem",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/animation/sprite-clip.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "playClip",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/animation/sprite-clip.test.ts"
             ],
             "typeOnly": false
           }
@@ -1189,6 +1277,126 @@
           }
         },
         {
+          "name": "SpriteAnimator",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "SpriteAnimatorDef",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "const",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/animation/sprite-clip.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "SpriteClip",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/animation/sprite-clip.test.ts"
+            ],
+            "typeOnly": true
+          }
+        },
+        {
+          "name": "SpriteClipAnimationSystemOptions",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "SpriteClipAnimationTickCtx",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "SpriteClipRegistry",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "class",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/animation/sprite-clip.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "tickSpriteAnimation",
           "coveredByExample": false,
           "example": {
@@ -1208,14 +1416,36 @@
             ],
             "typeOnly": false
           }
+        },
+        {
+          "name": "tickSpriteAnimator",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/animation/sprite-clip.test.ts"
+            ],
+            "typeOnly": false
+          }
         }
       ],
       "tests": [
-        "src/modules/animation/sprite-animation.test.ts"
+        "src/modules/animation/sprite-animation.test.ts",
+        "src/modules/animation/sprite-clip.test.ts"
       ],
-      "typeTotal": 3,
+      "typeTotal": 7,
       "typeUsedByExample": 0,
-      "valueTotal": 5,
+      "valueTotal": 12,
       "valueUsedByExample": 3
     },
     {
@@ -8365,6 +8595,7 @@
           "test": {
             "consumers": [
               "src/modules/animation/sprite-animation.test.ts",
+              "src/modules/animation/sprite-clip.test.ts",
               "src/modules/particles/particles.test.ts",
               "src/modules/tilemap/spawn.test.ts"
             ],
@@ -8405,6 +8636,7 @@
           "test": {
             "consumers": [
               "src/modules/animation/sprite-animation.test.ts",
+              "src/modules/animation/sprite-clip.test.ts",
               "src/modules/particles/particles.test.ts",
               "src/modules/render-canvas2d/render-canvas2d.test.ts",
               "src/modules/tilemap/spawn.test.ts"
@@ -8575,6 +8807,7 @@
       ],
       "tests": [
         "src/modules/animation/sprite-animation.test.ts",
+        "src/modules/animation/sprite-clip.test.ts",
         "src/modules/particles/particles.test.ts",
         "src/modules/render-canvas2d/render-canvas2d.test.ts",
         "src/modules/render-dom/dom-renderer.test.ts",
@@ -13100,6 +13333,7 @@
           "test": {
             "consumers": [
               "src/modules/animation/sprite-animation.test.ts",
+              "src/modules/animation/sprite-clip.test.ts",
               "src/modules/attach/attach.test.ts",
               "src/modules/audio/audio.test.ts",
               "src/modules/camera/camera.test.ts",
@@ -13122,6 +13356,7 @@
       ],
       "tests": [
         "src/modules/animation/sprite-animation.test.ts",
+        "src/modules/animation/sprite-clip.test.ts",
         "src/modules/attach/attach.test.ts",
         "src/modules/audio/audio.test.ts",
         "src/modules/camera/camera.test.ts",
@@ -13336,6 +13571,11 @@
       "total": 11
     },
     {
+      "importPath": "@pierre/ecs/modules/animation",
+      "missing": 9,
+      "total": 12
+    },
+    {
       "importPath": "@pierre/ecs/modules/save",
       "missing": 7,
       "total": 7
@@ -13389,11 +13629,6 @@
       "importPath": "@pierre/ecs/modules/stats",
       "missing": 3,
       "total": 3
-    },
-    {
-      "importPath": "@pierre/ecs/modules/animation",
-      "missing": 2,
-      "total": 5
     },
     {
       "importPath": "@pierre/ecs/modules/collision",
@@ -13457,11 +13692,11 @@
     "entriesWithExample": 41,
     "entriesWithoutExample": 17,
     "modules": 42,
-    "noExternalConsumer": 146,
-    "symbols": 506,
-    "typeSymbols": 222,
-    "valueSymbols": 284,
+    "noExternalConsumer": 149,
+    "symbols": 517,
+    "typeSymbols": 226,
+    "valueSymbols": 291,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 159
+    "valueWithoutExample": 166
   }
 }

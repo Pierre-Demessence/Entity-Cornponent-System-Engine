@@ -74,12 +74,60 @@ world.getStore(SpriteAnimationDef).set(eid, makeSpriteAnimation(
 The system writes `currentFrame(anim)` into `renderable.frame` each tick,
 preserving all other `Renderable` fields (atlas, kind, anchor, dw, dh).
 
+## Shared clips: the clip registry
+
+`SpriteAnimation` embeds its frame list in every component — ideal for one-off
+or procedural animations. When many entities share the same named clips, use the
+**clip registry** instead: define each clip once, and give each entity a light
+`SpriteAnimator` that references a clip by key and holds only playback state.
+
+### Exports
+
+- **`SpriteClip`** — immutable shared clip: `{ frames: readonly string[]; fps: number; loop: boolean }`
+- **`SpriteClipRegistry`** — `register(name, clip)` (throws on empty name,
+  duplicate key, or non-positive fps), `get`, `has`, `require`
+- **`SpriteAnimator`** — per-entity state: `{ clip: string; currentIndex: number; elapsedMs: number; playing: boolean }`
+- **`SpriteAnimatorDef`** — `ComponentDef<SpriteAnimator>`
+- **`makeSpriteAnimator(clip, playing?)`** → `SpriteAnimator`
+- **`playClip(animator, clip, restart?)`** — switch clip + reset cursor; no-op
+  when already playing that clip (pass `restart` to force)
+- **`tickSpriteAnimator(animator, clip, dtMs)`** — advance; paused animators
+  do not move
+- **`currentAnimatorFrame(animator, clip)`** → `string`
+- **`makeSpriteClipAnimationSystem({ registry, onMissingClip?, … })`** → `SchedulableSystem`
+
+```typescript
+import {
+  makeSpriteAnimator,
+  makeSpriteClipAnimationSystem,
+  playClip,
+  SpriteAnimatorDef,
+  SpriteClipRegistry,
+} from '@pierre/ecs/modules/animation';
+
+const clips = new SpriteClipRegistry()
+  .register('walk', { frames: ['walk-0', 'walk-1', 'walk-2'], fps: 8, loop: true })
+  .register('idle', { frames: ['idle-0', 'idle-1'], fps: 2, loop: true });
+
+world.registerComponent(SpriteAnimatorDef);
+scheduler.add(makeSpriteClipAnimationSystem({ registry: clips }));
+
+const eid = world.createEntity();
+world.getStore(SpriteAnimatorDef).set(eid, makeSpriteAnimator('idle'));
+
+// On input, switch clips — pausing is just `animator.playing = false`.
+playClip(world.getStore(SpriteAnimatorDef).get(eid)!, 'walk');
+```
+
+An animator whose `clip` key is not in the registry is skipped for that tick and
+reported to the optional `onMissingClip(entityId, clip)` callback.
+
 ## Design notes
 
-- A **clip registry** (named animation clips shared across entities) is a `V2`
-  backlog entry, marked **ready** — the shape is canon (Unity `AnimationClip`,
-  Godot `Animation`, Bevy `AnimationClip`), so it waits on a build slot rather
-  than on a second consumer.
+- The **clip registry** above is the canon-complete counterpart to the inline
+  `SpriteAnimation` (Unity `AnimationClip`, Godot `SpriteFrames`, Phaser named
+  anims, Bevy `AnimationClip`): use inline for procedural/one-off clips, the
+  registry for clips shared across entities.
 - The `frames` array stores atlas frame **names** (strings), matching
   the `Renderable.frame` field contract.
 - Zero-fps animations never advance (no division by zero).

@@ -111,14 +111,25 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 ## Modules
 
 ### `@pierre/ecs/modules/animation`
+- **`currentAnimatorFrame`** _(fn)_ `(animator: SpriteAnimator, clip: SpriteClip): string` — The frame name at `animator`'s current position within `clip`.
 - **`currentFrame`** _(fn)_ `(anim: SpriteAnimation): string` — The frame name at the animation's current position.
 - **`makeSpriteAnimation`** _(fn)_ `(frames: string[], fps: number, loop?: boolean): SpriteAnimation` — Create a SpriteAnimation that cycles through `frames` at `fps`. Starts at frame 0. Defaults to `loop = true`.
 - **`makeSpriteAnimationSystem`** _(fn)_ `<TCtx extends SpriteAnimationTickCtx>(options?: SpriteAnimationSystemOptions): SchedulableSystem<TCtx>` — Build a schedulable system that advances every SpriteAnimationDef and writes the current frame name into the entity's `RenderableDef`. Th...
+- **`makeSpriteAnimator`** _(fn)_ `(clip: string, playing?: boolean): SpriteAnimator` — Create a SpriteAnimator playing `clip` from frame 0. Defaults to playing.
+- **`makeSpriteClipAnimationSystem`** _(fn)_ `<TCtx extends SpriteClipAnimationTickCtx>(options: SpriteClipAnimationSystemOptions): SchedulableSystem<TCtx>` — Build a schedulable system that advances every SpriteAnimatorDef by resolving its `clip` key in the `registry`, then writes the current f...
+- **`playClip`** _(fn)_ `(animator: SpriteAnimator, clip: string, restart?: boolean): void` — Switch `animator` to `clip` and (re)start it from frame 0. A no-op when the animator is already playing that clip, so calling it every ti...
 - **`SpriteAnimation`** _(interface)_ — Ordered frame names (atlas frame keys) cycled at `fps` frames per second.
 - **`SpriteAnimationDef`** _(const)_ — —
 - **`SpriteAnimationSystemOptions`** _(interface)_ — Options for makeSpriteAnimationSystem.
 - **`SpriteAnimationTickCtx`** _(interface)_ — The tick-context makeSpriteAnimationSystem reads: `dtMs` and `world`.
+- **`SpriteAnimator`** _(interface)_ — Per-entity playback state for a SpriteClip selected by `clip` key. Holds only the cursor and play/pause flag; the frames themselves live ...
+- **`SpriteAnimatorDef`** _(const)_ — ECS component wrapping a SpriteAnimator — per-entity clip playback state.
+- **`SpriteClip`** _(interface)_ — An immutable, shareable animation clip: an ordered list of atlas frame names cycled at `fps`, looping or latching on the last frame. Unli...
+- **`SpriteClipAnimationSystemOptions`** _(interface)_ — Options for makeSpriteClipAnimationSystem.
+- **`SpriteClipAnimationTickCtx`** _(interface)_ — The tick-context makeSpriteClipAnimationSystem reads: `dtMs` and `world`.
+- **`SpriteClipRegistry`** _(class)_ `new (): SpriteClipRegistry` — A registry of named SpriteClips shared across entities. Populate it once, then reference clips by key from a SpriteAnimator. Injected int...
 - **`tickSpriteAnimation`** _(fn)_ `(anim: SpriteAnimation, dtMs: number): void` — Advance the animation by `dtMs`, mutating it in place.
+- **`tickSpriteAnimator`** _(fn)_ `(animator: SpriteAnimator, clip: SpriteClip, dtMs: number): void` — Advance `animator` over its `clip` by `dtMs`, mutating it in place. Paused animators do not advance.
 
 ### `@pierre/ecs/modules/asset-loader`
 - **`arrayBufferAsset`** _(fn)_ `(url: string): AssetHandle<ArrayBuffer>` — An `AssetHandle` that fetches its URL as a raw `ArrayBuffer`.

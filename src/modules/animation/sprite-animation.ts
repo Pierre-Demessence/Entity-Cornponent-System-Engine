@@ -60,28 +60,47 @@ export function makeSpriteAnimation(
   return { currentIndex: 0, elapsedMs: 0, fps, frames, loop };
 }
 
+/**
+ * Advance a `{ currentIndex, elapsedMs }` frame cursor by `dtMs` over a clip of
+ * `frameCount` frames at `fps`, mutating it in place. Shared by the inline
+ * `SpriteAnimation` (V1) and the registry-based `SpriteAnimator` (V2) so their
+ * advance / loop / latch behaviour cannot diverge. Not part of the public
+ * surface; imported only within the module.
+ *
+ * @internal
+ */
+export function stepFrameCursor(
+  cursor: { currentIndex: number; elapsedMs: number },
+  frameCount: number,
+  fps: number,
+  loop: boolean,
+  dtMs: number,
+): void {
+  if (frameCount === 0)
+    return;
+  cursor.elapsedMs += dtMs;
+  const frameMs = 1000 / fps;
+  while (cursor.elapsedMs >= frameMs) {
+    cursor.elapsedMs -= frameMs;
+    if (cursor.currentIndex < frameCount - 1) {
+      cursor.currentIndex++;
+    }
+    else if (loop) {
+      cursor.currentIndex = 0;
+    }
+    else {
+      cursor.elapsedMs = 0;
+      break;
+    }
+  }
+}
+
 /** Advance the animation by `dtMs`, mutating it in place. */
 export function tickSpriteAnimation(
   anim: SpriteAnimation,
   dtMs: number,
 ): void {
-  if (anim.frames.length === 0)
-    return;
-  anim.elapsedMs += dtMs;
-  const frameMs = 1000 / anim.fps;
-  while (anim.elapsedMs >= frameMs) {
-    anim.elapsedMs -= frameMs;
-    if (anim.currentIndex < anim.frames.length - 1) {
-      anim.currentIndex++;
-    }
-    else if (anim.loop) {
-      anim.currentIndex = 0;
-    }
-    else {
-      anim.elapsedMs = 0;
-      break;
-    }
-  }
+  stepFrameCursor(anim, anim.frames.length, anim.fps, anim.loop, dtMs);
 }
 
 /** The frame name at the animation's current position. */
