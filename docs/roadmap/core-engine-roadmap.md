@@ -150,6 +150,18 @@ modding/plugin support.
 
 ---
 
+### 4.6 Inline-prose API-mention linter
+
+| | |
+|---|---|
+| **Problem** | Module READMEs cite the API in prose (`` `world.spawn()` ``, `` `ctx.grid.cellsFor()` ``). Runnable examples are compiled and signature listings are name-checked (`scripts/readme-samples.ts`, `scripts/readme-symbols.ts`), but a method named only in a sentence, or inside a non-runnable code fence, is unchecked. |
+| **Solution** | A name/member-existence linter over prose backticks and non-runnable fences, resolving each mention against the engine surface. |
+| **Unlocks** | Catches "the cited method doesn't exist" doc rot everywhere, not just in verifiable blocks. |
+| **Complexity** | Mid, and **false-positive-bound**: measured on the current corpus, only 2 of 35 bare `` `foo()` `` prose mentions resolve to an export — the rest are member names (`dispose()`, `play()`) or external refs (`move_toward()`). Needs member-aware resolution (owner → type → members) or a conservative allowlist before it is worth the noise. Deferred from [`../plans/done/readme-doc-symbol-linter.md`](../plans/done/readme-doc-symbol-linter.md). |
+| **Dependencies** | The export enumeration in `scripts/engine-surface.ts`; the type checker for member existence on a named owner type. |
+
+---
+
 ## Suggested Implementation Order
 
 By value per unit of effort. Nothing here is scheduled; each entry still needs

@@ -98,15 +98,9 @@ consumers do, is immune.
 
 ```ts
 makeKinematics3DSystem<GameState>({
-  broadphase: (ctx, box) => {
-    const out = new Set<EntityId>();
-    for (const cell of ctx.grid.cellsFor(box)) {
-      const ids = ctx.grid.getAt(cell);
-      if (ids)
-        for (const id of ids) out.add(id);
-    }
-    return out;
-  },
+  // Brute-force every static — simplest, and immune to the pre-step margin
+  // issue above; a spatial-index query over the box's cells is the alternative.
+  broadphase: ctx => ctx.world.getTag(StaticBodyTag),
   dynamicTag: DynamicBodyTag,
   gravity: 26,
   positionDef: Position3DDef,

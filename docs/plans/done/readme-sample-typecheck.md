@@ -62,7 +62,7 @@ type-checks only those 33, reporting how many reference blocks it skipped so the
 skip is visible rather than silent. Verifying the reference blocks and the 41+
 inline `` `foo()` `` prose mentions is a *different* tool — a symbol-existence
 check against the real exports — tracked as a follow-up in
-[`readme-doc-symbol-linter.md`](../readme-doc-symbol-linter.md).
+[`readme-doc-symbol-linter.md`](readme-doc-symbol-linter.md).
 
 The 11 defects the original review found are already fixed in source; this gate
 prevents regressions in the runnable examples.

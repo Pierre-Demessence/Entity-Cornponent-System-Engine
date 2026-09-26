@@ -65,8 +65,8 @@ naming the README and line on a wrong arity, a nonexistent member, or a mistyped
 
 - Only runnable blocks are checked; `.d.ts`-style signature listings and
   cheat-sheets are API reference, not code, and are skipped (the test logs how
-  many). Verifying those and inline `` `foo()` `` prose mentions is a separate,
-  planned tool — see [`../plans/readme-doc-symbol-linter.md`](../plans/readme-doc-symbol-linter.md).
+  many). Signature listings are name-checked by the sibling gate below; inline
+  `` `foo()` `` prose mentions are a deferred follow-up.
 - Free identifiers a sample never defines (`ctx`, `GRAVITY`, …) are stubbed as
   `any`; `world` and `scheduler` get their real engine types so member misuse is
   caught. The scripts write nothing, so there is no artifact to regenerate.
@@ -75,6 +75,15 @@ naming the README and line on a wrong arity, a nonexistent member, or a mistyped
   to `SAMPLE_EXCLUSIONS` in `scripts/readme-samples.ts` — `index` is the block's
   zero-based ordinal within its README, and the `reason` must name what is
   missing so the exclusion can later be lifted.
+
+The `.d.ts`-style **signature-listing** blocks that the compile gate skips are
+instead name-checked by `scripts/readme-symbols.test.ts`: every top-level
+`function`/`class`/`interface`/`type` a listing documents must be a real public
+export, so a renamed or removed export cannot leave a stale name in a README. A
+documented name that is intentionally not an export goes in `SYMBOL_ALLOWLIST`
+(`scripts/readme-symbols.ts`) with a reason. Inline `` `foo()` `` prose mentions
+are not yet checked — that is a deferred, false-positive-bound follow-up (see
+[`../roadmap/core-engine-roadmap.md`](../roadmap/core-engine-roadmap.md) §4.6).
 
 ### Modules (`src/modules/<name>/`, exported as `@pierre/ecs/modules/<name>`)
 
