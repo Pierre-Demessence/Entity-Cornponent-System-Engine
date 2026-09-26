@@ -32,6 +32,12 @@ export interface FrameStatsOptions {
 const DEFAULT_WINDOW_MS = 1000;
 const DEFAULT_HISTORY = 120;
 
+/**
+ * Headless frame-timing collector (see the description on
+ * {@link FrameStatsOptions}): `sample` each frame's duration, then read back
+ * current/min/max/avg frame time and FPS, the 1%/0.1% lows, a recent-history
+ * ring for sparklines, and named counters. Allocation-free on the hot path.
+ */
 export class FrameStats {
   private readonly capacity: number;
   /** Monotonic clock for window eviction; advanced by each `sample`. */

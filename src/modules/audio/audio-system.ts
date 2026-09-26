@@ -23,6 +23,12 @@ export interface AudioSystemError {
   kind: AudioSystemErrorKind;
 }
 
+/**
+ * A FIFO of one-shot sound requests the audio system drains each tick. `play`
+ * enqueues a clip; the system `drain`s the queue and, when a clip fails to
+ * start, `requeueFront`s it to retry next tick. Decoupling the queue from the
+ * system lets game code fire sounds without holding a provider reference.
+ */
 export class AudioQueue {
   private readonly pending: AudioOneShot[] = [];
 
@@ -69,6 +75,13 @@ function sourceToPlayOptions(source: AudioSource): AudioPlayOptions {
   };
 }
 
+/**
+ * A `SchedulableSystem` that drives an `AudioProvider` from the world's
+ * `AudioSource` components plus a one-shot `AudioQueue`: it starts playback for
+ * a new source, restarts one whose parameters changed (a signature miss), and
+ * stops playback for a source that disappeared. Provider failures are reported
+ * to `onError` rather than thrown, so a bad clip cannot halt the tick.
+ */
 export function makeAudioSystem<TCtx extends AudioTickCtx>(
   options: AudioSystemOptions,
 ): SchedulableSystem<TCtx> {

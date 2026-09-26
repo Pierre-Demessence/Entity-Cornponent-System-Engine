@@ -33,6 +33,12 @@ export interface LifetimeSystemOptions<TCtx extends LifetimeTickCtx> {
   onExpire?: (ctx: TCtx, id: EntityId) => void;
 }
 
+/**
+ * A `SchedulableSystem` that counts each entity's `Lifetime` timer down by the
+ * tick's `dtMs` and, when one reaches zero, queues the entity for destruction —
+ * or hands it to `onExpire` instead, so a game can play a death effect before
+ * removing it.
+ */
 export function makeLifetimeSystem<TCtx extends LifetimeTickCtx>(
   options: LifetimeSystemOptions<TCtx> = {},
 ): SchedulableSystem<TCtx> {

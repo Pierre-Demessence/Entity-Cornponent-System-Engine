@@ -39,6 +39,12 @@ export interface DomRendererOptions {
   }) => void;
 }
 
+/**
+ * A `Renderer` that reconciles `DomRenderable` components to real DOM nodes —
+ * one element per entity, created, re-tagged, or removed to match the world each
+ * frame. An optional `reconcile` hook lets a game apply attributes or content
+ * the renderer does not manage itself.
+ */
 export class DomRenderer implements Renderer<DomRenderContext> {
   private readonly options: DomRendererOptions;
   private readonly tracked = new Map<EntityId, NodeRecord>();

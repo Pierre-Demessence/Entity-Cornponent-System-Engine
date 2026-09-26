@@ -64,6 +64,12 @@ function applyBoundary(
   return m;
 }
 
+/**
+ * A `SchedulableSystem` that advances each entity's `Position` by its
+ * `Velocity` scaled by the tick's `dt`, with optional boundary `wrap`/`clamp`,
+ * `tag`-scoping to a subset, and an `onMove` hook. Uses a columnar fast path
+ * when both stores are Structure-of-Arrays.
+ */
 export function makeVelocityIntegrationSystem<TCtx extends VelocityIntegrationTickCtx>(
   options: VelocityIntegrationOptions<TCtx> = {},
 ): SchedulableSystem<TCtx> {

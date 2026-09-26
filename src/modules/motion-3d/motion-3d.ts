@@ -62,6 +62,11 @@ function applyBoundary(
   return m;
 }
 
+/**
+ * The 3D sibling of `makeVelocityIntegrationSystem`: advances `Position3D` by
+ * `Velocity3D` each tick, with optional 3D boundary `wrap`/`clamp`, `tag`-
+ * scoping, and an `onMove` hook.
+ */
 export function makeVelocityIntegration3DSystem<TCtx extends VelocityIntegration3DTickCtx>(
   options: VelocityIntegration3DOptions<TCtx> = {},
 ): SchedulableSystem<TCtx> {

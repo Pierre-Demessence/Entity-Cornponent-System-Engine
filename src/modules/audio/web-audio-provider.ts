@@ -54,6 +54,12 @@ export interface WebAudioProviderOptions {
   resolveClip?: (clipId: string, context: AudioContext) => AudioBuffer | undefined;
 }
 
+/**
+ * An `AudioProvider` backed by the browser's Web Audio API: clips are
+ * pre-decoded `AudioBuffer`s (supplied up front or resolved on demand), routed
+ * through per-channel gain nodes into a master gain. The constructor throws when
+ * no `AudioContext` is available (e.g. server-side) unless one is passed in.
+ */
 export class WebAudioProvider implements AudioProvider {
   private readonly active = new Map<AudioHandle, ActiveSource>();
   private readonly channelGains = new Map<string, GainNode>();

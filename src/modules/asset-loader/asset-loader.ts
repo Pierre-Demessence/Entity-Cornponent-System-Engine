@@ -209,6 +209,12 @@ function incompatibleHandleMessage(
   return `[asset-loader] URL "${url}" is already associated with kind "${existing.kind}" (identity "${existing.identity}") and cannot be reused for kind "${expected.kind}" (identity "${expected.identity}"). Asset cache is URL-keyed.`;
 }
 
+/**
+ * The low-level `AssetHandle` factory: pairs a `kind` + `url` with a `load`
+ * function and a normalized cache identity. The typed helpers below
+ * (`imageAsset`, `jsonAsset`, …) wrap this for the common kinds; reach for it
+ * directly only when writing a loader for a custom asset kind.
+ */
 export function createAssetHandle<TValue>(input: {
   kind: AssetKind;
   url: string;
@@ -223,6 +229,7 @@ export function createAssetHandle<TValue>(input: {
   };
 }
 
+/** An `AssetHandle` that fetches its URL as a raw `ArrayBuffer`. */
 export function arrayBufferAsset(url: string): AssetHandle<ArrayBuffer> {
   return createAssetHandle({
     kind: 'array-buffer',
@@ -231,6 +238,7 @@ export function arrayBufferAsset(url: string): AssetHandle<ArrayBuffer> {
   });
 }
 
+/** An `AssetHandle` that fetches its URL and parses the response as JSON. */
 export function jsonAsset<TValue = unknown>(url: string): AssetHandle<TValue> {
   return createAssetHandle({
     kind: 'json',
@@ -239,6 +247,7 @@ export function jsonAsset<TValue = unknown>(url: string): AssetHandle<TValue> {
   });
 }
 
+/** An `AssetHandle` that fetches its URL as text. */
 export function textAsset(url: string): AssetHandle<string> {
   return createAssetHandle({
     kind: 'text',
@@ -247,6 +256,11 @@ export function textAsset(url: string): AssetHandle<string> {
   });
 }
 
+/**
+ * An `AssetHandle` that decodes its URL into an `HTMLImageElement`.
+ * `crossOrigin` defaults to `'anonymous'` so the image can be used as a
+ * canvas/WebGL texture without tainting the surface.
+ */
 export function imageAsset(
   url: string,
   options: ImageAssetOptions = {},
@@ -263,6 +277,10 @@ export function imageAsset(
   });
 }
 
+/**
+ * An `AssetHandle` that fetches its URL and decodes it into an `AudioBuffer`
+ * with the supplied `BaseAudioContext` (Web Audio decoding is context-bound).
+ */
 export function audioBufferAsset(
   url: string,
   context: BaseAudioContext,
@@ -277,6 +295,11 @@ export function audioBufferAsset(
   });
 }
 
+/**
+ * An `AssetHandle` that loads a web font into a `FontFace` for the given
+ * `family`. Unless `addToDocument` is `false`, the loaded face is registered on
+ * `document.fonts` so CSS can render with it immediately.
+ */
 export function fontFaceAsset(
   url: string,
   family: string,
@@ -297,6 +320,13 @@ export function fontFaceAsset(
   });
 }
 
+/**
+ * A URL-keyed asset cache with in-flight de-duplication: `load`ing the same
+ * handle again returns the cached value or joins the pending request instead of
+ * re-fetching. Supports batch loading, progress reporting, and `AbortSignal`
+ * cancellation. Because the cache is keyed by URL, one URL may not be reused for
+ * two different asset kinds.
+ */
 export class AssetLoader {
   private readonly cache = new Map<string, AssetCacheEntry>();
   private readonly context: AssetLoadContext;

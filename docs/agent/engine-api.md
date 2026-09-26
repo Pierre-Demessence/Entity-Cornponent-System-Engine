@@ -121,26 +121,26 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`tickSpriteAnimation`** _(fn)_ `(anim: SpriteAnimation, dtMs: number): void` — Advance the animation by `dtMs`, mutating it in place.
 
 ### `@pierre/ecs/modules/asset-loader`
-- **`arrayBufferAsset`** _(fn)_ `(url: string): AssetHandle<ArrayBuffer>` — —
+- **`arrayBufferAsset`** _(fn)_ `(url: string): AssetHandle<ArrayBuffer>` — An `AssetHandle` that fetches its URL as a raw `ArrayBuffer`.
 - **`AssetBatchLoadOptions`** _(interface)_ — —
 - **`AssetBatchProgress`** _(interface)_ — —
 - **`AssetHandle`** _(interface)_ — —
 - **`AssetKind`** _(type)_ `'array-buffer' | 'audio-buffer' | 'font-face' | 'image' | 'json' | 'text' | (string & {})` — —
 - **`AssetLoadContext`** _(interface)_ — —
-- **`AssetLoader`** _(class)_ `new (options?: AssetLoaderOptions): AssetLoader` — —
+- **`AssetLoader`** _(class)_ `new (options?: AssetLoaderOptions): AssetLoader` — A URL-keyed asset cache with in-flight de-duplication: `load`ing the same handle again returns the cached value or joins the pending requ...
 - **`AssetLoaderOptions`** _(interface)_ — —
 - **`AssetLoadOptions`** _(interface)_ — —
 - **`AssetValue`** _(type)_ `<THandle extends AssetHandle<unknown>>THandle extends AssetHandle<infer TValue> ? TValue : never` — —
-- **`audioBufferAsset`** _(fn)_ `(url: string, context: BaseAudioContext): AssetHandle<AudioBuffer>` — —
-- **`createAssetHandle`** _(fn)_ `<TValue>(input: { kind: AssetKind; url: string; load: (context: AssetLoadContext, options: AssetLoadOptions) =>…` — —
-- **`fontFaceAsset`** _(fn)_ `(url: string, family: string, options?: FontFaceAssetOptions): AssetHandle<FontFace>` — —
+- **`audioBufferAsset`** _(fn)_ `(url: string, context: BaseAudioContext): AssetHandle<AudioBuffer>` — An `AssetHandle` that fetches its URL and decodes it into an `AudioBuffer` with the supplied `BaseAudioContext` (Web Audio decoding is co...
+- **`createAssetHandle`** _(fn)_ `<TValue>(input: { kind: AssetKind; url: string; load: (context: AssetLoadContext, options: AssetLoadOptions) =>…` — The low-level `AssetHandle` factory: pairs a `kind` + `url` with a `load` function and a normalized cache identity. The typed helpers bel...
+- **`fontFaceAsset`** _(fn)_ `(url: string, family: string, options?: FontFaceAssetOptions): AssetHandle<FontFace>` — An `AssetHandle` that loads a web font into a `FontFace` for the given `family`. Unless `addToDocument` is `false`, the loaded face is re...
 - **`FontFaceAssetOptions`** _(interface)_ — —
 - **`FontLoaderOptions`** _(interface)_ — —
-- **`imageAsset`** _(fn)_ `(url: string, options?: ImageAssetOptions): AssetHandle<HTMLImageElement>` — —
+- **`imageAsset`** _(fn)_ `(url: string, options?: ImageAssetOptions): AssetHandle<HTMLImageElement>` — An `AssetHandle` that decodes its URL into an `HTMLImageElement`. `crossOrigin` defaults to `'anonymous'` so the image can be used as a c...
 - **`ImageAssetOptions`** _(interface)_ — —
 - **`ImageLoaderOptions`** _(interface)_ — —
-- **`jsonAsset`** _(fn)_ `<TValue = unknown>(url: string): AssetHandle<TValue>` — —
-- **`textAsset`** _(fn)_ `(url: string): AssetHandle<string>` — —
+- **`jsonAsset`** _(fn)_ `<TValue = unknown>(url: string): AssetHandle<TValue>` — An `AssetHandle` that fetches its URL and parses the response as JSON.
+- **`textAsset`** _(fn)_ `(url: string): AssetHandle<string>` — An `AssetHandle` that fetches its URL as text.
 
 ### `@pierre/ecs/modules/attach`
 - **`Attach`** _(interface)_ — Component data: which entity to follow and how.
@@ -151,15 +151,15 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 
 ### `@pierre/ecs/modules/audio`
 - **`AudioOneShot`** _(interface)_ — —
-- **`AudioQueue`** _(class)_ `new (): AudioQueue` — —
+- **`AudioQueue`** _(class)_ `new (): AudioQueue` — A FIFO of one-shot sound requests the audio system drains each tick. `play` enqueues a clip; the system `drain`s the queue and, when a cl...
 - **`AudioSource`** _(interface)_ — —
 - **`AudioSourceDef`** _(const)_ — —
 - **`AudioSystemError`** _(interface)_ — —
 - **`AudioSystemErrorKind`** _(type)_ `'one-shot-play' | 'source-play' | 'source-stop'` — —
 - **`AudioSystemOptions`** _(interface)_ — —
 - **`AudioTickCtx`** _(interface)_ — —
-- **`makeAudioSystem`** _(fn)_ `<TCtx extends AudioTickCtx>(options: AudioSystemOptions): SchedulableSystem<TCtx>` — —
-- **`WebAudioProvider`** _(class)_ `new (options?: WebAudioProviderOptions): WebAudioProvider` — —
+- **`makeAudioSystem`** _(fn)_ `<TCtx extends AudioTickCtx>(options: AudioSystemOptions): SchedulableSystem<TCtx>` — A `SchedulableSystem` that drives an `AudioProvider` from the world's `AudioSource` components plus a one-shot `AudioQueue`: it starts pl...
+- **`WebAudioProvider`** _(class)_ `new (options?: WebAudioProviderOptions): WebAudioProvider` — An `AudioProvider` backed by the browser's Web Audio API: clips are pre-decoded `AudioBuffer`s (supplied up front or resolved on demand),...
 - **`WebAudioProviderOptions`** _(interface)_ — —
 
 ### `@pierre/ecs/modules/behavior-tree`
@@ -291,7 +291,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`WorldState`** _(type)_ `Record<string, boolean>` — A flat set of boolean world facts (F.E.A.R.-style symbolic state). A missing key reads as `false`. Preconditions and effects are partial ...
 
 ### `@pierre/ecs/modules/grid-based`
-- **`bresenhamLine`** _(fn)_ `(x0: number, y0: number, x1: number, y1: number): Point[]` — —
+- **`bresenhamLine`** _(fn)_ `(x0: number, y0: number, x1: number, y1: number): Point[]` — The integer grid cells a straight line from `(x0, y0)` to `(x1, y1)` crosses, in order and inclusive of both endpoints (Bresenham). Handy...
 - **`computeFieldOfView`** _(fn)_ `(grid: VisibilityGrid, originX: number, originY: number, radius: number): Point[]` — Compute field-of-view tiles using recursive shadowcasting over 8 octants. Returns the visible tile coordinates for the current cast, incl...
 - **`hasLineOfSight`** _(fn)_ `(grid: VisibilityGrid, x0: number, y0: number, x1: number, y1: number): boolean` — Returns true when all intermediate line tiles are both in-bounds and transparent. Origin and destination tiles are ignored for blocking c...
 - **`Point`** _(interface)_ — —
@@ -350,7 +350,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`LifetimeSystemOptions`** _(interface)_ — —
 - **`LifetimeTickCtx`** _(interface)_ — —
 - **`makeLifetime`** _(fn)_ `(durationMs: number): Lifetime` — Create a Lifetime that expires after `durationMs`.
-- **`makeLifetimeSystem`** _(fn)_ `<TCtx extends LifetimeTickCtx>(options?: LifetimeSystemOptions<TCtx>): SchedulableSystem<TCtx>` — —
+- **`makeLifetimeSystem`** _(fn)_ `<TCtx extends LifetimeTickCtx>(options?: LifetimeSystemOptions<TCtx>): SchedulableSystem<TCtx>` — A `SchedulableSystem` that counts each entity's `Lifetime` timer down by the tick's `dtMs` and, when one reaches zero, queues the entity ...
 
 ### `@pierre/ecs/modules/math`
 - **`approximately`** _(fn)_ `(a: number, b: number, epsilon?: number): boolean` — Whether `a` and `b` are within `epsilon` (absolute tolerance) of each other.
@@ -400,14 +400,14 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 
 ### `@pierre/ecs/modules/motion`
 - **`Bounds`** _(interface)_ — —
-- **`makeVelocityIntegrationSystem`** _(fn)_ `<TCtx extends VelocityIntegrationTickCtx>(options?: VelocityIntegrationOptions<TCtx>): SchedulableSystem<TCtx>` — —
+- **`makeVelocityIntegrationSystem`** _(fn)_ `<TCtx extends VelocityIntegrationTickCtx>(options?: VelocityIntegrationOptions<TCtx>): SchedulableSystem<TCtx>` — A `SchedulableSystem` that advances each entity's `Position` by its `Velocity` scaled by the tick's `dt`, with optional boundary `wrap`/`...
 - **`VelocityIntegrationBoundary`** _(type)_ `{ mode: 'wrap'; bounds: Bounds; } | { mode: 'clamp'; bounds: Bounds; }` — Boundary behavior when a moving entity's position leaves `[0, width) x [0, height)` after integration. `wrap` is the toroidal topology us...
 - **`VelocityIntegrationOptions`** _(interface)_ — —
 - **`VelocityIntegrationTickCtx`** _(interface)_ — —
 
 ### `@pierre/ecs/modules/motion-3d`
 - **`Bounds3D`** _(interface)_ — —
-- **`makeVelocityIntegration3DSystem`** _(fn)_ `<TCtx extends VelocityIntegration3DTickCtx>(options?: VelocityIntegration3DOptions<TCtx>): SchedulableSystem<TCtx>` — —
+- **`makeVelocityIntegration3DSystem`** _(fn)_ `<TCtx extends VelocityIntegration3DTickCtx>(options?: VelocityIntegration3DOptions<TCtx>): SchedulableSystem<TCtx>` — The 3D sibling of `makeVelocityIntegrationSystem`: advances `Position3D` by `Velocity3D` each tick, with optional 3D boundary `wrap`/`cla...
 - **`VelocityIntegration3DBoundary`** _(type)_ `{ mode: 'wrap'; bounds: Bounds3D; } | { mode: 'clamp'; bounds: Bounds3D; }` — Boundary behavior when a moving entity's position leaves `[0, width) x [0, height) x [0, depth)` after integration. The 3D sibling of the...
 - **`VelocityIntegration3DOptions`** _(interface)_ — —
 - **`VelocityIntegration3DTickCtx`** _(interface)_ — —
@@ -475,7 +475,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`DomRenderable`** _(interface)_ — —
 - **`DomRenderableDef`** _(const)_ — —
 - **`DomRenderContext`** _(interface)_ — —
-- **`DomRenderer`** _(class)_ `new (options?: DomRendererOptions): DomRenderer` — —
+- **`DomRenderer`** _(class)_ `new (options?: DomRendererOptions): DomRenderer` — A `Renderer` that reconciles `DomRenderable` components to real DOM nodes — one element per entity, created, re-tagged, or removed to mat...
 - **`DomRendererOptions`** _(interface)_ — —
 
 ### `@pierre/ecs/modules/rng`
@@ -486,8 +486,8 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`shuffle`** _(fn)_ `<T>(arr: T[], rand?: RandomFn): T[]` — In-place Fisher–Yates shuffle. Returns the same array for chaining.
 
 ### `@pierre/ecs/modules/save`
-- **`computeChecksum`** _(fn)_ `(data: string): Promise<string>` — —
-- **`createEnvelope`** _(fn)_ `(data: string, header?: unknown): Promise<SaveEnvelope>` — —
+- **`computeChecksum`** _(fn)_ `(data: string): Promise<string>` — SHA-256 hex digest of a string, via the Web Crypto `SubtleCrypto` API.
+- **`createEnvelope`** _(fn)_ `(data: string, header?: unknown): Promise<SaveEnvelope>` — Wrap a payload string with its checksum (and an optional `header`) into a `SaveEnvelope`, so a later `verifyEnvelope` can detect corrupti...
 - **`IndexedDBBackend`** _(class)_ `new (options?: IndexedDbSaveOptions): IndexedDBBackend` — IndexedDB-backed SaveStorage implementation.
 - **`IndexedDbSaveOptions`** _(interface)_ — —
 - **`LocalStorageBackend`** _(class)_ `new (): LocalStorageBackend` — localStorage-backed SaveStorage implementation using tmp-write verification to reduce corruption risk.
@@ -495,7 +495,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`MigrationRegistry`** _(class)_ `new (): MigrationRegistry` — Version-to-version migration chain for versioned save payloads. - Exactly one outgoing migration is allowed per version to keep paths det...
 - **`SaveEnvelope`** _(interface)_ — —
 - **`SaveStorage`** _(class)_ `new (): SaveStorage` — Abstract save store with integrity checks, backup rotation, and orphan recovery, backed by a key-value implementation.
-- **`verifyEnvelope`** _(fn)_ `(envelope: SaveEnvelope): Promise<boolean>` — —
+- **`verifyEnvelope`** _(fn)_ `(envelope: SaveEnvelope): Promise<boolean>` — `true` when the envelope's payload still matches its stored checksum.
 
 ### `@pierre/ecs/modules/scene-transition`
 - **`SceneTransitionQueue`** _(class)_ `new (): SceneTransitionQueue` — Tick-boundary transition queue. Game code enqueues world swaps during a tick, then applies them between ticks via applyNext().
@@ -522,7 +522,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 
 ### `@pierre/ecs/modules/stats`
 - **`drawStatsOverlay`** _(fn)_ `(ctx2d: CanvasRenderingContext2D, render: FrameStats, options?: StatsOverlayOptions): void` — Draws a stats.js-style overlay (numeric readout + frame-time sparkline) for `render` into `ctx2d`, in screen-pixel space. Self-contained ...
-- **`FrameStats`** _(class)_ `new (options?: FrameStatsOptions): FrameStats` — —
+- **`FrameStats`** _(class)_ `new (options?: FrameStatsOptions): FrameStats` — Headless frame-timing collector (see the description on FrameStatsOptions): `sample` each frame's duration, then read back current/min/ma...
 - **`FrameStatsOptions`** _(interface)_ — Headless frame-timing collector: feed it the measured duration of each frame (or logic tick) and read back current/min/max/avg frame time...
 - **`StatsOverlayOptions`** _(interface)_ — Visual configuration for drawStatsOverlay.
 - **`TimedTickSource`** _(class)_ `new (inner: TickSource, stats: FrameStats, now?: () => number): TimedTickSource` — Wraps a TickSource so each downstream tick's **wall-clock cost** is measured and fed into a FrameStats. Use it to time work whose tick so...

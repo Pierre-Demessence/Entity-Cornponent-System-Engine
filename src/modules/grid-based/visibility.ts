@@ -118,6 +118,11 @@ export function computeFieldOfView(
   return visible;
 }
 
+/**
+ * The integer grid cells a straight line from `(x0, y0)` to `(x1, y1)` crosses,
+ * in order and inclusive of both endpoints (Bresenham). Handy for tile-grid
+ * line-of-sight, projectile tracing, or drawing.
+ */
 export function bresenhamLine(x0: number, y0: number, x1: number, y1: number): Point[] {
   const points: Point[] = [];
 

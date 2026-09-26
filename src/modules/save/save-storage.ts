@@ -6,6 +6,7 @@ export interface SaveEnvelope {
 
 const TMP_SUFFIX = /_tmp$/;
 
+/** SHA-256 hex digest of a string, via the Web Crypto `SubtleCrypto` API. */
 export async function computeChecksum(data: string): Promise<string> {
   const encoded = new TextEncoder().encode(data);
   const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
@@ -13,6 +14,10 @@ export async function computeChecksum(data: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Wrap a payload string with its checksum (and an optional `header`) into a
+ * `SaveEnvelope`, so a later `verifyEnvelope` can detect corruption or tampering.
+ */
 export async function createEnvelope(data: string, header?: unknown): Promise<SaveEnvelope> {
   const envelope: SaveEnvelope = { checksum: await computeChecksum(data), payload: data };
   if (header !== undefined)
@@ -20,6 +25,7 @@ export async function createEnvelope(data: string, header?: unknown): Promise<Sa
   return envelope;
 }
 
+/** `true` when the envelope's payload still matches its stored checksum. */
 export async function verifyEnvelope(envelope: SaveEnvelope): Promise<boolean> {
   return (await computeChecksum(envelope.payload)) === envelope.checksum;
 }
