@@ -530,15 +530,22 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 ### `@pierre/ecs/modules/steering`
 - **`alignment`** _(fn)_ `(vel: Vec2, neighbors: readonly Neighbor[], maxSpeed: number): Vec2` — Steer to match the average heading of neighbours.
 - **`arrive`** _(fn)_ `(pos: Vec2, target: Vec2, vel: Vec2, maxSpeed: number, slowRadius: number): Vec2` — Seek `target`, but scale desired speed down linearly inside `slowRadius` so the agent decelerates and settles instead of orbiting.
+- **`CircleObstacle`** _(interface)_ — A circular obstacle for obstacleAvoidance.
 - **`cohesion`** _(fn)_ `(pos: Vec2, neighbors: readonly Neighbor[], vel: Vec2, maxSpeed: number): Vec2` — Steer toward the average position (centre of mass) of neighbours.
 - **`combine`** _(fn)_ `(forces: readonly WeightedForce[], maxForce: number): Vec2` — Weighted sum of steering forces, truncated to `maxForce`.
 - **`evade`** _(fn)_ `(pos: Vec2, vel: Vec2, targetPos: Vec2, targetVel: Vec2, maxSpeed: number): Vec2` — Flee where a moving threat *will be*, leading it by its velocity.
 - **`flee`** _(fn)_ `(pos: Vec2, target: Vec2, vel: Vec2, maxSpeed: number): Vec2` — Steer directly away from `target` at full speed.
 - **`Neighbor`** _(interface)_ — A neighbour as steering sees it: a plain position + velocity pair. Deliberately ECS-decoupled — the caller builds these from whatever sto...
+- **`obstacleAvoidance`** _(fn)_ `(pos: Vec2, vel: Vec2, obstacles: readonly CircleObstacle[], maxSpeed: number, maxSeeAhead: number): Vec2` — Steer laterally around the nearest circular obstacle blocking the agent's path. Projects each obstacle centre onto the heading ray and, f...
+- **`Path`** _(interface)_ — A polyline path for pathFollowing.
+- **`pathFollowing`** _(fn)_ `(pos: Vec2, vel: Vec2, path: Path, maxSpeed: number, predictDistance: number): Vec2` — Reynolds path following: predict where the agent is heading, and if that point strays outside the path corridor (`path.radius`), seek bac...
 - **`pursue`** _(fn)_ `(pos: Vec2, vel: Vec2, targetPos: Vec2, targetVel: Vec2, maxSpeed: number): Vec2` — Seek where a moving target *will be*, leading it by its velocity.
 - **`seek`** _(fn)_ `(pos: Vec2, target: Vec2, vel: Vec2, maxSpeed: number): Vec2` — Steer toward `target` at full speed.
+- **`Segment`** _(interface)_ — A wall as a line segment, for wallFollowing.
 - **`separation`** _(fn)_ `(pos: Vec2, neighbors: readonly Neighbor[], vel: Vec2, maxSpeed: number): Vec2` — Steer away from crowding, weighted by inverse distance (closer = stronger).
 - **`truncate`** _(fn)_ `(v: Vec2, max: number): Vec2` — Clamp a vector's magnitude to `max`, preserving direction.
+- **`wallFollowing`** _(fn)_ `(pos: Vec2, vel: Vec2, walls: readonly Segment[], params: WallFollowParams, maxSpeed: number): Vec2` — Follow the nearest wall within `params.range`, keeping `desiredDistance` from it. Blends a tangential term (move along the wall in the di...
+- **`WallFollowParams`** _(interface)_ — Tuning for wallFollowing.
 - **`wander`** _(fn)_ `(vel: Vec2, state: WanderState, params: WanderParams, maxSpeed: number): Vec2` — Reynolds wander: jitter an angle each tick, project a point on a circle ahead of the agent's heading, and steer toward it. Produces smoot...
 - **`WanderParams`** _(interface)_ — Tuning for wander: the wander circle's `distance` and `radius`, per-call `jitter`, and an optional `random` source.
 - **`WanderState`** _(interface)_ — Per-agent wander state: the current offset angle on the wander circle.

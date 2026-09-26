@@ -144,7 +144,6 @@ pinned. `speculative` = shape undetermined or canon split.
 | `modules/noise` V3 (extra fractal types, families) | deferred | Shape — a consumer needing them |
 | `modules/grid-based` V2 | deferred | Shape — second consumer needing another algorithm |
 | `modules/debug` | ready | Scheduling — build slot (dev-only) |
-| `modules/steering` V2 | ready | Scheduling — build slot |
 | `modules/fsm` V2 | ready | Scheduling — build slot |
 | `modules/behavior-tree` V2 | deferred | Shape — a consumer needing the decorators |
 | `modules/goap` V2 | deferred | Shape — a consumer needing planner features |
@@ -158,6 +157,7 @@ pinned. `speculative` = shape undetermined or canon split.
 | `modules/destructible-terrain` | ready | Scheduling — depends on `modules/tilemap` V2 |
 | `modules/card-interaction` | ready | Scheduling — build slot |
 | `modules/input` — wheel + multi-touch | deferred | Shape — wheel model and multi-pointer set unpinned |
+| `modules/steering` — `SteeringAgentDef` component | deferred | Shape — a consumer wanting the component form |
 | `modules/spatial` — `QuadTree` / `BVH` backends | deferred | Shape — one consumer a uniform grid cannot serve |
 
 ---
@@ -915,30 +915,17 @@ decision.
 
 </details>
 
-### `modules/steering` V2 — ready
+### `modules/steering` — `SteeringAgentDef` component wrapper — deferred
 
-**Scope.** The rest of Reynolds' behaviour set not shipped in V1:
-**obstacle-avoidance**, **wall-following**, and **path-following**.
+**Scope.** An ECS-component form of the steering behaviours (`SteeringAgentDef`
++ a system), on top of the shipped pure-function surface.
 
-**Status.** Ready — obstacle avoidance is the same shape in Unity
-`NavMeshAgent` avoidance, Unreal's avoidance layer and Godot's RVO
-(`NavigationAgent2D.avoidance_enabled`); path-following is the same shape in
-Unity `NavMeshAgent.SetDestination`, Unreal `MoveTo` and Godot
-`NavigationAgent2D.target_position`. Both sit on top of the Reynolds
-behaviour set V1 already implements. Wall-following has no engine-level
-counterpart (it is a robotics-era behaviour), so it rides along as the
-Reynolds-set remainder.
+**Status.** Deferred — no consumer wants the component form yet; the
+pure-function surface is the proven shape, and steering is deliberately
+ECS-decoupled (plain `Vec2` in, force out).
 
-**Gate.** Scheduling — build slot.
-
-<details>
-<summary>Details</summary>
-
-**Also open — an ECS component wrapper** (`SteeringAgentDef` + system) stays
-deferred: no consumer wants the component form yet; the pure-function surface
-is the proven shape.
-
-</details>
+**Gate.** Shape — a consumer that wants the component form rather than calling
+the functions directly.
 
 ### `modules/fsm` V2 — ready
 

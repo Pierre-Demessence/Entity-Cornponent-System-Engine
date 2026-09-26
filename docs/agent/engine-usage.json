@@ -9655,6 +9655,25 @@
           }
         },
         {
+          "name": "CircleObstacle",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "cohesion",
           "coveredByExample": true,
           "example": {
@@ -9768,6 +9787,67 @@
           }
         },
         {
+          "name": "obstacleAvoidance",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/steering/steering.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "Path",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "pathFollowing",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/steering/steering.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "pursue",
           "coveredByExample": false,
           "example": {
@@ -9808,6 +9888,25 @@
             "consumers": [
               "src/modules/steering/steering.test.ts"
             ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "Segment",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
             "typeOnly": false
           }
         },
@@ -9857,6 +9956,46 @@
             "consumers": [
               "src/modules/steering/steering.test.ts"
             ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "wallFollowing",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/steering/steering.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "WallFollowParams",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
             "typeOnly": false
           }
         },
@@ -9949,9 +10088,9 @@
       "tests": [
         "src/modules/steering/steering.test.ts"
       ],
-      "typeTotal": 4,
+      "typeTotal": 8,
       "typeUsedByExample": 3,
-      "valueTotal": 11,
+      "valueTotal": 14,
       "valueUsedByExample": 9
     },
     {
@@ -13150,6 +13289,11 @@
       "total": 7
     },
     {
+      "importPath": "@pierre/ecs/modules/steering",
+      "missing": 5,
+      "total": 14
+    },
+    {
       "importPath": "@pierre/ecs/modules/tmx",
       "missing": 5,
       "total": 6
@@ -13210,11 +13354,6 @@
       "total": 2
     },
     {
-      "importPath": "@pierre/ecs/modules/steering",
-      "missing": 2,
-      "total": 11
-    },
-    {
       "importPath": "@pierre/ecs/modules/transform-3d",
       "missing": 2,
       "total": 4
@@ -13261,11 +13400,11 @@
     "entriesWithExample": 41,
     "entriesWithoutExample": 17,
     "modules": 42,
-    "noExternalConsumer": 139,
-    "symbols": 496,
-    "typeSymbols": 215,
-    "valueSymbols": 281,
+    "noExternalConsumer": 143,
+    "symbols": 503,
+    "typeSymbols": 219,
+    "valueSymbols": 284,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 156
+    "valueWithoutExample": 159
   }
 }

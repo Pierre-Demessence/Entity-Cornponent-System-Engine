@@ -41,10 +41,10 @@ references it.
 
 ## Headline
 
-- 58 public entries (16 core, 42 modules) · 496 symbols (281 value, 215 type)
+- 58 public entries (16 core, 42 modules) · 503 symbols (284 value, 219 type)
 - 41 entries referenced by at least one example · 17 with none
-- 156 value symbols referenced by no example (5 of them with no external consumer at all)
-- 139 symbols with no external consumer
+- 159 value symbols referenced by no example (5 of them with no external consumer at all)
+- 143 symbols with no external consumer
 
 ## Entries with no example reference
 
@@ -82,6 +82,7 @@ the shortlist for the next game in
 - `@pierre/ecs/modules/noise` — 11 of 11 value exports unreferenced by any example
 - `@pierre/ecs/modules/save` — 7 of 7 value exports unreferenced by any example
 - `@pierre/ecs/modules/timer` — 7 of 7 value exports unreferenced by any example
+- `@pierre/ecs/modules/steering` — 5 of 14 value exports unreferenced by any example
 - `@pierre/ecs/modules/tmx` — 5 of 6 value exports unreferenced by any example
 - `@pierre/ecs/modules/tween` — 5 of 5 value exports unreferenced by any example
 - `@pierre/ecs/modules/asset-loader` — 4 of 8 value exports unreferenced by any example
@@ -94,7 +95,6 @@ the shortlist for the next game in
 - `@pierre/ecs/modules/collision` — 2 of 10 value exports unreferenced by any example
 - `@pierre/ecs/modules/particles` — 2 of 6 value exports unreferenced by any example
 - `@pierre/ecs/modules/scene-transition` — 2 of 2 value exports unreferenced by any example
-- `@pierre/ecs/modules/steering` — 2 of 11 value exports unreferenced by any example
 - `@pierre/ecs/modules/transform-3d` — 2 of 4 value exports unreferenced by any example
 - `@pierre/ecs/modules/behavior-tree` — 1 of 5 value exports unreferenced by any example
 - `@pierre/ecs/modules/kinematics-3d` — 1 of 2 value exports unreferenced by any example
@@ -793,19 +793,26 @@ value 0/3 · type 0/2 · examples: — · tests: 3 · other: —
 
 ### `@pierre/ecs/modules/steering`
 
-value 9/11 · type 3/4 · examples: boids, critters, stealth-guard, woodcutter · tests: 1 · other: —
+value 9/14 · type 3/8 · examples: boids, critters, stealth-guard, woodcutter · tests: 1 · other: —
 
 - **`alignment`** _(fn)_ — examples: boids · tests: src/modules/steering/steering.test.ts · other: —
 - **`arrive`** _(fn)_ — examples: boids, critters, stealth-guard, woodcutter · tests: src/modules/steering/steering.test.ts · other: —
+- **`CircleObstacle`** _(interface)_ — no external consumer
 - **`cohesion`** _(fn)_ — examples: boids · tests: src/modules/steering/steering.test.ts · other: —
 - **`combine`** _(fn)_ — examples: boids, stealth-guard · tests: src/modules/steering/steering.test.ts · other: —
 - **`evade`** _(fn)_ — examples: — · tests: src/modules/steering/steering.test.ts · other: —
 - **`flee`** _(fn)_ — examples: boids, critters · tests: src/modules/steering/steering.test.ts · other: —
 - **`Neighbor`** _(interface)_ — examples: boids · tests: — · other: —
+- **`obstacleAvoidance`** _(fn)_ — examples: — · tests: src/modules/steering/steering.test.ts · other: —
+- **`Path`** _(interface)_ — no external consumer
+- **`pathFollowing`** _(fn)_ — examples: — · tests: src/modules/steering/steering.test.ts · other: —
 - **`pursue`** _(fn)_ — examples: — · tests: src/modules/steering/steering.test.ts · other: —
 - **`seek`** _(fn)_ — examples: stealth-guard · tests: src/modules/steering/steering.test.ts · other: —
+- **`Segment`** _(interface)_ — no external consumer
 - **`separation`** _(fn)_ — examples: boids · tests: src/modules/steering/steering.test.ts · other: —
 - **`truncate`** _(fn)_ — examples: boids, critters, stealth-guard, woodcutter · tests: src/modules/steering/steering.test.ts · other: —
+- **`wallFollowing`** _(fn)_ — examples: — · tests: src/modules/steering/steering.test.ts · other: —
+- **`WallFollowParams`** _(interface)_ — no external consumer
 - **`wander`** _(fn)_ — examples: boids, critters · tests: src/modules/steering/steering.test.ts · other: —
 - **`WanderParams`** _(interface)_ — no external consumer
 - **`WanderState`** _(interface)_ — examples: critters · tests: — · other: —
