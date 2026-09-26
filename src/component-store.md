@@ -137,22 +137,22 @@ are attached.
 
 ## Dirty Flags (Change Detection)
 
-Both `ComponentStore` and `TagStore` track per-turn mutations via an internal
+Both `ComponentStore` and `TagStore` track per-tick mutations via an internal
 `dirty: Set<EntityId>`:
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `isDirty(id)` | `boolean` | Entity was set/deleted this turn |
-| `hasChanges()` | `boolean` | Any entity was mutated this turn |
-| `clearDirty()` | `void` | Reset (called by `World.clearAllDirty()` at end of turn) |
+| `isDirty(id)` | `boolean` | Entity was set/deleted this tick |
+| `hasChanges()` | `boolean` | Any entity was mutated this tick |
+| `clearDirty()` | `void` | Reset (called by `World.clearAllDirty()` at end of tick) |
 | `markDirty(id)` | `void` | Manually mark an entity dirty (e.g., after in-place mutation) |
 
 `set()` / `add()` / `delete()` automatically mark the entity as dirty.
 `clear()` also clears the dirty set.
 
 `World.clearAllDirty()` iterates all registered component and tag stores and
-calls `clearDirty()`. This is called at the end of each turn in
-`Game.runSystems()`, after events are flushed.
+calls `clearDirty()`. This is called at the end of each tick by `TickRunner`,
+after events are flushed.
 
 ### System opt-in example
 

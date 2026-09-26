@@ -6,14 +6,14 @@ nested flush with depth limiting.
 
 ## How It Works
 
-1. Producers call `bus.emit(event)` during their turn — events queue.
+1. Producers call `bus.emit(event)` during a tick — events queue.
 2. After all systems run, the engine calls `bus.flush()`.
 3. Flush dispatches each batch of queued events to handlers, ordered by
    priority (higher = runs first). If handlers emit new events during
    flush, those are processed in subsequent batches within the same
    flush call, up to `maxDepth` (default 3).
 
-This avoids mid-tick side effects: all game state mutations from systems
+This avoids mid-tick side effects: all state mutations from systems
 complete before any event handler runs.
 
 ## API
