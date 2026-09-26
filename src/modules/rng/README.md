@@ -4,9 +4,6 @@ Pure, domain-neutral randomness utilities: a seedable generator,
 integer/array helpers, and an in-place Fisher–Yates shuffle. No ECS
 coupling — just functions over a `RandomFn`.
 
-Canon pattern: Unity `Random` / Godot `RandomNumberGenerator` (seedable),
-lodash `shuffle`, every roguelike's seeded RNG.
-
 ## API
 
 ```ts

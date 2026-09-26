@@ -5,20 +5,38 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { renderManualPages } from './manual';
+import { renderManualPages, summaryOf } from './manual';
 
 const pages = renderManualPages();
 const byPath = new Map(pages.map(page => [page.outPath, page.markdown]));
 const allMarkdown = pages.map(page => page.markdown).join('\n');
 
 function pageFor(name: string): string {
-  return byPath.get(`manual/${name}.md`) ?? '';
+  return byPath.get(`manual/modules/${name}.md`) ?? '';
+}
+
+function coreFor(name: string): string {
+  return byPath.get(`manual/core/${name}.md`) ?? '';
 }
 
 describe('manual generator', () => {
   it('writes a page per module guide', () => {
-    expect(byPath.has('manual/behavior-tree.md')).toBe(true);
+    expect(byPath.has('manual/modules/behavior-tree.md')).toBe(true);
     expect(pages.length).toBeGreaterThan(40);
+  });
+
+  it('publishes core-primitive guides under the Core group', () => {
+    expect(byPath.has('manual/core/world.md')).toBe(true);
+    expect(byPath.has('manual/core/component-store.md')).toBe(true);
+    expect(coreFor('world')).toContain('Import from `@pierre/ecs/world`.');
+  });
+
+  it('routes cross-group guide links between Core and Modules', () => {
+    // core -> module and core -> core sibling
+    expect(coreFor('spatial-structure')).toContain('](../../modules/spatial/)');
+    expect(coreFor('world')).toContain('](../component-store/)');
+    // module -> core
+    expect(pageFor('spatial')).toContain('](../../core/spatial-structure/)');
   });
 
   it('gives every page frontmatter with a title and description', () => {
@@ -54,8 +72,12 @@ describe('manual generator', () => {
   });
 
   it('does not mangle identifiers while summarising', () => {
-    expect(pageFor('pathfinding')).toContain('bevy_pathfinding');
-    expect(pageFor('pathfinding')).toContain('A* pathfinding');
+    const summary = summaryOf(
+      '# heading\n\nGrid-agnostic A\\* pathfinding built on `bevy_pathfinding`'
+      + ' (community).',
+    );
+    expect(summary).toContain('A* pathfinding');
+    expect(summary).toContain('bevy_pathfinding');
   });
 
   it('is byte-stable across runs', () => {

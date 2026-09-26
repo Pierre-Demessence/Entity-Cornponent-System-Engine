@@ -2,7 +2,7 @@
 
 ## EntityTemplate
 
-Defined in `packages/ecs/src/template.ts`. Engine-agnostic — no knowledge of
+Defined in `src/template.ts`. Engine-agnostic — no knowledge of
 specific component types.
 
 ```ts

@@ -32,7 +32,7 @@ export default defineConfig({
       // The header's section links are text, not icons, which needs an override.
       components: { Header: './src/components/Header.astro' },
       customCss: ['./src/styles/custom.css'],
-      description: 'Entity-Component-System primitives for 2D games and simulations.',
+      description: 'Entity-Component-System primitives for 2D and 3D games and simulations.',
       routeMiddleware: './src/site-route-data.ts',
       social: [{ href: REPO, icon: 'github', label: 'GitHub' }],
       title: '@pierre/ecs',
@@ -49,10 +49,14 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          // The 42 guides inline would push the API group far below the fold.
+          // The 50+ guides inline would push the API group far below the fold.
           collapsed: true,
-          items: [{ autogenerate: { directory: 'manual' } }],
           label: 'Manual',
+          items: [
+            { label: 'Overview', link: '/manual/' },
+            { items: [{ autogenerate: { directory: 'manual/core' } }], label: 'Core' },
+            { items: [{ autogenerate: { directory: 'manual/modules' } }], label: 'Modules' },
+          ],
         },
         {
           // `typeDocSidebarGroup` is a placeholder the plugin swaps for the generated

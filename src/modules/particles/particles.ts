@@ -1,8 +1,7 @@
 /**
  * Particle bursts and emitters — short-lived entities spawned in a radial,
  * cone, or shaped pattern and animated over their lifetime (fade, shrink, spin,
- * gravity, damping). Canon: Godot `CPUParticles2D` + `ParticleProcessMaterial`,
- * Unity `ParticleSystem`, Phaser / Pixi emitters.
+ * gravity, damping).
  *
  * No special renderer — particles are ordinary `RenderableDef` rects drawn by
  * `modules/render-canvas2d`, moved by `modules/motion`, and reaped by

@@ -4,7 +4,7 @@ The tick story is a two-layer design: a **core interface and runner**
 that define the per-tick ceremony, and **module implementations** that
 decide *when* ticks fire.
 
-## Core Interfaces (`packages/ecs/src/tick-source.ts`)
+## Core Interfaces (`src/tick-source.ts`)
 
 `TickInfo` + `TickSource` describe the source of ticks (discrete or
 continuous). A `TickSource` emits `TickInfo` payloads; how often, and
@@ -12,7 +12,7 @@ whether wall time is involved, is entirely up to the implementation.
 
 Import via `@pierre/ecs/tick-source`.
 
-## `TickRunner` (`packages/ecs/src/tick-runner.ts`)
+## `TickRunner` (`src/tick-runner.ts`)
 
 `TickRunner` drives the universal per-tick ceremony:
 
@@ -31,8 +31,8 @@ Import via `@pierre/ecs/tick-runner`.
 ## Implementations
 
 Concrete `TickSource` implementations live under
-`packages/ecs/src/modules/tick/`. See
-[`src/modules/tick/README.md`](../src/modules/tick/README.md) for the
+`src/modules/tick/`. See
+[`src/modules/tick/README.md`](./modules/tick/README.md) for the
 current implementations (`ManualTickSource`, `FixedIntervalTickSource`)
 and guidance on which to pick.
 
@@ -40,5 +40,5 @@ and guidance on which to pick.
 
 - [Scheduler](scheduler.md) - `TickRunner` calls `scheduler.run(ctx)` each tick.
 - [Event Bus](event-bus.md) - typically flushed inside the tick callback.
-- [`src/modules/tick/README.md`](../src/modules/tick/README.md) - concrete `TickSource` implementations.
+- [`src/modules/tick/README.md`](./modules/tick/README.md) - concrete `TickSource` implementations.
 

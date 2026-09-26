@@ -6,9 +6,8 @@ returns a **steering force** — `desired − velocity` — in generic
 `Vec2 {x, y}`. Blend several with `combine`, then apply the result as
 acceleration and let `@pierre/ecs/modules/motion` integrate it.
 
-Canon: Craig Reynolds, *Steering Behaviors For Autonomous Characters*
-(1987) — the universal set shipped by Unity, Godot, Unreal, and every
-boids demo. First consumer: [`examples/boids`](../../../examples/boids/).
+Based on Craig Reynolds' *Steering Behaviors For Autonomous Characters*
+(1987). See [`examples/boids`](../../../examples/boids/) for a worked example.
 
 ## Force model (why forces, not desired velocities)
 
@@ -76,16 +75,15 @@ function truncate(v: Vec2, max): Vec2
   heading ray and, for those within `maxSeeAhead` whose perpendicular distance
   is inside the radius, pushes away from the closest one ahead. Returns the
   zero vector when nothing threatens — or when the agent is stationary, since
-  there is no heading to project. Obstacles are circles because that is the
-  canonical avoidance primitive (Reynolds' unaligned obstacle avoidance, Unity
-  `NavMeshObstacle`, Godot RVO agent radius); polygon obstacles are a separate,
-  heavier shape and are out of scope.
+  there is no heading to project. Obstacles are circles — the standard avoidance
+  primitive; polygon obstacles are a separate, heavier shape and are out of
+  scope.
 - **`wallFollowing`** follows the nearest wall `Segment` within `params.range`,
   holding `params.desiredDistance`. It blends a tangential term (move along the
   wall in the direction the agent already travels) with a normal correction
   that restores the gap. Returns zero when no wall is in range, or when the
   agent sits exactly on the wall (no side to pick). Wall following has no single
-  engine-canon shape — it is a robotics-era behaviour — so this shape is ours.
+  standard shape across engines, so this API is our own.
 - **`pathFollowing`** is Reynolds' stateless predictive form: predict where the
   agent is heading, and if that point strays outside the corridor
   (`path.radius`), seek back toward a target nudged forward along the nearest

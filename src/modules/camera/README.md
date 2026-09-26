@@ -1,9 +1,8 @@
 # `@pierre/ecs/modules/camera`
 
-2D camera component, follow system, and world↔view transforms, modelled on
-Godot `Camera2D` (zoom, offset, limits, smoothing, drag-margin deadzone). Canon
-pattern: Bevy `Camera2dBundle`, Godot `Camera2D`, Phaser `Cameras`, Unity
-`Camera` (orthographic 2D).
+2D camera component, follow system, and world↔view transforms. Zoom, offset,
+limits, exponential smoothing, and a drag-margin deadzone. Coming from Godot,
+this maps closely to `Camera2D`.
 
 ## API
 
@@ -169,12 +168,9 @@ order).
 
 ## Out of scope
 
-- **Rotation** — Godot `Camera2D.rotation`, Phaser `Camera.rotation`. A `V3`
-  backlog entry, marked **ready**: the shape is canon, so it waits on a build
-  slot, not on a consumer. Building it needs a full affine transform and a
+- **Rotation** — not yet implemented. It needs a full affine transform and a
   conservative rotated-AABB cull, which the axis-aligned cull does not give.
-- **Parallax layers** — a layer/scroll-factor model; the same entry, same
-  status.
+- **Parallax layers** — a layer/scroll-factor model; also planned.
 - **Pixel-space / DPI helpers** — stay in app code (DOM/canvas-specific).
 
 Import via `@pierre/ecs/modules/camera`. Depends on

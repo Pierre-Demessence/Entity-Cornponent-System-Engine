@@ -2,7 +2,7 @@
 
 Concrete `TickSource` implementations. The `TickSource` interface and
 `TickRunner` themselves live in core — see
-[`docs/tick.md`](../../../docs/tick.md).
+[`tick`](../../tick.md).
 
 ## `ManualTickSource` — caller-driven
 

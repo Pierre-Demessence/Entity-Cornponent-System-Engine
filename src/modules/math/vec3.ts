@@ -88,13 +88,12 @@ export function vec3Lerp(a: Vec3, b: Vec3, t: number): Vec3 {
 
 /**
  * `current` stepped `delta` units along the straight line to `target` — the
- * `Vec3` sibling of `vec2MoveToward`, matching Unity `Vector3.MoveTowards`,
- * Godot `Vector3.move_toward` and Unreal `FMath::VInterpConstantTo`. A forward
+ * `Vec3` sibling of `vec2MoveToward`. A forward
  * mover cannot overshoot: once the remaining distance is within `delta` the
  * target itself is returned, so repeated calls settle on it instead of
  * oscillating around it.
  *
- * `delta` is a *signed* step, matching Unity and Godot: a negative one walks
+ * `delta` is a *signed* step: a negative one walks
  * away from the target, and `0` leaves the position unchanged.
  */
 export function vec3MoveToward(current: Vec3, target: Vec3, delta: number): Vec3 {

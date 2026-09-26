@@ -3,9 +3,6 @@
 Grid and tile-based spatial primitives. V1 ships line-of-sight and
 field-of-view helpers.
 
-Canon: roguelike FOV toolkits (libtcod, rot.js) and common engine LOS
-queries (Unity ray checks, Godot ray casts).
-
 ## API
 
 ```ts

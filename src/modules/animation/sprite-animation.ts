@@ -7,9 +7,6 @@
  * Follows the `Cooldown` / `Lifetime` pattern: a flat-primitive value type,
  * an ECS component def, and a system that auto-advances the animation and
  * writes the current frame name into the entity's `RenderableDef`.
- *
- * Canon: Godot `AnimatedSprite2D`, Unity `Animator` / `Animation` clips,
- * Phaser `sprite.anims`, PixiJS `AnimatedSprite`, Bevy `bevy_animation`.
  */
 import type { ComponentDef, EcsWorld, SchedulableSystem } from '#index';
 

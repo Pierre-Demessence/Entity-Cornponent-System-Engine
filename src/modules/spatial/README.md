@@ -2,7 +2,7 @@
 
 Concrete `SpatialStructure` implementations. The interface itself lives
 in core — see
-[`docs/spatial-structure.md`](../../../docs/spatial-structure.md).
+[`spatial-structure`](../../spatial-structure.md).
 
 ## `HashGrid2D` — integer grid (current default)
 
@@ -83,10 +83,9 @@ grid taking a `cellSize`).
 
 Tracked as a deferred gap (`modules/spatial` — `QuadTree` / `BVH` backends)
 in the [module backlog](../../../docs/roadmap/ecs-module-backlog.md):
-`QuadTree`, and `BVH` / `SweepAndPrune` for AABB sets. Both are solid canon,
-so one consumer is enough per the rule-book — a consumer a uniform grid cannot
-serve (very uneven entity density, or static AABB sets). An `Octree` for the
-3D stack stays out of scope until a 3D consumer forces it.
+`QuadTree`, and `BVH` / `SweepAndPrune` for AABB sets — for consumers a uniform
+grid cannot serve (very uneven entity density, or static AABB sets). An
+`Octree` for the 3D stack stays out of scope until a 3D consumer needs it.
 
 ## Integration with `EcsWorld`
 

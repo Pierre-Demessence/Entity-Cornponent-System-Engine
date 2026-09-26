@@ -12,14 +12,10 @@ freely. **Depends on nothing.**
 | `Vec3` | `vec3.ts` | `vec3Add`, `vec3Cross`, `vec3Normalize`, `vec3MoveToward`, … |
 | `Quat` | `quat.ts` | `quatFromAxisAngle`, `quatMul`, `quatRotate`, `quatSlerp`, … |
 
-**Why one module.** No engine splits its math layer by dimension: Unity keeps
-`Mathf`, `Vector2`, `Vector3` and `Quaternion` in one namespace, Godot its
-built-in types plus scalar `@GlobalScope` helpers, three.js one Math section
-with `Vector2`/`Vector3`/`Quaternion` and the scalar `MathUtils`, Unreal
-`FMath`/`FVector`/`FVector2D`/`FQuat` in Core, and Bevy's `bevy_math` `Vec2`,
-`Vec3` and `Quat` in a single crate. Vector work belongs to the value layer:
-Unity hangs `Vector3.MoveTowards` off `Vector3`, Godot `Vector2.move_toward`
-off `Vector2`, Unreal puts `FMath::VInterpConstantTo` in the math namespace.
+**Why one module.** Scalars, vectors and rotations are one value layer;
+splitting math by dimension across modules would just scatter closely related
+helpers. `vec3MoveToward` lives beside `vec2MoveToward`, and `clamp` / `lerp`
+sit next to both.
 
 The `-3d` **module** suffix is therefore reserved for a mirrored system family —
 `motion`/`motion-3d`, `transform`/`transform-3d`, `collision`/`collision-3d`,
@@ -81,18 +77,14 @@ canonical "normalize then multiply" for driving a body at a fixed speed from an
 arbitrary direction — a WASD input axis (diagonals don't go faster), a
 seek/steer delta, or a reflected ball velocity.
 
-Canon: Unity `Vector2.normalized` / `Vector3.MoveTowards` / `ClampMagnitude`,
-Godot `Vector2.normalized()` / `limit_length()` / `move_toward()`, Bevy
-`Vec2::normalize_or_zero`, Unreal `FMath::VInterpConstantTo`.
-
 ## Conventions
 
-- **Right-handed axes**, matching three.js, Bevy and Godot: `vec3Cross` follows
-  the right-hand rule, and `quatFromAxisAngle` rotates counter-clockwise when the
-  thumb of the right hand points along the axis. Unity is left-handed, so a port
-  to it needs a handedness mirror, not just a sign flip.
+- **Right-handed axes**: `vec3Cross` follows the right-hand rule, and
+  `quatFromAxisAngle` rotates counter-clockwise when the thumb of the right hand
+  points along the axis. In a left-handed system (e.g. Unity), a port needs a
+  handedness mirror, not just a sign flip.
 - **`-Z` is forward.** `quatForward` returns the direction of the local `-Z` axis
-  after rotation, which is the camera-facing convention three.js and Godot use.
+  after rotation, which is the standard camera-facing convention.
   `quatUp` is the local `+Y` axis.
 - **`Quat` is `{w, x, y, z}`** — scalar part first in the layout as well as in
   the name. Every library this follows spells its constructor `(x, y, z, w)`, so
@@ -121,7 +113,7 @@ Godot `Vector2.normalized()` / `limit_length()` / `move_toward()`, Bevy
 - **`vec2MoveToward` / `vec3MoveToward` take a *signed* `delta`.** A positive
   one steps toward the target and lands *exactly* on it rather than
   overshooting, so a repeated call converges and stays; a negative one walks
-  **away** from the target, as Unity and Godot both do; `0` leaves the position
+  **away** from the target; `0` leaves the position
   unchanged. A zero distance returns the target rather than `NaN`.
 - **`vec3ClampLength` returns its input object** when the vector is already
   short enough, rather than a copy — a cheap fast path that is safe only because

@@ -15,14 +15,17 @@ it (generated, not committed).
 
 ## Primitives
 
-- [Component Store](component-store.md) — `ComponentDef<T>`, `TagDef`, `ComponentStore<T>`, `TagStore`, dev-mode validation
-- [Query Builder](query.md) — fluent typed entity queries with tag filters
-- [Scheduler](scheduler.md) — DAG-based system ordering with topological sort
-- [Spatial Structure](spatial-structure.md) — `SpatialStructure<TPos>` interface describing the minimum spatial-backend contract. Concrete implementations live in `modules/spatial/`.
-- [Event Bus](event-bus.md) — generic queue-and-flush pub/sub system
-- [Entity Templates](template.md) — declarative entity blueprints & `World.spawn()`
-- [EcsWorld](world.md) — generic registry tying the primitives together
-- [Tick](tick.md) — `TickSource` interface + `TickRunner` per-tick ceremony. Concrete sources live in `modules/tick/`.
+The per-primitive guides live beside their source in `src/` and publish to the
+website Manual's **Core** group:
+
+- [Component Store](../src/component-store.md) — `ComponentDef<T>`, `TagDef`, `ComponentStore<T>`, `TagStore`, dev-mode validation
+- [Query Builder](../src/query.md) — fluent typed entity queries with tag filters
+- [Scheduler](../src/scheduler.md) — DAG-based system ordering with topological sort
+- [Spatial Structure](../src/spatial-structure.md) — `SpatialStructure<TPos>` interface describing the minimum spatial-backend contract. Concrete implementations live in `modules/spatial/`.
+- [Event Bus](../src/event-bus.md) — generic queue-and-flush pub/sub system
+- [Entity Templates](../src/template.md) — declarative entity blueprints & `World.spawn()`
+- [EcsWorld](../src/world.md) — generic registry tying the primitives together
+- [Tick](../src/tick.md) — `TickSource` interface + `TickRunner` per-tick ceremony. Concrete sources live in `modules/tick/`.
 
 ## Supporting Files
 

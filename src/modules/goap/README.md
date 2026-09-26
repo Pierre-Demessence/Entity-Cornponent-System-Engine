@@ -7,8 +7,8 @@ over authored behaviour is that the *same goal* yields *different plans*
 as the world changes.
 
 The most advanced of the AI decision modules (after `modules/fsm` and
-`modules/behavior-tree`). Canon: F.E.A.R. / Halo GOAP papers. First
-consumer: [`examples/woodcutter`](../../../examples/woodcutter/).
+`modules/behavior-tree`). GOAP was introduced in F.E.A.R.; see
+[`examples/woodcutter`](../../../examples/woodcutter/) for a worked example.
 
 ## Scope: the pure planner
 
@@ -31,8 +31,8 @@ behaviour, run it, and replan when a step fails or the world diverges).
 ## How it works
 
 - **Boolean facts.** `WorldState` is `Record<string, boolean>`; a missing
-  key reads as `false`, so `false` and absent are the same state. Chosen
-  as the canonical minimal representation.
+  key reads as `false`, so `false` and absent are the same state. This is
+  the minimal representation.
 - **A\* over states.** A node is a world state (hashed by its truthy keys,
   which collapses equivalent states); an edge is an applicable action;
   edge cost is `action.cost`; the heuristic is the count of unsatisfied

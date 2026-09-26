@@ -2,9 +2,8 @@
 
 Per-entity action-gating cooldown — fire-rate limits, ability recharge,
 invulnerability i-frames. A `'once'` `Timer` (see `modules/timer`) that
-starts **ready** and is re-armed on use. Canon: any engine's fire-rate /
-ability-cooldown timer; the "gate you poll" half of the timing primitive
-(`modules/lifetime` is the "auto-fire on finish" half).
+starts **ready** and is re-armed on use — the "gate you poll" half of the
+timing primitive (`modules/lifetime` is the "auto-fire on finish" half).
 
 ## API
 

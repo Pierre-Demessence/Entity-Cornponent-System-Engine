@@ -7,10 +7,9 @@ tree once and re-tick it from the root every frame — a higher-priority
 branch preempts a lower one the moment its condition flips.
 
 The step up from `@pierre/ecs/modules/fsm`: instead of "which state am I
-in", you express prioritised, hierarchical behaviour. Canon: Unreal
-Behavior Tree + Blackboard, behaviortree.cpp, Halo/Bungie published
-trees. First consumer:
-[`examples/critters`](../../../examples/critters/) — needs-driven
+in", you express prioritised, hierarchical behaviour — a higher-priority
+branch preempts a lower one the moment its condition flips. See
+[`examples/critters`](../../../examples/critters/) for needs-driven
 creatures (flee > eat > sleep > wander).
 
 ## Reactive, blackboard-on-context

@@ -4,9 +4,6 @@ Versioned-save primitives for browser games: migration chains, integrity
 envelopes, backup rotation, orphan recovery, and IndexedDB/localStorage
 backends.
 
-Canon: engine save systems that treat persistence as a first-class runtime
-primitive with explicit upgrade paths and corruption handling.
-
 ## API
 
 ```ts

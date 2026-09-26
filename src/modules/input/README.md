@@ -7,8 +7,6 @@ two modes: tick-polled state (`createInput`) and event dispatch
 (touch extensions, synthetic test harness) plug in by implementing the tiny
 `InputProvider` interface from `@pierre/ecs/input-source`.
 
-Canon pattern: Bevy `bevy_input`, Unity `InputSystem`, Godot `InputMap`.
-
 ## Why not just use DOM listeners?
 
 Every prototype (snake, asteroids, platformer) hand-rolled a `keydown`/
@@ -345,9 +343,7 @@ headless environments.
 - v1 is position + over-flag + buttons 0/1/2, nothing else.
 - No scroll/wheel and no multi-touch or gesture helpers yet — tracked as a
   deferred gap (`modules/input` — wheel + multi-touch) in the module backlog.
-  Every engine ships the *function*, but no two agree on the *shape* (Unity a
-  polled `Input.mouseScrollDelta`, Godot a discrete wheel-button event with a
-  `factor`, Phaser a `'wheel'` event object), and the core raw-event union
+  Scroll shape varies widely across platforms, and the core raw-event union
   cannot carry a delta as-is. Pointer lock lives in `MouseLookProvider`
   (below). Single-finger touch already works via Pointer Events.
 - Analog position lives on `provider.state`, not inside `InputState<T>`

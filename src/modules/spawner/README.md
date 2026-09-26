@@ -3,8 +3,8 @@
 Cadence emitter — "emit something every *T* ms", where *T* may be fixed, a
 difficulty ramp, or jittered. The repeating sibling of `modules/timer`: where
 a `Timer` is a single countdown, a `Spawner` fires an emit callback every
-interval and reschedules itself. Canon: pipe/obstacle spawners, enemy waves,
-auto-fire weapons, bomb drops.
+interval and reschedules itself. Typical uses: pipe/obstacle spawners, enemy
+waves, auto-fire weapons, bomb drops.
 
 ## API
 

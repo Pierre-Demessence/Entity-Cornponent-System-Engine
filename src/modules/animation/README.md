@@ -10,14 +10,6 @@ The **easing + tween** slice of `modules/animation` shipped separately
 as `modules/easing` and `modules/tween`. Skeletal / 2D-rig animation
 remains deferred.
 
-## Canon
-
-- Godot — `AnimatedSprite2D` + `AnimationPlayer`
-- Unity — `Animator` / `Animation` clips
-- Phaser — `sprite.anims.create()` + `sprite.play()`
-- PixiJS — `AnimatedSprite`
-- Bevy — `bevy_animation`
-
 ## Exports
 
 ### Value type
@@ -124,10 +116,9 @@ reported to the optional `onMissingClip(entityId, clip)` callback.
 
 ## Design notes
 
-- The **clip registry** above is the canon-complete counterpart to the inline
-  `SpriteAnimation` (Unity `AnimationClip`, Godot `SpriteFrames`, Phaser named
-  anims, Bevy `AnimationClip`): use inline for procedural/one-off clips, the
-  registry for clips shared across entities.
+- The **clip registry** above is the shared-clip counterpart to the inline
+  `SpriteAnimation`: use inline for procedural / one-off clips, the registry for
+  clips shared across entities.
 - The `frames` array stores atlas frame **names** (strings), matching
   the `Renderable.frame` field contract.
 - Zero-fps animations never advance (no division by zero).

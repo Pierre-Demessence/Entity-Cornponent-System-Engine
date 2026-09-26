@@ -60,7 +60,7 @@ export interface AudioSystemOptions<TCtx extends AudioTickCtx = AudioTickCtx> {
   queue?: AudioQueue;
   runAfter?: string[];
   sourceDef?: ComponentDef<AudioSource>;
-  /** Falloff defaults for spatial sources that omit their own. Web Audio canon: `refDistance 1`, `maxDistance 10000`, `rolloff 1`. */
+  /** Falloff defaults for spatial sources that omit their own. Web Audio defaults: `refDistance 1`, `maxDistance 10000`, `rolloff 1`. */
   spatialDefaults?: SpatialDefaults;
   /** Listener position for spatial sources; sources with a `spatial` field are attenuated/panned relative to it. Return `undefined` to leave spatial sources at base volume. */
   getListener?: (ctx: TCtx) => AudioListener | undefined;
@@ -130,7 +130,7 @@ function spatialPan(source: AudioSource, listener: AudioListener, falloff: Resol
   return pan < -1 ? -1 : pan > 1 ? 1 : pan;
 }
 
-/** Resolve and validate the system-wide falloff defaults, filling Web Audio canon where omitted. */
+/** Resolve and validate the system-wide falloff defaults, filling the Web Audio defaults where omitted. */
 function resolveFalloff(defaults: SpatialDefaults | undefined): ResolvedFalloff {
   const refDistance = defaults?.refDistance ?? 1;
   const maxDistance = defaults?.maxDistance ?? 10000;

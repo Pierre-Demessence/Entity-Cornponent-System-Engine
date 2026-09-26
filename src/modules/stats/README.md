@@ -1,9 +1,9 @@
 # `@pierre/ecs/modules/stats`
 
 Headless frame-timing collector plus an optional Canvas2D overlay.
-Replaces the inline `fps accumulator` every game re-hand-rolls. Canon
-reference: mrdoob `stats.js` (panel), and the "1% / 0.1% low" frame-time
-percentiles popularised by PC benchmarking.
+Replaces the inline `fps accumulator` every game re-hand-rolls. Comparable
+to mrdoob's `stats.js` panel, with the "1% / 0.1% low" frame-time
+percentiles from PC benchmarking.
 
 `FrameStats` is pure and DOM-free, so it works for any loop (render rAF,
 fixed logic tick, worker). Rendering is a consumer concern: ship the

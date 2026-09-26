@@ -1,8 +1,6 @@
 # `@pierre/ecs/modules/lifetime`
 
-Countdown-to-destroy component and system. Canon pattern: Unreal
-`AActor::SetLifeSpan`, Unity `Destroy(obj, t)`, Gregory *Game Engine
-Architecture* §12.5.
+Countdown-to-destroy component and system.
 
 Built on `modules/timer`: `Lifetime` is a `'once'` `Timer`, so it also
 exposes `fraction()` (elapsed `[0,1]`) for fade-outs.

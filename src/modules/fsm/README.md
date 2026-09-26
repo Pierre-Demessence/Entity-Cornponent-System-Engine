@@ -6,9 +6,8 @@ machine holds only `current` + `elapsedMs` (time-in-state); the
 *behaviour* — transitions and side effects — lives in an `FsmStates` map
 the app owns, exactly like a system.
 
-No canon library dictates one FSM shape (Unity `Animator`, Godot
-`AnimationTree`/LimboAI, Bevy `bevy_state`, XState all differ), so this
-ships the smallest useful surface. The strong consumer is
+FSM APIs differ across engines and libraries, so this ships the smallest
+useful surface rather than mirroring any one of them. The strong consumer is
 [`examples/stealth-guard`](../../../examples/stealth-guard/) — a 5-state
 guard brain (patrol→suspicious→chase→search→return) that exercises the
 whole surface (enter/exit hooks + `elapsedMs` time-in-state) and composes

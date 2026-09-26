@@ -2,8 +2,7 @@
 
 A small, embeddable **countdown value** — the shared timing primitive
 behind `modules/lifetime`, `modules/cooldown`, and (later)
-`modules/spawner`. Canon: Bevy's `Timer`/`Time`, Unity `WaitForSeconds`,
-Unreal `FTimerManager`.
+`modules/spawner`.
 
 `Timer` is a **value**, not a component or system. Embed it wherever a
 countdown belongs — as a flat component (its fields are all primitives, so

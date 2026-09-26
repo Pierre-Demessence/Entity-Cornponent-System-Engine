@@ -35,8 +35,8 @@ export interface VelocityIntegrationOptions<TCtx extends VelocityIntegrationTick
   /**
    * Integrate only entities carrying this tag (in addition to having
    * `Position` + `Velocity`). Unset integrates every velocity entity. The
-   * marker/query-filter idiom — Bevy `With<T>`, and this engine's own
-   * `kinematics` `dynamicTag` — so a game that runs `kinematics` over its bodies
+   * marker/query-filter idiom (like this engine's own `kinematics`
+   * `dynamicTag`) — so a game that runs `kinematics` over its bodies
    * can still integrate a disjoint set without double-integrating them.
    */
   tag?: TagDef;

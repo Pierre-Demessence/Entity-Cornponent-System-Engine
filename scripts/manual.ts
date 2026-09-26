@@ -1,11 +1,12 @@
 /**
  * Generates the Manual content for the Starlight site: one markdown page per
- * module, from that module's own `src/modules/<name>/README.md`. Starlight owns
- * the layout, sidebar, search and syntax highlighting from there.
+ * module (from `src/modules/<name>/README.md`) and per core primitive (from
+ * `src/<name>.md`), published as the **Modules** and **Core** sidebar groups.
+ * Starlight owns the layout, sidebar, search and syntax highlighting from there.
  *
- * The READMEs are the single source — nothing is copied by hand, and no
- * frontmatter is added to them. Links are rewritten because they are written for
- * readers *inside* the repo, not for the published site.
+ * The source `.md` files are the single source — nothing is copied by hand, and
+ * no frontmatter is added to them. Links are rewritten because they are written
+ * for readers *inside* the repo, not for the published site.
  *
  * Pure: this module writes nothing. The CLI wrapper (`manual.gen.ts`) writes the
  * files; the test (`manual.test.ts`) asserts the same output.
@@ -16,8 +17,25 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const MODULE_DIR = join(ROOT, 'src/modules');
+const SRC_DIR = join(ROOT, 'src');
 const REPO_URL = 'https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine';
 const SUMMARY_MAX = 160;
+
+/**
+ * Core-primitive guides, co-located with their source in `src/<name>.md` and
+ * published as the Manual's **Core** group. The value is the import line shown
+ * at the top of each page; most map to a `@pierre/ecs/<name>` subpath export.
+ */
+const CORE_GUIDES: Record<string, string> = {
+  'component-store': 'Import from `@pierre/ecs/component-store`.',
+  'event-bus': 'Import from `@pierre/ecs/event-bus`.',
+  'query': 'Import from `@pierre/ecs/query`.',
+  'scheduler': 'Import from `@pierre/ecs/scheduler`.',
+  'spatial-structure': 'Import from `@pierre/ecs/spatial-structure`.',
+  'template': 'Import from `@pierre/ecs/template`.',
+  'tick': 'Import from `@pierre/ecs/tick-source` and `@pierre/ecs/tick-runner`.',
+  'world': 'Import from `@pierre/ecs/world`.',
+};
 
 export interface ManualPage {
   markdown: string;
@@ -25,10 +43,24 @@ export interface ManualPage {
   outPath: string;
 }
 
+/** A published guide: a module README or a core-primitive deep-dive. */
+type GuideGroup = 'core' | 'modules';
+
 interface Guide {
   name: string;
+  group: GuideGroup;
+  /** The `Import from …` line rendered above the guide body. */
+  importLine: string;
   markdown: string;
-  readmePath: string;
+  /** The source `.md` file, used as the base for resolving its links. */
+  sourcePath: string;
+}
+
+/** Context a page's links resolve against: its group plus the known guide names. */
+interface LinkContext {
+  coreNames: Set<string>;
+  group: GuideGroup;
+  moduleNames: Set<string>;
 }
 
 /** Plain code-unit ordering, so the page order is byte-stable across machines. */
@@ -36,7 +68,7 @@ function byName(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-function listGuides(): Guide[] {
+function listModuleGuides(): Guide[] {
   return readdirSync(MODULE_DIR, { withFileTypes: true })
     .filter(entry => entry.isDirectory())
     .map(entry => entry.name)
@@ -45,7 +77,31 @@ function listGuides(): Guide[] {
       const readmePath = join(MODULE_DIR, name, 'README.md');
       if (!existsSync(readmePath))
         return [];
-      return [{ name, markdown: readFileSync(readmePath, 'utf8'), readmePath }];
+      return [{
+        name,
+        group: 'modules' as const,
+        importLine: `Import from \`@pierre/ecs/modules/${name}\`.`,
+        markdown: readFileSync(readmePath, 'utf8'),
+        sourcePath: readmePath,
+      }];
+    });
+}
+
+/** The core-primitive guides, read from `src/<name>.md` in a stable order. */
+function listCoreGuides(): Guide[] {
+  return Object.keys(CORE_GUIDES)
+    .sort(byName)
+    .flatMap((name) => {
+      const sourcePath = join(SRC_DIR, `${name}.md`);
+      if (!existsSync(sourcePath))
+        return [];
+      return [{
+        name,
+        group: 'core' as const,
+        importLine: CORE_GUIDES[name],
+        markdown: readFileSync(sourcePath, 'utf8'),
+        sourcePath,
+      }];
     });
 }
 
@@ -66,7 +122,7 @@ export function modulesWithoutReadme(): string[] {
  * description. Markup is unwrapped rather than deleted: a blanket strip of `*`
  * and `_` mangles real text such as `A\* pathfinding` or `bevy_pathfinding`.
  */
-function summaryOf(markdown: string): string {
+export function summaryOf(markdown: string): string {
   const body = markdown.replace(/^#.*$/m, '').trim();
   const paragraph = body.split(/\n\s*\n/).find(chunk => !chunk.startsWith('#'));
   if (!paragraph)
@@ -92,11 +148,20 @@ function githubUrl(absolutePath: string): string {
   return `${REPO_URL}/${kind}/main/${rel}`;
 }
 
+/** Site route to a guide page, relative to a page in `fromGroup`. */
+function routeTo(fromGroup: GuideGroup, group: GuideGroup, name: string): string {
+  return fromGroup === group ? `../${name}/` : `../../${group}/${name}/`;
+}
+
 /**
  * Rewrites one in-repo link target for the published site. Returns `null` when
  * the link must be dropped (internal docs), otherwise the replacement target.
+ *
+ * Links are classified by what they resolve to: a core guide (`src/<name>.md`)
+ * or module README routes to that guide's page; anything under `docs/` is
+ * internal and dropped; source files and examples point at GitHub.
  */
-function resolveLink(target: string, fromDir: string, moduleNames: Set<string>): string | null {
+function resolveLink(target: string, fromDir: string, ctx: LinkContext): string | null {
   if (/^(?:[a-z][a-z0-9+.-]*:|\/|#)/i.test(target))
     return target;
 
@@ -106,15 +171,21 @@ function resolveLink(target: string, fromDir: string, moduleNames: Set<string>):
   if (/(?:^|\/)docs\//.test(target))
     return null;
 
-  const sibling = /^\.\.\/([^/]+)\/README\.md$/.exec(target);
-  if (sibling && moduleNames.has(sibling[1]))
-    return `../${sibling[1]}/`;
-
   const absolute = resolve(fromDir, target);
-  if (relative(ROOT, absolute).startsWith('..'))
+  const rel = relative(ROOT, absolute).split(sep).join('/');
+
+  const core = /^src\/([^/]+)\.md$/.exec(rel);
+  if (core && ctx.coreNames.has(core[1]))
+    return routeTo(ctx.group, 'core', core[1]);
+
+  const mod = /^src\/modules\/([^/]+)\/README\.md$/.exec(rel);
+  if (mod && ctx.moduleNames.has(mod[1]))
+    return routeTo(ctx.group, 'modules', mod[1]);
+
+  if (rel.startsWith('..'))
     return target;
 
-  if (relative(ROOT, absolute).split(sep)[0] === 'docs')
+  if (rel.split('/')[0] === 'docs')
     return null;
 
   return existsSync(absolute) ? githubUrl(absolute) : target;
@@ -124,8 +195,8 @@ function resolveLink(target: string, fromDir: string, moduleNames: Set<string>):
  * Rewrites links outside fenced code blocks only — the READMEs contain code
  * samples with bracketed syntax that must survive verbatim.
  */
-function rewriteLinks(markdown: string, readmePath: string, moduleNames: Set<string>): string {
-  const fromDir = join(readmePath, '..');
+function rewriteLinks(markdown: string, sourcePath: string, ctx: LinkContext): string {
+  const fromDir = join(sourcePath, '..');
   const linkPattern = /(?<!!)\[([^\]]+)\]\(([^)\s]+)\)/g;
   let inFence = false;
 
@@ -139,7 +210,7 @@ function rewriteLinks(markdown: string, readmePath: string, moduleNames: Set<str
       if (inFence)
         return line;
       return line.replace(linkPattern, (_match, text: string, target: string) => {
-        const resolved = resolveLink(target, fromDir, moduleNames);
+        const resolved = resolveLink(target, fromDir, ctx);
         return resolved === null ? text : `[${text}](${resolved})`;
       });
     })
@@ -183,18 +254,21 @@ function renderIndexPage(): ManualPage {
 
 /** Build every Manual page, ready to be written into the Starlight content directory. */
 export function renderManualPages(): ManualPage[] {
-  const guides = listGuides();
-  const moduleNames = new Set(guides.map(guide => guide.name));
+  const coreGuides = listCoreGuides();
+  const moduleGuides = listModuleGuides();
+  const coreNames = new Set(coreGuides.map(guide => guide.name));
+  const moduleNames = new Set(moduleGuides.map(guide => guide.name));
 
-  const pages = guides.map((guide) => {
-    const description = summaryOf(guide.markdown) || `Guide for the ${guide.name} module.`;
-    const body = rewriteLinks(bodyOf(guide.markdown), guide.readmePath, moduleNames);
-    const intro = `Import from \`@pierre/ecs/modules/${guide.name}\`.\n\n`;
+  const render = (guide: Guide): ManualPage => {
+    const description = summaryOf(guide.markdown) || `Guide for ${guide.name}.`;
+    const ctx: LinkContext = { coreNames, group: guide.group, moduleNames };
+    const body = rewriteLinks(bodyOf(guide.markdown), guide.sourcePath, ctx);
+    const intro = `${guide.importLine}\n\n`;
     return {
       markdown: `${frontmatter(guide.name, description)}${intro}${body}\n`,
-      outPath: `manual/${guide.name}.md`,
+      outPath: `manual/${guide.group}/${guide.name}.md`,
     };
-  });
+  };
 
-  return [renderIndexPage(), ...pages];
+  return [renderIndexPage(), ...coreGuides.map(render), ...moduleGuides.map(render)];
 }

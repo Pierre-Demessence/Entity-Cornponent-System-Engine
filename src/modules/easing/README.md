@@ -1,7 +1,6 @@
 # `@pierre/ecs/modules/easing`
 
-The Robert Penner easing-curve canon — the same set every tween system ships
-(Godot `Tween`, Unity DOTween, Pixi / Phaser, GSAP). Pure, domain-free,
+The standard Robert Penner easing curves — pure, domain-free,
 **zero-dependency** functions that reshape normalized time.
 
 ## API

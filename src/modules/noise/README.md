@@ -9,9 +9,6 @@ neighbouring samples are similar, which is what makes it look like
 landscape instead of static. For uniform, uncorrelated randomness use
 [`modules/rng`](../rng/README.md) — a different primitive.
 
-Canon pattern: Godot `FastNoiseLite` (value / Perlin / simplex + fBm),
-Unity `Mathf.PerlinNoise`, `noise-rs` / OpenSimplex.
-
 ## API
 
 ```ts
@@ -96,13 +93,10 @@ family.
 
 ## Not included (by design)
 
-- **Other algorithm families** that Godot's `FastNoiseLite` and `noise-rs`
-  ship: **cellular / Worley** (Voronoi), **value-cubic**, and **domain warp**
-  (turbulence). Real canon, but not *unanimous* across engines and with no
-  consumer, so each waits for one.
-- **Ridged / ping-pong fractal types.** Two of the three canon sources expose
-  these first-class (Godot `FRACTAL_RIDGED` / `FRACTAL_PING_PONG`, `noise-rs`
-  `RidgedMulti` / `Billow`) — solid but not unanimous canon, so they wait for a
+- **Other algorithm families** — **cellular / Worley** (Voronoi),
+  **value-cubic**, and **domain warp** (turbulence). Not yet implemented; each
+  waits for a consumer that needs it.
+- **Ridged / ping-pong fractal types.** Not yet implemented; they wait for a
   consumer that needs them.
 - **1D simplex.** The simplex construction degenerates in 1D to a gradient
   noise indistinguishable in shape from `perlin1D`.

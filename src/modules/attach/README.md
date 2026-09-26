@@ -1,8 +1,7 @@
 # `@pierre/ecs/modules/attach`
 
 One-way attachment: an entity follows another entity's position, rotation,
-and velocity each tick. This is the lightweight slice of the engine-parenting
-canon (Unity `Transform.SetParent`, Godot node parenting, Bevy `ChildOf`); a
+and velocity each tick. This is a lightweight slice of entity parenting; a
 full transform hierarchy with N-level propagation is a deliberate non-goal
 (`docs/roadmap/non-goals.md`).
 

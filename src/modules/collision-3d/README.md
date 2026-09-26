@@ -12,10 +12,6 @@ means for your game. It does **not** ship a trigger system, because
 injected predicate and is therefore dimension-free — a 3D game wires the same
 factory with one of these helpers.
 
-Canon pattern: three.js `Box3` / `Sphere` / `Ray` / `OBB` / `Plane`, Godot
-`AABB` / `Sphere` / `Plane`, Unity `Bounds` + `Physics.BoxCast`, Bevy `Aabb3d`
-/ `Sphere` / `Ray3d`.
-
 ## Components
 
 ```ts
@@ -60,7 +56,7 @@ obb3VsObb3(a, b)                          aabb3VsObb3(box, obb)
   this module can change a caller's behaviour.
 - **Anything involving a sphere is inclusive** — touching counts.
 - **Containment is inclusive** — `aabb3ContainsPoint` and `sphere3ContainsPoint`
-  accept points exactly on the surface, as three.js does.
+  accept points exactly on the surface.
 
 ### Ray semantics
 
@@ -108,8 +104,8 @@ first if you need depenetration. A zero-length motion never hits.
 
 ## Not included (by design)
 
-- **Capsules.** Canon for a character controller rather than for a general
-  narrowphase, so they wait for `modules/kinematics-3d`'s first capsule-bodied
+- **Capsules.** More a character-controller shape than a general narrowphase
+  one, so they wait for `modules/kinematics-3d`'s first capsule-bodied
   consumer: the shape and its narrowphase land here, and that module adopts
   them.
 - **Convex hulls, meshes, triangles.** A different layer: these need a

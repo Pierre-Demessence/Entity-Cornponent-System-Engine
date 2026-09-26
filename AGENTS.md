@@ -95,6 +95,30 @@ them without a plan and a peer review.
 - **Tests live alongside source.** `*.test.ts` next to the file under
   test, not in a separate tree.
 
+## Consumer-facing docs describe; governance docs justify
+
+Two audiences read this repo's Markdown, and the "canon" vocabulary belongs to
+only one of them.
+
+- **Governance docs** — this file, [`docs/extending-the-engine.md`](docs/extending-the-engine.md),
+  and everything under `docs/plans/`, `docs/roadmap/`, `docs/archived/`. Here
+  "canon" is a load-bearing technical term: the 0/1/2-consumer promotion rule.
+  Keep it.
+- **Consumer-facing docs** — every `src/modules/**/README.md` and the
+  core-primitive guides `src/<name>.md` (both published as the Manual), plus all
+  JSDoc on public exports (published as the API reference). These describe
+  **what a primitive is and how to use it** — never why it earned
+  a place in the engine. **No `Canon:` lines, no `## Canon` sections, no
+  consumer-count or backlog status** (`marked ready`, `solid canon`,
+  `canon-complete`). Do not copy the justification line from a module's
+  `docs/plans/` file into its shipped README/JSDoc.
+
+A cross-engine reference is allowed in consumer docs **only** when it helps the
+reader — a porting caveat ("left-handed, e.g. Unity") or a familiarity bridge
+("coming from Godot, this maps to `Camera2D`") — framed as help, not as proof.
+Standard math/CS usage of "canonical" (canonical Perlin gradients, canonical
+defaults) is unrelated to the governance term and is fine.
+
 ## docs/plans lifecycle
 
 Non-trivial work requires `docs/plans/<feature>.md` with a `[ ]`

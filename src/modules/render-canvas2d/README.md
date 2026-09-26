@@ -5,9 +5,6 @@ RenderableDef`. Ships alongside the `Renderer<TCtx>` interface from
 `@pierre/ecs/renderer` and the `AnimationFrameTickSource` from
 `@pierre/ecs/modules/tick`.
 
-Canon: Pixi `Graphics`, Phaser `Rectangle`/`Arc` GameObjects, LÖVE
-`love.graphics.rectangle`/`circle`.
-
 ## API
 
 ```ts
@@ -131,15 +128,13 @@ bespoke render/pickup logic.
 The renderer optionally reads extrinsic transform components:
 
 - `RotationDef { angle: number }` (radians). Rotates around
-  `PositionDef`. Canon: Pixi/Phaser/LÖVE `.rotation`.
+  `PositionDef`.
 - `ScaleDef { x: number; y: number }`. Scales around
-  `PositionDef`. Canon: Pixi/Phaser/LÖVE `.scale`.
+  `PositionDef`.
 - `OpacityDef { value: number }` in `[0, 1]`. Multiplies
-  `globalAlpha`. Canon: Pixi `.alpha`, Phaser `.alpha`, LÖVE
-  `setColor`'s alpha channel.
+  `globalAlpha`.
 - `RenderOrderDef { value: number }`. Ascending `value` draws later
   (on top). Ties fall back to component-store insertion order.
-  Canon: Pixi/Phaser `zIndex` / `depth`.
 
 All four are optional. The renderer only pays for features the world
 actually uses: when no entity carries `RenderOrderDef`, the sort is
@@ -189,9 +184,8 @@ anchor for rect/circle. Extrinsic overlays: `RotationDef`,
 
 Not in the module yet (see `docs/roadmap/ecs-module-backlog.md` for status):
 
-- Tilemap kind — the batched `modules/tilemap` V2 entry, marked **ready**
-  (Unity `Tilemap`, Godot `TileMap`, Phaser `Tilemap`).
-- Canvas filters (`ctx.filter`) — deferred; request-driven, no canon pressure.
+- Tilemap kind — a batched tilemap renderable; planned.
+- Canvas filters (`ctx.filter`) — deferred; request-driven.
 - Snake migration — push the cells→pixels scale onto a `CameraDef` `zoom`
   (the `view` hook now exists; snake just needs to adopt it).
 

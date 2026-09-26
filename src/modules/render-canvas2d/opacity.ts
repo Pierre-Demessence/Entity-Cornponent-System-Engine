@@ -4,8 +4,7 @@ import { asNumber, asObject } from '#validation';
 
 /**
  * Per-entity opacity multiplier in [0, 1]. Renderer applies via
- * `globalAlpha`. Canon: Pixi `alpha`, Phaser `alpha`, CSS `opacity`,
- * Unity `CanvasGroup.alpha`, Bevy `Visibility`.
+ * `globalAlpha`.
  */
 export interface Opacity { value: number }
 

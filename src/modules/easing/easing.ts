@@ -1,6 +1,5 @@
 /**
- * Easing functions — the Robert Penner canon set used by every tween system
- * (Godot `Tween`, Unity DOTween, Pixi / Phaser, GSAP). Each maps normalized
+ * Easing functions — the standard Robert Penner set. Each maps normalized
  * time `t ∈ [0, 1]` to an eased progress, which you compose with a value
  * interpolation: `lerp(from, to, easeInOutQuad(t))`.
  *

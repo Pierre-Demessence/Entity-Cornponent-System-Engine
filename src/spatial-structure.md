@@ -4,7 +4,7 @@ Spatial indexing is a two-layer design: a **core interface** describing the
 minimum contract every spatial backend satisfies, and **module implementations**
 that plug in backend-specific storage.
 
-## Core Interface (`packages/ecs/src/spatial-structure.ts`)
+## Core Interface (`src/spatial-structure.ts`)
 
 ```ts
 interface SpatialStructure<TPos> {
@@ -31,8 +31,8 @@ Import via `@pierre/ecs/spatial-structure`.
 
 ## Implementations
 
-Concrete backends live under `packages/ecs/src/modules/spatial/`. See
-[`src/modules/spatial/README.md`](../src/modules/spatial/README.md) for the
+Concrete backends live under `src/modules/spatial/`. See
+[`src/modules/spatial/README.md`](./modules/spatial/README.md) for the
 current implementations (`HashGrid2D`, projection helpers) and
 `enableSpatial` wiring.
 
@@ -50,5 +50,5 @@ current implementations (`HashGrid2D`, projection helpers) and
 ## See also
 
 - [EcsWorld](world.md) - `world.enableSpatial(def)` wires a structure to component mutations.
-- [`src/modules/spatial/README.md`](../src/modules/spatial/README.md) - concrete `HashGrid2D` backend.
+- [`src/modules/spatial/README.md`](./modules/spatial/README.md) - concrete `HashGrid2D` backend.
 

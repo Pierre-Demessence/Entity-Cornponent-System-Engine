@@ -4,8 +4,7 @@ import { simpleComponent } from '#index';
 
 /**
  * Per-entity z-order. Renderer draws entities in ascending `value`;
- * ties preserve component-store insertion order. Canon: Pixi `zIndex`,
- * Phaser `depth`, Unity sorting order, Bevy `ZIndex`.
+ * ties preserve component-store insertion order.
  */
 export interface RenderOrder { value: number }
 

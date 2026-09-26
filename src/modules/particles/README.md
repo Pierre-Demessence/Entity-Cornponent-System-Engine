@@ -1,9 +1,7 @@
 # `@pierre/ecs/modules/particles`
 
 One-shot bursts and continuous emitters of short-lived particle entities,
-animated over their lifetime (fade, shrink, spin, gravity, damping). Canon:
-Godot `CPUParticles2D` + `ParticleProcessMaterial`, Unity `ParticleSystem`,
-Phaser `ParticleEmitter`, pixi-particles.
+animated over their lifetime (fade, shrink, spin, gravity, damping).
 
 There is **no special particle renderer** — particles are ordinary
 `RenderableDef` rects drawn by [`modules/render-canvas2d`](../render-canvas2d/README.md),
@@ -101,10 +99,8 @@ world.getStore(ParticleEmitterDef).set(playerId, {
 
 ## Out of scope
 
-- **Sub-emitters / trails / collision** — the `modules/particles` V2 backlog
-  entry, marked **ready**: canon (Unity `ParticleSystem` modules, Godot
-  advanced particle properties, Unreal Niagara/Cascade), so they wait on a
-  build slot, not on a consumer.
+- **Sub-emitters / trails / collision** — not yet implemented; planned for a
+  future version.
 - **Non-rect particle shapes** beyond what `RenderableDef` already offers
   (sprites work — passing a sprite renderable is not wired yet; rects only in
   V1). Same V2 entry.

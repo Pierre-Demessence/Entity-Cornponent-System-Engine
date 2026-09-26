@@ -1,7 +1,7 @@
 # `@pierre/ecs/modules/tween`
 
 The `Tween` value primitive — interpolates a number `from → to` over a duration
-along an easing curve. Canon: Godot `Tween`, Unity DOTween, Pixi / Phaser, GSAP.
+along an easing curve.
 
 It **composes** existing primitives rather than reinventing them: a
 [`Timer`](../timer/README.md) tracks time, an [`Easing`](../easing/README.md)
@@ -51,9 +51,8 @@ resetTween(pop, { from: scale, to: 1.2, durationMs: 120 });
 ## Not included
 
 - **`TweenDef` ECS component + system** — deferred. No current consumer animates
-  via a component (they read `tweenValue` inline), and the ECS-wrapper shape is
-  not single-canon (Godot node vs DOTween fluent chain). Add when a consumer
-  needs declarative per-entity tweens.
+  via a component (they read `tweenValue` inline). Add when a consumer needs
+  declarative per-entity tweens.
 - **Multi-channel / vector tweens** — run one `Tween` per channel for now.
 
 Import via `@pierre/ecs/modules/tween`. Depends on `modules/timer`,

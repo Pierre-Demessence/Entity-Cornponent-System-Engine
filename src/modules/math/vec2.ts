@@ -28,14 +28,13 @@ export function vec2ScaleToLength(v: Vec2, length: number): Vec2 {
 }
 
 /**
- * `current` stepped `delta` units along the straight line to `target` —
- * Unity `Vector2.MoveTowards`, Godot `Vector2.move_toward`, Unreal
- * `FMath::VInterpConstantTo`; sibling of `vec3MoveToward`. A forward mover
+ * `current` stepped `delta` units along the straight line to `target`;
+ * sibling of `vec3MoveToward`. A forward mover
  * cannot overshoot: once the remaining distance is within `delta` the target
  * itself is returned, so repeated calls settle on it instead of oscillating
  * around it.
  *
- * `delta` is a *signed* step, matching Unity and Godot: a negative one walks
+ * `delta` is a *signed* step: a negative one walks
  * away from the target, and `0` leaves the position unchanged.
  */
 export function vec2MoveToward(current: Vec2, target: Vec2, delta: number): Vec2 {

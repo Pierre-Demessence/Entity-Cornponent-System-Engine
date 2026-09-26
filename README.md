@@ -1,10 +1,10 @@
 # @pierre/ecs
 
-Project-agnostic Entity-Component-System (ECS) primitives for 2D games and
-simulations: component stores, typed queries, a spatial index, entity
-templates, a scheduler, and an event bus — plus opt-in modules (rendering,
-input, audio, collision, camera, motion, and more). Built for clarity and
-zero runtime cost over raw ECS throughput.
+Project-agnostic Entity-Component-System (ECS) primitives for 2D and 3D games
+and simulations: component stores, typed queries, a spatial index, entity
+templates, a scheduler, and an event bus — plus opt-in modules for rendering,
+input, audio, collision, camera, motion, and more, many with both 2D and 3D
+variants. Built for clarity and minimal overhead over hand-written ECS.
 
 ## Status
 
@@ -116,16 +116,17 @@ one-line-per-symbol catalog of every public export with its signature and
 JSDoc summary, grouped by import path. The fastest way to find an existing
 helper before hand-rolling one (regenerate with `npm run docs:api`).
 
-See [`docs/`](./docs/) for per-primitive deep dives:
+Per-primitive deep dives live beside their source in `src/` (and publish to the
+[Manual](https://pierre-demessence.github.io/Entity-Cornponent-System-Engine/manual/)):
 
-- [World](./docs/world.md)
-- [ComponentStore](./docs/component-store.md)
-- [SpatialStructure](./docs/spatial-structure.md) — interface; concrete backends under [`src/modules/spatial/`](./src/modules/spatial/README.md)
-- [QueryBuilder](./docs/query.md)
-- [EntityTemplate](./docs/template.md)
-- [EventBus](./docs/event-bus.md)
-- [Scheduler](./docs/scheduler.md)
-- [Tick](./docs/tick.md) — `TickSource` interface + `TickRunner`; concrete sources under [`src/modules/tick/`](./src/modules/tick/README.md)
+- [World](./src/world.md)
+- [ComponentStore](./src/component-store.md)
+- [SpatialStructure](./src/spatial-structure.md) — interface; concrete backends under [`src/modules/spatial/`](./src/modules/spatial/README.md)
+- [QueryBuilder](./src/query.md)
+- [EntityTemplate](./src/template.md)
+- [EventBus](./src/event-bus.md)
+- [Scheduler](./src/scheduler.md)
+- [Tick](./src/tick.md) — `TickSource` interface + `TickRunner`; concrete sources under [`src/modules/tick/`](./src/modules/tick/README.md)
 
 ## License
 

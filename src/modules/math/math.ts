@@ -1,5 +1,5 @@
 /**
- * Pure scalar-math helpers — the engine's `Mathf` / Godot `Math*` equivalent.
+ * Pure scalar-math helpers — the engine's scalar-math namespace.
  *
  * Every function is a domain-free, dependency-free pure number op, safe for any
  * module or app to import. This file is the module's scalar block; the `Vec2`,

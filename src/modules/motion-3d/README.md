@@ -5,9 +5,7 @@ tick, `pos += vel · dt`. Optional boundary handling (wrap / clamp) and an
 `onMove` hook so games that keep a separate spatial index or dirty-flag queue
 can stay in sync without the motion module owning either.
 
-Canon pattern: Bevy `bevy_transform` motion systems, Godot `_physics_process`
-velocity integration, Unity DOTS `TransformSystemGroup`. Not a full physics
-module — for gravity + collision + grounded, see
+Not a full physics module — for gravity + collision + grounded, see
 `@pierre/ecs/modules/kinematics-3d`.
 
 ## API
@@ -28,7 +26,7 @@ interface VelocityIntegration3DOptions<TCtx extends VelocityIntegration3DTickCtx
   name?: string;
   runAfter?: string[];
   boundary?: VelocityIntegration3DBoundary;
-  tag?: TagDef; // integrate only entities carrying this tag (Bevy `With<T>`)
+  tag?: TagDef; // integrate only entities carrying this tag
   onMove?: (
     ctx: TCtx,
     id: EntityId,
@@ -72,11 +70,10 @@ forces (a rigid-body concern), no rotation integration, no gravity/collision.
 Free-flight attitude control (rate-steered orientation + throttle) and
 non-box (spherical) world bounds are deferred — see the `motion-3d` V2 entry in
 [the module backlog](../../../docs/roadmap/ecs-module-backlog.md); they are
-game-specific shapes, not engine-canon motion primitives.
+game-specific shapes, not general motion primitives.
 
 A game that uses `modules/kinematics-3d` should not also run this integrator
 over the same bodies — kinematics already integrates its velocity, so a global
 motion pass would double-integrate. Pass `tag` to scope the integrator to a
 disjoint marker set (e.g. `tag: ProjectileTag`) so both can coexist in one game
-— the same marker/query-filter idiom as `kinematics-3d`'s `dynamicTag` and
-Bevy's `With<T>`.
+— the same marker/query-filter idiom as `kinematics-3d`'s `dynamicTag`.

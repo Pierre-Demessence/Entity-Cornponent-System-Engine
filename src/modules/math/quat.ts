@@ -32,10 +32,9 @@ export function quatConjugate(q: Quat): Quat {
 }
 
 /**
- * The direction the local `-Z` axis points after applying `q` — the "forward"
- * of the right-handed convention (three.js, Bevy, Godot). Unity is left-handed
- * with a `+Z` forward, so a port to it needs a handedness mirror, not merely a
- * negated result.
+ * The direction the local `-Z` axis points after applying `q` — "forward" in a
+ * right-handed coordinate system. In a left-handed system where `+Z` is forward
+ * (e.g. Unity), mirror the handedness rather than negating the result.
  */
 export function quatForward(q: Quat): Vec3 {
   return quatRotate(q, { x: 0, y: 0, z: -1 });
@@ -72,8 +71,7 @@ export function quatMul(a: Quat, b: Quat): Quat {
 
 /**
  * Unit-length copy of `q`. A zero-length input returns the identity rather than
- * `NaN`: a zero quaternion is not a rotation, and three.js resolves the same
- * degenerate case the same way.
+ * `NaN`: a zero quaternion is not a rotation.
  */
 export function quatNormalize(q: Quat): Quat {
   const len = Math.hypot(q.w, q.x, q.y, q.z);

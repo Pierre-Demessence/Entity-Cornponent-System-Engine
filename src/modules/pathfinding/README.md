@@ -1,7 +1,6 @@
 # `@pierre/ecs/modules/pathfinding`
 
-Grid-agnostic A\* pathfinding. Canon: rot.js `Path.AStar`, libtcod
-`TCODPath`, Godot `AStar2D`, Bevy `bevy_pathfinding` (community).
+Grid-agnostic A\* pathfinding.
 
 ## API
 

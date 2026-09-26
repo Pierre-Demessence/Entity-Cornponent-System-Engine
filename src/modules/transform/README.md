@@ -1,8 +1,6 @@
 # `@pierre/ecs/modules/transform`
 
 Canonical 2D transform primitives: position, velocity, rotation, scale.
-Canon pattern: Bevy `Transform`, Godot `Node2D`, Unity `Transform`,
-flecs `flecs.components.transforms`.
 
 ## API
 

@@ -2,7 +2,6 @@
 
 Canonical 3D transform primitives: position, velocity, rotation, scale — the
 3D sibling of `@pierre/ecs/modules/transform`.
-Canon pattern: Bevy `Transform`, Godot `Node3D`, Unity `Transform`.
 
 ## API
 

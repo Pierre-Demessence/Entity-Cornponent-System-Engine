@@ -156,16 +156,13 @@ same tick's Y pass rather than blocking the climb.
 
 ## Not included (by design)
 
-- **Slopes.** A non-axis-aligned surface needs a normal-aware resolver. This
-  and one-way platforms are the `modules/kinematics-3d` V2 backlog entry,
-  marked **ready** — the shape is canon (Godot
-  `CharacterBody3D.floor_max_angle`, Unity `CharacterController.slopeLimit`), so
-  they wait on a build slot, not on a consumer.
-- **One-way platforms.** The same entry — a per-collider flag consulted in the
-  sweep.
+- **Slopes.** A non-axis-aligned surface needs a normal-aware resolver. Not yet
+  implemented; planned alongside one-way platforms.
+- **One-way platforms.** The same planned entry — a per-collider flag consulted
+  in the sweep.
 - **Moving-platform carry.** Doom hand-rolls it (`elevator.ts`) as the
   "moving-platform rider" shape; it belongs with `modules/attach`, not here.
-- **A capsule collider.** Canon for a character controller, but the module
+- **A capsule collider.** The usual character-controller shape, but the module
   resolves against box statics because that is what its consumers store. The
   capsule *shape and its narrowphase* are `modules/collision-3d`'s to add; this
   module adopts them when a game wants a capsule body.

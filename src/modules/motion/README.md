@@ -5,10 +5,8 @@ handling (wrap / clamp) and an `onMove` hook so games that keep a
 separate spatial index or dirty-flag queue can stay in sync without the
 motion module owning either.
 
-Canon pattern: Bevy `bevy_transform` motion systems, Godot
-`_physics_process` velocity integration, Unity DOTS
-`TransformSystemGroup`. Not a full physics module — for gravity +
-collision + grounded, see the shipped `@pierre/ecs/modules/kinematics`.
+Not a full physics module — for gravity + collision + grounded, see
+`@pierre/ecs/modules/kinematics`.
 
 ## API
 
@@ -28,7 +26,7 @@ interface VelocityIntegrationOptions<TCtx extends VelocityIntegrationTickCtx> {
   name?: string;
   runAfter?: string[];
   boundary?: VelocityIntegrationBoundary;
-  tag?: TagDef; // integrate only entities carrying this tag (Bevy `With<T>`)
+  tag?: TagDef; // integrate only entities carrying this tag
   onMove?: (
     ctx: TCtx,
     id: EntityId,
@@ -82,10 +80,10 @@ Vector helpers do **not** live here. `@pierre/ecs/modules/math` owns the `Vec2`,
 - `bounds.width` and `bounds.height` must be positive (`> 0`). Zero or
   negative bounds produce `NaN` positions under `wrap` and are not
   validated at runtime — caller responsibility.
-- 2D only — angle (`RotationDef`) is not integrated here. No engine ships
-  angular-velocity integration as a standalone ECS component, so canon gives a
-  function and not a shape; a rotation-rate component ships in the game until a
-  second consumer converges on one.
+- 2D only — angle (`RotationDef`) is not integrated here. Angular-velocity
+  integration is a one-liner rather than a standard component shape; a
+  rotation-rate component lives in the game until a second consumer converges
+  on one.
 - No acceleration term, gravity, or collision — those belong in
   `modules/kinematics`.
 - Vector maths used to integrate (`vec2ScaleToLength`, `vec2MoveToward`) comes

@@ -34,8 +34,8 @@ export interface VelocityIntegration3DOptions<TCtx extends VelocityIntegration3D
   /**
    * Integrate only entities carrying this tag (in addition to having
    * `Position3D` + `Velocity3D`). Unset integrates every velocity entity. The
-   * marker/query-filter idiom — Bevy `With<T>`, and this engine's own
-   * `kinematics-3d` `dynamicTag` — so a game that runs `kinematics-3d` over its
+   * marker/query-filter idiom (like this engine's own `kinematics-3d`
+   * `dynamicTag`) — so a game that runs `kinematics-3d` over its
    * bodies can still integrate a disjoint set (e.g. projectiles) without
    * double-integrating the kinematic ones.
    */
