@@ -22,16 +22,13 @@ lines (`entity-id.ts`, `lifecycle.ts`, `input-source.ts`, `renderer.ts`,
 
 The Manual's guides are one-per-thing: eight core-primitive guides
 (`src/<name>.md`) and 42 module guides (`src/modules/*/README.md`), reached
-through a module index. Nothing explains the model the primitives share, and
-there is no walkthrough from an empty project.
+through a module index, plus a gallery of the prototypes under `examples/`.
+Nothing explains the model the primitives share, and there is no walkthrough
+from an empty project.
 
 Roughly ordered by value per unit of cost. Each remaining item is a slice in
 `docs/plans/manual-restructure.md`.
 
-- [ ] **Examples gallery** — `examples/` holds 30 prototype directories; the site
-  names 11 of them, each in `examples/<name>` form inside a guide or a JSDoc
-  comment, and none has a page. Per-example copy is authored, since 2 of the 30
-  directories carry a `README.md` and one of those is the shared `assets` folder.
 - [ ] **Concepts chapter** — archetypes, structural changes and their cost, query
   caching, tick versus frame, system ordering. The knowledge sits inside the
   guides for individual primitives; the only `## Invariants` heading in the guide

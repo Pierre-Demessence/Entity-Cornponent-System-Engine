@@ -204,6 +204,10 @@ colour once every card is the only child of its wrapper.
   because nothing rewrites them (unlike guide bodies, which go through
   `rewriteLinks()`). `scripts/manual.test.ts` resolves those routes against the
   generated page list, so a typo in a Manual route fails `npm test`.
+- `website/manual/getting-started/examples.md` describes the prototypes by hand:
+  28 of the 30 folders under `examples/` carry no `README.md`, and the per-example
+  copy in `examples/hub/src/main.ts` is written for the hub's own UI. Adding an
+  example means adding its entry there, kept in step by hand.
 - Source `.md` files are checked out CRLF on Windows (no `.gitattributes`,
   `core.autocrlf=true`) and the generator writes them verbatim, so each
   generated page is CRLF. A byte-diff of generated output against a Git blob

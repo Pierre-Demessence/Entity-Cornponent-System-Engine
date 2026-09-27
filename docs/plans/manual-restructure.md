@@ -226,8 +226,8 @@ Slice 2 — module index:
 
 Slice 3 — examples gallery:
 
-- [ ] Author the page, one entry per prototype.
-- [ ] `docs/agent/README.md` — note that example copy is authored, since 28 of
+- [x] Author the page, one entry per prototype.
+- [x] `docs/agent/README.md` — note that example copy is authored, since 28 of
       30 folders carry no README.
 
 Slice 4 — concepts:
