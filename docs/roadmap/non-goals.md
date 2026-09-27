@@ -86,6 +86,15 @@ under it. A game that wants it keeps a small app-side registry and calls
 `import.meta.hot` in its own Vite build. Revisit only if a reusable shape
 emerges across several consumers.
 
+### Plugin sandboxing — declined
+
+`world.use(plugin)` runs a plugin's `build(world)` as ordinary trusted code —
+there is no isolation of untrusted plugin/mod code. Sandboxing JS meaningfully
+needs iframes, workers, or realms, which a library cannot impose without
+dictating the host, and no major engine sandboxes plugin code (Bevy, Unity, and
+Godot all run it trusted). A game that loads untrusted content isolates it at
+its own boundary. Revisit only if the engine targets an untrusted-mod platform.
+
 ## Superseded
 
 ### `modules/motion` — boundary inset / per-entity size — superseded
