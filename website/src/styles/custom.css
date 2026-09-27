@@ -6,7 +6,9 @@
  * consequences are handled here:
  *
  * - The wrapper replaces the card as the grid child, so it has to bring the
- *   link affordance `LinkCard` would have provided.
+ *   link affordance `LinkCard` would have provided. `Card`'s body falls back to
+ *   plain prose, so `.card-cta` adds a persistent text-plus-arrow row — the same
+ *   `right-arrow` icon `LinkCard` uses — otherwise the cards read as static text.
  * - `Card` colours its icon chip from `:nth-child`, but every card is now the
  *   only child of its wrapper, so the cycle is re-derived from the wrapper's
  *   position. Without this every card on the page renders in the same colour.
@@ -19,6 +21,11 @@
   text-decoration: none;
 }
 
+.card-link:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 3px;
+}
+
 .card-link > .card {
   height: 100%;
   transition: border-color 150ms ease;
@@ -27,6 +34,41 @@
 .card-link:hover > .card,
 .card-link:focus-visible > .card {
   border-color: var(--sl-color-accent);
+}
+
+/* `Card` renders slot content inside `.body`, which is content-height by
+   default. Growing it lets `.card-cta`'s auto margin push the row to the bottom
+   edge, so the CTA lines up across cards of differing description length. */
+.card-link > .card > .body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.card-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.5ch;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  font-weight: 600;
+  color: var(--sl-color-text-accent);
+}
+
+.card-cta svg {
+  flex-shrink: 0;
+  transition: transform 150ms ease;
+}
+
+.card-link:hover .card-cta,
+.card-link:focus-visible .card-cta {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.card-link:hover .card-cta svg,
+.card-link:focus-visible .card-cta svg {
+  transform: translateX(0.25rem);
 }
 
 .card-link:nth-child(4n + 1) > .card {

@@ -168,6 +168,10 @@ the links (like the right-hand icons) are hidden.
 
 The home page's section cards are `Card`s wrapped in an anchor rather than
 `LinkCard`s: `LinkCard` has no `icon` prop, so passing one silently does nothing.
+`website/src/styles/custom.css` carries what the wrapper owes as a result — the
+persistent CTA row that marks each card clickable, and the icon-chip colour
+cycle, which `Card` derives from `:nth-child` and which collapses to a single
+colour once every card is the only child of its wrapper.
 
 - `npm run docs:site` regenerates the Manual, runs TypeDoc, and builds the site
   into `website/dist` — **generated output is never committed**. `.github/workflows/pages.yml`
