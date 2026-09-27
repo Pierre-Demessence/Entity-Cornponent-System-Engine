@@ -157,6 +157,7 @@ pinned. `speculative` = shape undetermined or canon split.
 | `modules/destructible-terrain` | ready | Scheduling — depends on `modules/tilemap` V2 |
 | `modules/card-interaction` | ready | Scheduling — build slot |
 | `modules/input` — wheel + multi-touch | deferred | Shape — wheel model and multi-pointer set unpinned |
+| `modules/input` — rebinding registry (overrides, conflicts, chords) | deferred | Shape — remap consumer + settled chord model |
 | `modules/steering` — `SteeringAgentDef` component | deferred | Shape — a consumer wanting the component form |
 | `modules/spatial` — `QuadTree` / `BVH` backends | deferred | Shape — one consumer a uniform grid cannot serve |
 
@@ -1220,6 +1221,24 @@ Single-finger touch already works through Pointer Events, so what is missing
 is the wheel delta and the multi-pointer set — not the events themselves.
 
 </details>
+
+### `modules/input` — rebinding registry (overrides, conflicts, chords) — deferred
+
+**Scope.** Runtime rebinding of an `InputMap`: player overrides layered over
+default bindings and persisted (e.g. to `localStorage`), binding-conflict
+detection, and modifier-key chords (Ctrl/Shift/Alt + key as a single binding).
+V1 ships a readonly `InputMap` passed once — no remap, no persistence, no
+conflict check, no chords.
+
+**Status.** Deferred — rebinding + persisted overrides + conflict detection are
+strong canon (Godot `InputMap` remap saved to config, Unity Input System
+interactive rebinding + serialized binding overrides), so that slice's shape is
+largely settled; the **modifier-chord** model is the unpinned part (an ordered
+code set vs a modifier-mask + key), and no in-repo example needs remapping yet
+— every example drives a static map happily.
+
+**Gate.** Shape + scheduling — a consumer that needs runtime remapping, plus a
+settled chord model.
 
 ### `modules/spatial` — `QuadTree` / `BVH` backends — deferred
 

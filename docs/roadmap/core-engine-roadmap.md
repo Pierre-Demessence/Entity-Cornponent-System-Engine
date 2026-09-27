@@ -118,18 +118,6 @@ modding/plugin support.
 | **Complexity** | Long — ~400 lines. Hook registry + plugin loader + sandboxing. |
 | **Dependencies** | None outstanding — the scheduler and `LifecycleEvent` shipped. `LifecycleEvent` covers created / destroyed / component-added / removed; the tick runner's tick-boundary reaping is the natural home for start/end hooks. |
 
-### 4.5 Centralized Keybinding Registry
-
-| | |
-|---|---|
-| **Problem** | Two hardcoded key maps in the Roguelike app (`input.ts`, `panel-keys.ts`). No rebinding, no modifier keys, no conflict detection. |
-| **Solution** | A single `KeybindingRegistry` with default bindings, player overrides persisted to localStorage, conflict detection, and modifier-key support. |
-| **Unlocks** | Accessibility (input remapping), complex key combos, an in-game controls reference panel |
-| **Complexity** | Mid. A plan was written for this in the Roguelike monorepo (`keybinding-system.md`) but was not ported here. |
-| **Dependencies** | None outstanding. **Overlaps `modules/input`**, which ships `InputMap` plus Keyboard/Pointer/Gamepad providers — check what a registry adds beyond that before building. |
-
----
-
 ### 4.6 Inline-prose API-mention linter
 
 | | |
@@ -149,11 +137,10 @@ its trigger.
 
 1. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
 2. **Content Hot-Reload** (4.3) — ~40 lines for faster content iteration
-3. **Keybinding Registry** (4.5) — accessibility, small and self-contained
-4. **Entity Inspector** (4.2) — dev quality of life
-5. **Plugin Hooks** (4.4) — modding, long-horizon and the largest piece
-6. **Data-Parallel Dispatch** (3.6) — a reusable module over the shipped SAB
+3. **Entity Inspector** (4.2) — dev quality of life
+4. **Plugin Hooks** (4.4) — modding, long-horizon and the largest piece
+5. **Data-Parallel Dispatch** (3.6) — a reusable module over the shipped SAB
    columns; gated on a second consumer, since no engine's parallelism API
    transfers to a browser worker pool (a shape gap, not effort)
-7. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest,
+6. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest,
    most strategic piece, above the shipped cache
