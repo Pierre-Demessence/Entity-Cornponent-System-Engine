@@ -21,18 +21,13 @@ lines (`entity-id.ts`, `lifecycle.ts`, `input-source.ts`, `renderer.ts`,
 ## The Manual
 
 The Manual's guides are one-per-thing: eight core-primitive guides
-(`src/<name>.md`) and 42 module guides (`src/modules/*/README.md`), reached
-through a module index, plus a gallery of the prototypes under `examples/`.
-Nothing explains the model the primitives share, and there is no walkthrough
-from an empty project.
+(`src/<name>.md`) and 42 module guides (`src/modules/*/README.md`). The pages
+that span primitives are authored in `website/manual/`, and reach the sidebar as
+the **Getting started** and **Concepts** groups.
 
 Roughly ordered by value per unit of cost. Each remaining item is a slice in
 `docs/plans/manual-restructure.md`.
 
-- [ ] **Concepts chapter** — archetypes, structural changes and their cost, query
-  caching, tick versus frame, system ordering. The knowledge sits inside the
-  guides for individual primitives; the only `## Invariants` heading in the guide
-  tree is `src/world.md`'s.
 - [ ] **Tutorial** — a numbered walkthrough from an empty project to a running
   scene.
 - [ ] **How-to guides** — fixed timestep and interpolation, save and load, scenes

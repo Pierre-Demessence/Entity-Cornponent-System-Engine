@@ -30,6 +30,9 @@ const AUTHORED_DIR = join(ROOT, 'website/manual');
  * because it is not one of these files.
  */
 const AUTHORED_ORDER: Record<string, number> = {
+  'concepts/model.md': 1,
+  'concepts/structural-changes.md': 2,
+  'concepts/ticks-and-order.md': 3,
   'getting-started/examples.md': 2,
 };
 

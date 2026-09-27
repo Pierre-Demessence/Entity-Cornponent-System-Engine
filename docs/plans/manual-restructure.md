@@ -232,8 +232,8 @@ Slice 3 — examples gallery:
 
 Slice 4 — concepts:
 
-- [ ] Author the three pages from shipped invariants only.
-- [ ] Declare the `Concepts` group in `astro.config.mjs` and
+- [x] Author the three pages from shipped invariants only.
+- [x] Declare the `Concepts` group in `astro.config.mjs` and
       `site-route-data.ts`, and check the rendered sidebar.
 
 Slice 5 — tutorial:

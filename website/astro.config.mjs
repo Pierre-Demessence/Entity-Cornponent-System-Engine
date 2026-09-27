@@ -55,6 +55,7 @@ export default defineConfig({
           items: [
             { label: 'Overview', link: '/manual/' },
             { items: [{ autogenerate: { directory: 'manual/getting-started' } }], label: 'Getting started' },
+            { items: [{ autogenerate: { directory: 'manual/concepts' } }], label: 'Concepts' },
             { items: [{ autogenerate: { directory: 'manual/core' } }], label: 'Core' },
             { items: [{ autogenerate: { directory: 'manual/modules' } }], label: 'Modules' },
           ],
