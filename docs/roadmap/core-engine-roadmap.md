@@ -52,16 +52,6 @@ complex systems.
 > set already bounds the id→slot cost regardless, so nothing forces this yet.
 > Full framing: [../plans/done/ecs-parallelism-and-soa-storage.md](../plans/done/ecs-parallelism-and-soa-storage.md#generational-entity-ids--logged-separate-strategic).
 
-### 3.4 Render Layers & Culling
-
-| | |
-|---|---|
-| **Problem** | The renderer receives the entire world. No z-ordering, no frustum culling. Everything renders every frame. |
-| **Solution** | Render layers (terrain → items → entities → effects → UI overlays). Cull entities outside the viewport. Only re-render layers that changed (via dirty flags). |
-| **Unlocks** | Particle effects, floating damage numbers, visual overlays, large maps without frame drops |
-| **Complexity** | Mid — ~200 lines in a renderer refactor. |
-| **Dependencies** | None outstanding — dirty flags and the spatial index shipped. Reconcile against what already exists before building: `RenderOrderDef` sorts drawables within the two-pass loop, and the camera's view-rect cull already drops off-screen entities. |
-
 ### 3.5 Archetype Tables — gather-free multi-component iteration
 
 | | |
@@ -158,13 +148,12 @@ By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
 1. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
-2. **Render Layers & Culling** (3.4) — unlocks dense visual effects
-3. **Content Hot-Reload** (4.3) — ~40 lines for faster content iteration
-4. **Keybinding Registry** (4.5) — accessibility, small and self-contained
-5. **Entity Inspector** (4.2) — dev quality of life
-6. **Plugin Hooks** (4.4) — modding, long-horizon and the largest piece
-7. **Data-Parallel Dispatch** (3.6) — a reusable module over the shipped SAB
+2. **Content Hot-Reload** (4.3) — ~40 lines for faster content iteration
+3. **Keybinding Registry** (4.5) — accessibility, small and self-contained
+4. **Entity Inspector** (4.2) — dev quality of life
+5. **Plugin Hooks** (4.4) — modding, long-horizon and the largest piece
+6. **Data-Parallel Dispatch** (3.6) — a reusable module over the shipped SAB
    columns; gated on a second consumer, since no engine's parallelism API
    transfers to a browser worker pool (a shape gap, not effort)
-8. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest,
+7. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest,
    most strategic piece, above the shipped cache
