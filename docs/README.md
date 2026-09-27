@@ -71,6 +71,7 @@ Open work only — no document here records shipped modules.
 
 - [Core-Engine Roadmap](roadmap/core-engine-roadmap.md) - open core-engine internals (component stores, queries, scheduler, hooks)
 - [ECS Module Backlog](roadmap/ecs-module-backlog.md) - open module work: ready to build, deferred, and speculative
+- [Docs-Site Roadmap](roadmap/docs-site-roadmap.md) - open Manual page types and built-site defects
 - [Non-goals](roadmap/non-goals.md) - declined and superseded decisions, with the reason
 - [Engine Gap Ledger](roadmap/engine-gap-ledger.md) - inbox of raw gaps from the examples, awaiting triage
 
