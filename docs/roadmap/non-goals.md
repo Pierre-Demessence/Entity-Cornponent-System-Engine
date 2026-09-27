@@ -77,6 +77,15 @@ doom hand-rolls the same overlap → apply → despawn flow. The remaining work
 is an **adoption** follow-up (migrate doom onto `makeTriggerSystem`), not a
 module.
 
+### Content hot-reload as engine surface — declined
+
+HMR content reloading — `import.meta.hot.accept()` re-registering a mutable
+content registry so live edits to entity/item templates skip a page refresh —
+is consumer-side Vite wiring, not engine surface: there is no engine primitive
+under it. A game that wants it keeps a small app-side registry and calls
+`import.meta.hot` in its own Vite build. Revisit only if a reusable shape
+emerges across several consumers.
+
 ## Superseded
 
 ### `modules/motion` — boundary inset / per-entity size — superseded

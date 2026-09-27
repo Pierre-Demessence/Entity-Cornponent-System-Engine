@@ -132,6 +132,7 @@ pinned. `speculative` = shape undetermined or canon split.
 | `modules/ui` | speculative | Shape — ECS-vs-scene-graph UI is a split decision |
 | `modules/dialogue` | speculative | Shape — choices/world-gating unproven by a linear consumer |
 | `modules/render-dom` V2 | deferred | Shape — second DOM-heavy consumer |
+| `modules/parallel` — `parallelFor` over shared columns | deferred | Shape — a second CPU-bound kernel consumer |
 | `modules/render-target` | ready | Scheduling — build slot (3D render family) |
 | `modules/lighting` | ready | Scheduling — consumer that is about light |
 | `modules/scene` V2 | ready | Scheduling — build slot |
@@ -478,6 +479,24 @@ spent without a game design that demands it.
 ---
 
 ## Standard engine modules
+
+### `modules/parallel` — `parallelFor` over shared columns — deferred
+
+**Scope.** A reusable `parallelFor(kernel, range)` that splits a shared-column
+slot range (`ColumnStore { shared: true }`) across a `modules/worker-pool`
+behind a per-frame barrier. The kernel is a worker-defined module — JS closures
+cannot cross the worker boundary — so this is data-parallel over shared columns,
+not general system auto-dispatch.
+
+**Status.** Deferred — `examples/parallel-kernel` proves the win (13→75 fps at
+600k×64, holds 75 fps at 1M), but its worker-splitting is harness-local. Canon
+supplies a *function*, not a shape: no engine's parallelism API transfers to a
+browser worker pool, so a second consumer is needed to pin it. Cross-origin
+isolation (`COOP`/`COEP`) is a plain-browser caveat.
+
+**Gate.** Shape — a second CPU-bound kernel consumer beyond
+`examples/parallel-kernel`. Detail:
+[`../plans/done/ecs-parallelism-and-soa-storage.md`](../plans/done/ecs-parallelism-and-soa-storage.md#b2--parallel-system-dispatch-core-needs-b1).
 
 ### `modules/audio` V2 — event adapters, clip loading — deferred
 
@@ -901,9 +920,9 @@ graphs, system-timing breakdown — dev-build only.
 
 **Status.** Ready — the same shape in Unity (`Gizmos` / `Debug.DrawRay` +
 Inspector), Godot's Debug tab, and Unreal's `DrawDebugHelpers` + console.
-Tree-shaken out of production builds; also overlaps
-[core-engine-roadmap.md](core-engine-roadmap.md) §4.2, which asks whether the
-entity inspector is core or belongs to this module.
+Tree-shaken out of production builds. The live entity inspector belongs here,
+not in core — `non-goals.md` declines an *authoring* inspector, and this module
+is diagnose-only.
 
 **Gate.** Scheduling — build slot.
 
