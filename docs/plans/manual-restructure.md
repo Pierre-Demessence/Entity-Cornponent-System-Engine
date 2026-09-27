@@ -216,13 +216,13 @@ Slice 1 — plumbing:
 
 Slice 2 — module index:
 
-- [ ] Declare the categories and generate the page into
+- [x] Declare the categories and generate the page into
       `manual/getting-started/`.
-- [ ] `website/astro.config.mjs` + `website/src/site-route-data.ts` — declare the
+- [x] `website/astro.config.mjs` + `website/src/site-route-data.ts` — declare the
       `Getting started` group in both, and check the rendered sidebar.
-- [ ] `website/manual/index.md` — extend its organisation section, which names
+- [x] `website/manual/index.md` — extend its organisation section, which names
       only Core and Modules.
-- [ ] Extend `scripts/manual.test.ts` so every module appears exactly once.
+- [x] Extend `scripts/manual.test.ts` so every module appears exactly once.
 
 Slice 3 — examples gallery:
 

@@ -41,10 +41,12 @@ function collapsedGroup(label: string, entries: SidebarEntry[]): SidebarEntry {
 
 function manualSidebar(entries: SidebarEntry[], href: string, isCurrent: boolean): SidebarEntry[] {
   const manual = findGroup(entries, MANUAL_GROUP)?.entries ?? [];
+  const gettingStarted = findGroup(manual, 'Getting started')?.entries ?? [];
   const core = findGroup(manual, 'Core')?.entries ?? [];
   const modules = findGroup(manual, 'Modules')?.entries ?? [];
   return [
     overviewLink(href, isCurrent),
+    collapsedGroup('Getting started', gettingStarted),
     collapsedGroup('Core', core),
     collapsedGroup('Modules', modules),
   ];

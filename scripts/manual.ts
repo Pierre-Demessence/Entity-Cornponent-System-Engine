@@ -28,8 +28,74 @@ const AUTHORED_DIR = join(ROOT, 'website/manual');
  * reading order is stated here rather than inherited from its file names.
  */
 const AUTHORED_ORDER: Record<string, number> = {};
+
+/** Path of the module index under the Manual root, and its path under the authored tree. */
+const MODULE_INDEX_PAGE = 'getting-started/module-index.md';
+
+/**
+ * The module index, grouped by the task a reader has in mind rather than by
+ * name. This is an array, not a record, because the order is the order the page
+ * reads in. A module appears in exactly one category; `scripts/manual.test.ts`
+ * fails if one is missing, or listed twice.
+ */
+export const MODULE_CATEGORIES: readonly { modules: readonly string[]; title: string }[] = [
+  { modules: ['easing', 'math', 'noise', 'rng', 'tween'], title: 'Values and math' },
+  {
+    title: 'Transform, motion and collision',
+    modules: [
+      'attach',
+      'collision',
+      'collision-3d',
+      'kinematics',
+      'kinematics-3d',
+      'motion',
+      'motion-3d',
+      'spatial',
+      'transform',
+      'transform-3d',
+    ],
+  },
+  {
+    title: 'Presentation and assets',
+    modules: [
+      'animation',
+      'asset-loader',
+      'audio',
+      'camera',
+      'particles',
+      'render-canvas2d',
+      'render-dom',
+      'texture-atlas',
+    ],
+  },
+  { modules: ['cooldown', 'input', 'lifetime', 'tick', 'timer'], title: 'Input and timing' },
+  {
+    modules: ['behavior-tree', 'fsm', 'goap', 'grid-based', 'pathfinding', 'steering'],
+    title: 'AI and decision making',
+  },
+  {
+    title: 'World, saves and services',
+    modules: [
+      'save',
+      'scene-transition',
+      'spawner',
+      'stats',
+      'tilemap',
+      'tmx',
+      'turn-based',
+      'worker-pool',
+    ],
+  },
+];
 const REPO_URL = 'https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine';
 const SUMMARY_MAX = 160;
+
+/**
+ * Stands in for a literal `\*` while the emphasis rules run. A private-use code
+ * point, so no real prose can collide with it, and not a regex escape, so the
+ * control-character lint rules stay quiet.
+ */
+const LITERAL_STAR = '\uE000';
 
 /**
  * Core-primitive guides, co-located with their source in `src/<name>.md` and
@@ -128,28 +194,48 @@ export function modulesWithoutReadme(): string[] {
 }
 
 /**
- * The README's first paragraph, flattened to one line for the sidebar and meta
- * description. Markup is unwrapped rather than deleted: a blanket strip of `*`
- * and `_` mangles real text such as `A\* pathfinding` or `bevy_pathfinding`.
+ * A guide's opening paragraph, flattened to one line with its markup unwrapped
+ * rather than deleted: a blanket strip of `*` and `_` mangles real text such as
+ * `A\* pathfinding` or `bevy_pathfinding`.
  */
-export function summaryOf(markdown: string): string {
+function flattenFirstParagraph(markdown: string): string {
   const body = markdown.replace(/^#.*$/m, '').trim();
   const paragraph = body.split(/\n\s*\n/).find(chunk => !chunk.startsWith('#'));
   if (!paragraph)
     return '';
-  const flat = paragraph
+  return paragraph
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/`([^`]+)`/g, '$1')
+    // A literal `\*` must not reach the emphasis rules: unshielded, it pairs with
+    // the next `*` and every character between them is deleted.
+    .replaceAll('\\*', LITERAL_STAR)
+    .replace(/\\(.)/g, '$1')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/\\(.)/g, '$1')
+    .replaceAll(LITERAL_STAR, '*')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/** The opening paragraph, cut at a word boundary, for a page's meta description. */
+export function summaryOf(markdown: string): string {
+  const flat = flattenFirstParagraph(markdown);
   if (flat.length <= SUMMARY_MAX)
     return flat;
   const head = flat.slice(0, SUMMARY_MAX);
   const lastSpace = head.lastIndexOf(' ');
   return `${(lastSpace > 0 ? head.slice(0, lastSpace) : head).trimEnd()}...`;
+}
+
+/**
+ * The opening sentence, complete. The module index puts one of these in each
+ * row: a fixed-length cut would leave a cell ending mid-clause, and a table has
+ * room for the whole thought.
+ */
+function openingSentence(markdown: string): string {
+  const flat = flattenFirstParagraph(markdown);
+  const end = flat.search(/\.(?=\s|$)/);
+  return end === -1 ? flat : flat.slice(0, end + 1);
 }
 
 function githubUrl(absolutePath: string): string {
@@ -341,6 +427,43 @@ export function renderAuthoredPages(
   });
 }
 
+/**
+ * The module index. Generated rather than authored so that a new module cannot
+ * be missing from it: the categories above are the only hand-written part, and
+ * each row's description is the summary derived from that module's README.
+ */
+export function renderModuleIndexPage(guides: readonly Guide[]): ManualPage {
+  const guideByName = new Map(guides.map(guide => [guide.name, guide]));
+  const sections = MODULE_CATEGORIES.map(({ modules, title }) => {
+    const rows = modules.map((name) => {
+      const guide = guideByName.get(name);
+      // A pipe would end the cell; `summaryOf` leaves prose punctuation alone.
+      const summary = (guide ? openingSentence(guide.markdown) : '').replace(/\|/g, '\\|');
+      return `| [\`${name}\`](../../modules/${name}/) | ${summary} |`;
+    });
+    return [
+      `## ${title}`,
+      '',
+      '| Module | What it is for |',
+      '| --- | --- |',
+      ...rows,
+      '',
+    ].join('\n');
+  });
+  const intro = [
+    'Everything genre-specific lives in an opt-in module, each one a separate',
+    'subpath import, so the ones you never import cost nothing to ship. The core',
+    'primitives they build on are under **Core**.',
+    '',
+    'Find the task you have in mind, then open the module for its guide.',
+    '',
+  ].join('\n');
+  return {
+    markdown: `${frontmatter('Module index', 'Every opt-in module, grouped by the task it serves.', { order: 1 })}${intro}${sections.join('\n')}`,
+    outPath: `manual/${MODULE_INDEX_PAGE}`,
+  };
+}
+
 /** Build every Manual page, ready to be written into the Starlight content directory. */
 export function renderManualPages(): ManualPage[] {
   const coreGuides = listCoreGuides();
@@ -361,6 +484,7 @@ export function renderManualPages(): ManualPage[] {
 
   return [
     ...renderAuthoredPages(AUTHORED_DIR),
+    renderModuleIndexPage(moduleGuides),
     ...coreGuides.map(render),
     ...moduleGuides.map(render),
   ];

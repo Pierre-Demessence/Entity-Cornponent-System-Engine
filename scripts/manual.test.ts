@@ -9,7 +9,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { renderAuthoredPages, renderManualPages, summaryOf } from './manual';
+import { MODULE_CATEGORIES, renderAuthoredPages, renderManualPages, summaryOf } from './manual';
 
 const pages = renderManualPages();
 const byPath = new Map(pages.map(page => [page.outPath, page.markdown]));
@@ -82,6 +82,15 @@ describe('manual generator', () => {
     );
     expect(summary).toContain('A* pathfinding');
     expect(summary).toContain('bevy_pathfinding');
+  });
+
+  it('keeps an escaped asterisk out of the emphasis rules', () => {
+    // Unshielded, `A\*` pairs with the next `*` and deletes the text between.
+    const summary = summaryOf(
+      '# heading\n\nReaches it via A\\* over states. The *same goal* yields others.',
+    );
+    expect(summary).toContain('A* over states.');
+    expect(summary).toContain('same goal');
   });
 
   it('is byte-stable across runs', () => {
@@ -202,6 +211,25 @@ describe('authored Manual pages', () => {
     finally {
       rmSync(dir, { force: true, recursive: true });
     }
+  });
+});
+
+describe('module index', () => {
+  const listed = MODULE_CATEGORIES.flatMap(category => category.modules);
+  const moduleNames = pages
+    .map(page => /^manual\/modules\/(.+)\.md$/.exec(page.outPath)?.[1])
+    .filter((name): name is string => name !== undefined);
+
+  it('lists every module under exactly one category', () => {
+    expect([...listed].sort()).toEqual([...moduleNames].sort());
+  });
+
+  it('publishes the index with a row per module', () => {
+    const index = byPath.get('manual/getting-started/module-index.md') ?? '';
+    expect(index).toContain('title: "Module index"');
+    expect(index).toContain('sidebar:\n  order: 1');
+    for (const name of moduleNames)
+      expect(index, name).toContain(`[\`${name}\`](../../modules/${name}/)`);
   });
 });
 

@@ -20,17 +20,14 @@ lines (`entity-id.ts`, `lifecycle.ts`, `input-source.ts`, `renderer.ts`,
 
 ## The Manual
 
-The Manual ships 51 pages and every one is a reference page for a single thing:
-a curated Overview, eight core-primitive guides (`src/<name>.md`) and 42 module
-guides (`src/modules/*/README.md`). Nothing spans primitives, and nothing
-explains the model they share.
+The Manual's guides are one-per-thing: eight core-primitive guides
+(`src/<name>.md`) and 42 module guides (`src/modules/*/README.md`), reached
+through a module index. Nothing explains the model the primitives share, and
+there is no walkthrough from an empty project.
 
-Roughly ordered by value per unit of cost. All eight are sliced in
+Roughly ordered by value per unit of cost. Each remaining item is a slice in
 `docs/plans/manual-restructure.md`.
 
-- [ ] **Module index** — a "which module do I need?" page. The 42 guides sit in
-  one collapsed alphabetical sidebar group, which answers "what is `spatial`?"
-  and not "how do I do collision?".
 - [ ] **Examples gallery** — `examples/` holds 30 prototype directories; the site
   names 11 of them, each in `examples/<name>` form inside a guide or a JSDoc
   comment, and none has a page. Per-example copy is authored, since 2 of the 30
