@@ -445,6 +445,7 @@
               "src/column-store.test.ts",
               "src/modules/kinematics-3d/kinematics3d-system.test.ts",
               "src/modules/scene-transition/scene-transition.test.ts",
+              "src/plugin.test.ts",
               "src/simple-component.test.ts"
             ],
             "typeOnly": false
@@ -666,6 +667,7 @@
         "src/modules/render-dom/dom-renderer.test.ts",
         "src/modules/scene-transition/scene-transition.test.ts",
         "src/modules/turn-based/turn-cycler.test.ts",
+        "src/plugin.test.ts",
         "src/query.test.ts",
         "src/registry-component.test.ts",
         "src/simple-component.test.ts",
@@ -13266,6 +13268,7 @@
         "motion",
         "motion-3d",
         "particles",
+        "plugin.ts",
         "render-canvas2d",
         "render-dom",
         "scene-transition",
@@ -13326,6 +13329,7 @@
               "motion",
               "motion-3d",
               "particles",
+              "plugin.ts",
               "render-canvas2d",
               "render-dom",
               "scene-transition",
@@ -13355,6 +13359,7 @@
               "src/modules/render-canvas2d/render-canvas2d.test.ts",
               "src/modules/render-dom/dom-renderer.test.ts",
               "src/modules/scene-transition/scene-transition.test.ts",
+              "src/plugin.test.ts",
               "src/world.test.ts"
             ],
             "typeOnly": false
@@ -13379,6 +13384,7 @@
         "src/modules/render-canvas2d/render-canvas2d.test.ts",
         "src/modules/render-dom/dom-renderer.test.ts",
         "src/modules/scene-transition/scene-transition.test.ts",
+        "src/plugin.test.ts",
         "src/world.test.ts"
       ],
       "typeTotal": 0,

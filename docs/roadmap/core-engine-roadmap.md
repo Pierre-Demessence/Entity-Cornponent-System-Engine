@@ -5,7 +5,7 @@ module and app: component stores, queries, scheduler, event bus, lifecycle,
 validation, change detection, plugin/extension hooks. No modules, no gameplay
 features.
 
-**Entry IDs are stable references** (`3.2`, `4.4`, `4.6`). A gap in the
+**Entry IDs are stable references** (`3.2`, `3.5`, `4.6`). A gap in the
 numbering means that entry shipped and left this file, so citations elsewhere
 keep resolving to the same item. Shipped core work is described by `src/` and
 dated by `git log`; where a plan exists it sits under `plans/done/`, and core
@@ -69,16 +69,6 @@ complex systems.
 Infrastructure that improves the development workflow and enables
 modding/plugin support.
 
-### 4.4 Plugin / Hook Architecture
-
-| | |
-|---|---|
-| **Problem** | All game logic lives in the core codebase. No extension points for mods or experimental features. |
-| **Solution** | Lifecycle hooks: `onEntityCreated`, `onEntityDestroyed`, `onComponentSet`, `onTurnStart`, `onTurnEnd`. Plugins register via a manifest. |
-| **Unlocks** | Modding support, experimental features without core changes, community content |
-| **Complexity** | Long — ~400 lines. Hook registry + plugin loader + sandboxing. |
-| **Dependencies** | None outstanding — the scheduler and `LifecycleEvent` shipped. `LifecycleEvent` covers created / destroyed / component-added / removed; the tick runner's tick-boundary reaping is the natural home for start/end hooks. |
-
 ### 4.6 Inline-prose API-mention linter
 
 | | |
@@ -97,6 +87,5 @@ By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
 1. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
-2. **Plugin Hooks** (4.4) — modding, long-horizon and the largest piece
-3. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest,
+2. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest,
    most strategic piece, above the shipped cache

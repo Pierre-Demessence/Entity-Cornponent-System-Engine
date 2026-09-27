@@ -2,6 +2,7 @@ import type { ColumnStoreOptions } from '#column-store';
 import type { ComponentDef, ComponentStoreLike, TagDef } from '#component-store';
 import type { EntityId } from '#entity-id';
 import type { LifecycleEvent } from '#lifecycle';
+import type { Plugin } from '#plugin';
 import type { SpatialStructure } from '#spatial-structure';
 import type { EntityTemplate } from '#template';
 
@@ -27,6 +28,7 @@ export class EcsWorld {
   private readonly archetypes = new ArchetypeIndex();
   private componentRegistry: ComponentEntry[] = [];
   private destroyQueue = new Set<EntityId>();
+  private readonly installedPlugins = new Set<string>();
   /**
    * Engine-internal lifecycle bus. Emits `EntityCreated`, `EntityDestroyed`,
    * `ComponentAdded`, `ComponentRemoved`. Queue-based like any `EventBus` —
@@ -223,6 +225,11 @@ export class EcsWorld {
 
   getTagByName(name: string): TagStore | undefined {
     return this.tagByName.get(name);
+  }
+
+  /** Whether a plugin with the given name has been installed via {@link use}. */
+  hasPlugin(name: string): boolean {
+    return this.installedPlugins.has(name);
   }
 
   /** In-place load — clears existing stores and repopulates from the serialized payload. */
@@ -459,5 +466,30 @@ export class EcsWorld {
         continue;
       store.set(id, structuredClone(value));
     }
+  }
+
+  /**
+   * Install one or more {@link plugin!Plugin}s, calling each plugin's `build`
+   * with this world exactly once. A plugin's `name` must be unique per world —
+   * re-installing the same name throws. Installed names survive `clearAll`
+   * (the registrations a plugin's `build` created do too), so a plugin cannot
+   * be re-`use`d after a reset. Returns `this` for chaining.
+   */
+  use(...plugins: Plugin[]): this {
+    for (const plugin of plugins) {
+      if (this.installedPlugins.has(plugin.name))
+        throw new Error(`Plugin "${plugin.name}" already installed`);
+      // Reserve the name before build so a re-entrant use() of the same plugin
+      // throws instead of recursing; roll back if build fails so it can retry.
+      this.installedPlugins.add(plugin.name);
+      try {
+        plugin.build(this);
+      }
+      catch (error) {
+        this.installedPlugins.delete(plugin.name);
+        throw error;
+      }
+    }
+    return this;
   }
 }
