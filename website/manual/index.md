@@ -12,6 +12,10 @@ module documents itself in its own `README.md` under **Modules**. A guide says
 what the piece is for, when to reach for it, and how it fits the rest of the
 engine.
 
+Pages that are not about a single primitive live in `website/manual/` and publish
+under the same path, so a page that spans several primitives is committed beside
+the generator rather than placed among its output.
+
 Signature-level detail lives in the [API reference](../api/): every public
 export with its full type signature and JSDoc summary.
 

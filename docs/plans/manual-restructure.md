@@ -1,8 +1,8 @@
 # Manual restructure: page types beyond the per-primitive reference
 
 The Manual ships 51 pages and every one is a reference page for a single thing:
-a curated Overview (`website/manual-overview.md`), eight core-primitive guides
-(`src/<name>.md`, listed in `CORE_GUIDES` at `scripts/manual.ts:29`) and 42
+a curated Overview (`website/manual/index.md`), eight core-primitive guides
+(`src/<name>.md`, listed in `CORE_GUIDES` at `scripts/manual.ts:31`) and 42
 module guides (`src/modules/*/README.md`). A reader can look up any piece, but
 there is no page for the model the pieces share, no walkthrough that starts from
 nothing, and no way in that begins from a task instead of a name.
@@ -41,13 +41,12 @@ slices; each slice ships on its own and is verified on its own.
 
 ## What the site already supports (verified, not assumed)
 
-- **Authored Manual pages are an existing mechanism.** `scripts/manual.ts:247`
-  reads `website/manual-overview.md`; `scripts/manual.ts:251` publishes it as
-  `manual/index.md`. The doc comment at `scripts/manual.ts:240-245` states the
-  file is deliberately the one site source outside the generator, and that
-  everything under `manual/` stays generated so nothing is hand-placed there
-  (the build `rmSync`s that directory, `scripts/manual.gen.ts:18`). Adding
-  authored pages generalises this one function — no second mechanism.
+- **Authored pages are served by one mechanism.** `renderAuthoredPages()`
+  (`scripts/manual.ts:294`) walks `website/manual/**` and publishes each file to
+  the same path under `manual/`. The invariant it protects is that everything
+  under `manual/` stays generated — `scripts/manual.gen.ts:18` wipes that
+  directory before writing — so authored prose is committed beside the site and
+  never hand-placed in the content tree.
 - **A sidebar group must be declared twice.** `website/astro.config.mjs:57-58`
   declares the `Core` and `Modules` autogenerate groups; the resolved tree is
   then re-cut per section by `manualSidebar()` (`website/src/site-route-data.ts:42`),
@@ -55,17 +54,20 @@ slices; each slice ships on its own and is verified on its own.
   (`:48`). A group added to the config alone does not survive — the middleware
   must name it, or its pages vanish from the sidebar while still building.
 - **One-line summaries are already extracted.** `summaryOf()`
-  (`scripts/manual.ts:125`) flattens a guide's first paragraph, strips inline
+  (`scripts/manual.ts:127`) flattens a guide's first paragraph, strips inline
   markup and truncates at 160 characters; it already supplies every guide's meta
   description. The module index can consume the same function, so its one-liners
   cannot drift from the guides they describe.
 - **The link rewriter runs only on generated bodies.** `rewriteLinks()` is called
-  for guides (`scripts/manual.ts:265`) because those links are written for
+  for guides (`scripts/manual.ts:329`) because those links are written for
   readers inside the repo. An authored page gets no rewriting, so it must use
   site routes (`./core/world/`, `../api/`) and absolute GitHub URLs directly.
-- **Nothing link-checks the site.** `scripts/docs.test.ts` walks `docs/**`, the
-  root `README.md` and `AGENTS.md`; no test opens `website/**`. A dead relative
-  link in an authored page builds without complaint, so Slice 1 adds a check.
+- **The link guards have different scopes.** `scripts/docs.test.ts` walks
+  `docs/**`, the root `README.md` and `AGENTS.md`; it never opens `website/**`.
+  The Manual's own routes are checked by `scripts/manual.test.ts`, which resolves
+  them against the generated page list rather than the filesystem, because a
+  Manual page links to published URLs (`./core/world/`) that `existsSync` cannot
+  see. A link into another section (the API reference) is out of scope.
 - **Search is site-wide.** Pagefind indexes every built page, so new pages are
   findable with no extra index.
 - **Most prototypes are invisible to a reader.** 11 of the 30 directories under
@@ -80,9 +82,9 @@ slices; each slice ships on its own and is verified on its own.
 ## Decisions (settled before building)
 
 - **Authored sources live at `website/manual/<group>/<slug>.md` and publish to
-  the same path under `manual/`.** `website/manual/index.md` becomes the
-  Overview, and `website/manual-overview.md` is deleted in the same change
-  rather than left as a second special case.
+  the same path under `manual/`.** `website/manual/index.md` is the landing page
+  and the only authored page with no group; it carries `sidebar.hidden` because
+  the sidebar's `Overview` entry is injected by the route middleware.
 - **New page types get new groups.** Core and Modules mean "one page per
   primitive / per module" by construction; authored pages mixed into them would
   break that meaning and make the groups unfalsifiable. The Manual sidebar
@@ -120,11 +122,13 @@ slices; each slice ships on its own and is verified on its own.
   alphabetically, which would render `Getting started` as examples,
   module-index, tutorial. The order is a map in `scripts/manual.ts` from
   authored page to number, emitted into each page's frontmatter. Slice 1 builds
-  the mechanism; Slice 2 is where an order is first observable, since the
-  Overview is the only authored page before it.
-- **Slices ship independently.** The plumbing (Slice 1) lands alone and changes
-  no page content except the Overview's own organisation section. Content slices
-  then add one page type each.
+  the mechanism and covers it from a throwaway directory; Slice 2 is where an
+  order is first observable, since the landing page is the only authored page
+  before it.
+- **Slices ship independently.** Slice 1 lands alone and changes no published
+  page at all, so a mistake in the walk or the frontmatter rule surfaces in a
+  diff with no new prose to re-review. Content slices then add one page type
+  each.
 
 ## Slices
 
@@ -133,11 +137,11 @@ slices; each slice ships on its own and is verified on its own.
 Generalise `renderIndexPage()` into "render every authored page found under
 `website/manual/`", so the folders on disk decide the pages. Move the Overview to
 `website/manual/index.md`; the published path stays `manual/index.md`. No new
-groups and no new pages: the mechanism is proven by the Overview itself, and the
-only prose touched is the Overview's own organisation section plus the agent doc,
-which keeps the diff reviewable. The Overview lives at the tree root and is
+groups, no new pages and no prose: the mechanism is proven by the Overview
+itself, so the diff stays reviewable. The Overview lives at the tree root and is
 hidden from the sidebar, so this slice exercises the walk but not group pathing
-or the declare-twice edit — Slice 2 is where those first appear.
+or the declare-twice edit — Slice 2 is where those first appear, and the nested
+path rule is covered from a throwaway directory in the meantime.
 
 ### 2. Module index
 
@@ -146,7 +150,9 @@ holding a table of its modules and their `summaryOf()` one-liner. Generated
 straight into the content tree like the core and module pages, so
 `website/manual/` stays hand-authored and no generated file lands in a source
 tree. Built from the same listing the guide pages come from, so a new module
-cannot be missing from it. This slice also declares the `Getting started` group.
+cannot be missing from it. This slice also declares the `Getting started` group
+and updates the Overview's organisation section, which names only Core and
+Modules.
 
 ### 3. Examples gallery
 
@@ -188,21 +194,25 @@ layer a module on the core primitives, and what "module" means as a subpath.
 
 Slice 1 — plumbing:
 
-- [ ] Move `website/manual-overview.md` to `website/manual/index.md`; delete the
+- [x] Move `website/manual-overview.md` to `website/manual/index.md`; delete the
       old file.
-- [ ] `scripts/manual.ts` — replace `renderIndexPage()` with a walk of
+- [x] `scripts/manual.ts` — replace `renderIndexPage()` with a walk of
       `website/manual/**/*.md`, publishing each to the same relative path under
       `manual/`; sort with the existing `byName` so the output stays
       byte-stable for `scripts/manual.test.ts`.
-- [ ] `scripts/manual.ts` — apply the title / description / `index.md` rule and
-      emit each authored page's declared sidebar order, from a map in that file.
-- [ ] Add a relative-link check for `website/manual/**/*.md`, in the shape of
-      `scripts/docs.test.ts`, since no gate opens `website/**` today.
-- [ ] `website/manual/index.md` — extend its organisation section to describe the
-      page types the Manual carries.
-- [ ] `scripts/manual.test.ts` — cover an authored page outside the Overview.
-- [ ] `docs/agent/README.md` — record the authored-source folder and the
-      declare-twice rule for a new group.
+- [x] `scripts/manual.ts` — apply the title / description / `index.md` rule.
+- [x] Check authored site routes against the generated page list, in
+      `scripts/manual.test.ts`, since no gate opens `website/**` today.
+- [x] `scripts/manual.test.ts` — cover an authored page outside the Overview,
+      rendered from a throwaway directory, so the nested-path rule is exercised
+      before an authored page lands in the repository.
+- [x] `docs/agent/README.md` — record the authored-source folder, the
+      route-link rule, and the declare-twice rule for a new group.
+- [x] `scripts/manual.ts` — emit each authored page's declared sidebar order,
+      from a map in that file, so a group of authored pages reads in a declared
+      order rather than alphabetically.
+- [x] `scripts/manual.test.ts` — cover the order rule by rendering a throwaway
+      directory with an injected map.
 
 Slice 2 — module index:
 
@@ -210,6 +220,8 @@ Slice 2 — module index:
       `manual/getting-started/`.
 - [ ] `website/astro.config.mjs` + `website/src/site-route-data.ts` — declare the
       `Getting started` group in both, and check the rendered sidebar.
+- [ ] `website/manual/index.md` — extend its organisation section, which names
+      only Core and Modules.
 - [ ] Extend `scripts/manual.test.ts` so every module appears exactly once.
 
 Slice 3 — examples gallery:
@@ -273,6 +285,8 @@ Per slice:
 - Every slice keeps the invariant that `website/src/content/docs/manual/` is
   fully generated. Authored prose never lands there.
 - Slice 1 is deliberately page-free: if the walk, the frontmatter rule or the
-  link check is wrong, it is wrong in a diff with no new prose to re-review.
+  route check is wrong, it is wrong in a diff with no new prose to re-review.
+  Its route check lives in `scripts/manual.test.ts` rather than a new file,
+  because it needs the generated page list, which only the generator has.
 - The favicon 404 on every page is a site defect, not a Manual one, and is
   tracked in `docs/roadmap/docs-site-roadmap.md`.

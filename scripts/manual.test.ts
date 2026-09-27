@@ -3,9 +3,13 @@
  * links are rewritten for the published site, internal docs are never linked,
  * and the output is byte-stable.
  */
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
-import { renderManualPages, summaryOf } from './manual';
+import { renderAuthoredPages, renderManualPages, summaryOf } from './manual';
 
 const pages = renderManualPages();
 const byPath = new Map(pages.map(page => [page.outPath, page.markdown]));
@@ -82,5 +86,153 @@ describe('manual generator', () => {
 
   it('is byte-stable across runs', () => {
     expect(JSON.stringify(renderManualPages())).toBe(JSON.stringify(pages));
+  });
+});
+
+/** The published route of a page: `manual/core/world.md` → `manual/core/world/`. */
+function routeOf(outPath: string): string {
+  return `${outPath.replace(/\.md$/, '').replace(/\/index$/, '')}/`;
+}
+
+/** Resolve a site-route link against the route of the page carrying it. */
+function resolveRoute(fromRoute: string, target: string): string {
+  const segments = fromRoute.split('/').slice(0, -1);
+  for (const part of target.split('/')) {
+    if (part === '' || part === '.')
+      continue;
+    if (part === '..')
+      segments.pop();
+    else
+      segments.push(part);
+  }
+  return `${segments.join('/')}/`;
+}
+
+/**
+ * Markdown with fenced blocks blanked, so a code sample's brackets are not links.
+ * Nested fences of different styles would desync the toggle; no page nests them.
+ */
+function withoutFences(markdown: string): string {
+  let inFence = false;
+  return markdown
+    .split('\n')
+    .map((line) => {
+      if (/^\s*(?:```|~~~)/.test(line)) {
+        inFence = !inFence;
+        return '';
+      }
+      return inFence ? '' : line;
+    })
+    .join('\n');
+}
+
+describe('authored Manual pages', () => {
+  it('publishes the landing page with the Overview title, hidden from the sidebar', () => {
+    const landing = byPath.get('manual/index.md') ?? '';
+    expect(landing).toContain('title: "Overview"');
+    expect(landing).toContain('sidebar:\n  hidden: true');
+  });
+
+  it('publishes a nested page under its own path, titled by its heading', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ecs-manual-'));
+    try {
+      mkdirSync(join(dir, 'getting-started'), { recursive: true });
+      writeFileSync(
+        join(dir, 'getting-started', 'demo.md'),
+        '# Demo page\n\nBody text.\n',
+        'utf8',
+      );
+
+      const rendered = renderAuthoredPages(dir);
+
+      expect(rendered.map(page => page.outPath)).toEqual(['manual/getting-started/demo.md']);
+      expect(rendered[0].markdown).toContain('title: "Demo page"');
+      expect(rendered[0].markdown).toContain('description: "Body text."');
+      // Starlight renders the frontmatter title, so the heading must not stay.
+      expect(rendered[0].markdown).not.toContain('# Demo page');
+      expect(rendered[0].markdown).not.toContain('sidebar:');
+    }
+    finally {
+      rmSync(dir, { force: true, recursive: true });
+    }
+  });
+
+  it('takes the title from a single-hash heading only, and drops that line', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ecs-manual-'));
+    try {
+      writeFileSync(join(dir, 'late.md'), 'Intro prose.\n\n# Real title\n\nMore.\n', 'utf8');
+      writeFileSync(join(dir, 'sub.md'), '## Only a section\n\nBody.\n', 'utf8');
+      writeFileSync(join(dir, 'fenced.md'), '```sh\n# not a title\n```\n\nBody.\n', 'utf8');
+
+      const rendered = new Map(renderAuthoredPages(dir).map(page => [page.outPath, page.markdown]));
+
+      // `## Sub` is a section, so the file name titles the page and the line stays.
+      expect(rendered.get('manual/sub.md')).toContain('title: "sub"');
+      expect(rendered.get('manual/sub.md')).toContain('## Only a section');
+      // The heading titles the page wherever it sits, and must not render twice.
+      expect(rendered.get('manual/late.md')).toContain('title: "Real title"');
+      expect(rendered.get('manual/late.md')).toContain('Intro prose.');
+      expect(rendered.get('manual/late.md')).not.toContain('# Real title');
+      // A comment inside a code sample is not a title, and must survive.
+      expect(rendered.get('manual/fenced.md')).toContain('title: "fenced"');
+      expect(rendered.get('manual/fenced.md')).toContain('# not a title');
+    }
+    finally {
+      rmSync(dir, { force: true, recursive: true });
+    }
+  });
+
+  it('numbers only the pages whose position the order map declares', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ecs-manual-'));
+    try {
+      mkdirSync(join(dir, 'getting-started'), { recursive: true });
+      writeFileSync(join(dir, 'getting-started', 'first.md'), '# First\n\nBody.\n', 'utf8');
+      writeFileSync(join(dir, 'getting-started', 'second.md'), '# Second\n\nBody.\n', 'utf8');
+
+      const rendered = new Map(
+        renderAuthoredPages(dir, { 'getting-started/first.md': 1 })
+          .map(page => [page.outPath, page.markdown]),
+      );
+
+      expect(rendered.get('manual/getting-started/first.md')).toContain('sidebar:\n  order: 1');
+      // Unnumbered pages carry no `sidebar` block, so Starlight sorts them after
+      // the numbered ones rather than pinning them to an arbitrary position.
+      expect(rendered.get('manual/getting-started/second.md')).not.toContain('sidebar:');
+    }
+    finally {
+      rmSync(dir, { force: true, recursive: true });
+    }
+  });
+});
+
+describe('manual routes', () => {
+  it('gives every page a distinct out path', () => {
+    // An authored page placed in a group's directory would otherwise collide
+    // with a generated guide and win or lose by array order.
+    expect(new Set(pages.map(page => page.outPath)).size).toBe(pages.length);
+  });
+
+  it('links every Manual page only to Manual routes that exist', () => {
+    // Authored pages link to published routes (`./core/world/`), not to files,
+    // so these resolve against the generated page list rather than the disk.
+    // Guide bodies are rewritten to routes as well, so the same rule covers
+    // them. A target that leaves `manual/` is another section (the API
+    // reference) and is out of scope.
+    const routes = new Set(pages.map(page => routeOf(page.outPath)));
+    const broken: string[] = [];
+
+    for (const page of pages) {
+      const from = routeOf(page.outPath);
+      for (const match of withoutFences(page.markdown).matchAll(/\]\(([^)\s]+)\)/g)) {
+        const target = match[1].split('#')[0];
+        if (!target || /^(?:[a-z][a-z0-9+.-]*:|\/|#)/i.test(target))
+          continue;
+        const resolved = resolveRoute(from, target);
+        if (resolved.startsWith('manual/') && !routes.has(resolved))
+          broken.push(`${page.outPath} -> ${match[1]}`);
+      }
+    }
+
+    expect(broken).toEqual([]);
   });
 });
