@@ -44,8 +44,8 @@ One line per task; the detail lives in the linked sections. `[x]` done,
 - Cheaper view construction — **declined**: fast prototype accessors silently
   break spread / `Object.keys`; the non-breaking fix needs `new Function`; and
   the query fix already cut most view churn.
-- [ ] Archetype *cache* (core roadmap §3.1) — cache query matches; lighter
-      middle step, no storage rewrite
+- [x] Archetype *cache* (core roadmap §3.1) — cache query matches; lighter
+      middle step, no storage rewrite. **Shipped** — `src/archetype-index.ts`.
 - [ ] Full archetype tables + sparse-set ("both", Bevy-style) — the top-tier
       endgame: co-located columns → gather-free multi-component iteration, at
       the cost of expensive add/remove-component; a storage-engine rewrite
@@ -281,8 +281,7 @@ Ideal). Middle builds the real data-oriented storage foundation now, keeps
 an object-view compatibility layer so most systems don't have to change, and
 leaves **Ideal** (columnar query as the default, systems written as column
 loops) reachable *later, incrementally, with no storage redo*. It is the
-storage foundation the roadmap's archetype cache
-([core-engine-roadmap §3.1](../../roadmap/core-engine-roadmap.md#31-archetype-cache))
+storage foundation the shipped archetype cache (`src/archetype-index.ts`)
 and schema-first components eventually sit on top of.
 
 > Refines the higher-level "opt-in per component" wording earlier in this

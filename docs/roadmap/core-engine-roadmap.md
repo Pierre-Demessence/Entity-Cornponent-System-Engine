@@ -5,7 +5,7 @@ module and app: component stores, queries, scheduler, event bus, lifecycle,
 validation, change detection, plugin/extension hooks. No modules, no gameplay
 features.
 
-**Entry IDs are stable references** (`3.1`, `4.2`, `4.4`). A gap in the
+**Entry IDs are stable references** (`3.2`, `4.2`, `4.4`). A gap in the
 numbering means that entry shipped and left this file, so citations elsewhere
 keep resolving to the same item. Shipped core work is described by `src/` and
 dated by `git log`; where a plan exists it sits under `plans/done/`, and core
@@ -28,16 +28,6 @@ graph.
 
 Optimizations that matter once a game has 100+ entities on large maps with
 complex systems.
-
-### 3.1 Archetype Cache
-
-| | |
-|---|---|
-| **Problem** | The query DSL intersects store key sets on every call. With 50+ components and frequent queries, that becomes expensive. |
-| **Solution** | Cache entity→archetype mappings. An archetype is the set of component types an entity possesses. Queries match against archetype signatures. Cache invalidates when components are added/removed. |
-| **Unlocks** | O(1) query matching instead of O(components) intersection, batch iteration by archetype |
-| **Complexity** | Mid-Long — ~300 lines. Bitmask-based archetype signatures. |
-| **Dependencies** | None outstanding — the query DSL shipped. |
 
 ### 3.2 Entity Pooling
 
@@ -80,7 +70,7 @@ complex systems.
 | **Solution** | Group entities by component set into **archetype tables** with aligned columns → a single-index loop, no gather. The top-tier form is the **"both" model** (Bevy): each component picks table vs sparse storage. The query / `get` / `set` API is preserved, so consumer code is unchanged. |
 | **Unlocks** | The full multi-component iteration win on top of the storage/GC win the columnar store already delivers. |
 | **Complexity** | Very long — a storage-engine rewrite. add/remove-component becomes a **structural move** (the entity is copied between tables), where sparse-set is O(1). |
-| **Dependencies** | None outstanding — builds on the shipped columnar store, and sits **above** the §3.1 archetype *cache* (the cache is the lighter middle step: cache query matches, keep the gather). Detail + the full cheapest→biggest ladder: [../plans/done/ecs-parallelism-and-soa-storage.md](../plans/done/ecs-parallelism-and-soa-storage.md#the-path-beyond-middle--storage-architecture-logged). |
+| **Dependencies** | None outstanding — builds on the shipped columnar store, and sits **above** the shipped archetype *cache* (the lighter middle step: it caches query matches, keeping the gather). Detail + the full cheapest→biggest ladder: [../plans/done/ecs-parallelism-and-soa-storage.md](../plans/done/ecs-parallelism-and-soa-storage.md#the-path-beyond-middle--storage-architecture-logged). |
 
 ### 3.6 Data-Parallel Dispatch over Shared Columns
 
@@ -167,16 +157,14 @@ modding/plugin support.
 By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
-1. **Archetype Cache** (3.1) — the biggest query-cost win, and the cheapest of
-   the three scale items
-2. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
-3. **Render Layers & Culling** (3.4) — unlocks dense visual effects
-4. **Content Hot-Reload** (4.3) — ~40 lines for faster content iteration
-5. **Keybinding Registry** (4.5) — accessibility, small and self-contained
-6. **Entity Inspector** (4.2) — dev quality of life
-7. **Plugin Hooks** (4.4) — modding, long-horizon and the largest piece
-8. **Data-Parallel Dispatch** (3.6) — a reusable module over the shipped SAB
+1. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
+2. **Render Layers & Culling** (3.4) — unlocks dense visual effects
+3. **Content Hot-Reload** (4.3) — ~40 lines for faster content iteration
+4. **Keybinding Registry** (4.5) — accessibility, small and self-contained
+5. **Entity Inspector** (4.2) — dev quality of life
+6. **Plugin Hooks** (4.4) — modding, long-horizon and the largest piece
+7. **Data-Parallel Dispatch** (3.6) — a reusable module over the shipped SAB
    columns; gated on a second consumer, since no engine's parallelism API
    transfers to a browser worker pool (a shape gap, not effort)
-9. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest,
-   most strategic piece, above the §3.1 cache
+8. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest,
+   most strategic piece, above the shipped cache

@@ -5,6 +5,7 @@ import type { LifecycleEvent } from '#lifecycle';
 import type { SpatialStructure } from '#spatial-structure';
 import type { EntityTemplate } from '#template';
 
+import { ArchetypeIndex } from '#archetype-index';
 import { ColumnStore } from '#column-store';
 import { ComponentStore, TagStore } from '#component-store';
 import { EventBus } from '#event-bus';
@@ -23,6 +24,7 @@ interface TagEntry { def: TagDef; store: TagStore }
 export class EcsWorld {
   private _spatial: SpatialStructure<{ x: number; y: number }> | undefined;
 
+  private readonly archetypes = new ArchetypeIndex();
   private componentRegistry: ComponentEntry[] = [];
   private destroyQueue = new Set<EntityId>();
   /**
@@ -103,6 +105,10 @@ export class EcsWorld {
    * Pending lifecycle events are dropped with the queue clear.
    */
   clearAll(): void {
+    // Clear the archetype index first, then wipe stores — mirrors `loadJSON`,
+    // so the rule is uniform: reset the index up front, never rely on the
+    // per-row delete events that `store.clear()` emits to unwind it.
+    this.archetypes.clear();
     for (const { store } of this.componentRegistry) store.clear();
     for (const { store } of this.tagRegistry) store.clear();
     this.destroyQueue.clear();
@@ -125,6 +131,7 @@ export class EcsWorld {
   destroyEntity(id: EntityId): void {
     for (const { store } of this.componentRegistry) store.delete(id);
     for (const { store } of this.tagRegistry) store.delete(id);
+    this.archetypes.removeEntity(id);
     this.lifecycle.emit({ id, type: 'EntityDestroyed' });
   }
 
@@ -223,6 +230,11 @@ export class EcsWorld {
     const source = asObject(data, 'EcsWorld save payload');
     this.nextId = asNumber(source.nextId, 'EcsWorld.nextId');
 
+    // Reset the archetype index up front: `store.clear()` below emits `delete`
+    // while the row still exists (has() is true), so its bit would otherwise
+    // survive as a phantom. The `store.set` calls that follow rebuild it.
+    this.archetypes.clear();
+
     for (const { def, store } of this.componentRegistry) {
       store.clear();
       const raw = source[def.name];
@@ -270,7 +282,7 @@ export class EcsWorld {
         throw new Error(`Component "${def.name}" not registered`);
       return store;
     });
-    return new QueryBuilder(stores);
+    return new QueryBuilder(stores, this.archetypes);
   }
 
   /**
@@ -296,10 +308,16 @@ export class EcsWorld {
     this.componentRegistry.push({ def: def as ComponentDef<unknown>, store: store as ComponentStoreLike<unknown> });
     this.storeByName.set(def.name, store as ComponentStoreLike<unknown>);
 
+    const bit = this.archetypes.registerStore(store);
     store.subscribe('set', (id, value) => {
+      this.archetypes.addBit(id, bit);
       this.lifecycle.emit({ id, component: def.name, type: 'ComponentAdded', value });
     });
     store.subscribe('delete', (id) => {
+      // A value replace also fires 'delete', but the row still exists then
+      // (has() is true); only a real removal clears the archetype bit.
+      if (!store.has(id))
+        this.archetypes.removeBit(id, bit);
       this.lifecycle.emit({ id, component: def.name, type: 'ComponentRemoved' });
     });
 
@@ -326,10 +344,13 @@ export class EcsWorld {
     this.tagRegistry.push({ def, store });
     this.tagByName.set(def.name, store);
 
+    const bit = this.archetypes.registerStore(store);
     store.subscribe('add', (id) => {
+      this.archetypes.addBit(id, bit);
       this.lifecycle.emit({ id, tag: def.name, type: 'TagAdded' });
     });
     store.subscribe('delete', (id) => {
+      this.archetypes.removeBit(id, bit);
       this.lifecycle.emit({ id, tag: def.name, type: 'TagRemoved' });
     });
 

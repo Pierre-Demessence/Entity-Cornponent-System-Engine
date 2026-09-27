@@ -213,6 +213,7 @@
           },
           "test": {
             "consumers": [
+              "src/archetype-cache.test.ts",
               "src/column-store.test.ts",
               "src/component-store.test.ts",
               "src/test-utils.test.ts",
@@ -440,6 +441,7 @@
           },
           "test": {
             "consumers": [
+              "src/archetype-cache.test.ts",
               "src/column-store.test.ts",
               "src/modules/kinematics-3d/kinematics3d-system.test.ts",
               "src/modules/scene-transition/scene-transition.test.ts",
@@ -616,6 +618,7 @@
           },
           "test": {
             "consumers": [
+              "src/archetype-cache.test.ts",
               "src/modules/camera/camera.test.ts",
               "src/modules/motion-3d/motion-3d.test.ts",
               "src/modules/motion/motion.test.ts",
@@ -653,6 +656,7 @@
         }
       ],
       "tests": [
+        "src/archetype-cache.test.ts",
         "src/column-store.test.ts",
         "src/component-store.test.ts",
         "src/modules/camera/camera.test.ts",
@@ -704,6 +708,7 @@
       "isModule": false,
       "other": [
         "animation",
+        "archetype-index.ts",
         "attach",
         "audio",
         "collision",
@@ -765,6 +770,7 @@
           "other": {
             "consumers": [
               "animation",
+              "archetype-index.ts",
               "attach",
               "audio",
               "collision",
@@ -13332,6 +13338,7 @@
           },
           "test": {
             "consumers": [
+              "src/archetype-cache.test.ts",
               "src/modules/animation/sprite-animation.test.ts",
               "src/modules/animation/sprite-clip.test.ts",
               "src/modules/attach/attach.test.ts",
@@ -13355,6 +13362,7 @@
         }
       ],
       "tests": [
+        "src/archetype-cache.test.ts",
         "src/modules/animation/sprite-animation.test.ts",
         "src/modules/animation/sprite-clip.test.ts",
         "src/modules/attach/attach.test.ts",

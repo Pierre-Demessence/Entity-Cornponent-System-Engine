@@ -1,17 +1,53 @@
+import type { ArchetypeIndex } from '#archetype-index';
 import type { ComponentStoreLike, TagStore } from '#component-store';
 import type { EntityId } from '#entity-id';
 
 /**
  * Fluent, iterable query over component stores with tag filtering.
- * Iterates the smallest store first for performance.
+ *
+ * When constructed with an {@link ArchetypeIndex} (the `world.query` path), it
+ * selects matching archetype buckets by signature — no per-entity store
+ * probing. Constructed without one (standalone), it falls back to scanning the
+ * smallest store and probing the rest. Both paths return identical results.
  */
 export class QueryBuilder<T extends unknown[]> {
   private excludedTags: TagStore[] = [];
+  private readonly index: ArchetypeIndex | undefined;
   private requiredTags: TagStore[] = [];
   private stores: ComponentStoreLike<unknown>[];
 
-  constructor(stores: ComponentStoreLike<unknown>[]) {
+  constructor(stores: ComponentStoreLike<unknown>[], index?: ArchetypeIndex) {
     this.stores = stores;
+    this.index = index;
+  }
+
+  /**
+   * OR the archetype bits of the required stores/tags and the excluded tags.
+   * Returns `undefined` if any store lacks a bit (not index-registered), so the
+   * caller falls back to the scan path.
+   */
+  private computeMasks(index: ArchetypeIndex): { excluded: bigint; required: bigint } | undefined {
+    let required = 0n;
+    for (const store of this.stores) {
+      const bit = index.bitOf(store);
+      if (bit === undefined)
+        return undefined;
+      required |= bit;
+    }
+    for (const tag of this.requiredTags) {
+      const bit = index.bitOf(tag);
+      if (bit === undefined)
+        return undefined;
+      required |= bit;
+    }
+    let excluded = 0n;
+    for (const tag of this.excludedTags) {
+      const bit = index.bitOf(tag);
+      if (bit === undefined)
+        return undefined;
+      excluded |= bit;
+    }
+    return { excluded, required };
   }
 
   /** Count matching entities without allocating a results array. */
@@ -36,6 +72,20 @@ export class QueryBuilder<T extends unknown[]> {
   * [Symbol.iterator](): Generator<[EntityId, ...T]> {
     if (this.stores.length === 0)
       return;
+
+    const masks = this.index ? this.computeMasks(this.index) : undefined;
+    if (this.index && masks) {
+      const width = this.stores.length;
+      for (const id of this.index.matching(masks.required, masks.excluded)) {
+        // The archetype guarantees every required store holds `id`, so we build
+        // the tuple with one get() per store and no membership probing.
+        const result: unknown[] = [id];
+        for (let i = 0; i < width; i++)
+          result.push(this.stores[i].get(id));
+        yield result as [EntityId, ...T];
+      }
+      return;
+    }
 
     let smallestIdx = 0;
     for (let i = 1; i < this.stores.length; i++) {

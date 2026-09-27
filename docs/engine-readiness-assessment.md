@@ -18,7 +18,7 @@ are marked **PRESENT** or **ABSENT** where they drive a verdict.
 
 | Game | Would it ship on this engine today? | The load-bearing blocker |
 | --- | --- | --- |
-| **Vampire Survivors** | Yes for a strong vertical slice; strained at shipping scale | Simulation entity count (thousands of gems/enemies) — no pooling, no SoA, no archetype cache |
+| **Vampire Survivors** | Yes for a strong vertical slice; strained at shipping scale | Simulation entity count (thousands of gems/enemies) — no entity pooling, and the gather-free archetype *tables* (§3.5) are unbuilt |
 | **Stardew Valley** | Yes — but most of the work is app-side simulation + UI | No UI module; world-model primitives (crops, inventory, schedules) are deliberately not engine surface |
 | **Hollow Knight** | Yes — the engine's home genre | Slopes / one-way platforms, animation clip registry, UI + dialogue, lighting |
 | **Factorio** | No | Objects-in-a-`Map` storage, no SoA / pooling / workers, no chunk streaming, Canvas2D renderer |
@@ -74,8 +74,9 @@ and the `modules/stats` overlay.
   options are DOM via `modules/render-dom` (the card-battler precedent) or
   hand-drawn canvas. Real work, but not engine work.
 - **Runtime scale (ABSENT).** Components are JS objects in a
-  `Map<EntityId, T>`. No entity pooling (core roadmap Tier 3.2, unchecked),
-  no archetype cache (Tier 3.1, unchecked), no SoA storage. A VS-like
+  `Map<EntityId, T>`. No entity pooling (core roadmap Tier 3.2, unchecked);
+  the archetype cache (Tier 3.1) now ships, but the gather-free archetype
+  *tables* (Tier 3.5) do not. A VS-like
   spawns and despawns thousands of things per minute — precisely the
   GC-stall shape `examples/stress-storage` exists to measure.
 - **The renderer is close to the wall, but not the wall.**
@@ -173,8 +174,9 @@ foundation, `modules/tilemap` parse plus collision grid, `modules/spatial`.
   offload (`modules/worker-pool` plus the `examples/worker-offload` harness)
   and the columnar storage slice have shipped; parallel *dispatch* (B2) is
   still open.
-- **No pooling and no archetype cache**, while `QueryBuilder` intersects
-  store key sets on every call.
+- **No entity pooling.** The archetype *cache* now ships, so `QueryBuilder`
+  matches by archetype signature instead of intersecting store key sets on
+  every call; the gather-free archetype *tables* (§3.5) remain unbuilt.
 - **No chunked or streaming world.** `HashGrid2D` is a single `Map` of
   cells; there is no simulation LOD and no notion of an abstracted chunk.
 - **Renderer.** Canvas2D with no batching; a zoomed-out factory is tens of
@@ -220,8 +222,9 @@ prevent.
    speculative-only in the backlog. The current paths are DOM via
    `modules/render-dom` or hand-drawn canvas. This is the most frequently
    missing surface in this list and the least glamorous.
-2. **Runtime storage scale.** Objects in `Map`, no pooling, no archetype
-   cache, no SoA, no workers. It bites Vampire Survivors at scale and kills
+2. **Runtime storage scale.** Objects in `Map`, no entity pooling, no
+   gather-free archetype *tables*, no workers (the archetype cache and the
+   columnar SoA slice ship). It bites Vampire Survivors at scale and kills
    Factorio.
 3. **Renderer ceiling.** Canvas2D only, one draw call per entity, no
    batching, no WebGL or WebGPU. It bites VS late-game and kills Factorio
@@ -256,7 +259,7 @@ Ordered by games unlocked per unit of work.
 | --- | --- | --- |
 | Promote the 3D stack that four examples already duplicate — `transform-3d`, 3D broadphase, 3D character controller, entity↔mesh sync, ray-vs-AABB | Subnautica-class 3D; stops active consumer drift | Large |
 | SoA hot-component storage (step B1) alone — worth it single-threaded, before any parallelism | VS at scale; Factorio step 1 | Large |
-| Entity pooling + archetype cache (core roadmap 3.1 / 3.2) | VS at ship scale; any spawn-heavy genre | Mid |
+| Entity pooling (core roadmap 3.2) — the archetype cache (3.1) ships; gather-free tables (3.5) sit above it | VS at ship scale; any spawn-heavy genre | Mid |
 | Slopes + one-way platforms | Hollow Knight to a comfortable yes | Small–mid |
 | A UI module, or a documented DOM-UI recipe | Four of the five games | Mid |
 | Batched tilemap renderable | Stardew and VS at real map sizes | Mid |
