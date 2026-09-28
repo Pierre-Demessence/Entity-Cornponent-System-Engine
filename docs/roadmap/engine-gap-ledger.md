@@ -13,6 +13,9 @@ undecided. Triaging it *removes* it: a promotion becomes an entry in
 [non-goals.md](non-goals.md), and the closed rows of the last exhaustive pass
 are frozen in
 [archived/audits/2026-09-21-example-gap-audit.md](../archived/audits/2026-09-21-example-gap-audit.md).
+Closures outside a pass are frozen in the dated audits beside it — most
+recently
+[2026-09-28-ledger-correction.md](../archived/audits/2026-09-28-ledger-correction.md).
 A row that outlives its decision is stale by construction.
 
 ## How this works
@@ -108,7 +111,6 @@ closed one, tagged or not, is frozen under
 
 | Gap (symptom) | Consumers | Verified @ src | Notes |
 |---|---|---|---|
-| Entity-lifecycle / tag-change events. No reactive hook, so consumers walk every entity every frame to detect tag (zone) changes. | card-battler | **ABSENT (tags only)**: `LifecycleEvent`@[`lifecycle.ts:13`](../../src/lifecycle.ts) = `EntityCreated/Destroyed/ComponentAdded/ComponentRemoved` — **no `TagAdded/TagRemoved`**. A zone modeled as a *component* WOULD get a reactive hook; card-battler models zones as *tags*, which don't emit. | **Hold** — 1 consumer, deferred (shape not pinned); now covered by the `modules/card-interaction` backlog entry, which must settle the zone model before building. Cheaper workaround on record: model zones as components. |
 | Carried-rider adoption — `modules/attach`'s `inheritVelocity` / carrier path has **no confirmed adopter**, so the rider case the module was built for is unexercised. | frogger (original motivation) | **PRESENT (module)**: `AttachDef` + `inheritVelocity` + `makeAttachSystem`@[`attach/attach.ts`](../../src/modules/attach/attach.ts). **ABSENT (adoption)**: a grep of `examples/**` for `AttachDef` finds only asteroids@[`game.ts:131`](../../examples/asteroids/src/game.ts) and spacewar@[`game.ts:173`](../../examples/spacewar/src/game.ts) — both use `snapPosition`/`snapRotation`, i.e. the *follow* case. frogger imports nothing from `modules/attach`. | **Open — adoption.** Two consumers ship-but-don't-exercise the carrier half. Either migrate frogger's log/turtle rider, or record the carrier path as canon-only (no internal consumer) so the claim stops being implied. |
 
 ## Related

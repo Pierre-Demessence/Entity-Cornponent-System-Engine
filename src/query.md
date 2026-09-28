@@ -5,10 +5,15 @@ A fluent query builder for typed component iteration with tag filters.
 ## How It Works
 
 - Constructed with an array of `ComponentStore` instances.
-- Iterates the **smallest** store for intersection efficiency, then checks
-  all other stores have the entity.
+- Built by `world.query(...)`, it selects whole archetype buckets by
+  component/tag signature, so a match costs no per-entity store probing and the
+  bucket list is cached until the world's archetype set changes.
+- Constructed directly, with no world, it iterates the **smallest** store and
+  checks every other store for the entity. Both paths yield identical results.
 - `.without(tagStore)` excludes entities present in a TagStore.
 - `.withTag(tagStore)` requires entities to be present in a TagStore.
+- Every result is an `[EntityId, ...components]` tuple — one component per def,
+  in the order the defs were passed.
 
 ## API
 

@@ -1,4 +1,4 @@
-import { TMX_FLIP_D, TMX_FLIP_H, TMX_FLIP_V } from '@pierre/ecs/modules/tmx';
+import { TMX_FLIP_D, TMX_FLIP_H, TMX_FLIP_V } from '#modules/tmx/index';
 
 /**
  * A tile's flip flags resolved to the canvas transform the renderer applies

@@ -14,7 +14,8 @@ not in this package.
 - Allocate monotonically increasing `EntityId` values.
 - Register `ComponentDef<T>` and `TagDef` schemas and hold the backing
   `ComponentStore<T>` / `TagStore` instances.
-- Expose a typed `query(...)` DSL that iterates the smallest matching store.
+- Expose a typed `query(...)` DSL that selects matching entities by archetype
+  signature, with tag filters.
 - Spawn entities from `EntityTemplate` blueprints with optional per-component
   overrides.
 - Serialize to / load from a plain JSON payload.
@@ -37,17 +38,20 @@ not in this package.
 | `getStore(def)` | Typed store lookup by def (throws if unregistered). |
 | `getStoreByName(name)` | Untyped store lookup by string name. |
 | `getTag(def)` / `getTagByName(name)` | Tag-store equivalents. |
-| `enableSpatial(def)` | Subscribe `set` / `delete` handlers on the given component so the `SpatialIndex` stays in sync. May be called at most once. |
+| `enableSpatial(def)` | Subscribe `set` / `delete` handlers on the given component so the spatial structure stays in sync. Defaults to a fresh `HashGrid2D`; pass any other `SpatialStructure` to swap the backend. May be called at most once. |
 | `move(id, x, y)` | Atomically update the spatial component and the index. Requires `enableSpatial` to have been called. |
+| `getColumnStore(def)` | Fast-path accessor for an all-numeric component's columnar store, exposing `column()` / `slotOf()` for zero-allocation hot loops. Throws if the component uses object storage. |
 | `query(...defs)` | Build a typed `QueryBuilder` over the given component defs. |
 | `spawn(template, overrides?)` | Create an entity from a template, shallow-merging per-component overrides. |
 | `spawnBatch(entries)` | Spawn many entities at once. Validates all at the end instead of per call. |
+| `use(...plugins)` | Install one or more `Plugin`s, calling each one's `build(world)` exactly once. Plugin names must be unique per world. Returns `this`. |
+| `hasPlugin(name)` | Whether a plugin with `name` has been installed. |
 | `transferEntity(id, from, componentNames?)` | Copy an entity's components from another world, preserving its id. Tags are not transferred (application-semantic). Optionally filter to a subset of components. |
 | `clearAllDirty()` | Clear dirty flags on every component and tag store. |
 | `clearAll()` | Empty every component/tag store, the destroy queue, the spatial index (if enabled), and the lifecycle event queue; reset `nextId = 0`. Registrations are preserved. Silent by design — no `EntityDestroyed` storm. Useful for full world resets (level restart, new game). |
 | `toJSON()` | Serialize the registry to `{ nextId, [storeName]: serialized }`. |
 | `loadJSON(data)` | In-place load — clears existing stores then repopulates. |
-| `lifecycle` | `EventBus<LifecycleEvent>` — emits `EntityCreated`, `EntityDestroyed`, `ComponentAdded`, `ComponentRemoved`. Queue-based; call `lifecycle.flush()` to dispatch (typically once per tick). Subscribers are **not** preserved across world swaps. |
+| `lifecycle` | `EventBus<LifecycleEvent>` — emits `EntityCreated`, `EntityDestroyed`, `ComponentAdded`, `ComponentRemoved`, `TagAdded`, `TagRemoved`. Queue-based; call `lifecycle.flush()` to dispatch (typically once per tick). Subscribers are **not** preserved across world swaps. |
 
 ## Using the engine
 

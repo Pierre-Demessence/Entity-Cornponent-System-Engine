@@ -31,9 +31,9 @@ export class EcsWorld {
   private readonly installedPlugins = new Set<string>();
   /**
    * Engine-internal lifecycle bus. Emits `EntityCreated`, `EntityDestroyed`,
-   * `ComponentAdded`, `ComponentRemoved`. Queue-based like any `EventBus` —
-   * call `lifecycle.flush()` (typically once per tick) to dispatch. Subscribers
-   * are not preserved across world swaps.
+   * `ComponentAdded`, `ComponentRemoved`, `TagAdded`, `TagRemoved`. Queue-based
+   * like any `EventBus` — call `lifecycle.flush()` (typically once per tick) to
+   * dispatch. Subscribers are not preserved across world swaps.
    */
   readonly lifecycle = new EventBus<LifecycleEvent>();
   private nextId = 0;

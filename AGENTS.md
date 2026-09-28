@@ -88,7 +88,9 @@ them without a plan and a peer review.
   `exports` map in `package.json`. Modules depend on core primitives
   only. **No module imports from `@pierre/ecs` itself**, and no module
   imports from another module unless that dependency is documented in
-  the module's own README.
+  the module's own README. That documentation rule covers shipped module
+  code; a `*.test.ts` file may pull fixtures from any module without the
+  dependency becoming documented surface.
 - **Core (`src/`) is domain-neutral.** Zero references to game-shape
   concepts (no "player", "enemy", "tile", "turn"). If a primitive in
   core mentions a genre concept, it's a leak — demote it.

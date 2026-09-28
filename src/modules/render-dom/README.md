@@ -53,3 +53,8 @@ class DomRenderer implements Renderer<DomRenderContext> {
 - `reconcile` runs after base reconciliation and can be used for
   per-entity adjustments (for example, zone-based layout overrides in
   DOM-heavy UIs).
+
+## Dependencies
+
+- `modules/transform` — `PositionDef` for each node's `left` / `top`.
+- `modules/render-canvas2d` — `RenderOrderDef` for z-order.

@@ -1,5 +1,6 @@
-import { TMX_FLIP_D, TMX_FLIP_H, TMX_FLIP_V } from '@pierre/ecs/modules/tmx';
 import { describe, expect, it } from 'vitest';
+
+import { TMX_FLIP_D, TMX_FLIP_H, TMX_FLIP_V } from '#modules/tmx/index';
 
 import { tileTransform } from './tile-transform';
 

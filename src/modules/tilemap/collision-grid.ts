@@ -1,4 +1,4 @@
-import type { TmxMap } from '@pierre/ecs/modules/tmx';
+import type { TmxMap } from '#modules/tmx/index';
 
 /**
  * A walkability mask for tile-based collision queries. Row-major, with

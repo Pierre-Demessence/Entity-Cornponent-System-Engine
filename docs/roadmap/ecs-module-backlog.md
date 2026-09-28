@@ -1193,12 +1193,12 @@ hand-rolled) and no hit-test / drop-predicate helper (card-battler and
 solitaire each hand-roll reverse hit-testing for DOM and canvas).
 
 **Representation choice to make during the build.** card-battler models zones
-as *tags*, and tags emit no lifecycle event; a *component* model would get
-`ComponentAdded` / `ComponentRemoved` reactivity for free. This does not change
-the operation surface (move a card between piles; hit-test a drop), so it does
-not gate the module — it is a design decision the plan settles. It also
-decides whether the related ledger row (zone changes with no reactive hook)
-closes or returns.
+as *tags*; a *component* model would put the pile a card sits in on its row
+rather than in a separate store. Both are observable — `TagAdded` /
+`TagRemoved` and `ComponentAdded` / `ComponentRemoved` are all emitted — so
+the choice turns on read pattern, not reactivity. This does not change the
+operation surface (move a card between piles; hit-test a drop), so it does not
+gate the module — it is a design decision the plan settles.
 
 **Canon.** Unity UI drag handlers, Godot `Control` drag-and-drop, Phaser's
 drag plugins, every card-game tutorial's hand-rolled pile manager.

@@ -1,4 +1,4 @@
-import type { TmxLayer, TmxMap, TmxTileset } from '@pierre/ecs/modules/tmx';
+import type { TmxLayer, TmxMap, TmxTileset } from '#modules/tmx/index';
 
 import { describe, expect, it } from 'vitest';
 

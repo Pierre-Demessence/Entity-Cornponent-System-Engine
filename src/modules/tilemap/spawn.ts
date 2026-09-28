@@ -1,9 +1,9 @@
-import type { EcsWorld, EntityId } from '@pierre/ecs';
-import type { TmxMap } from '@pierre/ecs/modules/tmx';
+import type { EcsWorld, EntityId } from '#index';
+import type { TmxMap } from '#modules/tmx/index';
 
-import { RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
-import { TMX_FLIP_H, TMX_FLIP_V } from '@pierre/ecs/modules/tmx';
-import { PositionDef } from '@pierre/ecs/modules/transform';
+import { RenderableDef, RenderOrderDef } from '#modules/render-canvas2d/index';
+import { TMX_FLIP_H, TMX_FLIP_V } from '#modules/tmx/index';
+import { PositionDef } from '#modules/transform/index';
 
 /** Options for {@link spawnTilemap}. */
 export interface SpawnTilemapOptions {

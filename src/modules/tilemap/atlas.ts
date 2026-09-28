@@ -1,7 +1,7 @@
-import type { TmxMap } from '@pierre/ecs/modules/tmx';
+import type { TmxMap } from '#modules/tmx/index';
 
-import { TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
-import { gidToFrame } from '@pierre/ecs/modules/tmx';
+import { TextureAtlasRegistry } from '#modules/texture-atlas/index';
+import { gidToFrame } from '#modules/tmx/index';
 
 /** Options for {@link buildTilemapAtlas}. */
 export interface BuildTilemapAtlasOptions {

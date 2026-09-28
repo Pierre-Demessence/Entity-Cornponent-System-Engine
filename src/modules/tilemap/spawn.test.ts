@@ -1,11 +1,12 @@
-import type { Renderable } from '@pierre/ecs/modules/render-canvas2d';
-import type { TmxLayer, TmxMap, TmxTileset } from '@pierre/ecs/modules/tmx';
+import type { Renderable } from '#modules/render-canvas2d/index';
+import type { TmxLayer, TmxMap, TmxTileset } from '#modules/tmx/index';
 
-import { RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
-import { TMX_FLIP_H, TMX_FLIP_V } from '@pierre/ecs/modules/tmx';
-import { PositionDef, RotationDef, ScaleDef } from '@pierre/ecs/modules/transform';
-import { createTestWorld } from '@pierre/ecs/test-utils';
 import { describe, expect, it } from 'vitest';
+
+import { RenderableDef, RenderOrderDef } from '#modules/render-canvas2d/index';
+import { TMX_FLIP_H, TMX_FLIP_V } from '#modules/tmx/index';
+import { PositionDef, RotationDef, ScaleDef } from '#modules/transform/index';
+import { createTestWorld } from '#test-utils';
 
 import { spawnTilemap } from './spawn';
 import { tileTransform } from './tile-transform';
