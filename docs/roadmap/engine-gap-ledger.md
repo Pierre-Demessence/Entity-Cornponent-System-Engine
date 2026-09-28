@@ -15,7 +15,7 @@ are frozen in
 [archived/audits/2026-09-21-example-gap-audit.md](../archived/audits/2026-09-21-example-gap-audit.md).
 Closures outside a pass are frozen in the dated audits beside it — most
 recently
-[2026-09-28-ledger-correction.md](../archived/audits/2026-09-28-ledger-correction.md).
+[2026-09-29-tick-runner-events.md](../archived/audits/2026-09-29-tick-runner-events.md).
 A row that outlives its decision is stale by construction.
 
 ## How this works
@@ -112,7 +112,6 @@ closed one, tagged or not, is frozen under
 | Gap (symptom) | Consumers | Verified @ src | Notes |
 |---|---|---|---|
 | Carried-rider adoption — `modules/attach`'s `inheritVelocity` / carrier path has **no confirmed adopter**, so the rider case the module was built for is unexercised. | frogger (original motivation) | **PRESENT (module)**: `AttachDef` + `inheritVelocity` + `makeAttachSystem`@[`attach/attach.ts`](../../src/modules/attach/attach.ts). **ABSENT (adoption)**: a grep of `examples/**` for `AttachDef` finds only asteroids@[`game.ts:131`](../../examples/asteroids/src/game.ts) and spacewar@[`game.ts:173`](../../examples/spacewar/src/game.ts) — both use `snapPosition`/`snapRotation`, i.e. the *follow* case. frogger imports nothing from `modules/attach`. | **Open — adoption.** Two consumers ship-but-don't-exercise the carrier half. Either migrate frogger's log/turtle rider, or record the carrier path as canon-only (no internal consumer) so the claim stops being implied. |
-| Event-less programs hand-roll a no-op flusher — `TickRunner` requires `getEvents`, so a scene with no event bus must invent `{ flush: () => {} }` to start a tick loop. | boids@[`main.ts:21`](../../examples/boids/src/main.ts), critters@[`main.ts:13`](../../examples/critters/src/main.ts), stealth-guard@[`main.ts:18`](../../examples/stealth-guard/src/main.ts), woodcutter@[`main.ts:12`](../../examples/woodcutter/src/main.ts); the Manual tutorial (`website/manual/guides/tutorial.md`, step 6) | **ABSENT**: `getEvents: (ctx: TCtx) => TickFlushableEvents` is a required field of `TickRunnerOptions`@[`tick-runner.ts:25`](../../src/tick-runner.ts), and the runner calls `getEvents(ctx).flush()` unconditionally@[`tick-runner.ts:88`](../../src/tick-runner.ts). No exported no-op flusher. | **Open.** Four examples define an identical `NOOP_EVENTS` constant. |
 
 ## Related
 

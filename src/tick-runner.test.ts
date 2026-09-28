@@ -79,6 +79,25 @@ describe('tickRunner', () => {
     expect(f.trace).toEqual(['system', 'events.flush', 'flushCommands', 'lifecycle.flush', 'clearAllDirty']);
   });
 
+  it('skips only the event flush when no event bus is given', () => {
+    const f = makeFixture();
+    f.scheduler.add({
+      name: 'sys',
+      run: ctx => ctx.trace.push('system'),
+    });
+
+    const runner = new TickRunner<Ctx>({
+      scheduler: f.scheduler,
+      source: f.source,
+      contextFactory: () => ({ events: f.events, trace: f.trace }),
+      getWorld: () => f.world,
+    });
+    runner.start();
+    f.source.emit();
+
+    expect(f.trace).toEqual(['system', 'flushCommands', 'lifecycle.flush', 'clearAllDirty']);
+  });
+
   it('passes the correct info to contextFactory and onTickComplete', () => {
     const f = makeFixture();
     const factory = vi.fn((_info: TickInfo): Ctx => ({ events: f.events, trace: f.trace }));

@@ -10,7 +10,6 @@ import { render } from './render';
 import { critterSystem } from './systems';
 
 const LOGIC_TICK_MS = 1000 / 60;
-const NOOP_EVENTS = { flush: () => {} };
 
 export function start(container: HTMLElement): () => void {
   container.innerHTML = '';
@@ -52,7 +51,6 @@ export function start(container: HTMLElement): () => void {
   const tickRunner = new TickRunner<GameState>({
     scheduler,
     source: tickSource,
-    getEvents: () => NOOP_EVENTS,
     getWorld: () => state.world,
     contextFactory: (info) => {
       state.dtMs = info.deltaMs ?? LOGIC_TICK_MS;

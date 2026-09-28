@@ -130,7 +130,6 @@ const runner = new TickRunner<Sim>({
     sim.dtMs = info.deltaMs ?? 16;
     return sim;
   },
-  getEvents: () => ({ flush: () => {} }),
   getWorld: () => world,
 });
 runner.start();
@@ -144,9 +143,9 @@ runner.start();
   always writes `dtMs` first, so the `0` it starts from is never seen by a
   system. Reusing one object is a choice, not a rule: a fresh one per tick is
   equally valid.
-- `getEvents` returns a no-op flusher because this scene emits no events. A
-  scene that does hands its event bus over here, and events drain at the end of
-  each tick.
+- `getWorld` tells the runner which world to flush at the end of each tick. A
+  scene that also has a game event bus passes it as `getEvents`, so its events
+  drain in the same flush; this one emits none.
 
 ## 7. Draw it
 

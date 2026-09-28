@@ -21,8 +21,12 @@ export interface TickRunnerOptions<TCtx> {
   source: TickSource;
   /** Build the per-tick context. Called once at the start of every tick. */
   contextFactory: (info: TickInfo) => TCtx;
-  /** Pull the event bus off the context for post-tick flushing. */
-  getEvents: (ctx: TCtx) => TickFlushableEvents;
+  /**
+   * Pull the game's event bus off the context for post-tick flushing. Omit it
+   * only when the program has no event bus: a bus the runner is not given is
+   * never flushed, so its queued events never reach their handlers.
+   */
+  getEvents?: (ctx: TCtx) => TickFlushableEvents;
   /**
    * Resolve the current world. A function (not a reference) so the runner
    * reads the latest world when the consumer swaps worlds between ticks
@@ -53,7 +57,7 @@ export interface TickRunnerOptions<TCtx> {
  * 1. `ctx = contextFactory(info)`
  * 2. `scheduler.run(ctx)`
  * 3. `onBeforeFlush?.(ctx, info)` — emit tick-boundary events here
- * 4. `ctx.events.flush()`
+ * 4. `getEvents?.(ctx).flush()` — skipped when there is no event bus
  * 5. `world.flushCommands()`
  * 6. `world.lifecycle.flush()`
  * 7. `world.clearAllDirty()`
@@ -85,7 +89,7 @@ export class TickRunner<TCtx> {
     }
     finally {
       onBeforeFlush?.(ctx, info);
-      getEvents(ctx).flush();
+      getEvents?.(ctx).flush();
       const world = getWorld();
       world.flushCommands();
       world.lifecycle.flush();
