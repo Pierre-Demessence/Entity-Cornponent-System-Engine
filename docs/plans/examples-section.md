@@ -23,13 +23,23 @@ the site becomes one more consumer of the examples, exactly as the hub is.
   early rungs, 20 Games Challenge, proving a subsystem, harnesses.
 - THE page for a prototype SHALL mount that prototype in the page, and SHALL link
   to the prototype's folder in the repository.
-- THE prototype SHALL NOT start until the reader asks it to start.
+- THE prototype SHALL start on its own when its page loads, with no click, and
+  SHALL offer Stop and Restart controls. WHERE the browser blocks audio until a
+  gesture, THE page SHALL still run silently and unlock sound on the reader's
+  first key press or click.
+- THE prototype SHALL be torn down when the reader leaves or reloads the page, so
+  no listeners or render loop outlive it.
+- THE Examples section SHALL have an overview page at `examples/` (the header
+  link's target and the sidebar's first entry) that introduces the section and
+  lists the groups.
 - THE Examples section SHALL be reachable from the header beside Manual and API
   reference, and SHALL have its own sidebar that the other two sections do not
   share.
 - WHEN a prototype is added, removed or renamed under `examples/`, THE site SHALL
-  need exactly one edit, and a test SHALL fail if the catalogue and the directory
-  disagree.
+  need no edit beyond the catalogue's own data (`examples/manifest.ts`); a type
+  error or a failing test SHALL name every other place that must follow
+  (`examples/loaders.ts`, the hub's `package.json` dependency), and a test SHALL
+  fail if the catalogue and the directory disagree.
 - THE prototype metadata (title, one-line summary, controls, modules exercised,
   group) SHALL have a single source, consumed by both the hub and the site.
 - IF a prototype needs cross-origin isolation to run its headline feature, THEN
@@ -101,12 +111,22 @@ the site becomes one more consumer of the examples, exactly as the hub is.
   it is what the hub already proves works. An iframe stays available as the
   escape hatch for one prototype that misbehaves, and would be a page-local
   change, not a design change.
-- **`start()` runs only on request.** The page renders the title, the controls
-  and a Play button; the click calls `start()`. Three reasons: the prototypes
-  attach keyboard listeners to the window (Space and the arrows would otherwise
-  fight the page's scrolling), several want an audio unlock gesture, and a page
-  that starts a render loop on load burns a GPU while it is being read. This is
-  the same gate the hub already applies through its Launch button.
+- **`start()` runs on page load.** Online demos of other libraries autoplay, and
+  a click-to-play gate makes the section feel like a link list. The page renders
+  the title, summary and controls, and mounts the prototype immediately. Three
+  costs come with that, and each has a mitigation rather than a gate:
+  - The prototypes attach keyboard listeners to the window, so Space and the
+    arrows would scroll the page while a reader plays. The stage calls
+    `preventDefault` for those keys only while the stage has focus or the
+    pointer is over it (spike checks which prototypes need it).
+  - Audio cannot start without a gesture. Prototypes must already tolerate a
+    suspended audio context; the stage resumes it on the first key press or
+    click. The spike confirms `rhythm` and any other audio prototype.
+  - A render loop burns CPU/GPU while the page is being read. The stage stops the
+    prototype when the tab is hidden or the stage has scrolled fully out of view
+    (`IntersectionObserver` + `visibilitychange`), and Restart brings it back.
+  Stop and Restart buttons are always available. The hub keeps its own Launch
+  button; the two shells may differ on this.
 - **Pages are generated MDX in the content collection, not a dynamic route.** The
   sidebar autogenerate, `Astro.locals.starlightRoute.id` in `Header.astro`, and
   the per-section regrouping in `site-route-data.ts` are all built for collection
@@ -118,7 +138,10 @@ the site becomes one more consumer of the examples, exactly as the hub is.
   optional challenge rung, modules, optional isolation caveat) and
   `examples/loaders.ts` holds the literal `import()` per id, typed as a record
   over the manifest's id union so a missing prototype is a type error rather than
-  a runtime one. The hub consumes both — its inline `EXAMPLES` array and its
+  a runtime one. Adding a prototype therefore touches the manifest, the loaders
+  and the hub's `package.json` (which lists every `@pierre/ecs-example-*`
+  workspace as a dependency); the test in slice 1 checks all three against the
+  directories, so nothing is silently forgotten. The hub consumes both — its inline `EXAMPLES` array and its
   loaders go away — and so does the site, which is what removes today's second
   copy. A dynamic specifier would defeat chunking, which is why the loaders stay
   a literal map even though the ids already exist in the manifest.
@@ -127,8 +150,8 @@ the site becomes one more consumer of the examples, exactly as the hub is.
   @pierre/ecs-example-<name>` keeps working as documented in `examples/README.md`.
   The site is an additional consumer, not a replacement shell.
 - **The site's stage is its own component, not shared with the hub.**
-  `website/src/components/ExampleStage.astro` owns the Play gate, the fullscreen
-  toggle and the teardown. The hub's equivalent markup is styled by the hub's own
+  `website/src/components/ExampleStage.astro` owns the autostart, the Stop/Restart and
+  fullscreen controls, the visibility pause and the teardown. The hub's equivalent markup is styled by the hub's own
   stylesheet, so sharing the code would drag the hub's CSS into the docs section
   to save about 60 lines of DOM wiring. What is shared is the contract
   (`start(container)`, gated), and it gets stated in `examples/README.md`.
@@ -137,12 +160,20 @@ the site becomes one more consumer of the examples, exactly as the hub is.
   (gitignored, wiped by the generator, like the Manual's generated half). Only the
   data is authored, and it is authored in `examples/` where it describes the
   prototypes.
+- **The section has a generated overview page.** `examples/index` is generated
+  from the manifest like the prototype pages: a short introduction, then the
+  groups with a card per prototype. It carries the intro copy the retired Manual
+  page had.
+- **No view transitions, so navigation is a full page load.** The site does not
+  use Astro's `ClientRouter`, so leaving a page discards the prototype anyway.
+  Teardown is still wired (`pagehide`, Stop, and the visibility pause) so the
+  stage stays correct if the site adopts a client router later.
 - **The Manual's examples page is deleted, not kept alongside.** It carries the
   same 28 summaries and the same module lists the manifest will carry; leaving it
   would recreate the duplication this plan removes. Its narrative grouping (early
   rungs → challenge → subsystems → harnesses) survives as the sidebar groups, and
   its inbound links are updated (`website/manual/index.md:45`,
-  `website/manual/guides/tutorial.md:21`).
+  `website/manual/guides/tutorial.md:21`, `docs/agent/README.md:207`).
 - **Cross-origin isolation is stated, not solved.** `examples/parallel-kernel`
   sets COOP/COEP through dev-and-preview middleware
   (`examples/parallel-kernel/vite.config.ts`) and degrades when
@@ -161,20 +192,25 @@ the site becomes one more consumer of the examples, exactly as the hub is.
 and loaders and reads both. `scripts/examples.test.ts` asserts the manifest
 matches the directories on disk: every `examples/*/package.json` whose name starts
 `@pierre/ecs-example-` appears exactly once, no entry names a missing directory,
-every module named in an entry exists under `src/modules/`, and the renderer
-emits one page per entry. No site change at all, so the diff is reviewable as
+every workspace the hub depends on matches the manifest, the loaders record has
+exactly the manifest's ids, and every module named in an entry exists under
+`src/modules/`. (The renderer's one-page-per-entry check arrives with the
+renderer, in slice 2.) No site change at all, so the diff is reviewable as
 pure data movement — and the hub build plus a browser pass over the hub is what
 proves it did not change behaviour.
 
 ### 2. Two prototypes, mounted from the site
 
-Add `website/src/components/ExampleStage.astro` (container + Play gate +
-fullscreen + teardown), the pure renderer in `scripts/examples.ts` and its CLI
+Add `website/src/components/ExampleStage.astro` (container + autostart +
+Stop/Restart + fullscreen + visibility pause + teardown), the pure renderer in `scripts/examples.ts` and its CLI
 `scripts/examples.gen.ts` writing into `website/src/content/docs/examples/`
-(gitignored, wiped first), and generate exactly two pages: `snake` (canvas, no
+(gitignored, wiped first), and generate the overview page plus exactly two prototype pages: `snake` (canvas, no
 assets, no worker) and `worker-offload` (worker, posts, graph). Those two cover
 the two risky shapes — a plain canvas mount and a worker whose URL has to come out
-base-correct under `website/astro.config.mjs`'s `base`. Neither page is in a
+base-correct under `website/astro.config.mjs`'s `base`. The spike also answers whether
+`astro.config.mjs` can import `examples/manifest.ts` (Astro loads its config
+through Vite, so it should) and what the keyboard and audio handling above needs.
+Neither page is in a
 sidebar yet, so this slice changes no published navigation and can be visited
 directly at its URL.
 
@@ -185,7 +221,8 @@ with explicit `link` entries built from the manifest and grouped by category;
 teach `site-route-data.ts` to cut the section (a third label beside
 `MANUAL_GROUP` / `API_GROUP`, and an `examplesSidebar()` that returns the group's
 resolved entries plus the Overview link); add the third header link in
-`Header.astro`. Verified by grepping the built `website/dist/**/index.html` for the
+`Header.astro`. Record the site build's size and time next to the hub's 3.48 MB baseline, since
+Pages now carries every prototype chunk. Verified by grepping the built `website/dist/**/index.html` for the
 group labels and an entry per prototype, not by trusting a green build.
 
 ### 4. Retire the Manual page
@@ -205,7 +242,9 @@ now compiles every prototype's source and a prototype that stops typechecking
 must fail CI instead of shipping as a page that cannot mount. Note the mount
 contract in `examples/README.md` (a prototype exports `start(container)` and is
 safe to mount in a foreign page), and update `docs/roadmap/docs-site-roadmap.md`:
-the Examples candidate is shipped, and open roadmap files list open work.
+the Examples candidate is shipped, and open roadmap files list open work. The
+file has no "Deferred" section today, so the deferred items below get one. A peer
+review of the whole change is the last gate before the plan moves to `done/`.
 
 ## Deferred, and where it lives
 
@@ -238,9 +277,9 @@ Slice 1 — catalogue:
       prototype into a type error included. An import from the site alone would
       never be typechecked.
 - [ ] Add `scripts/examples.test.ts`: the manifest against
-      `examples/*/package.json` and against `src/modules/`, and one page per
-      manifest entry out of the renderer, so a prototype missing from either side
-      fails `npm test` rather than vanishing from the site.
+      `examples/*/package.json`, `examples/hub/package.json` dependencies, the
+      loaders record's keys and `src/modules/`, so a prototype missing from any
+      side fails `npm test` rather than vanishing from the site.
 - [ ] Gates: `npm run lint`, `npm test`, `npm run typecheck`, `npm run
       typecheck:examples`, `npm run build -w @pierre/ecs-examples-hub`.
 - [ ] Hand the hub to Pierre to confirm each prototype still launches.
@@ -248,28 +287,37 @@ Slice 1 — catalogue:
 Slice 2 — two prototypes from the site:
 
 - [ ] Add `website/src/components/ExampleStage.astro`: renders the prototype's
-      title, summary and controls, a Play button, and a `div` the prototype mounts
-      into; calls `start()` on Play; tears down on navigation; keeps the hub's
-      fullscreen affordance.
-- [ ] Add `scripts/examples.ts` (pure: manifest → page markdown with frontmatter)
+      title, summary and controls and a `div` the prototype mounts into; calls
+      `start()` on load; Stop and Restart buttons; pauses when the tab is hidden
+      or the stage is scrolled out of view; tears down on `pagehide`; keeps the
+      hub's fullscreen affordance; keeps Space/arrows from scrolling the page
+      while the stage is focused or hovered; resumes audio on the first gesture.
+- [ ] Add `scripts/examples.ts` (pure: manifest → page markdown with frontmatter,
+      including the `examples/index` overview page)
       and `scripts/examples.gen.ts` (CLI: wipe and write
       `website/src/content/docs/examples/`).
 - [ ] Add `website/src/content/docs/examples/` to `.gitignore` beside the
       Manual's generated entry.
-- [ ] Generate `snake` and `worker-offload` only; wire the generator into
+- [ ] Extend `scripts/examples.test.ts`: the renderer emits one page per manifest
+      entry plus the overview.
+- [ ] Generate the overview, `snake` and `worker-offload` only; wire the generator into
       `docs:manual` / `docs:site` in `package.json`.
-- [ ] Gate: `npm run docs:site` succeeds and the two pages load their prototype
-      when Play is pressed, with the worker URL resolving under the Pages base
-      path. Pierre verifies both in the browser.
+- [ ] Gate: `npm run docs:site` succeeds and the two pages start their prototype
+      on load, with the worker URL resolving under the Pages base path. Claude
+      drives both pages in the pre-installed Chromium (Playwright: no console
+      errors, canvas painting, Stop/Restart work, Space does not scroll) and
+      reports; Pierre then confirms by eye.
 - [ ] Record in the plan what the spike proved or broke: whether Astro bundles a
       workspace TS package imported from an `.astro` script, whether the worker
       chunk gets the `base` prefix, the added build time, and whether
       `website/tsconfig.json` needs `examples/loaders.ts` in `include` for the
-      typecheck leg.
+      typecheck leg, and whether `astro.config.mjs` can import the manifest.
 
 Slice 3 — the section:
 
-- [ ] Generate all 28 pages, grouped by category.
+- [ ] Generate all 28 pages, grouped by category. Sweep every page in Chromium
+      (starts, no console errors, audio prototypes run silently until a gesture);
+      record the site build's size and time.
 - [ ] Declare the `Examples` group in `website/astro.config.mjs` (explicit link
       entries from the manifest; Starlight's `{ label, items: [{ autogenerate }] }`
       shape is not needed for explicit links).
@@ -291,6 +339,8 @@ Slice 4 — retire the Manual page:
       depth for a page's own URL, per the Manual's link rules), and fix the count
       in the index's own copy at `:45` — it says 29 prototypes while `examples/`
       holds 28 next to `hub/` and `assets/`.
+- [ ] Repoint `docs/agent/README.md:207`, which describes the retired page as
+      the hand-written prototype list.
 - [ ] Confirm nothing links to the retired route: `npm test` runs the Manual's
       route check.
 - [ ] Gate: `npm run docs:site`, then Pierre confirms no Manual page lost content.
@@ -302,7 +352,8 @@ Slice 5 — guards, docs, roadmap:
 - [ ] State the mount contract in `examples/README.md`.
 - [ ] Delete the "Candidate, not yet wanted" block at
       `docs/roadmap/docs-site-roadmap.md:31-35`: the candidate shipped, and an
-      open roadmap lists open work. File the deferred items above where the
-      "Deferred" section says.
+      open roadmap lists open work. Add a "Deferred" section there and file
+      the deferred items above in it.
+- [ ] Peer review of the full change before the move.
 - [ ] Move this plan to `docs/plans/done/` in the same commit as the final
       change, and re-run `npm test` after the move.
