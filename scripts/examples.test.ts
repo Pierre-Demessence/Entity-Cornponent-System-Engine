@@ -193,4 +193,12 @@ describe('links into the Examples section', () => {
         expect(posix.join(url, match[1]!), `${rel}: ${match[1]}`).toBe('/examples/');
     }
   });
+
+  it('quote a prototype count that matches the manifest', () => {
+    for (const file of authoredPages(manualDir)) {
+      const source = readFileSync(file, 'utf8').replaceAll(/\s+/g, ' ');
+      for (const match of source.matchAll(/(\d+) prototypes/g))
+        expect(Number(match[1]), file).toBe(EXAMPLES.length);
+    }
+  });
 });

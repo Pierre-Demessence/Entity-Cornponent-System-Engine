@@ -17,6 +17,31 @@ game list in order.
 Engine gaps surfaced while building these examples are recorded centrally
 in the [engine gap ledger](../docs/roadmap/engine-gap-ledger.md).
 
+## The catalogue and the mount contract
+
+[`manifest.ts`](manifest.ts) is the one list of prototypes — id, title, summary,
+controls, group, the modules each imports — and [`loaders.ts`](loaders.ts) holds
+the literal `import()` for each. The hub and the documentation site's
+[Examples section](../website/src/components/ExampleStage.astro) both read them,
+and `scripts/examples.test.ts` fails when they disagree with the directories
+here. To add a prototype: add its manifest entry, its loader, and its workspace
+dependency in `hub/package.json`.
+
+Every prototype's `src/main.ts` exports `start(container: HTMLElement): () => void`:
+it mounts into the element it is given and returns a teardown that stops every
+loop and listener it started. That contract is what lets a foreign page host a
+prototype, so keep to it:
+
+- mount only into `container` — never `document.body` or a hard-coded id;
+- ship no global CSS (a stylesheet is fine if every rule is scoped to a class the
+  prototype owns; global `html, body` rules belong in its own `index.html`);
+- start on being called — the host decides when — and clean up completely when
+  the teardown runs, because the site starts and stops a prototype as the reader
+  scrolls, switches tabs and presses Restart.
+
+The standalone shell (`index.html` plus its Vite app) still works on its own; it
+is one more host of the same contract.
+
 ## Rules for examples
 
 These mirror the guiding rules from the prototype roadmap. They are

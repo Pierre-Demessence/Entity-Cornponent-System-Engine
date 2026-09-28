@@ -5,7 +5,8 @@
  * The prototypes share one contract — `start(container)` returns a teardown —
  * and inject no global styles, so a page needs only a container. The stage adds
  * what a reader needs around it: Stop / Restart, fullscreen, and a guarantee the
- * prototype is not running when nobody can see it.
+ * prototype is not running when nobody can see it or while the reader is typing
+ * somewhere else on the page (the prototypes listen for keys on `window`).
  */
 interface Props {
 	/** Directory name under `examples/`, a key of `examples/manifest.ts`. */
@@ -48,10 +49,11 @@ const { id } = Astro.props;
 		let teardown: (() => void) | null = null;
 		let generation = 0;
 		let loading = false;
-		// Three independent reasons for the prototype not to run.
+		// Independent reasons for the prototype not to run.
 		let wanted = true; // the reader has not pressed Stop
 		let inView = false;
-		let tabVisible = document.visibilityState === 'visible';
+		let typing = false; // focus is in a text field elsewhere on the page
+		let failed = false; // start threw; only Restart tries again
 		let hovered = false;
 
 		function setStatus(text: string): void {
@@ -85,19 +87,24 @@ const { id } = Astro.props;
 				if (mine !== generation)
 					return;
 				loading = false;
+				failed = true;
+				// `start` may have got partway: drop whatever it put on the page.
+				viewport.replaceChildren();
 				console.error('Failed to load or start example', error);
-				setStatus('Could not start this example. See the console for details.');
+				sync();
 			});
 		}
 
 		function sync(): void {
-			const shouldRun = wanted && inView && tabVisible;
+			const shouldRun = wanted && inView && !typing && !failed;
 			if (shouldRun && !teardown && !loading)
 				begin();
 			else if (!shouldRun && (teardown || loading))
 				halt();
-			if (!shouldRun)
-				setStatus(wanted ? 'Paused while out of view' : 'Stopped');
+			if (failed)
+				setStatus('Could not start this example. See the console for details.');
+			else if (!shouldRun)
+				setStatus(!wanted ? 'Stopped' : typing ? 'Paused while typing' : 'Paused while out of view');
 			toggle.textContent = wanted ? 'Stop' : 'Start';
 		}
 
@@ -107,6 +114,7 @@ const { id } = Astro.props;
 		});
 		restart.addEventListener('click', () => {
 			wanted = true;
+			failed = false;
 			halt();
 			sync();
 		});
@@ -118,19 +126,33 @@ const { id } = Astro.props;
 		});
 
 		new IntersectionObserver((entries) => {
-			inView = entries.some(entry => entry.isIntersecting);
+			// Entries are chronological; the last one is the current state.
+			inView = entries[entries.length - 1]?.isIntersecting ?? false;
 			sync();
 		}).observe(root);
-		document.addEventListener('visibilitychange', () => {
-			tabVisible = document.visibilityState === 'visible';
+		// A hidden tab already stops `requestAnimationFrame`, so it needs no handling.
+		window.addEventListener('pagehide', halt);
+
+		// The prototypes read keys from `window`, so typing in the site's search box
+		// would drive the game (and lose the keystrokes). Pause while a text field
+		// outside the stage has focus.
+		const isTextField = (target: EventTarget | null): boolean =>
+			target instanceof HTMLElement && !root.contains(target)
+			&& (target.isContentEditable || target.matches('input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"]), textarea, select'));
+		document.addEventListener('focusin', (event) => {
+			typing = isTextField(event.target);
 			sync();
 		});
-		window.addEventListener('pagehide', halt);
+		document.addEventListener('focusout', () => {
+			typing = false;
+			sync();
+		});
 
 		viewport.addEventListener('pointerenter', () => { hovered = true; });
 		viewport.addEventListener('pointerleave', () => { hovered = false; });
 		window.addEventListener('keydown', (event) => {
-			if (!SCROLL_KEYS.has(event.key) || !(hovered || root.contains(document.activeElement)))
+			// Only while the prototype is running: a stopped stage must not trap the page.
+			if (!teardown || !SCROLL_KEYS.has(event.key) || !(hovered || root.contains(document.activeElement)))
 				return;
 			if ((event.target as Element | null)?.closest?.(NATIVE_KEY_TARGETS))
 				return;
@@ -181,14 +203,19 @@ const { id } = Astro.props;
 	.example-actions button:hover {
 		border-color: var(--sl-color-accent);
 	}
+	/* The prototypes size themselves to their container; a floor keeps an empty or
+	   loading stage from collapsing (and the page from jumping when it starts). */
 	.example-viewport {
-		display: flex;
+		display: grid;
 		flex: 1;
-		flex-direction: column;
-		align-items: center;
+		place-items: center;
+		min-height: min(72vh, 720px);
 		max-width: 100%;
 		padding: 0.75rem;
 		overflow: auto;
+	}
+	.example-stage:fullscreen .example-viewport {
+		min-height: 0;
 	}
 	.example-viewport:focus-visible {
 		outline: 2px solid var(--sl-color-accent);

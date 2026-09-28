@@ -24,9 +24,9 @@ the site becomes one more consumer of the examples, exactly as the hub is.
 - THE page for a prototype SHALL mount that prototype in the page, and SHALL link
   to the prototype's folder in the repository.
 - THE prototype SHALL start on its own when its page loads, with no click, and
-  SHALL offer Stop and Restart controls. WHERE the browser blocks audio until a
-  gesture, THE page SHALL still run silently and unlock sound on the reader's
-  first key press or click.
+  SHALL offer Stop and Restart controls. Audio that the browser blocks until a
+  gesture is the prototype's own concern: it SHALL still run silently, and
+  unlocks on the prototype's own gesture.
 - THE prototype SHALL be torn down when the reader leaves or reloads the page, so
   no listeners or render loop outlive it.
 - THE Examples section SHALL have an overview page at `examples/` (the header
@@ -119,12 +119,16 @@ the site becomes one more consumer of the examples, exactly as the hub is.
     arrows would scroll the page while a reader plays. The stage calls
     `preventDefault` for those keys only while the stage has focus or the
     pointer is over it (spike checks which prototypes need it).
-  - Audio cannot start without a gesture. Prototypes must already tolerate a
-    suspended audio context; the stage resumes it on the first key press or
-    click. The spike confirms `rhythm` and any other audio prototype.
+  - Audio cannot start without a gesture. The prototypes create and unlock their
+    own audio contexts (there is no handle for the stage to resume), so they run
+    silently until the reader's first gesture inside them.
   - A render loop burns CPU/GPU while the page is being read. The stage stops the
-    prototype when the tab is hidden or the stage has scrolled fully out of view
-    (`IntersectionObserver` + `visibilitychange`), and Restart brings it back.
+    prototype when it has scrolled fully out of view (`IntersectionObserver`) and
+    starts it again, from the beginning, when it returns; the `start()` contract
+    only returns a teardown, so there is no true pause. A hidden tab needs no
+    handling — the browser already stops `requestAnimationFrame`.
+  - The prototypes read keys from `window`, so typing in the site's search box
+    would drive a game. The stage pauses while a text field outside it has focus.
   Stop and Restart buttons are always available. The hub keeps its own Launch
   button; the two shells may differ on this.
 - **Pages are generated MDX in the content collection, not a dynamic route.** The
@@ -151,7 +155,7 @@ the site becomes one more consumer of the examples, exactly as the hub is.
   The site is an additional consumer, not a replacement shell.
 - **The site's stage is its own component, not shared with the hub.**
   `website/src/components/ExampleStage.astro` owns the autostart, the Stop/Restart and
-  fullscreen controls, the visibility pause and the teardown. The hub's equivalent markup is styled by the hub's own
+  fullscreen controls, the out-of-view stop and the teardown. The hub's equivalent markup is styled by the hub's own
   stylesheet, so sharing the code would drag the hub's CSS into the docs section
   to save about 60 lines of DOM wiring. What is shared is the contract
   (`start(container)`, gated), and it gets stated in `examples/README.md`.
@@ -166,7 +170,7 @@ the site becomes one more consumer of the examples, exactly as the hub is.
   page had.
 - **No view transitions, so navigation is a full page load.** The site does not
   use Astro's `ClientRouter`, so leaving a page discards the prototype anyway.
-  Teardown is still wired (`pagehide`, Stop, and the visibility pause) so the
+  Teardown is still wired (`pagehide`, Stop, and the out-of-view stop) so the
   stage stays correct if the site adopts a client router later.
 - **The Manual's examples page is deleted, not kept alongside.** It carries the
   same 28 summaries and the same module lists the manifest will carry; leaving it
@@ -202,7 +206,7 @@ proves it did not change behaviour.
 ### 2. Two prototypes, mounted from the site
 
 Add `website/src/components/ExampleStage.astro` (container + autostart +
-Stop/Restart + fullscreen + visibility pause + teardown), the pure renderer in `scripts/examples.ts` and its CLI
+Stop/Restart + fullscreen + out-of-view stop + teardown), the pure renderer in `scripts/examples.ts` and its CLI
 `scripts/examples.gen.ts` writing into `website/src/content/docs/examples/`
 (gitignored, wiped first), and generate the overview page plus exactly two prototype pages: `snake` (canvas, no
 assets, no worker) and `worker-offload` (worker, posts, graph). Those two cover
@@ -284,7 +288,7 @@ Slice 1 — catalogue:
       typecheck:examples`, `npm run build -w @pierre/ecs-examples-hub`.
 - [x] Drive the hub in Chromium: all 28 prototypes mount with no page errors
       (Claude, Playwright sweep of the built hub).
-- [ ] Pierre confirms each prototype still launches, by eye.
+- [ ] Pierre confirms each prototype still launches, by eye (see the hand-off under slice 5).
 
 Slice 1 findings: `scripts/examples.test.ts` must not import `examples/loaders.ts`
 — its literal `import()`s would pull every prototype's DOM-dependent source into
@@ -299,10 +303,11 @@ Slice 2 — two prototypes from the site:
 
 - [x] Add `website/src/components/ExampleStage.astro`: renders the prototype's
       title, summary and controls and a `div` the prototype mounts into; calls
-      `start()` on load; Stop and Restart buttons; pauses when the tab is hidden
-      or the stage is scrolled out of view; tears down on `pagehide`; keeps the
+      `start()` on load; Stop and Restart buttons; stops while the stage is out of
+      view or a text field elsewhere has focus; latches a failed start until
+      Restart; tears down on `pagehide`; keeps the
       hub's fullscreen affordance; keeps Space/arrows from scrolling the page
-      while the stage is focused or hovered; resumes audio on the first gesture.
+      while it is running and focused or hovered.
 - [x] Add `scripts/examples.ts` (pure: manifest → page markdown with frontmatter,
       including the `examples/index` overview page)
       and `scripts/examples.gen.ts` (CLI: wipe and write
@@ -342,8 +347,8 @@ Slice 2 findings (spike):
 - `astro.config.mjs` importing the manifest is still to be proven in slice 3.
 - The stage does not touch audio: prototypes create and unlock their own audio
   context on their own gestures (`rhythm` says "Click to start audio"), and there
-  is no handle to resume from outside, so the requirement's "unlock on first
-  gesture" is the prototypes' behaviour, not the stage's.
+  is no handle to resume from outside, so unlocking is the prototypes' behaviour,
+  not the stage's (the requirement and decision were reworded to say so).
 - Keyboard: Space and the arrows are `preventDefault`ed while the pointer is
   over the stage or it holds focus (native controls exempt); Playwright confirms
   the page does not scroll.
@@ -402,7 +407,7 @@ Slice 4 — retire the Manual page:
       route check.
 - [x] Gate: `npm run docs:site`; the built Manual sidebar no longer lists
       Examples, and the Manual's links resolve to `/examples/`.
-- [ ] Pierre confirms no Manual page lost content.
+- [ ] Pierre confirms no Manual page lost content (see the hand-off under slice 5).
 
 Slice 4 findings: a third inbound link the plan missed —
 `website/manual/getting-started/introduction.md:63` — is repointed too, and its
@@ -415,13 +420,47 @@ descriptions) was updated in slice 3.
 
 Slice 5 — guards, docs, roadmap:
 
-- [ ] Confirm the `typecheck-examples` job (`ci.yml:61-72`) typechecks the
+- [x] Confirm the `typecheck-examples` job (`ci.yml:61-72`) typechecks the
       catalogue through the hub's import; no CI edit.
-- [ ] State the mount contract in `examples/README.md`.
-- [ ] Delete the "Candidate, not yet wanted" block at
+- [x] State the mount contract in `examples/README.md`.
+- [x] Delete the "Candidate, not yet wanted" block at
       `docs/roadmap/docs-site-roadmap.md:31-35`: the candidate shipped, and an
       open roadmap lists open work. Add a "Deferred" section there and file
       the deferred items above in it.
-- [ ] Peer review of the full change before the move.
-- [ ] Move this plan to `docs/plans/done/` in the same commit as the final
+- [x] Peer review of the full change before the move (`/code-review high` over the branch; findings and resolutions are recorded below).
+- [x] Move this plan to `docs/plans/done/` in the same commit as the final
       change, and re-run `npm test` after the move.
+
+Slice 5 findings: `npm run typecheck:examples` (the `typecheck-examples` job) does
+check the catalogue through the hub's import — deleting one loader fails it with
+`Property 'snake' is missing in type … Record<ExampleId, …>` — and
+`npm run typecheck` (the `typecheck` job) checks the site's import of
+`examples/loaders`; no CI edit was needed. `pages.yml` runs `npm run docs:site`,
+which now generates the Examples pages first.
+
+Handed to Pierre (human checks this plan cannot do): confirm each prototype still
+launches from the hub and on its site page, and that no Manual page lost content
+when `examples.md` was retired.
+
+Review round (`/code-review high` over the branch), and what changed:
+
+- **Fixed:** the empty stage collapsed to ~24 px (the hub's `min-height` and
+  centring were dropped), which starves `starfighter` and `card-battler`; the
+  viewport is now a centred grid with the hub's floor. `inView` used `some()` over
+  a batch of observer entries; it now takes the last. Scroll-key suppression only
+  applies while the prototype is running, so Stop or a failed load never traps the
+  page. A `start()` that throws now clears the viewport and latches until
+  Restart, instead of retrying on every observer event. The stage pauses while a
+  text field elsewhere has focus (typing in the site's search would drive a game
+  through the prototypes' window-level key listeners). `rpg` called
+  `new KeyboardProvider()` with no `preventDefaultCodes`, which swallows every key
+  on the page including Ctrl+R; it now lists only the arrows and Space, like its
+  siblings. A test now checks the prose "N prototypes" in the Manual against the
+  manifest.
+- **Changed by decision:** the hidden-tab stop is gone. A hidden tab already
+  stops `requestAnimationFrame`, and tearing a game down (resetting its state) on a
+  brief tab switch cost more than it saved. Out-of-view still stops and restarts
+  from the beginning, because the contract offers a teardown and no pause.
+- **Declined:** sharing the hub's and the stage's mount code. The plan decided
+  against it (the hub's markup is styled by the hub's global stylesheet); what is
+  shared is the contract, which `examples/README.md` states.
