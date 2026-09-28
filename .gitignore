@@ -21,6 +21,7 @@ docs/agent/engine-usage.html
 website/dist/
 website/.astro/
 website/src/content/docs/manual/
+website/src/content/docs/examples/
 website/src/content/docs/api/
 
 # Editor directories and files

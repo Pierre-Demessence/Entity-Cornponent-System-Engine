@@ -1,0 +1,197 @@
+---
+/**
+ * Mounts one prototype from `examples/` into the page and starts it on load.
+ *
+ * The prototypes share one contract — `start(container)` returns a teardown —
+ * and inject no global styles, so a page needs only a container. The stage adds
+ * what a reader needs around it: Stop / Restart, fullscreen, and a guarantee the
+ * prototype is not running when nobody can see it.
+ */
+interface Props {
+	/** Directory name under `examples/`, a key of `examples/manifest.ts`. */
+	id: string;
+}
+
+const { id } = Astro.props;
+---
+
+<div class="example-stage not-content" data-example-stage data-id={id}>
+	<div class="example-toolbar">
+		<span class="example-status" data-status role="status">Loading…</span>
+		<div class="example-actions">
+			<button type="button" data-action="toggle">Stop</button>
+			<button type="button" data-action="restart">Restart</button>
+			<button type="button" data-action="fullscreen" title="Toggle fullscreen" aria-label="Toggle fullscreen">⛶</button>
+		</div>
+	</div>
+	<div class="example-viewport" data-viewport tabindex="0" role="application" aria-label="Interactive demo"></div>
+</div>
+
+<script>
+	import type { ExampleId } from '../../../examples/manifest';
+
+	import { LOADERS } from '../../../examples/loaders';
+
+	/** Keys the browser would use to scroll the page, which a game wants for itself. */
+	const SCROLL_KEYS = new Set([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown']);
+	/** Elements whose own keyboard handling must keep working inside a prototype's UI. */
+	const NATIVE_KEY_TARGETS = 'input, select, textarea, button, a';
+
+	function mountStage(root: HTMLElement): void {
+		const viewport = root.querySelector<HTMLElement>('[data-viewport]')!;
+		const status = root.querySelector<HTMLElement>('[data-status]')!;
+		const toggle = root.querySelector<HTMLButtonElement>('[data-action="toggle"]')!;
+		const restart = root.querySelector<HTMLButtonElement>('[data-action="restart"]')!;
+		const fullscreen = root.querySelector<HTMLButtonElement>('[data-action="fullscreen"]')!;
+		const load = LOADERS[root.dataset.id as ExampleId];
+
+		let teardown: (() => void) | null = null;
+		let generation = 0;
+		let loading = false;
+		// Three independent reasons for the prototype not to run.
+		let wanted = true; // the reader has not pressed Stop
+		let inView = false;
+		let tabVisible = document.visibilityState === 'visible';
+		let hovered = false;
+
+		function setStatus(text: string): void {
+			status.textContent = text;
+		}
+
+		function halt(): void {
+			generation++;
+			loading = false;
+			try {
+				teardown?.();
+			}
+			catch (error) {
+				console.error('Failed to tear down example', error);
+			}
+			teardown = null;
+			viewport.replaceChildren();
+		}
+
+		function begin(): void {
+			const mine = ++generation;
+			loading = true;
+			setStatus('Loading…');
+			load().then((module) => {
+				if (mine !== generation)
+					return;
+				loading = false;
+				teardown = module.start(viewport);
+				setStatus('Running');
+			}).catch((error: unknown) => {
+				if (mine !== generation)
+					return;
+				loading = false;
+				console.error('Failed to load or start example', error);
+				setStatus('Could not start this example. See the console for details.');
+			});
+		}
+
+		function sync(): void {
+			const shouldRun = wanted && inView && tabVisible;
+			if (shouldRun && !teardown && !loading)
+				begin();
+			else if (!shouldRun && (teardown || loading))
+				halt();
+			if (!shouldRun)
+				setStatus(wanted ? 'Paused while out of view' : 'Stopped');
+			toggle.textContent = wanted ? 'Stop' : 'Start';
+		}
+
+		toggle.addEventListener('click', () => {
+			wanted = !wanted;
+			sync();
+		});
+		restart.addEventListener('click', () => {
+			wanted = true;
+			halt();
+			sync();
+		});
+		fullscreen.addEventListener('click', () => {
+			if (document.fullscreenElement)
+				void document.exitFullscreen();
+			else
+				void root.requestFullscreen();
+		});
+
+		new IntersectionObserver((entries) => {
+			inView = entries.some(entry => entry.isIntersecting);
+			sync();
+		}).observe(root);
+		document.addEventListener('visibilitychange', () => {
+			tabVisible = document.visibilityState === 'visible';
+			sync();
+		});
+		window.addEventListener('pagehide', halt);
+
+		viewport.addEventListener('pointerenter', () => { hovered = true; });
+		viewport.addEventListener('pointerleave', () => { hovered = false; });
+		window.addEventListener('keydown', (event) => {
+			if (!SCROLL_KEYS.has(event.key) || !(hovered || root.contains(document.activeElement)))
+				return;
+			if ((event.target as Element | null)?.closest?.(NATIVE_KEY_TARGETS))
+				return;
+			event.preventDefault();
+		});
+	}
+
+	document.querySelectorAll<HTMLElement>('[data-example-stage]').forEach(mountStage);
+</script>
+
+<style>
+	.example-stage {
+		margin: 1.5rem 0;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 0.5rem;
+		background: var(--sl-color-gray-6);
+		overflow: hidden;
+	}
+	.example-stage:fullscreen {
+		display: flex;
+		flex-direction: column;
+		border: 0;
+		border-radius: 0;
+	}
+	.example-toolbar {
+		display: flex;
+		gap: 1rem;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.5rem 0.75rem;
+		border-bottom: 1px solid var(--sl-color-gray-5);
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-2);
+	}
+	.example-actions {
+		display: flex;
+		gap: 0.5rem;
+	}
+	.example-actions button {
+		padding: 0.2rem 0.75rem;
+		border: 1px solid var(--sl-color-gray-4);
+		border-radius: 0.25rem;
+		background: var(--sl-color-bg);
+		color: var(--sl-color-white);
+		font: inherit;
+		cursor: pointer;
+	}
+	.example-actions button:hover {
+		border-color: var(--sl-color-accent);
+	}
+	.example-viewport {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		align-items: center;
+		max-width: 100%;
+		padding: 0.75rem;
+		overflow: auto;
+	}
+	.example-viewport:focus-visible {
+		outline: 2px solid var(--sl-color-accent);
+		outline-offset: -2px;
+	}
+</style>

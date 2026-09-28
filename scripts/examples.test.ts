@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { EXAMPLE_GROUPS, EXAMPLES } from '../examples/manifest';
+import { renderExamplePages } from './examples';
 
 const root = resolve(fileURLToPath(import.meta.url), '../..');
 const examplesDir = join(root, 'examples');
@@ -110,5 +111,61 @@ describe('examples manifest', () => {
   it('keeps the challenge games in rung order', () => {
     const rungs = EXAMPLES.flatMap(entry => 'challenge' in entry ? [entry.challenge] : []);
     expect(rungs).toEqual([...rungs].sort((a, b) => a - b));
+  });
+});
+
+describe('examples pages', () => {
+  const pages = renderExamplePages();
+  const byPath = new Map(pages.map(page => [page.outPath, page.markdown]));
+
+  it('emits the overview and exactly one page per manifest entry', () => {
+    expect(pages).toHaveLength(EXAMPLES.length + 1);
+    expect(byPath.has('examples/index.mdx')).toBe(true);
+    for (const id of ids)
+      expect(byPath.has(`examples/${id}.mdx`), id).toBe(true);
+  });
+
+  it('mounts each prototype by its own id and links its source folder', () => {
+    for (const id of ids) {
+      const page = byPath.get(`examples/${id}.mdx`)!;
+      expect(page, id).toContain(`<ExampleStage id="${id}" />`);
+      expect(page, id).toContain(`/tree/main/examples/${id})`);
+    }
+  });
+
+  it('states the summary, controls and every module a prototype exercises', () => {
+    for (const entry of EXAMPLES) {
+      const page = byPath.get(`examples/${entry.id}.mdx`)!;
+      expect(page, entry.id).toContain(entry.summary);
+      expect(page, entry.id).toContain(`**Controls:** ${entry.controls}`);
+      for (const name of entry.modules)
+        expect(page, `${entry.id}: ${name}`).toContain(`\`${name}\``);
+    }
+  });
+
+  it('links a module to its Manual guide only when the guide exists', () => {
+    const snake = byPath.get('examples/snake.mdx')!;
+    expect(snake).toContain('[`input`](../../manual/modules/input/)');
+  });
+
+  it('carries the isolation caveat, and the challenge rung, only where the manifest does', () => {
+    for (const entry of EXAMPLES) {
+      const page = byPath.get(`examples/${entry.id}.mdx`)!;
+      expect(page.includes('Cross-origin isolation'), entry.id).toBe('isolation' in entry);
+      expect(page.includes('20 Games Challenge'), entry.id).toBe('challenge' in entry);
+    }
+  });
+
+  it('lists every prototype on the overview, under its group', () => {
+    const overview = byPath.get('examples/index.mdx')!;
+    for (const group of EXAMPLE_GROUPS)
+      expect(overview).toContain(`## ${group.title}`);
+    for (const id of ids)
+      expect(overview, id).toContain(`(./${id}/)`);
+  });
+
+  it('quotes frontmatter so summary punctuation stays inert', () => {
+    for (const page of pages)
+      expect(page.markdown.startsWith('---\ntitle: "')).toBe(true);
   });
 });

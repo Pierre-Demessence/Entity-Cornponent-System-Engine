@@ -297,32 +297,59 @@ come from each prototype's real imports (the old Manual page missed `spatial` fo
 
 Slice 2 — two prototypes from the site:
 
-- [ ] Add `website/src/components/ExampleStage.astro`: renders the prototype's
+- [x] Add `website/src/components/ExampleStage.astro`: renders the prototype's
       title, summary and controls and a `div` the prototype mounts into; calls
       `start()` on load; Stop and Restart buttons; pauses when the tab is hidden
       or the stage is scrolled out of view; tears down on `pagehide`; keeps the
       hub's fullscreen affordance; keeps Space/arrows from scrolling the page
       while the stage is focused or hovered; resumes audio on the first gesture.
-- [ ] Add `scripts/examples.ts` (pure: manifest → page markdown with frontmatter,
+- [x] Add `scripts/examples.ts` (pure: manifest → page markdown with frontmatter,
       including the `examples/index` overview page)
       and `scripts/examples.gen.ts` (CLI: wipe and write
       `website/src/content/docs/examples/`).
-- [ ] Add `website/src/content/docs/examples/` to `.gitignore` beside the
+- [x] Add `website/src/content/docs/examples/` to `.gitignore` beside the
       Manual's generated entry.
-- [ ] Extend `scripts/examples.test.ts`: the renderer emits one page per manifest
+- [x] Extend `scripts/examples.test.ts`: the renderer emits one page per manifest
       entry plus the overview.
-- [ ] Generate the overview, `snake` and `worker-offload` only; wire the generator into
+- [x] Generate the overview, `snake` and `worker-offload` only; wire the generator into
       `docs:manual` / `docs:site` in `package.json`.
-- [ ] Gate: `npm run docs:site` succeeds and the two pages start their prototype
+- [x] Gate: `npm run docs:site` succeeds and the two pages start their prototype
       on load, with the worker URL resolving under the Pages base path. Claude
       drives both pages in the pre-installed Chromium (Playwright: no console
       errors, canvas painting, Stop/Restart work, Space does not scroll) and
       reports; Pierre then confirms by eye.
-- [ ] Record in the plan what the spike proved or broke: whether Astro bundles a
+- [x] Record in the plan what the spike proved or broke: whether Astro bundles a
       workspace TS package imported from an `.astro` script, whether the worker
       chunk gets the `base` prefix, the added build time, and whether
       `website/tsconfig.json` needs `examples/loaders.ts` in `include` for the
       typecheck leg, and whether `astro.config.mjs` can import the manifest.
+
+Slice 2 findings (spike):
+
+- Astro bundles a workspace TS package imported from an `.astro` `<script>` with
+  no config: the component imports `examples/loaders.ts` by relative path and
+  Vite resolves each `@pierre/ecs-example-<id>` through the root `node_modules`
+  workspace links, including `?url` assets and `.mp3`/`.wav` files from
+  `examples/assets/`.
+- The worker chunk gets the `base` prefix: the built `main` chunks contain
+  `new Worker(new URL('/Entity-Cornponent-System-Engine/_astro/heavy.worker-….js', import.meta.url))`,
+  and `worker-offload` runs from a server rooted so that base applies.
+- Build cost: the full `astro build` took 18.6 s (all 28 loaders are in the
+  bundle even with two pages, as they are one record); `_astro/` is 3.9 MB / 110
+  files, the same shape as the hub's build (three.module 528 kB, one mp3).
+- `website/tsconfig.json` needed no change: `npm run typecheck` passes with the
+  component importing `../../../examples/loaders`.
+- `astro.config.mjs` importing the manifest is still to be proven in slice 3.
+- The stage does not touch audio: prototypes create and unlock their own audio
+  context on their own gestures (`rhythm` says "Click to start audio"), and there
+  is no handle to resume from outside, so the requirement's "unlock on first
+  gesture" is the prototypes' behaviour, not the stage's.
+- Keyboard: Space and the arrows are `preventDefault`ed while the pointer is
+  over the stage or it holds focus (native controls exempt); Playwright confirms
+  the page does not scroll.
+- Verified in Chromium against the built site served under the Pages base path:
+  both pages start on load, paint, Stop/Restart work, no console or request errors.
+
 
 Slice 3 — the section:
 
