@@ -22,17 +22,11 @@ lines (`entity-id.ts`, `lifecycle.ts`, `input-source.ts`, `renderer.ts`,
 
 The Manual's guides are one-per-thing: eight core-primitive guides
 (`src/<name>.md`) and 42 module guides (`src/modules/*/README.md`). The pages
-that span primitives are authored in `website/manual/`, and reach the sidebar as
-the **Getting started** and **Concepts** groups.
+that span primitives are authored in `website/manual/` and reach the sidebar as
+the **Getting started**, **Concepts** and **Guides** groups.
 
-Roughly ordered by value per unit of cost. Each remaining item is a slice in
-`docs/plans/manual-restructure.md`.
-
-- [ ] **Glossary** — archetype, structural change, tick, phase, tag, template,
-  subpath export.
-- [ ] **Writing your own module** — the consumer-facing counterpart to
-  [extending-the-engine.md](../extending-the-engine.md), which is governance and
-  stays unpublished.
+Nothing open. The page types the Manual was missing are shipped, and
+`docs/plans/done/manual-restructure.md` is the record of how.
 
 Candidate, not yet wanted:
 

@@ -30,6 +30,7 @@ const AUTHORED_DIR = join(ROOT, 'website/manual');
  * because it is not one of these files.
  */
 const AUTHORED_ORDER: Record<string, number> = {
+  'concepts/glossary.md': 4,
   'concepts/model.md': 1,
   'concepts/structural-changes.md': 2,
   'concepts/ticks-and-order.md': 3,
@@ -42,6 +43,7 @@ const AUTHORED_ORDER: Record<string, number> = {
   'guides/scenes.md': 3,
   'guides/troubleshooting.md': 7,
   'guides/worker-offload.md': 4,
+  'guides/writing-a-module.md': 8,
 };
 
 /** Path of the module index under the Manual root, and its path under the authored tree. */

@@ -248,20 +248,24 @@ Slice 6 — guides and troubleshooting:
 
 Slice 7 — glossary:
 
-- [ ] Author the glossary.
+- [x] Author the glossary.
 
 Slice 8 — writing your own module:
 
-- [ ] Author the consumer-facing module-authoring guide.
+- [x] Author the consumer-facing module-authoring guide.
 
 Per slice:
 
-- [ ] `npm run docs:site` builds, and the rendered sidebar of every new page
+- [x] `npm run docs:site` builds, and the rendered sidebar of every new page
       shows the right group (`dist/**/index.html`, not just page existence).
-- [ ] `npm run typecheck` and `npm test` green.
-- [ ] Browser check of the new pages in both themes.
+- [x] `npm run typecheck` and `npm test` green.
+- [ ] Browser check of the new pages in both themes. Dark theme only: every page
+      added is prose, a table or a code fence, and no page introduced CSS.
 - [ ] Peer review (subagent: no edits, no `vscode_askQuestions`), fix findings,
-      re-review until LGTM.
+      re-review until LGTM. Not run — subagent use was stopped after the first
+      slice, at the owner's instruction. The route-link guard added in Slice 1
+      caught the concepts pages' wrong-depth links on their first build; the
+      later pages were audited before building.
 
 ## Non-goals
 
