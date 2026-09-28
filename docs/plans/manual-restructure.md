@@ -238,7 +238,7 @@ Slice 4 — concepts:
 
 Slice 5 — tutorial:
 
-- [ ] Author the walkthrough; every snippet typechecked against `src/`.
+- [x] Author the walkthrough; every snippet typechecked against `src/`.
 
 Slice 6 — guides and troubleshooting:
 

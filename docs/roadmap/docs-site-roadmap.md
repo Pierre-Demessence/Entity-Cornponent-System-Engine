@@ -28,8 +28,6 @@ the **Getting started** and **Concepts** groups.
 Roughly ordered by value per unit of cost. Each remaining item is a slice in
 `docs/plans/manual-restructure.md`.
 
-- [ ] **Tutorial** — a numbered walkthrough from an empty project to a running
-  scene.
 - [ ] **How-to guides** — fixed timestep and interpolation, save and load, scenes
   and transitions, worker offload, first frame, debug overlay. Cross-cutting, so
   no module README can hold them.

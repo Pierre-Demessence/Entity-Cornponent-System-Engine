@@ -34,6 +34,7 @@ const AUTHORED_ORDER: Record<string, number> = {
   'concepts/structural-changes.md': 2,
   'concepts/ticks-and-order.md': 3,
   'getting-started/examples.md': 2,
+  'getting-started/tutorial.md': 3,
 };
 
 /** Path of the module index under the Manual root, and its path under the authored tree. */
