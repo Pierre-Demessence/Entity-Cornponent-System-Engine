@@ -104,4 +104,65 @@ describe('archetypeIndex', () => {
     expect(ids(index, a)).toEqual([1, 2]);
     expect(ids(index, a | b)).toEqual([2]);
   });
+
+  describe('any-of groups', () => {
+    it('matches entities intersecting every group mask', () => {
+      const index = new ArchetypeIndex();
+      const a = index.registerStore({});
+      const b = index.registerStore({});
+      const c = index.registerStore({});
+      index.addBit(1, a);
+      index.addBit(2, b);
+      index.addBit(3, c);
+
+      // (a or b) → entities 1 and 2, not 3.
+      expect([...index.matching(0n, 0n, [a | b])].sort((x, y) => x - y)).toEqual([1, 2]);
+    });
+
+    it('intersects every group (logical AND across groups)', () => {
+      const index = new ArchetypeIndex();
+      const a = index.registerStore({});
+      const b = index.registerStore({});
+      const c = index.registerStore({});
+      index.addBit(1, a);
+      index.addBit(1, c);
+      index.addBit(2, b);
+      index.addBit(2, c);
+      index.addBit(3, a);
+
+      // (a or b) and c → 1 (a,c) and 2 (b,c); 3 lacks c.
+      const got = [...index.matching(0n, 0n, [a | b, c])].sort((x, y) => x - y);
+      expect(got).toEqual([1, 2]);
+    });
+
+    it('combines required, excluded, and any-of masks', () => {
+      const index = new ArchetypeIndex();
+      const req = index.registerStore({});
+      const dead = index.registerStore({});
+      const x = index.registerStore({});
+      const y = index.registerStore({});
+      index.addBit(1, req);
+      index.addBit(1, x);
+      index.addBit(2, req);
+      index.addBit(2, y);
+      index.addBit(2, dead);
+      index.addBit(3, req);
+
+      // req required, dead excluded, (x or y) → only 1 (2 is dead, 3 lacks x/y).
+      const got = [...index.matching(req, dead, [x | y])];
+      expect(got).toEqual([1]);
+    });
+
+    it('caches per distinct any-of mask set', () => {
+      const index = new ArchetypeIndex();
+      const a = index.registerStore({});
+      const b = index.registerStore({});
+      index.addBit(1, a);
+      index.addBit(2, b);
+
+      expect([...index.matching(0n, 0n, [a])]).toEqual([1]);
+      expect([...index.matching(0n, 0n, [b])]).toEqual([2]);
+      expect([...index.matching(0n, 0n, [a | b])].sort((x, y) => x - y)).toEqual([1, 2]);
+    });
+  });
 });

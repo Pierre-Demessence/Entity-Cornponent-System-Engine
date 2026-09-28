@@ -5,18 +5,17 @@ module and app: component stores, queries, scheduler, event bus, lifecycle,
 validation, change detection, plugin/extension hooks. No modules, no gameplay
 features.
 
-**Entry IDs are stable references** (`1.4`, `2.5`, `3.2`, `4.7`). The numbering
+**Entry IDs are stable references** (`1.5`, `2.5`, `3.2`, `4.7`). The numbering
 is not contiguous: a gap means that entry shipped, moved to the module backlog,
 or was declined, so citations elsewhere keep resolving to the same item. Shipped
 core work is described by `src/` and dated by `git log`; where a plan exists it
 sits under `plans/done/`, and core work performed before the engine split out is
 in the Roguelike monorepo's `docs/plans/done/`.
 
-**Two entanglements to note.** 3.7 and 3.8 build on the predicate surface 1.4
-opens, and 3.2's id recycling is one design conversation with 1.5 — recycling
-ids without a generation counter is the ABA problem. Every other entry's
-original dependencies have shipped. The order at the bottom reflects value, not
-a dependency graph.
+**One entanglement to note.** 3.2's id recycling is one design conversation with
+1.5 — recycling ids without a generation counter is the ABA problem. Every other
+entry's dependencies have shipped. The order at the bottom reflects value, not a
+dependency graph.
 
 - Module-level work (camera, audio, render-dom, pathfinding, …) —
   [ecs-module-backlog.md](ecs-module-backlog.md)
@@ -28,19 +27,8 @@ a dependency graph.
 
 ## Tier 1 — Critical Foundations
 
-Primitives that already ship but are incomplete. The query DSL cannot express
-patterns consumers write every day, and the entity id space has no liveness
-concept — both are holes in the foundations the tier is named for.
-
-### 1.4 Query predicate vocabulary
-
-| | |
-|---|---|
-| **Problem** | `world.query` accepts component defs only, and the builder filters tags (`withTag` / `without`). Three everyday patterns are inexpressible: iterate entities that hold *only* a tag ("every enemy"), require A while excluding B when B is a *component* rather than a tag, and take an optional companion component next to a required one. Consumers work around all three by looping a tag store and probing stores per entity. |
-| **Solution** | Extend the query surface with tag-only queries (yielding `[EntityId]`), component-level exclusion, optional components, and any-of groups. Canon shape: Bevy's `With` / `Without` / `Option<&T>` / `Or`, Unity DOTS `WithNone` / `WithAny`, Flecs `not` / `optional` / `or`. |
-| **Unlocks** | Adopting the shipped query engine at all. It has zero call sites in `examples/**` and `src/modules/**`, so the archetype index is maintained on every store mutation and read by nothing. |
-| **Complexity** | Mid — the index's mask test expresses superset plus disjoint only, so any-of and optional components need new index predicates; the rest is surface and typing. |
-| **Dependencies** | The shipped archetype index (`src/archetype-index.ts`) and builder (`src/query.ts`). |
+Primitives that already ship but are incomplete. The entity id space has no
+liveness concept — a hole in the foundations the tier is named for.
 
 ### 1.5 Entity liveness / existence API
 
@@ -127,7 +115,7 @@ complex systems.
 | **Solution** | An `Added` / `Changed` filter on the query surface, over a settled contract: either every write path marks dirty, or the filter is documented as opt-in tracking with the mutation sites that must call `markDirty` listed. Canon: Bevy `Added` / `Changed`, Unity DOTS `WithChangeFilter`. |
 | **Unlocks** | Change-driven systems — re-derive on edit, sync only what moved, stay idle on a quiet tick — without per-entity polling. |
 | **Complexity** | Small surface over shipped machinery; the cost is the contract, not the code. |
-| **Dependencies** | The shipped dirty tracking (`markDirty` / `isDirty` on both store types) and the query surface 1.4 opens. |
+| **Dependencies** | The shipped dirty tracking (`markDirty` / `isDirty` on both store types) and the shipped query predicate surface. |
 
 ### 3.8 Cached query handles + typed arity beyond four
 
@@ -137,7 +125,7 @@ complex systems.
 | **Solution** | A reusable query handle, resolved once and iterated per tick, plus variadic tuple typing so arity is not a cliff. Canon: Bevy system params, Flecs cached queries. |
 | **Unlocks** | Query-heavy systems without per-tick allocation, and queries over five or more components that keep their types. |
 | **Complexity** | Mid — the match cache already exists; the work is a handle that owns it, plus the typing. |
-| **Dependencies** | The shipped archetype cache, and 1.4 for the predicate surface the handle would freeze. |
+| **Dependencies** | The shipped archetype cache and query predicate surface, whose shape the handle would freeze. |
 
 ---
 
@@ -173,16 +161,14 @@ modding/plugin support.
 By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
-1. **Query predicate vocabulary** (1.4) — the shipped query engine has no
-   adopter, and this is why; it is also the gate on 3.7 and 3.8
-2. **Entity liveness** (1.5) — small, and the prerequisite for recycling ids
-3. **Deferred structural changes** (2.5) — turns a documented hazard into a
+1. **Entity liveness** (1.5) — small, and the prerequisite for recycling ids
+2. **Deferred structural changes** (2.5) — turns a documented hazard into a
    safe path
-4. **Change-detection filters** (3.7) — a small surface over machinery that
+3. **Change-detection filters** (3.7) — a small surface over machinery that
    already ships
-5. **System run conditions** (4.7) — small
-6. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
-7. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
-8. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
-9. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
+4. **System run conditions** (4.7) — small
+5. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
+6. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
+7. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
+8. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
    strategic piece, above the shipped cache

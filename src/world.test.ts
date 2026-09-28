@@ -28,6 +28,7 @@ const HealthDef: ComponentDef<Health> = {
 };
 
 const FlagTag: TagDef = { name: 'flag' };
+const MarkTag: TagDef = { name: 'mark' };
 
 describe('ecsWorld', () => {
   describe('entity lifecycle', () => {
@@ -389,6 +390,102 @@ describe('ecsWorld', () => {
     it('throws on unregistered component', () => {
       const w = new EcsWorld();
       expect(() => w.query(PosDef).run()).toThrow(/not registered/);
+    });
+
+    it('query() with no components iterates entities by tag alone', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      const flag = w.registerTag(FlagTag);
+
+      const a = w.createEntity();
+      flag.add(a);
+      w.createEntity(); // untagged — not selected
+
+      expect(w.query().withTag(flag).run()).toEqual([[a]]);
+    });
+
+    it('withComponent requires a component without yielding it', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const health = w.registerComponent(HealthDef);
+
+      const a = w.createEntity();
+      pos.set(a, { x: 0, y: 0 });
+      health.set(a, { hp: 5 });
+      const b = w.createEntity();
+      pos.set(b, { x: 1, y: 1 });
+
+      const results = w.query(PosDef).withComponent(health).run();
+      expect(results).toEqual([[a, { x: 0, y: 0 }]]);
+    });
+
+    it('withoutComponent excludes entities holding a component', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const health = w.registerComponent(HealthDef);
+
+      const a = w.createEntity();
+      pos.set(a, { x: 0, y: 0 });
+      const b = w.createEntity();
+      pos.set(b, { x: 1, y: 1 });
+      health.set(b, { hp: 3 });
+
+      const results = w.query(PosDef).withoutComponent(health).run();
+      expect(results).toEqual([[a, { x: 0, y: 0 }]]);
+    });
+
+    it('optional yields the companion component or undefined', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const health = w.registerComponent(HealthDef);
+
+      const a = w.createEntity();
+      pos.set(a, { x: 0, y: 0 });
+      health.set(a, { hp: 5 });
+      const b = w.createEntity();
+      pos.set(b, { x: 1, y: 1 });
+
+      const byId = new Map(w.query(PosDef).optional(health).run().map(r => [r[0], r]));
+      expect(byId.get(a)).toEqual([a, { x: 0, y: 0 }, { hp: 5 }]);
+      expect(byId.get(b)).toEqual([b, { x: 1, y: 1 }, undefined]);
+    });
+
+    it('anyOf matches entities holding at least one group member', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const flag = w.registerTag(FlagTag);
+      const mark = w.registerTag(MarkTag);
+
+      const a = w.createEntity();
+      pos.set(a, { x: 0, y: 0 });
+      flag.add(a);
+      const b = w.createEntity();
+      pos.set(b, { x: 1, y: 1 });
+      mark.add(b);
+      const c = w.createEntity();
+      pos.set(c, { x: 2, y: 2 }); // neither tag — excluded
+
+      const ids = w.query(PosDef).anyOf(flag, mark).run().map(r => r[0]).sort((x, y) => x - y);
+      expect(ids).toEqual([a, b]);
+      void c;
+    });
+
+    it('query() with no components selects by any-of tag union', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const flag = w.registerTag(FlagTag);
+      const mark = w.registerTag(MarkTag);
+
+      const a = w.createEntity();
+      flag.add(a);
+      const b = w.createEntity();
+      mark.add(b);
+      const c = w.createEntity();
+      pos.set(c, { x: 0, y: 0 }); // tracked, but holds neither tag — excluded
+
+      const ids = w.query().anyOf(flag, mark).run().map(r => r[0]).sort((x, y) => x - y);
+      expect(ids).toEqual([a, b]);
+      void c;
     });
   });
 

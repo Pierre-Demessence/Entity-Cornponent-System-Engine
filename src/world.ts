@@ -278,6 +278,7 @@ export class EcsWorld {
     store.markDirty(id);
   }
 
+  query(): QueryBuilder<[]>;
   query<A>(d1: ComponentDef<A>): QueryBuilder<[A]>;
   query<A, B>(d1: ComponentDef<A>, d2: ComponentDef<B>): QueryBuilder<[A, B]>;
   query<A, B, C>(d1: ComponentDef<A>, d2: ComponentDef<B>, d3: ComponentDef<C>): QueryBuilder<[A, B, C]>;

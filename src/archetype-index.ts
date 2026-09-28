@@ -44,9 +44,13 @@ export class ArchetypeIndex {
     this.structuralVersion++;
   }
 
-  /** Yield every entity whose signature is a superset of `required` and disjoint from `excluded`. */
-  * matching(required: bigint, excluded: bigint): Generator<EntityId> {
-    for (const bucket of this.selectBuckets(required, excluded)) {
+  /**
+   * Yield every entity whose signature is a superset of `required`, disjoint
+   * from `excluded`, and intersects **every** mask in `anyOf` (each mask being
+   * one OR-group — the entity must hold at least one member of each group).
+   */
+  * matching(required: bigint, excluded: bigint, anyOf: readonly bigint[] = []): Generator<EntityId> {
+    for (const bucket of this.selectBuckets(required, excluded, anyOf)) {
       yield* bucket;
     }
   }
@@ -109,14 +113,23 @@ export class ArchetypeIndex {
     }
   }
 
-  private selectBuckets(required: bigint, excluded: bigint): Set<EntityId>[] {
-    const key = `${required}:${excluded}`;
+  private selectBuckets(required: bigint, excluded: bigint, anyOf: readonly bigint[]): Set<EntityId>[] {
+    const key = `${required}:${excluded}:${anyOf.join(',')}`;
     const cached = this.matchCache.get(key);
     if (cached && cached.version === this.structuralVersion)
       return cached.buckets;
     const result: Set<EntityId>[] = [];
     for (const [sig, bucket] of this.buckets) {
-      if ((sig & required) === required && (sig & excluded) === 0n)
+      if ((sig & required) !== required || (sig & excluded) !== 0n)
+        continue;
+      let ok = true;
+      for (const group of anyOf) {
+        if ((sig & group) === 0n) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok)
         result.push(bucket);
     }
     this.matchCache.set(key, { buckets: result, version: this.structuralVersion });

@@ -105,4 +105,78 @@ describe('queryBuilder', () => {
     const results = q.run();
     expect(results).toEqual([[3, 30, 'c']]);
   });
+
+  describe('component and optional filters', () => {
+    it('tag-only query yields [EntityId] tuples', () => {
+      const tag = tagStore([1, 3]);
+      const results = new QueryBuilder<[]>([]).withTag(tag).run();
+      expect(results).toContainEqual([1]);
+      expect(results).toContainEqual([3]);
+      expect(results).toHaveLength(2);
+    });
+
+    it('withComponent requires a component without yielding it', () => {
+      const nums = numStore([[1, 10], [2, 20], [3, 30]]);
+      const gate = numStore([[1, 0], [3, 0]]);
+      const q = new QueryBuilder<[number]>([nums as ComponentStore<unknown>])
+        .withComponent(gate as ComponentStore<unknown>);
+      const results = q.run();
+      expect(results).toHaveLength(2);
+      expect(results).toContainEqual([1, 10]);
+      expect(results).toContainEqual([3, 30]);
+    });
+
+    it('withoutComponent excludes entities holding a component', () => {
+      const nums = numStore([[1, 10], [2, 20], [3, 30]]);
+      const frozen = numStore([[2, 0]]);
+      const q = new QueryBuilder<[number]>([nums as ComponentStore<unknown>])
+        .withoutComponent(frozen as ComponentStore<unknown>);
+      const results = q.run();
+      expect(results).toHaveLength(2);
+      expect(results).not.toContainEqual(expect.arrayContaining([2]));
+    });
+
+    it('optional appends the value or undefined and never filters', () => {
+      const nums = numStore([[1, 10], [2, 20]]);
+      const labels = strStore([[1, 'a']]);
+      const q = new QueryBuilder<[number]>([nums as ComponentStore<unknown>])
+        .optional(labels as ComponentStore<string>);
+      const results = q.run();
+      expect(results).toHaveLength(2);
+      expect(results).toContainEqual([1, 10, 'a']);
+      expect(results).toContainEqual([2, 20, undefined]);
+    });
+
+    it('chained optional() accumulates result-tuple columns in call order', () => {
+      const nums = numStore([[1, 10]]);
+      const labels = strStore([[1, 'a']]);
+      const extra = numStore([]);
+      const results = new QueryBuilder<[number]>([nums as ComponentStore<unknown>])
+        .optional(labels as ComponentStore<string>)
+        .optional(extra as ComponentStore<number>)
+        .run();
+      expect(results).toEqual([[1, 10, 'a', undefined]]);
+    });
+
+    it('anyOf groups require at least one member and AND across groups', () => {
+      const nums = numStore([[1, 10], [2, 20], [3, 30], [4, 40]]);
+      const groupA1 = tagStore([1, 2]);
+      const groupA2 = tagStore([3]);
+      const groupB = tagStore([2, 3]);
+      // (A1 or A2) and B → entity 2 (A1,B) and 3 (A2,B); 1 fails B, 4 fails both.
+      const q = new QueryBuilder<[number]>([nums as ComponentStore<unknown>])
+        .anyOf(groupA1, groupA2)
+        .anyOf(groupB);
+      const ids = q.run().map(r => r[0]).sort((a, b) => a - b);
+      expect(ids).toEqual([2, 3]);
+    });
+
+    it('pure any-of query with no mandatory source scans the group union', () => {
+      const a = tagStore([1, 2]);
+      const b = tagStore([2, 3]);
+      const q = new QueryBuilder<[]>([]).anyOf(a, b);
+      const ids = q.run().map(r => r[0]).sort((x, y) => x - y);
+      expect(ids).toEqual([1, 2, 3]);
+    });
+  });
 });
