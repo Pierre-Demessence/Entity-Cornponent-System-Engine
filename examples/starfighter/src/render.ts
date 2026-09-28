@@ -1,8 +1,9 @@
-import type { EntityId } from '@pierre/ecs';
+import type { EcsWorld, TagDef } from '@pierre/ecs';
 
 import type { GameState } from './game';
 
 import { vec3RandomUnit } from '@pierre/ecs/modules/math';
+import { Scene3DRenderer } from '@pierre/ecs/modules/render-scene3d';
 import * as THREE from 'three';
 
 import { BulletTag, Position3DDef, RadiusDef, TargetTag } from './components';
@@ -125,52 +126,28 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   const targetGeo = new THREE.IcosahedronGeometry(1, 0);
   const bulletMat = new THREE.MeshBasicMaterial({ color: 0x9CF6FF });
   const targetMat = new THREE.MeshStandardMaterial({ color: 0xE8583C, emissive: 0x5A1206, metalness: 0.3, roughness: 0.5 });
-  const meshes = new Map<EntityId, THREE.Mesh>();
-  const touched = new Set<EntityId>();
-
-  function ensureMesh(id: EntityId, kind: 'bullet' | 'target'): THREE.Mesh {
-    let mesh = meshes.get(id);
-    if (mesh)
-      return mesh;
-    mesh = kind === 'bullet'
-      ? new THREE.Mesh(unitSphere, bulletMat)
-      : new THREE.Mesh(targetGeo, targetMat);
-    meshes.set(id, mesh);
-    scene.add(mesh);
-    return mesh;
-  }
-
-  function syncBodies(state: GameState): void {
-    const posStore = state.world.getStore(Position3DDef);
-    const radStore = state.world.getStore(RadiusDef);
-    for (const kind of ['bullet', 'target'] as const) {
-      const tag = kind === 'bullet' ? BulletTag : TargetTag;
-      for (const id of state.world.getTag(tag)) {
-        const p = posStore.get(id);
-        const r = radStore.get(id);
-        if (!p || !r)
-          continue;
-        const mesh = ensureMesh(id, kind);
+  const bodiesTagged = (tag: TagDef) => (world: EcsWorld) =>
+    world.query(Position3DDef, RadiusDef).withTag(world.getTag(tag));
+  const passes = [
+    new Scene3DRenderer({
+      select: bodiesTagged(BulletTag),
+      create: () => new THREE.Mesh(unitSphere, bulletMat),
+      sync: (mesh, [, p, r]) => {
         mesh.position.set(p.x, p.y, p.z);
         mesh.scale.setScalar(r.r);
-        if (kind === 'target') {
-          mesh.rotation.x += 0.01;
-          mesh.rotation.y += 0.013;
-        }
-        touched.add(id);
-      }
-    }
-  }
-
-  function reapUntouched(): void {
-    for (const [id, mesh] of meshes) {
-      if (touched.has(id))
-        continue;
-      scene.remove(mesh);
-      meshes.delete(id);
-    }
-    touched.clear();
-  }
+      },
+    }),
+    new Scene3DRenderer({
+      select: bodiesTagged(TargetTag),
+      create: () => new THREE.Mesh(targetGeo, targetMat),
+      sync: (mesh, [, p, r]) => {
+        mesh.position.set(p.x, p.y, p.z);
+        mesh.scale.setScalar(r.r);
+        mesh.rotation.x += 0.01;
+        mesh.rotation.y += 0.013;
+      },
+    }),
+  ];
 
   const shipQuat = new THREE.Quaternion();
   const fwdVec = new THREE.Vector3();
@@ -223,9 +200,8 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   return {
     domElement: renderer.domElement,
     dispose() {
-      for (const mesh of meshes.values())
-        scene.remove(mesh);
-      meshes.clear();
+      for (const pass of passes)
+        pass.dispose(scene);
       starGeo.dispose();
       starMat.dispose();
       dustGeo.dispose();
@@ -249,8 +225,8 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       renderer.dispose();
     },
     render(state) {
-      syncBodies(state);
-      reapUntouched();
+      for (const pass of passes)
+        pass.render({ graph: scene, world: state.world });
       updateShipAndCamera(state);
       stars.position.copy(camera.position);
       updateDust();

@@ -492,6 +492,13 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`DomRenderer`** _(class)_ `new (options?: DomRendererOptions): DomRenderer` — A `Renderer` that reconciles `DomRenderable` components to real DOM nodes — one element per entity, created, re-tagged, or removed to mat...
 - **`DomRendererOptions`** _(interface)_ — DomRenderer options: a `reconcile` hook to apply per-entity attributes or content the renderer does not manage itself.
 
+### `@pierre/ecs/modules/render-scene3d`
+- **`Scene3DEntry`** _(type)_ `<TRow extends unknown[]>[ EntityId, ...TRow ]` — One selected entity: its id followed by the component values `select` yields.
+- **`Scene3DRenderContext`** _(interface)_ — The context a Scene3DRenderer pass reconciles into: the scene `graph` and the `world`.
+- **`Scene3DRenderer`** _(class)_ `new <TObject, TRow extends unknown[] = unknown[]>(options: Scene3DRendererOptions<TObject, TRow>):…` — A `Renderer` that keeps one scene-graph object per selected entity: created on first selection, synced every frame, and removed from the ...
+- **`Scene3DRendererOptions`** _(interface)_ — Scene3DRenderer options: which entities to draw, how to build an object for one, and how to update it.
+- **`SceneGraph`** _(interface)_ — The minimal surface of a scene graph: attach and detach one object. A three.js `Scene` (or any `Object3D` parent) satisfies `SceneGraph<O...
+
 ### `@pierre/ecs/modules/rng`
 - **`makeSeededRng`** _(fn)_ `(seed: number): RandomFn` — Deterministic `[0, 1)` generator (mulberry32). The same `seed` always yields the same sequence, so games can record a seed for replays an...
 - **`pick`** _(fn)_ `<T>(arr: readonly T[], rand?: RandomFn): T | undefined` — Uniformly pick one element. Returns `undefined` for an empty array.

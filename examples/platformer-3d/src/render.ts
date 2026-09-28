@@ -1,7 +1,10 @@
-import type { EntityId, TagDef } from '@pierre/ecs';
+import type { EcsWorld, TagDef } from '@pierre/ecs';
+import type { Scene3DEntry } from '@pierre/ecs/modules/render-scene3d';
 
+import type { Position3D, ShapeAabb3D } from './components';
 import type { GameState } from './game';
 
+import { Scene3DRenderer } from '@pierre/ecs/modules/render-scene3d';
 import * as THREE from 'three';
 
 import {
@@ -56,57 +59,27 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   const staticMat = new THREE.MeshStandardMaterial({ color: 0x5A6577, roughness: 0.9 });
   const coinMat = new THREE.MeshStandardMaterial({ color: 0xF4C542, emissive: 0x664A00, roughness: 0.3 });
 
-  const meshes = new Map<EntityId, THREE.Mesh>();
-  const touched = new Set<EntityId>();
+  const boxOf = (material: THREE.Material) => (): THREE.Mesh => new THREE.Mesh(unitBox, material);
+  const syncBox = (mesh: THREE.Mesh, [, p, a]: Scene3DEntry<[Position3D, ShapeAabb3D]>): void => {
+    mesh.position.set(p.x, p.y, p.z);
+    mesh.scale.set(a.w, a.h, a.d);
+  };
+  const bodiesTagged = (tag: TagDef) => (world: EcsWorld) =>
+    world.query(Position3DDef, ShapeAabb3DDef).withTag(world.getTag(tag));
 
-  function ensureMesh(id: EntityId, kind: 'player' | 'static' | 'coin'): THREE.Mesh {
-    let mesh = meshes.get(id);
-    if (mesh)
-      return mesh;
-    if (kind === 'coin') {
-      mesh = new THREE.Mesh(unitSphere, coinMat);
-    }
-    else if (kind === 'player') {
-      mesh = new THREE.Mesh(unitBox, playerMat);
-    }
-    else {
-      mesh = new THREE.Mesh(unitBox, staticMat);
-    }
-    meshes.set(id, mesh);
-    scene.add(mesh);
-    return mesh;
-  }
-
-  function syncFromTag(state: GameState, tag: TagDef, kind: 'player' | 'static' | 'coin'): void {
-    const posStore = state.world.getStore(Position3DDef);
-    const aabbStore = state.world.getStore(ShapeAabb3DDef);
-    for (const id of state.world.getTag(tag)) {
-      const p = posStore.get(id);
-      const a = aabbStore.get(id);
-      if (!p || !a)
-        continue;
-      const mesh = ensureMesh(id, kind);
-      mesh.position.set(p.x, p.y, p.z);
-      if (kind === 'coin') {
+  const passes = [
+    new Scene3DRenderer({ create: boxOf(playerMat), select: bodiesTagged(PlayerTag), sync: syncBox }),
+    new Scene3DRenderer({ create: boxOf(staticMat), select: bodiesTagged(StaticBodyTag), sync: syncBox }),
+    new Scene3DRenderer({
+      select: bodiesTagged(CoinTag),
+      create: () => new THREE.Mesh(unitSphere, coinMat),
+      sync: (mesh, [, p, a]) => {
+        mesh.position.set(p.x, p.y, p.z);
         mesh.scale.setScalar(a.w);
         mesh.rotation.y += 0.03;
-      }
-      else {
-        mesh.scale.set(a.w, a.h, a.d);
-      }
-      touched.add(id);
-    }
-  }
-
-  function reapUntouched(): void {
-    for (const [id, mesh] of meshes) {
-      if (touched.has(id))
-        continue;
-      scene.remove(mesh);
-      meshes.delete(id);
-    }
-    touched.clear();
-  }
+      },
+    }),
+  ];
 
   function updateCamera(state: GameState): void {
     if (state.playerId == null)
@@ -131,9 +104,8 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     dispose() {
       // Meshes are not disposed individually; they share the unitBox / unitSphere
       // geometries and the three *Mat materials, all disposed below.
-      for (const mesh of meshes.values())
-        scene.remove(mesh);
-      meshes.clear();
+      for (const pass of passes)
+        pass.dispose(scene);
       scene.remove(grid);
       grid.geometry.dispose();
       (grid.material as THREE.Material).dispose();
@@ -145,10 +117,8 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       renderer.dispose();
     },
     render(state) {
-      syncFromTag(state, PlayerTag, 'player');
-      syncFromTag(state, StaticBodyTag, 'static');
-      syncFromTag(state, CoinTag, 'coin');
-      reapUntouched();
+      for (const pass of passes)
+        pass.render({ graph: scene, world: state.world });
       updateCamera(state);
       renderer.render(scene, camera);
     },

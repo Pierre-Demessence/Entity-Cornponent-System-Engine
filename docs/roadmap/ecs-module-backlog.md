@@ -120,7 +120,6 @@ pinned. `speculative` = shape undetermined or canon split.
 | `modules/motion` V2 (radial force fields) | deferred | Shape — second radial consumer |
 | `modules/motion-3d` V2 (attitude, spherical bounds) | deferred | Shape — second consumer for either |
 | `modules/camera` V3 (rotation, parallax) | ready | Scheduling — consumer needs it; snake zoom adoption |
-| `modules/render-scene3d` | ready | Scheduling — 4 consumers already hand-roll it |
 | `modules/camera-3d` | ready | Scheduling — build slot |
 | `modules/navmesh-3d` | ready | Scheduling — 3D consumer |
 | `modules/render-webgl` / `render-webgpu` | deferred | Shape — three.js covers 3D today |
@@ -388,29 +387,6 @@ rather than replacing it.
 - `SpatialStructure<TPos>` is already generic in core — a future `HashGrid3D`
   ships as another backend with zero core change. That is why spatial is
   dimension-agnostic and is not duplicated below.
-
-### `modules/render-scene3d` — ready
-
-**Scope.** Entity ↔ scene-object sync: create / update / reap by tag — the 3D
-analogue of `Canvas2DRenderer`.
-
-**Status.** Ready — the same shape in three.js scene graphs and Babylon
-`Scene`, **and** the largest de-facto demand cluster in this file: **4
-consumers** hand-roll the three.js entity↔mesh sync (platformer-3d, portal,
-doom, starfighter). Both axes are met.
-
-**Gate.** Scheduling — build slot.
-
-<details>
-<summary>Details</summary>
-
-Shipped alongside it: `modules/collision-3d`, `modules/kinematics-3d`,
-`modules/transform-3d` and `modules/motion-3d` — each replaced a hand-rolled
-duplicate. The `Vec3` / `Quat` value blocks they share are not 3D-only, so they
-live with the scalar helpers in `modules/math`. This is the remaining one the
-fourth consumer has not yet pulled in.
-
-</details>
 
 ### `modules/camera-3d` — ready
 

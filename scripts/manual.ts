@@ -83,6 +83,7 @@ export const MODULE_CATEGORIES: readonly { modules: readonly string[]; title: st
       'particles',
       'render-canvas2d',
       'render-dom',
+      'render-scene3d',
       'texture-atlas',
     ],
   },

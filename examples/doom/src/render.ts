@@ -1,7 +1,6 @@
-import type { EntityId } from '@pierre/ecs';
-
 import type { GameState } from './game';
 
+import { Scene3DRenderer } from '@pierre/ecs/modules/render-scene3d';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -76,49 +75,17 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     return mat;
   }
 
-  const meshes = new Map<EntityId, THREE.Mesh>();
-  const touched = new Set<EntityId>();
-
-  function ensureMesh(id: EntityId, material: THREE.Material): THREE.Mesh {
-    let mesh = meshes.get(id);
-    if (mesh)
-      return mesh;
-    mesh = new THREE.Mesh(unitBox, material);
-    meshes.set(id, mesh);
-    scene.add(mesh);
-    return mesh;
-  }
-
-  function syncStatics(state: GameState): void {
-    const posStore = state.world.getStore(Position3DDef);
-    const aabbStore = state.world.getStore(ShapeAabb3DDef);
-    const tintStore = state.world.getStore(TintDef);
-    // Statics are rebuilt deterministically on reset (clearAll rewinds entity
-    // ids), so a reused id keeps its tint — ensureMesh sets the material once.
-    for (const id of state.world.getTag(StaticBodyTag)) {
-      if (touched.has(id))
-        continue;
-      const p = posStore.get(id);
-      const a = aabbStore.get(id);
-      if (!p || !a)
-        continue;
-      const tint = tintStore.get(id);
-      const mesh = ensureMesh(id, materialFor(tint?.color ?? DEFAULT_COLOR));
+  // Materials are picked in `sync`, not `create`, so an object never keeps the
+  // look of an earlier entity whose id a reset (`clearAll`) handed out again.
+  const statics = new Scene3DRenderer({
+    create: () => new THREE.Mesh(unitBox, materialFor(DEFAULT_COLOR)),
+    select: world => world.query(Position3DDef, ShapeAabb3DDef).withTag(world.getTag(StaticBodyTag)),
+    sync: (mesh, [id, p, a], world) => {
+      mesh.material = materialFor(world.getStore(TintDef).get(id)?.color ?? DEFAULT_COLOR);
       mesh.position.set(p.x, p.y, p.z);
       mesh.scale.set(a.w, a.h, a.d);
-      touched.add(id);
-    }
-  }
-
-  function reapUntouched(): void {
-    for (const [id, mesh] of meshes) {
-      if (touched.has(id))
-        continue;
-      scene.remove(mesh);
-      meshes.delete(id);
-    }
-    touched.clear();
-  }
+    },
+  });
 
   // Enemy billboards: pixel-art sprites on camera-facing quads (THREE.Sprite
   // always faces the camera — the classic Doom "2.5D" look).
@@ -134,67 +101,26 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     map,
     transparent: true,
   }));
-  const enemySprites = new Map<EntityId, THREE.Sprite>();
-  const enemyTouched = new Set<EntityId>();
-
-  function syncEnemies(state: GameState): void {
-    const posStore = state.world.getStore(Position3DDef);
-    const aabbStore = state.world.getStore(ShapeAabb3DDef);
-    const bbStore = state.world.getStore(BillboardDef);
-    for (const id of state.world.getTag(EnemyTag)) {
-      const p = posStore.get(id);
-      const a = aabbStore.get(id);
-      if (!p || !a)
-        continue;
-      let spr = enemySprites.get(id);
-      if (!spr) {
-        const bb = bbStore.get(id);
-        spr = new THREE.Sprite(enemyMats[bb?.sprite ?? 0] ?? enemyMats[0]);
-        enemySprites.set(id, spr);
-        scene.add(spr);
-      }
+  const enemies = new Scene3DRenderer({
+    create: () => new THREE.Sprite(enemyMats[0]),
+    select: world => world.query(Position3DDef, ShapeAabb3DDef).withTag(world.getTag(EnemyTag)),
+    sync: (spr, [id, p, a], world) => {
+      spr.material = enemyMats[world.getStore(BillboardDef).get(id)?.sprite ?? 0] ?? enemyMats[0]!;
       spr.position.set(p.x, p.y, p.z);
       spr.scale.set(a.h, a.h, 1);
-      enemyTouched.add(id);
-    }
-    for (const [id, spr] of enemySprites) {
-      if (enemyTouched.has(id))
-        continue;
-      scene.remove(spr);
-      enemySprites.delete(id);
-    }
-    enemyTouched.clear();
-  }
+    },
+  });
 
   // Projectiles: small glowing spheres.
   const projGeo = new THREE.SphereGeometry(PROJECTILE_SIZE * 0.7, 8, 8);
   const projMat = new THREE.MeshStandardMaterial({ color: 0xFFD24A, emissive: 0xFFA000, emissiveIntensity: 1.3 });
-  const projMeshes = new Map<EntityId, THREE.Mesh>();
-  const projTouched = new Set<EntityId>();
-
-  function syncProjectiles(state: GameState): void {
-    const posStore = state.world.getStore(Position3DDef);
-    for (const id of state.world.getTag(ProjectileTag)) {
-      const p = posStore.get(id);
-      if (!p)
-        continue;
-      let mesh = projMeshes.get(id);
-      if (!mesh) {
-        mesh = new THREE.Mesh(projGeo, projMat);
-        projMeshes.set(id, mesh);
-        scene.add(mesh);
-      }
+  const projectiles = new Scene3DRenderer({
+    create: () => new THREE.Mesh(projGeo, projMat),
+    select: world => world.query(Position3DDef).withTag(world.getTag(ProjectileTag)),
+    sync: (mesh, [, p]) => {
       mesh.position.set(p.x, p.y, p.z);
-      projTouched.add(id);
-    }
-    for (const [id, mesh] of projMeshes) {
-      if (projTouched.has(id))
-        continue;
-      scene.remove(mesh);
-      projMeshes.delete(id);
-    }
-    projTouched.clear();
-  }
+    },
+  });
 
   // Pickups: small bobbing, spinning cubes coloured by kind.
   const pickupGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
@@ -203,36 +129,18 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     new THREE.MeshStandardMaterial({ color: 0xE8C84A, emissive: 0x3A3010 }), // 1 hitscan ammo
     new THREE.MeshStandardMaterial({ color: 0xD1722A, emissive: 0x3A1D08 }), // 2 rocket ammo
   ];
-  const pickupMeshes = new Map<EntityId, THREE.Mesh>();
-  const pickupTouched = new Set<EntityId>();
+  let pickupTime = 0;
+  const pickups = new Scene3DRenderer({
+    create: () => new THREE.Mesh(pickupGeo, pickupMats[0]),
+    select: world => world.query(Position3DDef).withTag(world.getTag(PickupTag)),
+    sync: (mesh, [id, p], world) => {
+      mesh.material = pickupMats[world.getStore(PickupDef).get(id)?.kind ?? 0] ?? pickupMats[0]!;
+      mesh.position.set(p.x, p.y + Math.sin(pickupTime * 2 + p.x) * 0.12, p.z);
+      mesh.rotation.y = pickupTime;
+    },
+  });
 
-  function syncPickups(state: GameState): void {
-    const posStore = state.world.getStore(Position3DDef);
-    const pickupStore = state.world.getStore(PickupDef);
-    const t = performance.now() / 1000;
-    for (const id of state.world.getTag(PickupTag)) {
-      const p = posStore.get(id);
-      if (!p)
-        continue;
-      let mesh = pickupMeshes.get(id);
-      if (!mesh) {
-        const pk = pickupStore.get(id);
-        mesh = new THREE.Mesh(pickupGeo, pickupMats[pk?.kind ?? 0] ?? pickupMats[0]);
-        pickupMeshes.set(id, mesh);
-        scene.add(mesh);
-      }
-      mesh.position.set(p.x, p.y + Math.sin(t * 2 + p.x) * 0.12, p.z);
-      mesh.rotation.y = t;
-      pickupTouched.add(id);
-    }
-    for (const [id, mesh] of pickupMeshes) {
-      if (pickupTouched.has(id))
-        continue;
-      scene.remove(mesh);
-      pickupMeshes.delete(id);
-    }
-    pickupTouched.clear();
-  }
+  const passes = [statics, enemies, projectiles, pickups];
 
   // Hitscan tracer: one reusable 2-point line, shown the frames a shot is live.
   const tracerGeo = new THREE.BufferGeometry();
@@ -308,33 +216,23 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     domElement: renderer.domElement,
     dispose() {
       disposed = true;
-      for (const mesh of meshes.values())
-        scene.remove(mesh);
-      meshes.clear();
+      for (const pass of passes)
+        pass.dispose(scene);
       unitBox.dispose();
       for (const mat of matCache.values())
         mat.dispose();
       matCache.clear();
-      for (const spr of enemySprites.values())
-        scene.remove(spr);
-      enemySprites.clear();
       for (const mat of enemyMats)
         mat.dispose();
       for (const tex of enemyTextures)
         tex.dispose();
       projGeo.dispose();
       projMat.dispose();
-      for (const mesh of projMeshes.values())
-        scene.remove(mesh);
-      projMeshes.clear();
       tracerGeo.dispose();
       tracerMat.dispose();
       pickupGeo.dispose();
       for (const mat of pickupMats)
         mat.dispose();
-      for (const mesh of pickupMeshes.values())
-        scene.remove(mesh);
-      pickupMeshes.clear();
       for (const gun of guns) {
         if (gun) {
           camera.remove(gun);
@@ -344,11 +242,9 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       renderer.dispose();
     },
     render(state) {
-      syncStatics(state);
-      reapUntouched();
-      syncEnemies(state);
-      syncProjectiles(state);
-      syncPickups(state);
+      pickupTime = performance.now() / 1000;
+      for (const pass of passes)
+        pass.render({ graph: scene, world: state.world });
       syncTracer(state);
       syncGuns(state);
       updateCamera(state);
