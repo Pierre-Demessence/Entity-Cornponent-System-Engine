@@ -18,7 +18,7 @@ sibling folder through a `file:` install:
 ```
 
 The package's `exports` map points straight at TypeScript sources, so a
-TypeScript-aware bundler — Vite is what every [example](../examples/) uses — needs no
+TypeScript-aware bundler — Vite is what every [example](../../getting-started/examples/) uses — needs no
 build step. Projects that neither bundle nor transpile need one.
 
 ## 2. Create a world and a canvas
@@ -79,8 +79,10 @@ world.spawn({
 
 ## 5. Move it, once per tick
 
-A system is a function over the world. This one advances every entity that has a
-position, and the tick context it receives carries the elapsed time.
+A system is a function over the world, and what it receives is the **tick
+context** — an object your project defines. The narrowest useful shape is the
+world plus how long the last tick covered, so that is what this one declares, and
+step 6 hands exactly this object to the system on every tick.
 
 ```ts
 interface Sim {
@@ -178,5 +180,5 @@ and wraps, drawn by the engine's default renderer.
   and step 7 are separate loops, and how to order more than one system.
 - [Structural changes](../../concepts/structural-changes/) — what to expect when
   entities start gaining and losing components.
-- [Module index](../module-index/) — the modules that add sprites, input,
-  collision, cameras and the rest.
+- [Module index](../../getting-started/module-index/) — the modules that add sprites,
+  input, collision, cameras and the rest.

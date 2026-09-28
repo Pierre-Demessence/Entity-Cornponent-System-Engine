@@ -72,5 +72,5 @@ The renderer exists to make the common case a component. Reach past it when:
 - [`modules/render-canvas2d`](../../modules/render-canvas2d/) — shapes, anchors
   and the optional components.
 - [`modules/render-dom`](../../modules/render-dom/) — the non-canvas renderer.
-- [Build a moving, drawn scene](../../getting-started/tutorial/) — the same
+- [Build a moving, drawn scene](../tutorial/) — the same
   renderer in a minimal program.

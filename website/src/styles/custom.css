@@ -95,3 +95,16 @@
   --sl-card-bg: var(--sl-color-blue-low);
   --sl-card-border: var(--sl-color-blue);
 }
+
+/*
+ * A link whose text is a code span — a module name in a table, an example name
+ * in a list — is the case where the default underline crowds the text: the code
+ * span is smaller (13px against the link's 16px) and sits on a shorter line box,
+ * so the automatic offset lands against the glyphs. Push it clear of them.
+ *
+ * The alternative, dropping the underline on these links, would leave the colour
+ * as the only thing marking them as links.
+ */
+.sl-markdown-content a:has(code) {
+  text-underline-offset: 0.32em;
+}

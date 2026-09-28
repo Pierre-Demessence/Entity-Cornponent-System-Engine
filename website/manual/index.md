@@ -15,13 +15,8 @@ engine.
 Pages that are not about a single primitive live in `website/manual/` and publish
 under the same path, so a page that spans several primitives is committed beside
 the generator rather than placed among its output. Three groups hold them:
-**Getting started**, which answers what comes before a primitive of your own —
-[walk through building a first
-scene](./getting-started/tutorial/), or [start from the module
-index](./getting-started/module-index/) if you would rather browse; **Concepts**,
-which explains the model the primitives share; and **Guides**, for tasks that
-span modules — a fixed timestep, saving, world swaps, worker offload, drawing —
-plus [the traps that catch people out](./guides/troubleshooting/).
+**Getting started** for orientation and browsing, **Concepts** for the model the
+primitives share, and **Guides** for tasks that span modules.
 
 Signature-level detail lives in the [API reference](../api/): every public
 export with its full type signature and JSDoc summary.
@@ -41,13 +36,16 @@ The package's `exports` map points straight at TypeScript sources, so a
 TypeScript-aware bundler needs no build step, and each module is tree-shaken
 unless it is imported.
 
-## Start here
+## Where to go
 
-- Core: [World](./core/world/) ties the primitives together,
-  [ComponentStore](./core/component-store/) stores components,
-  [Query](./core/query/) iterates them, [Scheduler](./core/scheduler/) orders
-  systems.
-- Modules: [math](./modules/math/) for vectors and easing,
-  [tick](./modules/tick/) for fixed timesteps,
-  [spatial](./modules/spatial/) for broadphase grids,
-  [render-canvas2d](./modules/render-canvas2d/) for drawing.
+- [Introduction](./getting-started/introduction/) — the engine in brief, and the
+  model in thirty seconds.
+- [Module index](./getting-started/module-index/) — all 42 opt-in modules, grouped
+  by the task they serve.
+- [Examples](./getting-started/examples/) — 29 prototypes, each with what it was
+  built to prove.
+- [Build a moving, drawn scene](./guides/tutorial/) — seven steps from an empty
+  file to something on screen.
+- [Concepts](./concepts/model/) — the model in depth, and
+  [the glossary](./concepts/glossary/) for its vocabulary.
+- [API reference](../api/) — every export with its full type signature.

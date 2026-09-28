@@ -227,7 +227,9 @@ describe('module index', () => {
   it('publishes the index with a row per module', () => {
     const index = byPath.get('manual/getting-started/module-index.md') ?? '';
     expect(index).toContain('title: "Module index"');
-    expect(index).toContain('sidebar:\n  order: 1');
+    // The value is not pinned: the index is renumbered as groups gain pages, and
+    // all this test means to assert is that it carries an order at all.
+    expect(index).toMatch(/sidebar:\n {2}order: \d+/);
     for (const name of moduleNames)
       expect(index, name).toContain(`[\`${name}\`](../../modules/${name}/)`);
   });

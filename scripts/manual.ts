@@ -34,16 +34,17 @@ const AUTHORED_ORDER: Record<string, number> = {
   'concepts/model.md': 1,
   'concepts/structural-changes.md': 2,
   'concepts/ticks-and-order.md': 3,
-  'getting-started/examples.md': 2,
-  'getting-started/tutorial.md': 3,
-  'guides/custom-drawing.md': 5,
-  'guides/debug-overlay.md': 6,
-  'guides/fixed-timestep.md': 1,
-  'guides/save-and-load.md': 2,
-  'guides/scenes.md': 3,
-  'guides/troubleshooting.md': 7,
-  'guides/worker-offload.md': 4,
-  'guides/writing-a-module.md': 8,
+  'getting-started/examples.md': 3,
+  'getting-started/introduction.md': 1,
+  'guides/custom-drawing.md': 6,
+  'guides/debug-overlay.md': 7,
+  'guides/fixed-timestep.md': 2,
+  'guides/save-and-load.md': 3,
+  'guides/scenes.md': 4,
+  'guides/troubleshooting.md': 8,
+  'guides/tutorial.md': 1,
+  'guides/worker-offload.md': 5,
+  'guides/writing-a-module.md': 9,
 };
 
 /** Path of the module index under the Manual root, and its path under the authored tree. */
@@ -476,7 +477,7 @@ export function renderModuleIndexPage(guides: readonly Guide[]): ManualPage {
     '',
   ].join('\n');
   return {
-    markdown: `${frontmatter('Module index', 'Every opt-in module, grouped by the task it serves.', { order: 1 })}${intro}${sections.join('\n')}`,
+    markdown: `${frontmatter('Module index', 'Every opt-in module, grouped by the task it serves.', { order: 2 })}${intro}${sections.join('\n')}`,
     outPath: `manual/${MODULE_INDEX_PAGE}`,
   };
 }
