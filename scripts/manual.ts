@@ -35,6 +35,13 @@ const AUTHORED_ORDER: Record<string, number> = {
   'concepts/ticks-and-order.md': 3,
   'getting-started/examples.md': 2,
   'getting-started/tutorial.md': 3,
+  'guides/custom-drawing.md': 5,
+  'guides/debug-overlay.md': 6,
+  'guides/fixed-timestep.md': 1,
+  'guides/save-and-load.md': 2,
+  'guides/scenes.md': 3,
+  'guides/troubleshooting.md': 7,
+  'guides/worker-offload.md': 4,
 };
 
 /** Path of the module index under the Manual root, and its path under the authored tree. */

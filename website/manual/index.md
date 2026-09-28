@@ -14,12 +14,14 @@ engine.
 
 Pages that are not about a single primitive live in `website/manual/` and publish
 under the same path, so a page that spans several primitives is committed beside
-the generator rather than placed among its output. Two groups hold them:
+the generator rather than placed among its output. Three groups hold them:
 **Getting started**, which answers what comes before a primitive of your own —
 [walk through building a first
 scene](./getting-started/tutorial/), or [start from the module
-index](./getting-started/module-index/) if you would rather browse — and
-**Concepts**, which explains the model the primitives share.
+index](./getting-started/module-index/) if you would rather browse; **Concepts**,
+which explains the model the primitives share; and **Guides**, for tasks that
+span modules — a fixed timestep, saving, world swaps, worker offload, drawing —
+plus [the traps that catch people out](./guides/troubleshooting/).
 
 Signature-level detail lives in the [API reference](../api/): every public
 export with its full type signature and JSDoc summary.

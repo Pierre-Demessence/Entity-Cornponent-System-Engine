@@ -242,8 +242,8 @@ Slice 5 — tutorial:
 
 Slice 6 — guides and troubleshooting:
 
-- [ ] Author the how-to pages and the troubleshooting page.
-- [ ] Declare the `Guides` group in `astro.config.mjs` and
+- [x] Author the how-to pages and the troubleshooting page.
+- [x] Declare the `Guides` group in `astro.config.mjs` and
       `site-route-data.ts`, and check the rendered sidebar.
 
 Slice 7 — glossary:

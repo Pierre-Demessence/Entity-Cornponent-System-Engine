@@ -28,12 +28,6 @@ the **Getting started** and **Concepts** groups.
 Roughly ordered by value per unit of cost. Each remaining item is a slice in
 `docs/plans/manual-restructure.md`.
 
-- [ ] **How-to guides** — fixed timestep and interpolation, save and load, scenes
-  and transitions, worker offload, first frame, debug overlay. Cross-cutting, so
-  no module README can hold them.
-- [ ] **Troubleshooting** — the recurring traps: a query missing entities added
-  this tick, deferred destroy taking effect at end of tick, archetype component
-  order, indexing only what is spatially queried.
 - [ ] **Glossary** — archetype, structural change, tick, phase, tag, template,
   subpath export.
 - [ ] **Writing your own module** — the consumer-facing counterpart to

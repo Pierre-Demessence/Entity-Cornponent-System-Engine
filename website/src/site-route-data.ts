@@ -43,12 +43,14 @@ function manualSidebar(entries: SidebarEntry[], href: string, isCurrent: boolean
   const manual = findGroup(entries, MANUAL_GROUP)?.entries ?? [];
   const gettingStarted = findGroup(manual, 'Getting started')?.entries ?? [];
   const concepts = findGroup(manual, 'Concepts')?.entries ?? [];
+  const guides = findGroup(manual, 'Guides')?.entries ?? [];
   const core = findGroup(manual, 'Core')?.entries ?? [];
   const modules = findGroup(manual, 'Modules')?.entries ?? [];
   return [
     overviewLink(href, isCurrent),
     collapsedGroup('Getting started', gettingStarted),
     collapsedGroup('Concepts', concepts),
+    collapsedGroup('Guides', guides),
     collapsedGroup('Core', core),
     collapsedGroup('Modules', modules),
   ];
