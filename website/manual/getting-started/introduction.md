@@ -60,8 +60,8 @@ change this structure.
   from an empty file to a moving, drawn rectangle in seven steps.
 - **Find a capability** — [Module index](../module-index/) groups all 42 modules by
   the task they serve, rather than by name.
-- **See it working** — [Examples](../examples/) lists 29 prototypes, each with what
-  it was built to prove.
+- **See it working** — [Examples](../../../examples/) runs 28 prototypes in the
+  page, each with what it was built to prove.
 - **Understand the loop** — [Ticks, frames and system
   order](../../concepts/ticks-and-order/) explains why simulation and drawing are
   separate clocks.

@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
@@ -167,5 +167,30 @@ describe('examples pages', () => {
   it('quotes frontmatter so summary punctuation stays inert', () => {
     for (const page of pages)
       expect(page.markdown.startsWith('---\ntitle: "')).toBe(true);
+  });
+});
+
+describe('links into the Examples section', () => {
+  const manualDir = join(root, 'website/manual');
+
+  function authoredPages(dir: string): string[] {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory())
+        return authoredPages(full);
+      return entry.name.endsWith('.md') ? [full] : [];
+    });
+  }
+
+  it('reach the section from every authored Manual page that names it', () => {
+    for (const file of authoredPages(manualDir)) {
+      const rel = file.slice(manualDir.length + 1).replaceAll('\\', '/');
+      // A page's URL: `index.md` is the section root, every other page a folder.
+      const url = rel === 'index.md' ? '/manual/' : `/manual/${rel.replace(/\.md$/, '')}/`;
+      const source = readFileSync(file, 'utf8');
+      expect(source, rel).not.toContain('getting-started/examples');
+      for (const match of source.matchAll(/\]\(([^)#]*\bexamples\/)\)/g))
+        expect(posix.join(url, match[1]!), `${rel}: ${match[1]}`).toBe('/examples/');
+    }
   });
 });

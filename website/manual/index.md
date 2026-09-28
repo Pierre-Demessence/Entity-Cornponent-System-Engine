@@ -42,8 +42,8 @@ unless it is imported.
   model in thirty seconds.
 - [Module index](./getting-started/module-index/) — all 42 opt-in modules, grouped
   by the task they serve.
-- [Examples](./getting-started/examples/) — 29 prototypes, each with what it was
-  built to prove.
+- [Examples](../examples/) — 28 prototypes you can play in the page, each with
+  what it was built to prove.
 - [Build a moving, drawn scene](./guides/tutorial/) — seven steps from an empty
   file to something on screen.
 - [Concepts](./concepts/model/) — the model in depth, and

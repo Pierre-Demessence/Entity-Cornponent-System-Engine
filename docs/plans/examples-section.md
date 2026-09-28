@@ -389,18 +389,29 @@ Slice 3 findings:
 
 Slice 4 — retire the Manual page:
 
-- [ ] Delete `website/manual/getting-started/examples.md` and its
+- [x] Delete `website/manual/getting-started/examples.md` and its
       `AUTHORED_ORDER` entry.
-- [ ] Repoint `website/manual/index.md:45` and
+- [x] Repoint `website/manual/index.md:45` and
       `website/manual/guides/tutorial.md:21` at the new section (correct relative
       depth for a page's own URL, per the Manual's link rules), and fix the count
       in the index's own copy at `:45` — it says 29 prototypes while `examples/`
       holds 28 next to `hub/` and `assets/`.
-- [ ] Repoint `docs/agent/README.md:207`, which describes the retired page as
+- [x] Repoint `docs/agent/README.md:207`, which describes the retired page as
       the hand-written prototype list.
-- [ ] Confirm nothing links to the retired route: `npm test` runs the Manual's
+- [x] Confirm nothing links to the retired route: `npm test` runs the Manual's
       route check.
-- [ ] Gate: `npm run docs:site`, then Pierre confirms no Manual page lost content.
+- [x] Gate: `npm run docs:site`; the built Manual sidebar no longer lists
+      Examples, and the Manual's links resolve to `/examples/`.
+- [ ] Pierre confirms no Manual page lost content.
+
+Slice 4 findings: a third inbound link the plan missed —
+`website/manual/getting-started/introduction.md:63` — is repointed too, and its
+"29 prototypes" is now 28. `scripts/manual.test.ts` does not follow links that
+leave `/manual/`, so `scripts/examples.test.ts` gained a check that every authored
+Manual link naming `examples/` resolves to `/examples/` and none names the retired
+route. `docs/agent/README.md` (both the retired-page note and the section
+descriptions) was updated in slice 3.
+
 
 Slice 5 — guards, docs, roadmap:
 
