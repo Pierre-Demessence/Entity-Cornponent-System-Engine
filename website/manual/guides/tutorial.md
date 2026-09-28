@@ -81,16 +81,14 @@ world.spawn({
 
 A system is a function over the world, and what it receives is the **tick
 context** — an object your project defines. The narrowest useful shape is the
-world plus how long the last tick covered, so that is what this one declares, and
-step 6 hands exactly this object to the system on every tick.
+world plus how long the last tick covered, so that is what this one declares.
+Step 6 creates the object and hands it to the system on every tick.
 
 ```ts
 interface Sim {
   dtMs: number;
   world: EcsWorld;
 }
-
-const sim: Sim = { dtMs: 16, world };
 
 const moveSystem = {
   name: 'move',
@@ -121,6 +119,8 @@ ticks fire, and `TickRunner` performs the per-tick ceremony between them.
 import { Scheduler, TickRunner } from '@pierre/ecs';
 import { AnimationFrameTickSource } from '@pierre/ecs/modules/tick';
 
+const sim: Sim = { dtMs: 0, world };
+
 const scheduler = new Scheduler<Sim>().add(moveSystem);
 const source = new AnimationFrameTickSource();
 const runner = new TickRunner<Sim>({
@@ -140,7 +140,10 @@ runner.start();
   frame; [`modules/tick`](../../modules/tick/) ships three others, including a
   fixed-timestep one for physics that must not vary with frame rate.
 - `contextFactory` builds the object systems receive — here, the same `sim`
-  object with the frame's delta written into it.
+  object with the frame's delta written into it. It runs before each tick and
+  always writes `dtMs` first, so the `0` it starts from is never seen by a
+  system. Reusing one object is a choice, not a rule: a fresh one per tick is
+  equally valid.
 - `getEvents` returns a no-op flusher because this scene emits no events. A
   scene that does hands its event bus over here, and events drain at the end of
   each tick.
