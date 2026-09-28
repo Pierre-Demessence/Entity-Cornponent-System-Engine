@@ -80,6 +80,15 @@ export class EventBus<TEvent extends { type: string }, TMap extends { [E in TEve
     }
   }
 
+  /**
+   * Whether any handler is subscribed to `type`. Lets a hot-path producer skip
+   * building an event nobody would receive.
+   */
+  hasListeners<K extends keyof TMap & string>(type: K): boolean {
+    const entries = this.listeners.get(type);
+    return entries !== undefined && entries.length > 0;
+  }
+
   /** Remove a previously registered handler. */
   off<K extends keyof TMap & string>(type: K, handler: EventHandler<TMap, K>): void {
     const entries = this.listeners.get(type);

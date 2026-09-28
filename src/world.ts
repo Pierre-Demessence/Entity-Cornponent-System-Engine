@@ -50,6 +50,10 @@ export class EcsWorld {
    * `ComponentAdded`, `ComponentRemoved`, `TagAdded`, `TagRemoved`. Queue-based
    * like any `EventBus` — call `lifecycle.flush()` (typically once per tick) to
    * dispatch. Subscribers are not preserved across world swaps.
+   *
+   * An event is only built and queued while its type has a subscriber, so an
+   * unobserved world pays nothing per mutation. A handler therefore sees only
+   * the changes made after it subscribed.
    */
   readonly lifecycle = new EventBus<LifecycleEvent>();
   private nextId = 0;
@@ -152,16 +156,21 @@ export class EcsWorld {
   createEntity(): EntityId {
     const id = this.nextId++;
     this.alive.add(id);
-    this.lifecycle.emit({ id, type: 'EntityCreated' });
+    if (this.lifecycle.hasListeners('EntityCreated'))
+      this.lifecycle.emit({ id, type: 'EntityCreated' });
     return id;
   }
 
+  /**
+   * Remove every component and tag from `id` and mark it dead. Idempotent:
+   * `EntityDestroyed` is emitted only when `id` was alive.
+   */
   destroyEntity(id: EntityId): void {
     for (const { store } of this.componentRegistry) store.delete(id);
     for (const { store } of this.tagRegistry) store.delete(id);
     this.archetypes.removeEntity(id);
-    this.alive.delete(id);
-    this.lifecycle.emit({ id, type: 'EntityDestroyed' });
+    if (this.alive.delete(id) && this.lifecycle.hasListeners('EntityDestroyed'))
+      this.lifecycle.emit({ id, type: 'EntityDestroyed' });
   }
 
   /**
@@ -263,7 +272,8 @@ export class EcsWorld {
             break;
           case 'spawn':
             this.alive.add(cmd.id);
-            this.lifecycle.emit({ id: cmd.id, type: 'EntityCreated' });
+            if (this.lifecycle.hasListeners('EntityCreated'))
+              this.lifecycle.emit({ id: cmd.id, type: 'EntityCreated' });
             if (cmd.template)
               this._populateEntity(cmd.id, cmd.template, cmd.overrides);
             touched.add(cmd.id);
@@ -280,11 +290,6 @@ export class EcsWorld {
           this._validateEntity(id);
       }
     }
-  }
-
-  /** Back-compat alias for {@link flushCommands}. */
-  flushDestroys(): void {
-    this.flushCommands();
   }
 
   /**
@@ -471,14 +476,16 @@ export class EcsWorld {
     const bit = this.archetypes.registerStore(store);
     store.subscribe('set', (id, value) => {
       this.archetypes.addBit(id, bit);
-      this.lifecycle.emit({ id, component: def.name, type: 'ComponentAdded', value });
+      if (this.lifecycle.hasListeners('ComponentAdded'))
+        this.lifecycle.emit({ id, component: def.name, type: 'ComponentAdded', value });
     });
     store.subscribe('delete', (id) => {
       // A value replace also fires 'delete', but the row still exists then
       // (has() is true); only a real removal clears the archetype bit.
       if (!store.has(id))
         this.archetypes.removeBit(id, bit);
-      this.lifecycle.emit({ id, component: def.name, type: 'ComponentRemoved' });
+      if (this.lifecycle.hasListeners('ComponentRemoved'))
+        this.lifecycle.emit({ id, component: def.name, type: 'ComponentRemoved' });
     });
 
     if (import.meta.env.DEV && def.requires?.length) {
@@ -507,11 +514,13 @@ export class EcsWorld {
     const bit = this.archetypes.registerStore(store);
     store.subscribe('add', (id) => {
       this.archetypes.addBit(id, bit);
-      this.lifecycle.emit({ id, tag: def.name, type: 'TagAdded' });
+      if (this.lifecycle.hasListeners('TagAdded'))
+        this.lifecycle.emit({ id, tag: def.name, type: 'TagAdded' });
     });
     store.subscribe('delete', (id) => {
       this.archetypes.removeBit(id, bit);
-      this.lifecycle.emit({ id, tag: def.name, type: 'TagRemoved' });
+      if (this.lifecycle.hasListeners('TagRemoved'))
+        this.lifecycle.emit({ id, tag: def.name, type: 'TagRemoved' });
     });
 
     return store;

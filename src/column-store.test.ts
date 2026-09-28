@@ -95,6 +95,50 @@ describe('columnStore', () => {
     expect(s.get(3)!.x).toBe(99);
   });
 
+  it('repeated get and iteration return the same cached view', () => {
+    const s = new ColumnStore<Vec2>(FIELDS);
+    s.set(1, { x: 1, y: 1 });
+    const view = s.get(1)!;
+    expect(s.get(1)).toBe(view);
+    expect([...s][0][1]).toBe(view);
+    s.set(1, { x: 5, y: 5 });
+    expect(s.get(1)).toBe(view);
+    expect(view.x).toBe(5);
+  });
+
+  it('delete and clear drop the cached view; a re-added row gets a fresh one', () => {
+    const s = new ColumnStore<Vec2>(FIELDS);
+    s.set(1, { x: 1, y: 1 });
+    const first = s.get(1)!;
+    s.delete(1);
+    expect(first.x).toBeUndefined();
+    s.set(1, { x: 2, y: 2 });
+    const second = s.get(1)!;
+    expect(second).not.toBe(first);
+    expect(second.x).toBe(2);
+    s.clear();
+    s.set(1, { x: 3, y: 3 });
+    expect(s.get(1)).not.toBe(second);
+    expect(s.get(1)!.x).toBe(3);
+  });
+
+  it('held views stay bound across swap-remove, grow and page boundaries', () => {
+    const s = new ColumnStore<Vec2>(FIELDS);
+    const far = 1 << 12;
+    s.set(0, { x: 0, y: 0 });
+    s.set(1, { x: 1, y: 1 });
+    s.set(far, { x: 2, y: 2 });
+    const v1 = s.get(1)!;
+    const vFar = s.get(far)!;
+    s.delete(0);
+    for (let i = 2; i < 100; i++) s.set(i, { x: i, y: i });
+    expect(v1.x).toBe(1);
+    expect(vFar.x).toBe(2);
+    vFar.x = 42;
+    expect(s.get(far)).toBe(vFar);
+    expect(s.get(far)!.x).toBe(42);
+  });
+
   it('grows beyond initial capacity and keeps all data', () => {
     const s = new ColumnStore<Vec2>(FIELDS);
     for (let i = 0; i < 100; i++) s.set(i, { x: i, y: -i });

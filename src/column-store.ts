@@ -61,7 +61,9 @@ export interface ColumnStoreOptions {
  * `world`, `QueryBuilder`, the spatial index, and save treat it identically.
  * The compatibility `get(id)` returns a **write-through view**: a small object
  * whose field accessors read and write the underlying columns, so the universal
- * `pos.x += …` mutate-in-place idiom keeps working. Hot loops that want the full
+ * `pos.x += …` mutate-in-place idiom keeps working. The view is cached per
+ * entity, so repeated `get(id)` calls return the same object until the row is
+ * deleted. Hot loops that want the full
  * zero-allocation win use the columnar fast path ({@link column} + {@link slotOf}).
  */
 export class ColumnStore<T> implements ComponentStoreLike<T> {
@@ -78,6 +80,10 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   private readonly slot2id: EntityId[] = [];
   private readonly validateHandlers: StoreValidateHandler[] = [];
   private readonly viewDescriptors: PropertyDescriptorMap = {};
+  // One cached view per live id, paged like the sparse set. Building a view
+  // (defineProperties) is far costlier than reading through one, so it is paid
+  // once per entity instead of once per `get()`.
+  private readonly viewPages: (T[] | undefined)[] = [];
 
   constructor(specs: readonly ColumnField[], options: ColumnStoreOptions = {}) {
     this.shared = options.shared ?? false;
@@ -118,6 +124,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     }
     this.count = 0;
     this.pages.length = 0;
+    this.viewPages.length = 0;
     this.slot2id.length = 0;
     this.dirty.clear();
   }
@@ -142,6 +149,9 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
       this.setSparse(lastId, slot);
     }
     this.setSparse(id, ABSENT);
+    const views = this.viewPages[id >>> PAGE_BITS];
+    if (views !== undefined)
+      views[id & PAGE_MASK] = undefined as T;
     this.slot2id.length = lastSlot;
     this.count = lastSlot;
     this.dirty.add(id);
@@ -166,12 +176,12 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   * entries(): Generator<[EntityId, T]> {
     for (let slot = 0; slot < this.count; slot++) {
       const id = this.slot2id[slot];
-      yield [id, this.makeView(id)];
+      yield [id, this.viewFor(id)];
     }
   }
 
   get(id: EntityId): T | undefined {
-    return this.slotFor(id) === ABSENT ? undefined : this.makeView(id);
+    return this.slotFor(id) === ABSENT ? undefined : this.viewFor(id);
   }
 
   private grow(): void {
@@ -190,7 +200,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     for (let slot = 0; slot < this.count; slot++) yield this.slot2id[slot];
   }
 
-  /** Per-call write-through view bound to the entity id, so it survives slot moves caused by other deletes (swap-remove). */
+  /** Write-through view bound to the entity id (not its slot), so it survives slot moves caused by other deletes (swap-remove). */
   private makeView(id: EntityId): T {
     const v = {};
     Object.defineProperty(v, '_id', { value: id });
@@ -298,5 +308,21 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   /** Fire all `validate` handlers for a given id. Used by World for post-spawn dependency checks. */
   validate(id: EntityId): void {
     this.emitValidate(id);
+  }
+
+  /** The cached view for a live id, built on first access. */
+  private viewFor(id: EntityId): T {
+    const p = id >>> PAGE_BITS;
+    let views = this.viewPages[p];
+    if (views === undefined) {
+      views = [];
+      this.viewPages[p] = views;
+    }
+    let view = views[id & PAGE_MASK];
+    if (view === undefined) {
+      view = this.makeView(id);
+      views[id & PAGE_MASK] = view;
+    }
+    return view;
   }
 }

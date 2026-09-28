@@ -38,6 +38,16 @@ describe('eventBus', () => {
       expect(received).toEqual([]);
     });
 
+    it('hasListeners tracks subscriptions per type', () => {
+      const bus = createBus();
+      expect(bus.hasListeners('Ping')).toBe(false);
+      const unsubscribe = bus.on('Ping', () => {});
+      expect(bus.hasListeners('Ping')).toBe(true);
+      expect(bus.hasListeners('Pong')).toBe(false);
+      unsubscribe();
+      expect(bus.hasListeners('Ping')).toBe(false);
+    });
+
     it('unsubscribe function from on() removes handler', () => {
       const bus = createBus();
       const received: number[] = [];

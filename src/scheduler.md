@@ -88,7 +88,8 @@ This is metadata only — there is no runtime access check and no
 production overhead. In DEV mode, `build()` scans the sorted order and
 emits a `console.warn` whenever a system reads a component written by
 an earlier system it does NOT declare (directly or transitively via
-`runAfter`/`runBefore`) a dependency on.
+`runAfter`/`runBefore`) a dependency on. In phase mode, a writer in an
+earlier phase never triggers the warning: the phase list already orders it.
 
 The intent is to catch implicit "works by accident" ordering before it
 breaks on a future reorder. Example:

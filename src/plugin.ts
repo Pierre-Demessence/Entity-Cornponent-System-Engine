@@ -15,7 +15,7 @@ import type { EcsWorld } from '#world';
  *   name: 'physics',
  *   build(world) {
  *     world.registerComponent(VelocityDef);
- *     world.lifecycle.subscribe((e) => { ... });
+ *     world.lifecycle.on('ComponentAdded', (e) => { ... });
  *   },
  * };
  * world.use(physics);

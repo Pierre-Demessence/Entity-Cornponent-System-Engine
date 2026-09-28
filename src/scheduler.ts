@@ -177,13 +177,22 @@ export class Scheduler<TCtx> {
       }
     }
 
+    // A writer in an earlier phase is ordered by the phase list itself —
+    // cross-phase edges are forbidden, so it can never appear in `predecessors`.
+    const inEarlierPhase = (writer: string, reader: SchedulableSystem<TCtx>): boolean => {
+      const writerPhase = byName.get(writer)?.phase;
+      if (writerPhase === undefined || reader.phase === undefined)
+        return false;
+      return this.phaseIndex.get(writerPhase)! < this.phaseIndex.get(reader.phase)!;
+    };
+
     // Walk sorted order, tracking the last writer per component name.
     const lastWriter = new Map<string, string>();
     for (const sys of sorted) {
       if (sys.reads) {
         for (const c of sys.reads) {
           const writer = lastWriter.get(c.name);
-          if (writer && writer !== sys.name && !predecessors.get(sys.name)!.has(writer)) {
+          if (writer && writer !== sys.name && !predecessors.get(sys.name)!.has(writer) && !inEarlierPhase(writer, sys)) {
             console.warn(
               `[ecs/scheduler] System "${sys.name}" reads component "${c.name}" written by "${writer}" earlier in the sort order, but "${sys.name}" does not declare runAfter "${writer}" (directly or transitively). The ordering is implicit; declare the dependency to make it explicit.`,
             );

@@ -12,7 +12,6 @@ queue drains once per tick.
 
 - `queueDestroy(id)` is deduped and safe to call repeatedly.
 - `flushCommands()` drains it — the contract is *after systems finish iterating*.
-  (`flushDestroys()` is a back-compat alias for the same call.)
 - `endOfTick()` runs `flushCommands()` then the lifecycle flush in one pass, so
   subscribers see the final entity set. `TickRunner` already calls this.
 

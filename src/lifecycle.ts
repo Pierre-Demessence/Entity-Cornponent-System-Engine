@@ -9,6 +9,9 @@ import type { EntityId } from '#entity-id';
  * `set()` on an existing id fires `ComponentRemoved` (via the store's
  * replace-semantics) followed by `ComponentAdded`, so consumers can treat
  * the pair as an update.
+ *
+ * Each event is built only while its type has a subscriber on
+ * `world.lifecycle`, so a handler sees only changes made after it subscribed.
  */
 export type LifecycleEvent
   = | { type: 'EntityCreated'; id: EntityId }

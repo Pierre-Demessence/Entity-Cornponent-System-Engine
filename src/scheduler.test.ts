@@ -340,5 +340,25 @@ describe('scheduler', () => {
       expect(warn).not.toHaveBeenCalled();
       warn.mockRestore();
     });
+
+    it('does not warn when the writer sits in an earlier phase', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const s = new Scheduler<void>({ phases: ['physics', 'render'] });
+      s.add({ name: 'move', phase: 'physics', writes: [pos], run: () => {} });
+      s.add({ name: 'draw', phase: 'render', reads: [pos], run: () => {} });
+      s.build();
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it('still warns on an undeclared same-phase dependency in phase mode', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const s = new Scheduler<void>({ phases: ['physics', 'render'] });
+      s.add({ name: 'move', phase: 'physics', writes: [pos], run: () => {} });
+      s.add({ name: 'collide', phase: 'physics', reads: [pos], run: () => {} });
+      s.build();
+      expect(warn).toHaveBeenCalledOnce();
+      warn.mockRestore();
+    });
   });
 });

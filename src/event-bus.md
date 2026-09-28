@@ -22,6 +22,7 @@ complete before any event handler runs.
 |--------|-------------|
 | `on(type, handler, priority?)` | Register a handler. Returns an unsubscribe function. Higher priority runs first (default 0). |
 | `off(type, handler)` | Remove a handler |
+| `hasListeners(type)` | Whether any handler is subscribed to `type` — lets a hot-path producer skip building an event nobody would receive |
 | `emit(event)` | Queue an event |
 | `flush(maxDepth?)` | Dispatch all queued events. Processes handler-emitted events in subsequent batches up to `maxDepth` (default 3). |
 | `clear()` | Drop every queued event without dispatching. Handlers are preserved. Used by `EcsWorld.clearAll()`; call directly when resetting application-level event buses. |

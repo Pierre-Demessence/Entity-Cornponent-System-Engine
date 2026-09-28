@@ -53,7 +53,7 @@ describe('ecsWorld', () => {
       expect(tag.has(id)).toBe(false);
     });
 
-    it('queueDestroy defers until flushDestroys', () => {
+    it('queueDestroy defers until flushCommands', () => {
       const w = new EcsWorld();
       const pos = w.registerComponent(PosDef);
       const id = w.createEntity();
@@ -62,7 +62,7 @@ describe('ecsWorld', () => {
       w.queueDestroy(id);
       expect(pos.has(id)).toBe(true);
 
-      w.flushDestroys();
+      w.flushCommands();
       expect(pos.has(id)).toBe(false);
     });
 
@@ -77,17 +77,17 @@ describe('ecsWorld', () => {
       w.queueDestroy(id);
       w.queueDestroy(id);
       w.queueDestroy(id);
-      w.flushDestroys();
+      w.flushCommands();
 
       expect(deletes).toEqual([id]);
     });
 
-    it('flushDestroys is a no-op when queue is empty', () => {
+    it('flushCommands is a no-op when queue is empty', () => {
       const w = new EcsWorld();
-      expect(() => w.flushDestroys()).not.toThrow();
+      expect(() => w.flushCommands()).not.toThrow();
     });
 
-    it('flushDestroys allows safe iteration-then-destroy', () => {
+    it('flushCommands allows safe iteration-then-destroy', () => {
       const w = new EcsWorld();
       const pos = w.registerComponent(PosDef);
       const a = w.createEntity();
@@ -102,7 +102,7 @@ describe('ecsWorld', () => {
         if (p.x >= 1)
           w.queueDestroy(id);
       }
-      w.flushDestroys();
+      w.flushCommands();
 
       expect(pos.has(a)).toBe(true);
       expect(pos.has(b)).toBe(false);
@@ -157,12 +157,12 @@ describe('ecsWorld', () => {
       void b;
     });
 
-    it('queueDestroy keeps the entity alive until flushDestroys', () => {
+    it('queueDestroy keeps the entity alive until flushCommands', () => {
       const w = new EcsWorld();
       const id = w.createEntity();
       w.queueDestroy(id);
       expect(w.isAlive(id)).toBe(true);
-      w.flushDestroys();
+      w.flushCommands();
       expect(w.isAlive(id)).toBe(false);
     });
 
@@ -224,7 +224,7 @@ describe('ecsWorld', () => {
 
       w.queueDestroy(a);
       w.loadJSON(saved);
-      w.flushDestroys(); // must not destroy the reloaded entity
+      w.flushCommands(); // must not destroy the reloaded entity
 
       expect(w.isAlive(a)).toBe(true);
     });
@@ -947,7 +947,7 @@ describe('ecsWorld', () => {
   });
 
   describe('endOfTick', () => {
-    it('runs flushDestroys before lifecycle.flush', () => {
+    it('runs flushCommands before lifecycle.flush', () => {
       const w = new EcsWorld();
       w.registerComponent(PosDef);
       const events: string[] = [];
@@ -959,7 +959,7 @@ describe('ecsWorld', () => {
       w.endOfTick();
 
       // Both the queued destroy and the lifecycle events dispatch in one call,
-      // with Destroyed arriving because flushDestroys ran first.
+      // with Destroyed arriving because flushCommands ran first.
       expect(events).toEqual(['Created', 'Destroyed']);
     });
 
@@ -1070,6 +1070,38 @@ describe('ecsWorld', () => {
       w.lifecycle.flush();
 
       expect(events.map(e => e.type)).toEqual(['ComponentRemoved', 'ComponentAdded']);
+    });
+
+    it('does not re-emit EntityDestroyed when destroying an already-dead id', () => {
+      const w = new EcsWorld();
+      const events: number[] = [];
+      w.lifecycle.on('EntityDestroyed', e => events.push(e.id));
+      const id = w.createEntity();
+      w.destroyEntity(id);
+      w.destroyEntity(id);
+      w.destroyEntity(999);
+      w.lifecycle.flush();
+      expect(events).toEqual([id]);
+    });
+
+    it('queues no lifecycle event for a type nobody subscribes to', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const tag = w.registerTag(FlagTag);
+      const emit = vi.spyOn(w.lifecycle, 'emit');
+      const id = w.createEntity();
+      pos.set(id, { x: 1, y: 2 });
+      tag.add(id);
+      w.destroyEntity(id);
+      expect(emit).not.toHaveBeenCalled();
+
+      const added: number[] = [];
+      w.lifecycle.on('ComponentAdded', e => added.push(e.id));
+      const other = w.createEntity();
+      pos.set(other, { x: 0, y: 0 });
+      w.lifecycle.flush();
+      expect(emit).toHaveBeenCalledOnce();
+      expect(added).toEqual([other]);
     });
   });
 

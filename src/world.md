@@ -36,7 +36,6 @@ not in this package.
 | `queueRemove(def, id)` | Enqueue a component remove for the next `flushCommands()`. |
 | `queueAddTag(def, id)` / `queueRemoveTag(def, id)` | Tag equivalents. |
 | `flushCommands()` | Apply every queued structural change (spawn / destroy / add / remove / add-tag / remove-tag) in insertion order. Call once per tick, after systems finish iterating. |
-| `flushDestroys()` | Back-compat alias for `flushCommands()`. |
 | `isAlive(id)` | Whether `id` refers to a live entity (created and not yet destroyed). |
 | `entityCount()` | Number of live entities. |
 | `liveEntities()` | Iterate the live entity ids (order unspecified). |
@@ -59,7 +58,7 @@ not in this package.
 | `clearAll()` | Empty every component/tag store, the destroy queue, the spatial index (if enabled), and the lifecycle event queue; reset `nextId = 0`. Registrations are preserved. Silent by design — no `EntityDestroyed` storm. Useful for full world resets (level restart, new game). |
 | `toJSON()` | Serialize the registry to `{ nextId, [storeName]: serialized }`. |
 | `loadJSON(data)` | In-place load — clears existing stores then repopulates. |
-| `lifecycle` | `EventBus<LifecycleEvent>` — emits `EntityCreated`, `EntityDestroyed`, `ComponentAdded`, `ComponentRemoved`, `TagAdded`, `TagRemoved`. Queue-based; call `lifecycle.flush()` to dispatch (typically once per tick). Subscribers are **not** preserved across world swaps. |
+| `lifecycle` | `EventBus<LifecycleEvent>` — emits `EntityCreated`, `EntityDestroyed`, `ComponentAdded`, `ComponentRemoved`, `TagAdded`, `TagRemoved`. Queue-based; call `lifecycle.flush()` to dispatch (typically once per tick). An event is only built while its type has a subscriber, so a handler sees only changes made after it subscribed, and an unobserved world allocates nothing per mutation. `destroyEntity` on an id that is already dead emits nothing. Subscribers are **not** preserved across world swaps. |
 
 ## Using the engine
 

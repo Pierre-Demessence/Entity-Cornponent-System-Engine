@@ -19,18 +19,15 @@ module README.
 
 ### Faster columnar view construction (prototype-accessor flyweight) — declined
 
-The columnar store's `get(id)` materializes a write-through view via
-`Object.defineProperties` per call, which makes `world.query` / `get()`
-iteration over columnar components slower than the old object store. The
-obvious speed-up — a shared prototype with column-backed accessors — is
-declined: prototype accessors are **not own-enumerable**, so they silently
-break `{ ...view }` spread and `Object.keys(view)`, both of which consumers
-rely on. The non-breaking alternative (codegen'd own-accessor objects via
-`new Function`) buys speed for a real cost in complexity and CSP-friendliness,
-and the shipped `query.ts` fix already removed most view churn (it rejects
-non-matches before building any view). Hot loops that need zero-alloc use the
-`column()` / `slotOf()` fast path instead. Revisit only if a profiler shows
-uniform-API columnar `get`/`query` as a real bottleneck in a shipping game.
+The columnar store's `get(id)` returns a write-through view built with
+`Object.defineProperties` once per entity and cached until the row is deleted,
+so `world.query` / `get()` iteration over columnar components runs on par with
+the object store. Making view *construction* cheaper is declined: a shared
+prototype with column-backed accessors is **not own-enumerable**, so it
+silently breaks `{ ...view }` spread and `Object.keys(view)`, both of which
+consumers rely on; codegen'd own-accessor objects via `new Function` cost
+complexity and CSP-friendliness for a one-time-per-entity saving. Hot loops
+that need zero-alloc use the `column()` / `slotOf()` fast path instead.
 
 ### Entity hierarchy / parenting — full transform propagation — declined
 
