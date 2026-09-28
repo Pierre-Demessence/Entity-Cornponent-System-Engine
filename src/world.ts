@@ -10,7 +10,6 @@ import { ArchetypeIndex } from '#archetype-index';
 import { ColumnStore } from '#column-store';
 import { ComponentStore, TagStore } from '#component-store';
 import { EventBus } from '#event-bus';
-import { HashGrid2D } from '#modules/spatial/hash-grid-2d';
 import { QueryBuilder } from '#query';
 import { asNumber, asObject } from '#validation';
 
@@ -174,16 +173,17 @@ export class EcsWorld {
   }
 
   /**
-   * Opt in to spatial indexing for a component that carries `{x, y}`. May only
+   * Opt in to spatial indexing for a component that carries `{x, y}`, backed by
+   * `structure` (e.g. `HashGrid2D` from `@pierre/ecs/modules/spatial`). May only
    * be called once per world — installs `set`/`delete` subscribers on the store.
    *
-   * `structure` defaults to a fresh {@link HashGrid2D}. Pass any other
-   * {@link SpatialStructure} to swap in a different backend (QuadTree, etc.).
+   * Returns `structure` with its own type, so backend-specific extras (a grid's
+   * `getAt`, say) stay typed on the returned handle.
    */
-  enableSpatial<T extends { x: number; y: number }>(
+  enableSpatial<T extends { x: number; y: number }, S extends SpatialStructure<{ x: number; y: number }>>(
     def: ComponentDef<T>,
-    structure: SpatialStructure<{ x: number; y: number }> = new HashGrid2D(),
-  ): void {
+    structure: S,
+  ): S {
     if (this.spatialDef) {
       throw new Error(`Spatial already enabled for "${this.spatialDef.name}"; cannot re-enable for "${def.name}".`);
     }
@@ -194,11 +194,12 @@ export class EcsWorld {
     this._spatial = structure;
     const typedStore = store as ComponentStoreLike<T>;
     typedStore.subscribe('set', (id, pos) => {
-      this._spatial!.add(id, pos);
+      structure.add(id, pos);
     });
     typedStore.subscribe('delete', (id, pos) => {
-      this._spatial!.remove(id, pos);
+      structure.remove(id, pos);
     });
+    return structure;
   }
 
   /**
@@ -527,15 +528,14 @@ export class EcsWorld {
   }
 
   /**
-   * The spatial index. Typed as {@link HashGrid2D} (the default backend) so
-   * game callers can use grid-specific extras (`getAt`, `findAt`, `getInRect`).
-   * If you've passed a non-grid structure to `enableSpatial`, cast or expose
-   * it via a subclass getter.
+   * The spatial index passed to {@link enableSpatial}, typed as the
+   * {@link SpatialStructure} contract. For backend-specific extras, keep the
+   * handle `enableSpatial` returns (a subclass may narrow this getter to it).
    */
-  get spatial(): HashGrid2D {
+  get spatial(): SpatialStructure<{ x: number; y: number }> {
     if (!this._spatial)
       throw new Error('spatial requires enableSpatial() to have been called.');
-    return this._spatial as HashGrid2D;
+    return this._spatial;
   }
 
   /** Create an entity from a template, merging per-component overrides (shallow merge per component). */

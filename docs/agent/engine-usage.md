@@ -43,7 +43,7 @@ references it.
 
 - 58 public entries (16 core, 42 modules) · 517 symbols (291 value, 226 type)
 - 41 entries referenced by at least one example · 17 with none
-- 166 value symbols referenced by no example (5 of them with no external consumer at all)
+- 165 value symbols referenced by no example (5 of them with no external consumer at all)
 - 149 symbols with no external consumer
 
 ## Entries with no example reference
@@ -65,7 +65,7 @@ only by another module.
 - `@pierre/ecs/modules/turn-based` — tests: 1 · other: —
 - `@pierre/ecs/modules/tween` — tests: 1 · other: —
 - `@pierre/ecs/query` — tests: 1 · other: world.ts
-- `@pierre/ecs/spatial-structure` — tests: 1 · other: spatial, world.ts
+- `@pierre/ecs/spatial-structure` — tests: 2 · other: spatial, world.ts
 - `@pierre/ecs/template` — tests: 2 · other: world.ts
 - `@pierre/ecs/test-utils` — tests: 4 · other: —
 - `@pierre/ecs/validation` — tests: 1 · other: animation, audio, component-store.ts, render-canvas2d, render-dom, world.ts
@@ -90,11 +90,11 @@ the shortlist for the next game in
 - `@pierre/ecs/modules/camera` — 4 of 9 value exports unreferenced by any example
 - `@pierre/ecs/modules/grid-based` — 3 of 3 value exports unreferenced by any example
 - `@pierre/ecs/modules/input` — 3 of 10 value exports unreferenced by any example
-- `@pierre/ecs/modules/spatial` — 3 of 6 value exports unreferenced by any example
 - `@pierre/ecs/modules/stats` — 3 of 3 value exports unreferenced by any example
 - `@pierre/ecs/modules/collision` — 2 of 10 value exports unreferenced by any example
 - `@pierre/ecs/modules/particles` — 2 of 6 value exports unreferenced by any example
 - `@pierre/ecs/modules/scene-transition` — 2 of 2 value exports unreferenced by any example
+- `@pierre/ecs/modules/spatial` — 2 of 6 value exports unreferenced by any example
 - `@pierre/ecs/modules/transform-3d` — 2 of 4 value exports unreferenced by any example
 - `@pierre/ecs/modules/behavior-tree` — 1 of 5 value exports unreferenced by any example
 - `@pierre/ecs/modules/kinematics-3d` — 1 of 2 value exports unreferenced by any example
@@ -135,7 +135,7 @@ symbols.
 | tilemap | 9 | 16 | 2 |
 | solitaire | 9 | 15 | 2 |
 | woodcutter | 11 | 10 | 6 |
-| snake | 10 | 10 | 4 |
+| snake | 11 | 11 | 4 |
 | rhythm | 10 | 9 | 4 |
 | stress-storage | 2 | 3 | 0 |
 | parallel-kernel | 2 | 2 | 0 |
@@ -179,9 +179,9 @@ value 2/4 · type 2/15 · examples: asteroids, boids, breakout, card-battler, do
 
 ### `@pierre/ecs/entity-id`
 
-value 0/0 · type 1/1 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: 11 · other: animation, archetype-index.ts, attach, audio, collision, column-store.ts, component-store.ts, kinematics +16 more
+value 0/0 · type 1/1 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: 12 · other: animation, archetype-index.ts, attach, audio, collision, column-store.ts, component-store.ts, kinematics +16 more
 
-- **`EntityId`** _(type)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: src/modules/animation/sprite-animation.test.ts, src/modules/animation/sprite-clip.test.ts, src/modules/collision/trigger.test.ts, src/modules/cooldown/cooldown.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts, src/modules/kinematics/kinematics-system.test.ts, src/modules/lifetime/lifetime.test.ts, src/modules/motion-3d/motion-3d.test.ts +3 more · other: animation, archetype-index.ts, attach, audio, collision, column-store.ts, component-store.ts, kinematics +16 more
+- **`EntityId`** _(type)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: src/modules/animation/sprite-animation.test.ts, src/modules/animation/sprite-clip.test.ts, src/modules/collision/trigger.test.ts, src/modules/cooldown/cooldown.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts, src/modules/kinematics/kinematics-system.test.ts, src/modules/lifetime/lifetime.test.ts, src/modules/motion-3d/motion-3d.test.ts +4 more · other: animation, archetype-index.ts, attach, audio, collision, column-store.ts, component-store.ts, kinematics +16 more
 
 ### `@pierre/ecs/event-bus`
 
@@ -226,9 +226,9 @@ value 1/1 · type 1/3 · examples: asteroids, boids, breakout, card-battler, cri
 
 ### `@pierre/ecs/spatial-structure`
 
-value 0/0 · type 0/1 · examples: — · tests: 1 · other: spatial, world.ts
+value 0/0 · type 0/1 · examples: — · tests: 2 · other: spatial, world.ts
 
-- **`SpatialStructure`** _(interface)_ — examples: — · tests: src/spatial-structure.test.ts · other: spatial, world.ts
+- **`SpatialStructure`** _(interface)_ — examples: — · tests: src/spatial-structure.test.ts, src/world.test.ts · other: spatial, world.ts
 
 ### `@pierre/ecs/template`
 
@@ -773,7 +773,7 @@ value 0/2 · type 0/1 · examples: — · tests: 1 · other: —
 
 ### `@pierre/ecs/modules/spatial`
 
-value 3/6 · type 0/3 · examples: asteroids, boids, platformer, spacewar, top-down-shooter · tests: 4 · other: world.ts
+value 4/6 · type 0/3 · examples: asteroids, boids, platformer, snake, spacewar, top-down-shooter · tests: 4 · other: —
 
 - **`CellKey`** _(interface)_ — no external consumer
 - **`cellOfPoint`** _(fn)_ — examples: — · tests: src/modules/spatial/projections.test.ts · other: —
@@ -782,7 +782,7 @@ value 3/6 · type 0/3 · examples: asteroids, boids, platformer, spacewar, top-d
 - **`ContinuousHashGrid2D`** _(class)_ — examples: asteroids, boids, platformer, spacewar, top-down-shooter · tests: src/modules/spatial/continuous-hash-grid-2d.test.ts · other: —
 - **`GridSyncOnMove`** _(type)_ — no external consumer
 - **`GridSyncOnMoveOptions`** _(interface)_ — no external consumer
-- **`HashGrid2D`** _(class)_ — examples: — · tests: src/modules/spatial/grid-sync.test.ts, src/modules/spatial/hash-grid-2d.test.ts · other: world.ts
+- **`HashGrid2D`** _(class)_ — examples: snake · tests: src/modules/spatial/grid-sync.test.ts, src/modules/spatial/hash-grid-2d.test.ts · other: —
 - **`makeGridSyncOnMove`** _(fn)_ — examples: asteroids, boids, spacewar, top-down-shooter · tests: src/modules/spatial/grid-sync.test.ts · other: —
 
 ### `@pierre/ecs/modules/spawner`

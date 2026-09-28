@@ -25,15 +25,12 @@ export const movementSystem: SchedulableSystem<GameState> = {
     }
 
     // Self-collision: any snake segment except the tail (which is about to move away)
-    const occupants = ctx.world.spatial.getAt(nx, ny);
-    if (occupants) {
-      const tailId = ctx.segments.at(-1)!;
-      const segTag = ctx.world.getTag(SnakeSegmentTag);
-      for (const occ of occupants) {
-        if (segTag.has(occ) && occ !== tailId) {
-          ctx.events.emit({ type: 'GameOver' });
-          return;
-        }
+    const tailId = ctx.segments.at(-1)!;
+    const segTag = ctx.world.getTag(SnakeSegmentTag);
+    for (const occ of ctx.world.spatial.queryAt({ x: nx, y: ny })) {
+      if (segTag.has(occ) && occ !== tailId) {
+        ctx.events.emit({ type: 'GameOver' });
+        return;
       }
     }
 

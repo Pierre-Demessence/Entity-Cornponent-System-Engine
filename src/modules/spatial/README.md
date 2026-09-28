@@ -4,12 +4,13 @@ Concrete `SpatialStructure` implementations. The interface itself lives
 in core — see
 [`spatial-structure`](../../spatial-structure.md).
 
-## `HashGrid2D` — integer grid (current default)
+## `HashGrid2D` — integer grid
 
 `Map<"x,y", Set<EntityId>>`. Each cell key maps to the set of entities at
 that integer position. Auto-maintained via
 `ComponentStore.subscribe('set' | 'delete', ...)` handlers installed by
-`EcsWorld.enableSpatial` on the position store. Same-cell no-op
+`EcsWorld.enableSpatial` on the position store when a `HashGrid2D` is passed
+to it. Same-cell no-op
 optimization on `move`.
 
 Implements `SpatialStructure<{x, y}>` and adds grid-specific ergonomics:
@@ -50,7 +51,7 @@ to `HashGrid2D.add` / `.remove` / `.cellFor`.
 ## `makeGridSyncOnMove` — motion ↔ grid glue
 
 When an app keeps its own `HashGrid2D` (distinct from
-`world.enableSpatial`'s auto-managed one — e.g. a bullet/enemy broadphase
+the one passed to `world.enableSpatial` — e.g. a bullet/enemy broadphase
 grid in Asteroids or the Shooter), it needs an `onMove` callback on
 `makeVelocityIntegrationSystem` to re-index entities as they cross cell
 boundaries. That callback body is identical across every consumer seen
@@ -90,15 +91,15 @@ grid cannot serve (very uneven entity density, or static AABB sets). An
 ## Integration with `EcsWorld`
 
 ```ts
-world.enableSpatial(PositionDef);               // defaults to new HashGrid2D()
-world.enableSpatial(PositionDef, customBackend); // swap in any SpatialStructure<{x,y}>
+const grid = world.enableSpatial(PositionDef, new HashGrid2D()); // or any SpatialStructure<{x,y}>
 ```
 
 - `enableSpatial` installs `set`/`delete` subscribers on the position
   store, so writes automatically keep the index in sync.
-- `world.spatial` is typed as `HashGrid2D` (the default backend) so game
-  code can use the grid-specific extras. If you pass a non-grid backend,
-  expose it via a subclass getter with the appropriate type.
+- `enableSpatial` returns the structure with its own type, so the handle
+  keeps the grid-specific extras (`getAt`, `findAt`, `getInRect`).
+  `world.spatial` is typed as the `SpatialStructure` contract; a `World`
+  subclass can narrow the getter to its backend.
 - `world.move(id, x, y)` atomically updates both the position component
   and the spatial index via the interface. Game code should always use
   `world.move()` rather than mutating positions directly.

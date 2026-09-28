@@ -19,7 +19,7 @@ not in this package.
 - Spawn entities from `EntityTemplate` blueprints with optional per-component
   overrides.
 - Serialize to / load from a plain JSON payload.
-- Opt-in spatial indexing via `enableSpatial(def)` for a `{ x, y }` component.
+- Opt-in spatial indexing via `enableSpatial(def, structure)` for a `{ x, y }` component.
 - Suppress dev-mode `requires` validation during `spawn()` (components arrive
   in arbitrary order; full validation runs once per entity after the template
   has been fully applied).
@@ -45,7 +45,8 @@ not in this package.
 | `getStore(def)` | Typed store lookup by def (throws if unregistered). |
 | `getStoreByName(name)` | Untyped store lookup by string name. |
 | `getTag(def)` / `getTagByName(name)` | Tag-store equivalents. |
-| `enableSpatial(def)` | Subscribe `set` / `delete` handlers on the given component so the spatial structure stays in sync. Defaults to a fresh `HashGrid2D`; pass any other `SpatialStructure` to swap the backend. May be called at most once. |
+| `enableSpatial(def, structure)` | Index the given component in `structure` (any `SpatialStructure`, e.g. `HashGrid2D` from `@pierre/ecs/modules/spatial`) by subscribing `set` / `delete` handlers on its store. Returns `structure` with its own type, so backend extras stay typed on the handle. May be called at most once. |
+| `spatial` | The structure passed to `enableSpatial`, typed as the `SpatialStructure` contract (`queryAt`, `queryNear`, `queryRect`, …). A subclass may narrow the getter to its concrete backend. |
 | `move(id, x, y)` | Atomically update the spatial component and the index. Requires `enableSpatial` to have been called. |
 | `getColumnStore(def)` | Fast-path accessor for an all-numeric component's columnar store, exposing `column()` / `slotOf()` for zero-allocation hot loops. Throws if the component uses object storage. |
 | `query(...defs)` | Build a typed `QueryBuilder` over the given component defs. |
@@ -63,24 +64,20 @@ not in this package.
 ## Using the engine
 
 ```ts
+import { simpleComponent } from '@pierre/ecs/component-store';
+import { HashGrid2D } from '@pierre/ecs/modules/spatial';
 import { EcsWorld } from '@pierre/ecs/world';
-import type { ComponentDef } from '@pierre/ecs/component-store';
 
 interface Pos { x: number; y: number }
-
-const PosDef: ComponentDef<Pos> = {
-  name: 'pos',
-  serialize: v => v,
-  deserialize: raw => raw as Pos,
-};
+const PosDef = simpleComponent<Pos>('pos', { x: 'number', y: 'number' });
 
 const world = new EcsWorld();
 const positions = world.registerComponent(PosDef);
-world.enableSpatial(PosDef);
+const grid = world.enableSpatial(PosDef, new HashGrid2D());
 
 const id = world.spawn({ name: 'marker', components: { pos: { x: 3, y: 4 } } });
 world.move(id, 5, 6);
-world.spatial.getAt(5, 6); // Set { id }
+grid.getAt(5, 6); // Set { id }
 ```
 
 ## Extending for a specific consumer
@@ -91,8 +88,9 @@ The engine is designed to be subclassed. A consumer subclass typically:
 2. Calls `this.registerComponent(...)` for every consumer component,
    storing the returned store as a typed `readonly` field.
 3. Calls `this.registerTag(...)` for every consumer tag.
-4. Calls `this.enableSpatial(PositionDef)` once (if the consumer uses a
-   spatial component).
+4. Calls `this.enableSpatial(PositionDef, backend)` once (if the consumer
+   uses a spatial component), keeping the returned handle in a field — and
+   optionally narrowing `get spatial()` to its concrete type.
 5. Adds consumer-specific helpers on top of the generic API.
 
 ## Invariants
@@ -122,6 +120,6 @@ The engine is designed to be subclassed. A consumer subclass typically:
 - [Component Store](component-store.md) - typed storage registered on the world.
 - [Query Builder](query.md) - `world.query(...)` entry point.
 - [Entity Templates](template.md) - `world.spawn(template, overrides)`.
-- [Spatial Structure](spatial-structure.md) - `world.enableSpatial(def)` and `world.move(id, x, y)`.
+- [Spatial Structure](spatial-structure.md) - `world.enableSpatial(def, structure)` and `world.move(id, x, y)`.
 - [Tick](tick.md) - drives the game loop around the world.
 

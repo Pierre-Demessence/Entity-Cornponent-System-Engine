@@ -180,8 +180,9 @@ contributors know *why* the table is shaped that way.
 
 Every module exposes an **interface** and a **default implementation**.
 Users can swap the implementation without changing the core or other
-modules. `EcsWorld.enableSpatial()` accepts any `SpatialStructure`, with
-`HashGrid2D` as the convenient default for simple 2D grid games — a
+modules. `EcsWorld.enableSpatial(def, structure)` accepts any
+`SpatialStructure` and names no backend itself; `modules/spatial` ships
+`HashGrid2D` as the ready-made choice for simple 2D grid games, and a
 future `QuadTree` or `BVH` drops in with zero core change. Same shape
 applies to `TickSource`, `Renderer<TCtx>`, `InputProvider`,
 `AudioProvider`, and every other module interface.

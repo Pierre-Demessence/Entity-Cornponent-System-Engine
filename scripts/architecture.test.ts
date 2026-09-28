@@ -9,19 +9,11 @@ const srcDir = join(root, 'src');
 const modulesDir = join(srcDir, 'modules');
 
 /**
- * The one sanctioned core → module edge.
- *
- * `EcsWorld.enableSpatial` defaults to a fresh `HashGrid2D`, which
- * `docs/extending-the-engine.md` names as the engine's worked example of
- * "good defaults, never mandatory assumptions" — so the edge is deliberate,
- * not an oversight. It is not free: a class method cannot be tree-shaken, so
- * the default reaches every `EcsWorld` consumer's bundle whether or not it
- * enables spatial indexing. That price is paid knowingly; any *new* core →
- * module import is a layering violation.
+ * Sanctioned core → module edges. Empty: core names no module, so any core →
+ * module import is a layering violation. Kept as a table so an edge, if one is
+ * ever justified, is added deliberately and in one visible place.
  */
-const CORE_MODULE_EDGES: readonly (readonly [file: string, specifier: string])[] = [
-  ['world.ts', '#modules/spatial/hash-grid-2d'],
-];
+const CORE_MODULE_EDGES: readonly (readonly [file: string, specifier: string])[] = [];
 
 function walkTs(dir: string): string[] {
   const found: string[] = [];
@@ -186,10 +178,10 @@ describe('architecture boundaries', () => {
     ]);
   });
 
-  it('rule 2 allows the one documented default and catches any other core → module edge', () => {
-    expect(coreModuleOffenders([{ rel: 'world.ts', specifiers: ['#modules/spatial/hash-grid-2d'] }])).toEqual([]);
-    expect(coreModuleOffenders([{ rel: 'query.ts', specifiers: ['#modules/spatial/hash-grid-2d'] }]))
-      .toEqual(['query.ts → #modules/spatial/hash-grid-2d']);
+  it('rule 2 catches every core → module edge', () => {
+    expect(coreModuleOffenders([{ rel: 'world.ts', specifiers: ['#modules/spatial/hash-grid-2d'] }]))
+      .toEqual(['world.ts → #modules/spatial/hash-grid-2d']);
+    expect(coreModuleOffenders([{ rel: 'query.ts', specifiers: ['#world'] }])).toEqual([]);
   });
 
   it('the specifier scanner reads multi-line, side-effect and re-export forms, and drops comments', () => {

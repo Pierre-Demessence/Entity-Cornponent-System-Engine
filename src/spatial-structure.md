@@ -49,6 +49,6 @@ current implementations (`HashGrid2D`, projection helpers) and
 
 ## See also
 
-- [EcsWorld](world.md) - `world.enableSpatial(def)` wires a structure to component mutations.
+- [EcsWorld](world.md) - `world.enableSpatial(def, structure)` wires a structure to component mutations.
 - [`src/modules/spatial/README.md`](./modules/spatial/README.md) - concrete `HashGrid2D` backend.
 

@@ -37,7 +37,7 @@ large or re-shaped during a tick.
 
 | | |
 |---|---|
-| **Problem** | `SpatialStructure<TPos>` is generic, but the world's wiring is not: `enableSpatial` / `move` / `spatial` are hard-wired to `{x, y}` and `HashGrid2D`, and a world may index exactly one component. So a 3D game cannot use the core integration at all, and a 2D game cannot index two populations (bodies plus pickups). |
+| **Problem** | `SpatialStructure<TPos>` is generic, but the world's wiring is not: `enableSpatial` / `move` / `spatial` are hard-wired to `{x, y}`, and a world may index exactly one component. (The backend is already caller-supplied; the world names none.) So a 3D game cannot use the core integration at all, and a 2D game cannot index two populations (bodies plus pickups). |
 | **Solution** | Make the world's spatial wiring generic in `TPos` and allow more than one indexed set. |
 | **Unlocks** | 3D broadphase through the core instead of per-consumer brute force, and per-purpose indexes inside one world. |
 | **Complexity** | Mid — the interface already generalizes; the work is the world's plumbing and its typing. |

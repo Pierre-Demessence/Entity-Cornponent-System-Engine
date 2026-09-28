@@ -39,6 +39,7 @@ TypeScript sources, so no build step is needed for a TS-aware bundler.
 
 ```ts
 import { simpleComponent } from '@pierre/ecs/component-store';
+import { HashGrid2D } from '@pierre/ecs/modules/spatial';
 import { EcsWorld } from '@pierre/ecs/world';
 
 interface Pos { x: number; y: number }
@@ -46,7 +47,7 @@ const PosDef = simpleComponent<Pos>('pos', { x: 'number', y: 'number' });
 
 const world = new EcsWorld();
 world.registerComponent(PosDef);
-world.enableSpatial(PosDef);
+world.enableSpatial(PosDef, new HashGrid2D());
 
 const id = world.spawn({ name: 'marker', components: { pos: { x: 0, y: 0 } } });
 world.move(id, 3, 4);

@@ -2,6 +2,7 @@ import type { EntityId, EventBus } from '@pierre/ecs';
 
 import { EcsWorld } from '@pierre/ecs';
 import { pick } from '@pierre/ecs/modules/rng';
+import { HashGrid2D } from '@pierre/ecs/modules/spatial';
 
 import {
   DirectionDef,
@@ -36,7 +37,7 @@ export function makeWorld(): EcsWorld {
   w.registerTag(SnakeHeadTag);
   w.registerTag(SnakeSegmentTag);
   w.registerTag(FoodTag);
-  w.enableSpatial(PositionDef);
+  w.enableSpatial(PositionDef, new HashGrid2D());
   return w;
 }
 
@@ -55,7 +56,7 @@ function randomEmptyCell(world: EcsWorld): { x: number; y: number } | null {
   const candidates: { x: number; y: number }[] = [];
   for (let x = 0; x < GRID; x++) {
     for (let y = 0; y < GRID; y++) {
-      if (!world.spatial.getAt(x, y)?.size)
+      if (new Set(world.spatial.queryAt({ x, y })).size === 0)
         candidates.push({ x, y });
     }
   }

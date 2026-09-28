@@ -40,7 +40,8 @@ Core (`@pierre/ecs`):
 - **`TickRunner`** — the per-tick ceremony: run systems, flush events,
   commands and lifecycle, clear dirty sets.
 - **`SpatialStructure`** — the spatial-index contract;
-  `world.enableSpatial(def)` wires one in (`HashGrid2D` by default).
+  `world.enableSpatial(def, structure)` wires one in (e.g. `HashGrid2D`
+  from `modules/spatial`).
 
 Opt-in modules (`@pierre/ecs/modules/<name>`) cover rendering (Canvas2D,
 DOM), input, audio, collision, kinematics, motion, transforms, camera,
@@ -100,6 +101,7 @@ import type { ComponentDef } from '@pierre/ecs/component-store';
 
 ```ts
 import { simpleComponent } from '@pierre/ecs/component-store';
+import { HashGrid2D } from '@pierre/ecs/modules/spatial';
 import { EcsWorld } from '@pierre/ecs/world';
 
 interface Pos { x: number; y: number }
@@ -107,7 +109,7 @@ const PosDef = simpleComponent<Pos>('pos', { x: 'number', y: 'number' });
 
 const world = new EcsWorld();
 world.registerComponent(PosDef);
-world.enableSpatial(PosDef);
+world.enableSpatial(PosDef, new HashGrid2D());
 
 const id = world.spawn({ name: 'marker', components: { pos: { x: 0, y: 0 } } });
 world.move(id, 3, 4);

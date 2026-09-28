@@ -810,7 +810,8 @@
               "src/modules/motion-3d/motion-3d.test.ts",
               "src/modules/motion/motion.test.ts",
               "src/modules/spatial/grid-sync.test.ts",
-              "src/spatial-structure.test.ts"
+              "src/spatial-structure.test.ts",
+              "src/world.test.ts"
             ],
             "typeOnly": true
           }
@@ -827,7 +828,8 @@
         "src/modules/motion-3d/motion-3d.test.ts",
         "src/modules/motion/motion.test.ts",
         "src/modules/spatial/grid-sync.test.ts",
-        "src/spatial-structure.test.ts"
+        "src/spatial-structure.test.ts",
+        "src/world.test.ts"
       ],
       "typeTotal": 1,
       "typeUsedByExample": 1,
@@ -9400,14 +9402,13 @@
         "asteroids",
         "boids",
         "platformer",
+        "snake",
         "spacewar",
         "top-down-shooter"
       ],
       "importPath": "@pierre/ecs/modules/spatial",
       "isModule": true,
-      "other": [
-        "world.ts"
-      ],
+      "other": [],
       "symbols": [
         {
           "name": "CellKey",
@@ -9560,18 +9561,18 @@
         },
         {
           "name": "HashGrid2D",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "snake"
+            ],
             "typeOnly": false
           },
           "isValue": true,
           "kind": "class",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [
-              "world.ts"
-            ],
+            "consumers": [],
             "typeOnly": false
           },
           "test": {
@@ -9618,7 +9619,7 @@
       "typeTotal": 3,
       "typeUsedByExample": 0,
       "valueTotal": 6,
-      "valueUsedByExample": 3
+      "valueUsedByExample": 4
     },
     {
       "coveredByExample": true,
@@ -12677,14 +12678,16 @@
           },
           "test": {
             "consumers": [
-              "src/spatial-structure.test.ts"
+              "src/spatial-structure.test.ts",
+              "src/world.test.ts"
             ],
             "typeOnly": true
           }
         }
       ],
       "tests": [
-        "src/spatial-structure.test.ts"
+        "src/spatial-structure.test.ts",
+        "src/world.test.ts"
       ],
       "typeTotal": 1,
       "typeUsedByExample": 0,
@@ -13534,9 +13537,9 @@
     },
     {
       "name": "snake",
-      "entries": 10,
+      "entries": 11,
       "type": 4,
-      "value": 10
+      "value": 11
     },
     {
       "name": "rhythm",
@@ -13635,11 +13638,6 @@
       "total": 10
     },
     {
-      "importPath": "@pierre/ecs/modules/spatial",
-      "missing": 3,
-      "total": 6
-    },
-    {
       "importPath": "@pierre/ecs/modules/stats",
       "missing": 3,
       "total": 3
@@ -13658,6 +13656,11 @@
       "importPath": "@pierre/ecs/modules/scene-transition",
       "missing": 2,
       "total": 2
+    },
+    {
+      "importPath": "@pierre/ecs/modules/spatial",
+      "missing": 2,
+      "total": 6
     },
     {
       "importPath": "@pierre/ecs/modules/transform-3d",
@@ -13711,6 +13714,6 @@
     "typeSymbols": 226,
     "valueSymbols": 291,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 166
+    "valueWithoutExample": 165
   }
 }

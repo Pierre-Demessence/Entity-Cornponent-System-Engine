@@ -1,4 +1,6 @@
 import type { ComponentDef, TagDef } from '#component-store';
+import type { EntityId } from '#entity-id';
+import type { SpatialStructure } from '#spatial-structure';
 import type { EntityTemplate } from '#template';
 
 import { describe, expect, it, vi } from 'vitest';
@@ -6,6 +8,32 @@ import { describe, expect, it, vi } from 'vitest';
 import { EcsWorld } from '#world';
 
 interface Pos { x: number; y: number }
+
+/** Minimal cell index — core tests stay free of module imports. */
+class CellIndex implements SpatialStructure<Pos> {
+  private readonly cells = new Map<string, Set<EntityId>>();
+  add(id: EntityId, pos: Pos): void {
+    const key = `${pos.x},${pos.y}`;
+    let cell = this.cells.get(key);
+    if (!cell) {
+      cell = new Set();
+      this.cells.set(key, cell);
+    }
+    cell.add(id);
+  }
+
+  at(x: number, y: number): EntityId[] { return [...this.queryAt({ x, y })]; }
+  clear(): void { this.cells.clear(); }
+  move(id: EntityId, from: Pos, to: Pos): void {
+    this.remove(id, from);
+    this.add(id, to);
+  }
+
+  queryAt(pos: Pos): Iterable<EntityId> { return this.cells.get(`${pos.x},${pos.y}`) ?? []; }
+  queryNear(): Iterable<EntityId> { return []; }
+  queryRect(): Iterable<EntityId> { return []; }
+  remove(id: EntityId, pos: Pos): void { this.cells.get(`${pos.x},${pos.y}`)?.delete(id); }
+}
 interface Health { hp: number }
 
 const PosDef: ComponentDef<Pos> = {
@@ -470,36 +498,44 @@ describe('ecsWorld', () => {
     it('keeps the spatial index in sync with set/delete', () => {
       const w = new EcsWorld();
       const pos = w.registerComponent(PosDef);
-      w.enableSpatial(PosDef);
+      const grid = w.enableSpatial(PosDef, new CellIndex());
 
       const id = w.createEntity();
       pos.set(id, { x: 3, y: 4 });
 
-      expect(w.spatial.getAt(3, 4)?.has(id)).toBe(true);
+      expect(grid.at(3, 4)).toEqual([id]);
 
       pos.delete(id);
-      expect(w.spatial.getAt(3, 4)).toBeUndefined();
+      expect(grid.at(3, 4)).toEqual([]);
+    });
+
+    it('returns the structure it was given and exposes it as world.spatial', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      const grid = new CellIndex();
+      expect(w.enableSpatial(PosDef, grid)).toBe(grid);
+      expect(w.spatial).toBe(grid);
     });
 
     it('move() updates both position and spatial index', () => {
       const w = new EcsWorld();
       const pos = w.registerComponent(PosDef);
-      w.enableSpatial(PosDef);
+      const grid = w.enableSpatial(PosDef, new CellIndex());
 
       const id = w.createEntity();
       pos.set(id, { x: 0, y: 0 });
       w.move(id, 5, 6);
 
       expect(pos.get(id)).toEqual({ x: 5, y: 6 });
-      expect(w.spatial.getAt(0, 0)).toBeUndefined();
-      expect(w.spatial.getAt(5, 6)?.has(id)).toBe(true);
+      expect(grid.at(0, 0)).toEqual([]);
+      expect([...w.spatial.queryAt({ x: 5, y: 6 })]).toEqual([id]);
     });
 
     it('throws if enableSpatial is called twice', () => {
       const w = new EcsWorld();
       w.registerComponent(PosDef);
-      w.enableSpatial(PosDef);
-      expect(() => w.enableSpatial(PosDef)).toThrow(/already enabled/);
+      w.enableSpatial(PosDef, new CellIndex());
+      expect(() => w.enableSpatial(PosDef, new CellIndex())).toThrow(/already enabled/);
     });
 
     it('move() throws if spatial was never enabled', () => {
@@ -895,15 +931,15 @@ describe('ecsWorld', () => {
     it('clears the spatial index when spatial is enabled', () => {
       const w = new EcsWorld();
       const pos = w.registerComponent(PosDef);
-      w.enableSpatial(PosDef);
+      const grid = w.enableSpatial(PosDef, new CellIndex());
 
       const id = w.createEntity();
       pos.set(id, { x: 5, y: 7 });
-      expect(w.spatial.getAt(5, 7)?.has(id)).toBe(true);
+      expect(grid.at(5, 7)).toEqual([id]);
 
       w.clearAll();
 
-      expect(w.spatial.getAt(5, 7)).toBeUndefined();
+      expect(grid.at(5, 7)).toEqual([]);
     });
 
     it('drops pending destroys and queued lifecycle events silently', () => {
