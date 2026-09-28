@@ -21,10 +21,18 @@ Registering a component gives you a store for it. Every component of that type,
 across every entity, lives in that one store — not in a per-entity object.
 
 ```ts
-const PosDef: ComponentDef<Pos> = { name: 'pos', serialize: v => v, deserialize: raw => raw as Pos };
+import { simpleComponent } from '@pierre/ecs/component-store';
+
+interface Pos { x: number; y: number }
+const PosDef = simpleComponent<Pos>('pos', { x: 'number', y: 'number' });
+
 const positions = world.registerComponent(PosDef);
 positions.get(id); // Pos | undefined
 ```
+
+`simpleComponent` builds the definition — its name, storage and save format —
+from a flat schema; [`component-store`](../../core/component-store/) has the
+other factories.
 
 A **tag** is the same idea with no payload: it records that an entity belongs to
 a set. Tags are how you mark state that needs no data of its own.
@@ -80,8 +88,9 @@ writes the world already observes.
 
 - **Register before you use.** Components and tags must be registered on the
   world first, and names must be unique within a world.
-- **Change position through `world.move(id, x, y)`.** Writing the position
-  component directly leaves the spatial index stale — see
+- **Move indexed positions through `world.move(id, x, y)`.** Once a world has a
+  spatial index, writing the indexed component directly leaves the index stale.
+  Without one, a position is a component like any other — see
   [`world`](../../core/world/).
 - **Do not depend on iteration order.** Nothing in the query contract promises
   one, and the buckets it walks are an implementation detail.

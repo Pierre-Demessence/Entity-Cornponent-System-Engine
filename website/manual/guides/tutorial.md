@@ -2,7 +2,8 @@
 
 A walkthrough from an empty folder to a rectangle that moves across the screen
 and is drawn, using nothing but shipped primitives. It is a single file built up
-over seven steps, and every snippet is typechecked against the current source.
+over seven steps. The finished file is type-checked and run against the current
+source on every test run, so what you copy is what works.
 
 ## 1. Install the engine
 
@@ -93,20 +94,19 @@ interface Sim {
 const moveSystem = {
   name: 'move',
   run: (ctx: Sim): void => {
-    for (const [entity, position] of ctx.world.query(PositionDef)) {
-      const next = (position.x + (60 * ctx.dtMs) / 1000) % WIDTH;
-      ctx.world.move(entity, next, position.y);
-    }
+    for (const [, position] of ctx.world.query(PositionDef))
+      position.x = (position.x + (60 * ctx.dtMs) / 1000) % WIDTH;
   },
 };
 ```
 
 Two things worth noticing:
 
-- **Position goes through `world.move`**, not by writing the component. That is
-  the engine's one hard rule about positions: a direct write leaves the spatial
-  index — if you have enabled one — believing the old value. See
-  [`world`](../../core/world/).
+- **The system writes the component in place.** The query hands out a live row,
+  so assigning `position.x` updates the store and marks the entity changed for
+  this tick. Once a world has a spatial index (`world.enableSpatial`), the
+  indexed component moves through `world.move` instead, so the index follows —
+  see [`world`](../../core/world/).
 - **Movement is scaled by `dtMs`.** The system does not assume a frame rate;
   what it is given is how long the last tick covered.
 

@@ -31,7 +31,7 @@ transitions.enqueue(() => {
 
 // at the tick boundary — e.g. the runner's onTickComplete or your own loop:
 if (transitions.applyNext())
-  /* a swap happened this boundary */;
+  onLevelEntered();
 ```
 
 `enqueue(applier)` takes a zero-argument callback that performs the swap;
@@ -51,17 +51,22 @@ them by id:
 ```ts
 import { transferEntities } from '@pierre/ecs/modules/scene-transition';
 
+let current = makeLevelWorld(1);
+
 const carried = [playerId, lanternId];
 transitions.enqueue(() => {
   const next = makeLevelWorld(nextLevel);
-  transferEntities(next, world, carried);
-  world = next;
+  transferEntities(next, current, carried);
+  current = next; // the runner's getWorld() returns `current`
 });
 ```
 
-Both worlds must have the components registered, and the ids belong to the
-destination's id space afterwards. Restrict the transfer with the optional
-component-name list when only part of each entity should travel.
+An entity keeps its id, and the destination's id counter moves past it so later
+spawns cannot collide. Values are deep-copied, so the two worlds never share an
+object. Components travel only if the destination registers them; restrict the
+transfer with the optional component-name list when only part of each entity
+should. Tags do not travel at all — which tags follow an entity is the game's
+decision, so re-add them on the destination.
 
 ## Where the boundary sits
 

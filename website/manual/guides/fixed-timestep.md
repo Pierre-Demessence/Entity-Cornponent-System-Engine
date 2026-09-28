@@ -8,6 +8,9 @@ other tick source uses.
 
 ## Use the accumulator
 
+The snippets reuse the `world`, `scheduler` and event bus (`events`) from a setup
+like [the tutorial's](../tutorial/); only the tick source changes.
+
 ```ts
 import { Scheduler, TickRunner } from '@pierre/ecs';
 import { FixedAccumulatorTickSource } from '@pierre/ecs/modules/tick';

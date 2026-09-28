@@ -14,6 +14,7 @@ current/min/max/average; the overlay is a separate call you can leave out.
 import { drawStatsOverlay, FrameStats } from '@pierre/ecs/modules/stats';
 
 const stats = new FrameStats();
+let last = performance.now();
 
 function frame(now: number): void {
   stats.sample(now - last);

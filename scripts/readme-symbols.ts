@@ -2,7 +2,7 @@
  * Discovers the API symbols a module README *documents* in its `.d.ts`-style
  * signature-listing blocks, so a name that no longer exists (a renamed or removed
  * export) fails `npm test`. This is the complement to the runnable-example
- * compile gate (`readme-samples.ts`): those blocks are reference tables, not
+ * compile gate (`doc-samples.ts`): those blocks are reference tables, not
  * code, so the compiler cannot check them — but the names they list can be
  * matched against the real public surface.
  *
@@ -16,7 +16,7 @@
  * Pure: reads the READMEs and returns the symbol list. The test
  * (`readme-symbols.test.ts`) resolves each name against the engine surface.
  */
-import { isRunnable, moduleSamples } from './readme-samples';
+import { isRunnable, moduleSamples } from './doc-samples';
 
 /** One top-level declaration named in a signature-listing block. */
 export interface DeclaredSymbol {
@@ -80,8 +80,8 @@ export function declaredSymbols(): DeclaredSymbol[] {
           name: match[2],
           kind: match[1] as DeclaredSymbol['kind'],
           line: sample.startLine + offset,
-          module: sample.module,
-          readmeRel: sample.readmeRel,
+          module: sample.source,
+          readmeRel: sample.docRel,
         });
       }
     });

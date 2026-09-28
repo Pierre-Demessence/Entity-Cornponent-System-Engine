@@ -17,6 +17,9 @@ coverage
 # Generated from the usage model; the versioned artifacts are the .md and .json.
 docs/agent/engine-usage.html
 
+# Manual walkthroughs written out by scripts/manual-walkthroughs.test.ts to be executed.
+scripts/.walkthroughs/
+
 # Starlight site: generated content and build output, never committed.
 website/dist/
 website/.astro/

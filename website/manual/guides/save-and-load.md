@@ -6,9 +6,10 @@ Core owns serialization; `modules/save` owns storage.
 
 ## Serialize the world
 
-`EcsWorld` serializes itself. Component registration order is preserved, so the
-caller is responsible for registering the same schemas — in any order — before
-loading.
+`EcsWorld` serializes itself, keyed by component and tag name. Loading restores
+into the stores already registered on the world, so register the same schemas —
+in any order — before loading. A saved component with no registered store is
+skipped without an error.
 
 ```ts
 const blob = JSON.stringify(world.toJSON());
@@ -24,14 +25,16 @@ shape. That is where to put the logic for anything that cannot be a plain object
 
 ## Store it durably
 
-`SaveStorage` wraps a key-value backend with the things a save slot needs:
-integrity checks, backup rotation, and orphan recovery after an interrupted
-write.
+`SaveStorage` is the base class of the two storage backends, and it holds
+everything a save slot needs: integrity checks, backup rotation, and orphan
+recovery after an interrupted write. A backend only supplies raw key-value
+access, so you construct the backend and use it as the `SaveStorage`:
 
 ```ts
-import { IndexedDBBackend, SaveStorage } from '@pierre/ecs/modules/save';
+import { IndexedDBBackend } from '@pierre/ecs/modules/save';
 
-const storage = new SaveStorage(new IndexedDBBackend({ dbName: 'my-game' }));
+const storage = new IndexedDBBackend({ dbName: 'my-game' });
+await storage.open();
 await storage.save('slot-1', JSON.stringify(world.toJSON()), { savedAt: Date.now() });
 
 const raw = await storage.load('slot-1');       // string | null
@@ -39,12 +42,12 @@ await storage.delete('slot-1');
 const slots = await storage.listSaves(/^slot-/); // [{ key, header }]
 ```
 
-`LocalStorageBackend` is the drop-in alternative when IndexedDB is overkill —
-useful for small saves, and it writes through a temp key so a torn write cannot
-leave a half-saved slot behind.
-
-Both backends are key-value stores; the integrity work is in `SaveStorage`, not
-in them.
+`IndexedDBBackend` must be `open()`ed before its first read or write.
+`LocalStorageBackend` is the drop-in alternative when IndexedDB is overkill:
+it needs no opening, and since `localStorage` has no transactions, it writes
+through a temp key and reads it back, so a torn write cannot leave a half-saved
+slot behind. With either backend, `save` keeps the previous save as a backup and
+`load` falls back to it when the primary fails its checksum.
 
 ## Version the payload
 

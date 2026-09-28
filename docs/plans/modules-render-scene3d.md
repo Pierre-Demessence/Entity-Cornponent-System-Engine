@@ -221,7 +221,7 @@ surface in this API without a consumer today.
 - [ ] `src/modules/render-scene3d/README.md` — API, the reconciler-vs-surface
       boundary, "not included (by design)", canon (verified sources only). Must
       document the `modules/transform-3d` sibling edge (architecture rule 3) and
-      keep its code sample type-checkable (`scripts/readme-samples.test.ts`).
+      keep its code sample type-checkable (`scripts/doc-samples.test.ts`).
 - [ ] Adopt in doom — four `Scene3DRenderer` instances replacing
       `meshes`/`enemySprites`/`projMeshes`/`pickupMeshes`; keep the tracer
       singleton, the camera rig and `domElement`/`resize` in `main.ts`.

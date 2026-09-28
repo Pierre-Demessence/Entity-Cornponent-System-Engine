@@ -45,9 +45,9 @@ not in this package.
 | `getStore(def)` | Typed store lookup by def (throws if unregistered). |
 | `getStoreByName(name)` | Untyped store lookup by string name. |
 | `getTag(def)` / `getTagByName(name)` | Tag-store equivalents. |
-| `enableSpatial(def, structure)` | Index the given component in `structure` (any `SpatialStructure`, e.g. `HashGrid2D` from `@pierre/ecs/modules/spatial`) by subscribing `set` / `delete` handlers on its store. Returns `structure` with its own type, so backend extras stay typed on the handle. May be called at most once. |
+| `enableSpatial(def, structure)` | Index the given component in `structure` (any `SpatialStructure`, e.g. `HashGrid2D` from `@pierre/ecs/modules/spatial`) by subscribing `set` / `delete` handlers on its store. Returns `structure` with its own type, so backend extras stay typed on the handle. May be called at most once; a second call throws. |
 | `spatial` | The structure passed to `enableSpatial`, typed as the `SpatialStructure` contract (`queryAt`, `queryNear`, `queryRect`, …). A subclass may narrow the getter to its concrete backend. |
-| `move(id, x, y)` | Atomically update the spatial component and the index. Requires `enableSpatial` to have been called. |
+| `move(id, x, y)` | Atomically update the spatial component and the index. Throws unless `enableSpatial` has been called. |
 | `getColumnStore(def)` | Fast-path accessor for an all-numeric component's columnar store, exposing `column()` / `slotOf()` for zero-allocation hot loops. Throws if the component uses object storage. |
 | `query(...defs)` | Build a typed `QueryBuilder` over the given component defs. |
 | `spawn(template, overrides?)` | Create an entity from a template, shallow-merging per-component overrides. |
@@ -58,7 +58,7 @@ not in this package.
 | `clearAllDirty()` | Clear dirty flags on every component and tag store. |
 | `clearAll()` | Empty every component/tag store, the destroy queue, the spatial index (if enabled), and the lifecycle event queue; reset `nextId = 0`. Registrations are preserved. Silent by design — no `EntityDestroyed` storm. Useful for full world resets (level restart, new game). |
 | `toJSON()` | Serialize the registry to `{ nextId, [storeName]: serialized }`. |
-| `loadJSON(data)` | In-place load — clears existing stores then repopulates. |
+| `loadJSON(data)` | In-place load — clears every registered store, then repopulates each from the payload entry of the same name. |
 | `lifecycle` | `EventBus<LifecycleEvent>` — emits `EntityCreated`, `EntityDestroyed`, `ComponentAdded`, `ComponentRemoved`, `TagAdded`, `TagRemoved`. Queue-based; call `lifecycle.flush()` to dispatch (typically once per tick). An event is only built while its type has a subscriber, so a handler sees only changes made after it subscribed, and an unobserved world allocates nothing per mutation. `destroyEntity` on an id that is already dead emits nothing. Subscribers are **not** preserved across world swaps. |
 
 ## Using the engine
@@ -97,12 +97,13 @@ The engine is designed to be subclassed. A consumer subclass typically:
 
 - `enableSpatial` may only be called once per world.
 - Component and tag names must be unique per world.
-- Entity positions must only be changed via `world.move(id, x, y)` — never
-  by mutating the position component directly, or the spatial index becomes
-  stale.
-- `toJSON` / `loadJSON` preserve registration order of components and tags;
-  the caller is responsible for registering the same schemas (in any order)
-  before calling `loadJSON`.
+- Once `enableSpatial` has indexed a component, change that component's `x` /
+  `y` only via `world.move(id, x, y)` — a direct write leaves the index
+  believing the old position. Without `enableSpatial` there is no index to keep
+  current, and `move` throws; write the component like any other.
+- `loadJSON` restores by name into the components and tags registered on the
+  world, so register the same schemas (in any order) before calling it. Payload
+  keys with no registered store are ignored, not an error.
 - Liveness (`isAlive` / `entityCount` / `liveEntities`) is derived from
   persisted membership on `loadJSON`: a component-less entity carries no
   serialized data, so it is not alive after a save/load round-trip.

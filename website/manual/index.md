@@ -5,21 +5,21 @@ each one a separate subpath import, so unused code never reaches a bundle.
 
 ## How this Manual is organised
 
-Each guide is generated from a source `.md` file in the repository, so the guide
-and the code it documents cannot drift apart. Core primitives are documented in
-`src/<name>.md` beside their source and grouped under **Core**; each opt-in
-module documents itself in its own `README.md` under **Modules**. A guide says
-what the piece is for, when to reach for it, and how it fits the rest of the
-engine.
+The sidebar groups pages by what you are trying to do:
 
-Pages that are not about a single primitive live in `website/manual/` and publish
-under the same path, so a page that spans several primitives is committed beside
-the generator rather than placed among its output. Three groups hold them:
-**Getting started** for orientation and browsing, **Concepts** for the model the
-primitives share, and **Guides** for tasks that span modules.
+- **Getting started** — orientation: what the engine is, which module does what,
+  and the example games to read.
+- **Concepts** — the model every primitive shares: entities, archetypes, ticks,
+  and what a structural change costs. Read these once.
+- **Guides** — tasks that span several pieces, from a first drawn scene to
+  saving, scene swaps and troubleshooting.
+- **Core** — one page per core primitive (`world`, `query`, `scheduler`, …):
+  what it is for, when to reach for it, and how it fits the rest.
+- **Modules** — one page per opt-in module, in the same shape.
 
-Signature-level detail lives in the [API reference](../api/): every public
-export with its full type signature and JSDoc summary.
+The Manual explains; the [API reference](../api/) lists. Reach for the reference
+when you need an exact signature: every public export with its full type and
+JSDoc summary.
 
 ## Installing
 
@@ -40,9 +40,9 @@ unless it is imported.
 
 - [Introduction](./getting-started/introduction/) — the engine in brief, and the
   model in thirty seconds.
-- [Module index](./getting-started/module-index/) — all 42 opt-in modules, grouped
-  by the task they serve.
-- [Examples](./getting-started/examples/) — 29 prototypes, each with what it was
+- [Module index](./getting-started/module-index/) — every opt-in module, grouped
+  by the task it serves.
+- [Examples](./getting-started/examples/) — the prototypes, each with what it was
   built to prove.
 - [Build a moving, drawn scene](./guides/tutorial/) — seven steps from an empty
   file to something on screen.
