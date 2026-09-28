@@ -5,6 +5,8 @@ import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 import starlightTypeDoc, { typeDocSidebarGroup } from 'starlight-typedoc';
 
+import { EXAMPLE_GROUPS, EXAMPLES } from '../examples/manifest.ts';
+
 const REPO = 'https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine';
 const BASE = '/Entity-Cornponent-System-Engine/';
 
@@ -22,6 +24,20 @@ function coreEntryPoints() {
     .filter(([key]) => key !== '.' && key !== './modules/*')
     .map(([, value]) => String(value));
 }
+
+/**
+ * The Examples sidebar, straight from the catalogue: explicit links, because the
+ * pages are grouped by the manifest's `group`, not by directory.
+ */
+const examplesSidebar = [
+  { label: 'Overview', link: '/examples/' },
+  ...EXAMPLE_GROUPS.map(group => ({
+    label: group.title,
+    items: EXAMPLES
+      .filter(entry => entry.group === group.id)
+      .map(entry => ({ label: entry.title, link: `/examples/${entry.id}/` })),
+  })),
+];
 
 export default defineConfig({
   base: BASE,
@@ -62,10 +78,15 @@ export default defineConfig({
           ],
         },
         {
+          // Cut into its own sidebar by `src/site-route-data.ts`, like the other two.
+          items: examplesSidebar,
+          label: 'Examples',
+        },
+        {
           // `typeDocSidebarGroup` is a placeholder the plugin swaps for the generated
           // group by matching its label, so it must stay in the tree untouched.
           // The route middleware in `src/site-route-data.ts` splits this superset into
-          // the two per-section sidebars.
+          // the per-section sidebars.
           items: [{ label: 'Overview', link: '/api/' }, typeDocSidebarGroup],
           label: 'API reference',
         },

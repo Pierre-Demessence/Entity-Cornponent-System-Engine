@@ -353,20 +353,39 @@ Slice 2 findings (spike):
 
 Slice 3 — the section:
 
-- [ ] Generate all 28 pages, grouped by category. Sweep every page in Chromium
+- [x] Generate all 28 pages, grouped by category. Sweep every page in Chromium
       (starts, no console errors, audio prototypes run silently until a gesture);
       record the site build's size and time.
-- [ ] Declare the `Examples` group in `website/astro.config.mjs` (explicit link
+- [x] Declare the `Examples` group in `website/astro.config.mjs` (explicit link
       entries from the manifest; Starlight's `{ label, items: [{ autogenerate }] }`
       shape is not needed for explicit links).
-- [ ] Add `EXAMPLES_GROUP` and `examplesSidebar()` to
+- [x] Add `EXAMPLES_GROUP` and `examplesSidebar()` to
       `website/src/site-route-data.ts`, keeping the Manual and API sidebars
       untouched.
-- [ ] Add the third entry to `Header.astro`'s `sections`.
-- [ ] Gate: grep the built `website/dist/**/index.html` for the `Examples` group
+- [x] Add the third entry to `Header.astro`'s `sections`.
+- [x] Gate: grep the built `website/dist/**/index.html` for the `Examples` group
       label, the category labels and one entry per prototype; confirm the Manual
       and API sidebars are unchanged. Pierre verifies the navigation in the
       browser.
+
+Slice 3 findings:
+
+- `astro.config.mjs` imports `../examples/manifest.ts` directly (Astro loads its
+  config through Vite), so the sidebar is built from the manifest with no copy.
+- Built `website/dist`: the Examples sidebar has `Overview`, the four group labels
+  and all 28 titles; the Manual sidebar (checked on a Manual page) and the API
+  sidebar (checked on `/api/`) are unchanged; the header carries three links with
+  `Examples` current on its pages. Site build 19.5 s.
+- Chromium sweep of all 28 built pages: every prototype starts on load and Stop /
+  Restart work, with no console or request errors. The four WebGL pages
+  (`platformer-3d`, `doom`, `portal`, `starfighter`) fail a canvas-readback check
+  only because a WebGL canvas reads back blank; a screenshot of `doom` shows the
+  scene rendering.
+- Rolldown prints one `MODULE_LEVEL_DIRECTIVE` warning per example page
+  (`use astro:head-inject`, from `?astroPropagatedAssets`); it is cosmetic and the
+  Manual's `.md` pages do not emit it.
+- The home page gained a third card so the landing page matches the header.
+
 
 Slice 4 — retire the Manual page:
 

@@ -9,7 +9,6 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { EXAMPLES } from '../examples/manifest';
 import { EXAMPLES_DIR, renderExamplePages } from './examples';
 
 const root = resolve(fileURLToPath(import.meta.url), '../..');
@@ -18,7 +17,7 @@ const contentDir = join(root, 'website/src/content/docs');
 // Rebuilt from scratch so a removed prototype's page does not linger.
 rmSync(join(contentDir, EXAMPLES_DIR), { force: true, recursive: true });
 
-const pages = renderExamplePages(EXAMPLES.filter(entry => ['snake', 'worker-offload'].includes(entry.id)));
+const pages = renderExamplePages();
 for (const page of pages) {
   const out = join(contentDir, page.outPath);
   mkdirSync(dirname(out), { recursive: true });

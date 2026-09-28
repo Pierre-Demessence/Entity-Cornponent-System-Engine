@@ -114,8 +114,8 @@ capability map across all modules, use [`engine-api.md`](engine-api.md).
 ### Published site (`website/`, Astro + Starlight)
 
 A consumer-facing GitHub Pages site with three sections sharing one theme and one
-search index — but **not** one sidebar: the Manual and the API reference each get
-their own, described below.
+search index — but **not** one sidebar: the Manual, the API reference and the
+Examples each get their own, described below.
 
 - `/` — the home page (`website/src/content/docs/index.mdx`).
 - `/manual/` — one guide per module, **generated** from
@@ -127,6 +127,15 @@ their own, described below.
 - `/api/` — the TypeDoc reference, rendered as Starlight pages by
   `starlight-typedoc`, whose entry points are derived from `package.json`
   `exports` so they cannot drift. Landing page: `website/src/content/docs/api.md`.
+- `/examples/` — one page per prototype under `examples/`, **generated** from
+  `examples/manifest.ts` by `scripts/examples.ts` into
+  `website/src/content/docs/examples/` (gitignored, wiped by `npm run
+  docs:examples`). Each page mounts the prototype in place through
+  `website/src/components/ExampleStage.astro`, which imports the literal loaders in
+  `examples/loaders.ts` and starts the prototype on page load. The manifest is the
+  single catalogue — the hub reads it too — and `scripts/examples.test.ts` fails
+  when it disagrees with the `examples/` directories, the hub's dependencies or
+  `src/modules/`. The sidebar groups come from the manifest's `group`.
 
 `typeDocSidebarGroup` is an empty placeholder that `starlight-typedoc` swaps for
 the generated sidebar group by matching its **label**. It must sit in the sidebar
@@ -140,11 +149,11 @@ page reachable only by URL.
 
 #### Sidebars: one per section
 
-Starlight configures a single sidebar, but the Manual and the API reference share
-nothing, so `website/src/site-route-data.ts` (wired through `routeMiddleware`)
+Starlight configures a single sidebar, but the Manual, the API reference and the
+Examples share nothing, so `website/src/site-route-data.ts` (wired through `routeMiddleware`)
 replaces `starlightRoute.sidebar` per section: the configured sidebar is the
 superset, Starlight resolves it, and the middleware only rearranges the resolved
-entries. The two shapes:
+entries. The three shapes:
 
 - `/manual/**` — `Overview` (→ `/manual/`) then collapsed `Core` and `Modules`
   groups. A new Manual group must be declared in **both**
@@ -158,13 +167,18 @@ entries. The two shapes:
   is stripped, so a heading reads `animation` rather than `modules/animation`.
   Changing that glob without updating the prefix check would silently put every
   module in Core API.
+- `/examples/**` — `Overview` (→ `/examples/`) then the manifest's groups, each a
+  list of explicit links. The groups are declared once in `astro.config.mjs`
+  (built from `EXAMPLE_GROUPS` / `EXAMPLES`), and `examplesSidebar()` lifts them
+  out by the `Examples` label, so adding a prototype to the manifest needs no
+  edit to either.
 
 The section is chosen from the URL path relative to `import.meta.env.BASE_URL`,
 not from the page id, so `/manual/` itself classifies correctly.
 
 #### Header links
 
-The header's two section links and the active-section highlight come from
+The header's three section links and the active-section highlight come from
 `website/src/components/Header.astro`, registered as `components.Header`. It is a
 copy of Starlight's default header with a nav added *inside* the search column:
 at ≥50rem the header is a three-column grid, so a fourth child would wrap onto a
@@ -204,16 +218,18 @@ colour once every card is the only child of its wrapper.
   because nothing rewrites them (unlike guide bodies, which go through
   `rewriteLinks()`). `scripts/manual.test.ts` resolves those routes against the
   generated page list, so a typo in a Manual route fails `npm test`.
-- `website/manual/getting-started/examples.md` describes the prototypes by hand:
-  28 of the 30 folders under `examples/` carry no `README.md`, and the per-example
-  copy in `examples/hub/src/main.ts` is written for the hub's own UI. Adding an
-  example means adding its entry there, kept in step by hand.
+- The prototypes are listed once, in `examples/manifest.ts`, and published as the
+  **Examples** section rather than as a Manual page (28 of the 30 folders under
+  `examples/` carry no `README.md`). Adding an example means adding its manifest
+  entry, its loader in `examples/loaders.ts` and its workspace dependency in
+  `examples/hub/package.json`; `scripts/examples.test.ts` names whichever is
+  missing.
 - Source `.md` files are checked out CRLF on Windows (no `.gitattributes`,
   `core.autocrlf=true`) and the generator writes them verbatim, so each
   generated page is CRLF. A byte-diff of generated output against a Git blob
   therefore shows phantom differences — compare against the worktree file.
 - Remember: `docs/**` is **internal** and is not published. The site shows the
-  home page, the Manual and the API reference only.
+  home page, the Manual, the API reference and the Examples only.
 - The deploy requires repo Settings → Pages → Source = **GitHub Actions**.
 
 ## Invariants
