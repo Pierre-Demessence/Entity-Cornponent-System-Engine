@@ -261,28 +261,39 @@ review of the whole change is the last gate before the plan moves to `done/`.
 
 Slice 1 — catalogue:
 
-- [ ] Write `examples/manifest.ts`: 28 entries with id, title, summary, controls,
+- [x] Write `examples/manifest.ts`: 28 entries with id, title, summary, controls,
       group, modules, challenge rung where applicable, isolation caveat for
       `parallel-kernel`. Copy is lifted from `examples/hub/src/main.ts:15` and
       `website/manual/getting-started/examples.md`, reconciled where the two
       disagree.
-- [ ] Write `examples/loaders.ts` as a record over the manifest's id union, one
+- [x] Write `examples/loaders.ts` as a record over the manifest's id union, one
       literal `import('@pierre/ecs-example-<id>/src/main.ts')` each.
-- [ ] Point `examples/hub/src/main.ts` at both; delete the inline `EXAMPLES`
+- [x] Point `examples/hub/src/main.ts` at both; delete the inline `EXAMPLES`
       array and the inline loaders. Page copy and behaviour unchanged.
-- [ ] Keep the hub importing both files. `examples/hub/tsconfig.json` includes
+- [x] Keep the hub importing both files. `examples/hub/tsconfig.json` includes
       only `src`, and TypeScript checks what an included file imports, so the
       hub's import is what puts the catalogue in the program that
       `npm run typecheck:examples` checks — the record that turns a missing
       prototype into a type error included. An import from the site alone would
       never be typechecked.
-- [ ] Add `scripts/examples.test.ts`: the manifest against
+- [x] Add `scripts/examples.test.ts`: the manifest against
       `examples/*/package.json`, `examples/hub/package.json` dependencies, the
       loaders record's keys and `src/modules/`, so a prototype missing from any
       side fails `npm test` rather than vanishing from the site.
-- [ ] Gates: `npm run lint`, `npm test`, `npm run typecheck`, `npm run
+- [x] Gates: `npm run lint`, `npm test`, `npm run typecheck`, `npm run
       typecheck:examples`, `npm run build -w @pierre/ecs-examples-hub`.
-- [ ] Hand the hub to Pierre to confirm each prototype still launches.
+- [x] Drive the hub in Chromium: all 28 prototypes mount with no page errors
+      (Claude, Playwright sweep of the built hub).
+- [ ] Pierre confirms each prototype still launches, by eye.
+
+Slice 1 findings: `scripts/examples.test.ts` must not import `examples/loaders.ts`
+— its literal `import()`s would pull every prototype's DOM-dependent source into
+the Node-only `tsconfig.node.json` program and fail `npm run typecheck`. The test
+reads the file as text instead (and checks each loader points at its own id); the
+record's completeness is checked by the hub's typecheck. Manifest module lists
+come from each prototype's real imports (the old Manual page missed `spatial` for
+`snake`).
+
 
 Slice 2 — two prototypes from the site:
 
