@@ -18,6 +18,21 @@ interface ComponentEntry { def: ComponentDef<unknown>; store: ComponentStoreLike
 interface TagEntry { def: TagDef; store: TagStore }
 
 /**
+ * A deferred structural change recorded by `queue*` and applied, in insertion
+ * order, at the next `flushCommands()`. For `queueAdd`, `queueRemove`,
+ * `queueAddTag`, and `queueRemoveTag`, the component/tag store is resolved at
+ * enqueue time (unregistered def throws immediately). For `queueSpawn`, template
+ * component names are resolved at flush time inside `_populateEntity`.
+ */
+type StructuralCommand
+  = | { id: EntityId; kind: 'add'; store: ComponentStoreLike<unknown>; value: unknown }
+    | { id: EntityId; kind: 'addTag'; store: TagStore }
+    | { id: EntityId; kind: 'destroy' }
+    | { id: EntityId; kind: 'remove'; store: ComponentStoreLike<unknown> }
+    | { id: EntityId; kind: 'removeTag'; store: TagStore }
+    | { id: EntityId; kind: 'spawn'; overrides: Record<string, unknown> | undefined; template: EntityTemplate | undefined };
+
+/**
  * Generic, project-agnostic ECS registry: entity id allocation, component/tag
  * stores, queries, template spawn, serialization, and opt-in spatial indexing.
  * No imports from game-specific code.
@@ -27,8 +42,8 @@ export class EcsWorld {
 
   private readonly alive = new Set<EntityId>();
   private readonly archetypes = new ArchetypeIndex();
+  private commandQueue: StructuralCommand[] = [];
   private componentRegistry: ComponentEntry[] = [];
-  private destroyQueue = new Set<EntityId>();
   private readonly installedPlugins = new Set<string>();
   /**
    * Engine-internal lifecycle bus. Emits `EntityCreated`, `EntityDestroyed`,
@@ -53,9 +68,8 @@ export class EcsWorld {
 
   protected set _nextId(value: number) { this.nextId = value; }
 
-  private _spawnCore(template: EntityTemplate, overrides?: Record<string, unknown>): EntityId {
-    const id = this.createEntity();
-
+  /** Apply a template's components and tags to an already-allocated entity id. */
+  private _populateEntity(id: EntityId, template: EntityTemplate, overrides?: Record<string, unknown>): void {
     const allComponentNames = new Set<string>();
     if (template.components) {
       for (const name of Object.keys(template.components)) allComponentNames.add(name);
@@ -84,6 +98,11 @@ export class EcsWorld {
         store.add(id);
       }
     }
+  }
+
+  private _spawnCore(template: EntityTemplate, overrides?: Record<string, unknown>): EntityId {
+    const id = this.createEntity();
+    this._populateEntity(id, template, overrides);
     return id;
   }
 
@@ -99,7 +118,7 @@ export class EcsWorld {
 
   /**
    * Reset the world to an empty state — clears every registered component
-   * store, tag store, the destroy queue, and the spatial index (if enabled),
+   * store, tag store, the command queue, and the spatial index (if enabled),
    * then rewinds `nextId` to 0. Component and tag *registrations* are
    * preserved; only their contents are wiped.
    *
@@ -118,7 +137,7 @@ export class EcsWorld {
     this.archetypes.clear();
     for (const { store } of this.componentRegistry) store.clear();
     for (const { store } of this.tagRegistry) store.clear();
-    this.destroyQueue.clear();
+    this.commandQueue = [];
     this._spatial?.clear();
     this.lifecycle.clear();
     this.alive.clear();
@@ -174,17 +193,18 @@ export class EcsWorld {
   }
 
   /**
-   * End-of-tick convenience: `flushDestroys()` then `lifecycle.flush()`.
+   * End-of-tick convenience: `flushCommands()` then `lifecycle.flush()`.
    *
-   * Ordering invariant: destroys run first so lifecycle subscribers see
-   * the final entity set — any `EntityDestroyed` / `ComponentRemoved`
-   * events emitted by destruction are dispatched in the same flush pass.
+   * Ordering invariant: structural commands (destroys included) apply first so
+   * lifecycle subscribers see the final entity set — any `EntityDestroyed` /
+   * `ComponentRemoved` / `ComponentAdded` events they emit are dispatched in the
+   * same flush pass.
    *
    * Prefer this over calling both manually in game loops that do not use
    * {@link tick-runner!TickRunner} (which already sequences these internally).
    */
   endOfTick(): void {
-    this.flushDestroys();
+    this.flushCommands();
     this.lifecycle.flush();
   }
 
@@ -194,16 +214,77 @@ export class EcsWorld {
   }
 
   /**
-   * Destroy all entities enqueued via `queueDestroy`. Safe to call after a
-   * system iteration loop — removes entities in one batch without mutating
-   * stores during iteration.
+   * Apply every queued structural change (`queueSpawn` / `queueDestroy` /
+   * `queueAdd` / `queueRemove` / `queueAddTag` / `queueRemoveTag`) in insertion
+   * order. Safe to call after a system iteration loop — the loop enqueues, this
+   * applies once, so stores are never mutated mid-iteration. A repeated destroy
+   * of the same id within one flush collapses to a single destruction.
    */
-  flushDestroys(): void {
-    if (this.destroyQueue.size === 0)
+  flushCommands(): void {
+    if (this.commandQueue.length === 0)
       return;
-    const ids = [...this.destroyQueue];
-    this.destroyQueue.clear();
-    for (const id of ids) this.destroyEntity(id);
+    const commands = this.commandQueue;
+    this.commandQueue = [];
+    const destroyed = new Set<EntityId>();
+    const touched = new Set<EntityId>();
+    // Suppress per-set requires-validation for the whole batch — a queued add
+    // may legitimately precede the component it depends on — then validate the
+    // surviving touched entities once, after the batch is applied.
+    const wasSpawning = this.spawning;
+    this.spawning = true;
+    try {
+      for (const cmd of commands) {
+        switch (cmd.kind) {
+          case 'add':
+            // Skip a mutation targeting an id already destroyed this batch (or
+            // otherwise dead): it must not resurrect the entity's archetype bits.
+            if (this.alive.has(cmd.id)) {
+              cmd.store.set(cmd.id, cmd.value);
+              touched.add(cmd.id);
+            }
+            break;
+          case 'addTag':
+            if (this.alive.has(cmd.id))
+              cmd.store.add(cmd.id);
+            break;
+          case 'destroy':
+            if (!destroyed.has(cmd.id)) {
+              destroyed.add(cmd.id);
+              this.destroyEntity(cmd.id);
+            }
+            break;
+          case 'remove':
+            if (this.alive.has(cmd.id))
+              cmd.store.delete(cmd.id);
+            break;
+          case 'removeTag':
+            if (this.alive.has(cmd.id))
+              cmd.store.delete(cmd.id);
+            break;
+          case 'spawn':
+            this.alive.add(cmd.id);
+            this.lifecycle.emit({ id: cmd.id, type: 'EntityCreated' });
+            if (cmd.template)
+              this._populateEntity(cmd.id, cmd.template, cmd.overrides);
+            touched.add(cmd.id);
+            break;
+        }
+      }
+    }
+    finally {
+      this.spawning = wasSpawning;
+    }
+    if (import.meta.env.DEV) {
+      for (const id of touched) {
+        if (this.alive.has(id))
+          this._validateEntity(id);
+      }
+    }
+  }
+
+  /** Back-compat alias for {@link flushCommands}. */
+  flushDestroys(): void {
+    this.flushCommands();
   }
 
   /**
@@ -265,7 +346,7 @@ export class EcsWorld {
     // survive as a phantom. The `store.set` calls that follow rebuild it.
     this.archetypes.clear();
     this.alive.clear();
-    this.destroyQueue.clear();
+    this.commandQueue = [];
 
     for (const { def, store } of this.componentRegistry) {
       store.clear();
@@ -321,12 +402,56 @@ export class EcsWorld {
   }
 
   /**
-   * Enqueue an entity for destruction on the next `flushDestroys()` call.
+   * Enqueue a component add on the next `flushCommands()` call. Safe during
+   * system iteration — the store is not mutated until the queue is drained.
+   * Throws now if `def` is not registered.
+   */
+  queueAdd<T>(def: ComponentDef<T>, id: EntityId, value: T): void {
+    this.commandQueue.push({ id, kind: 'add', store: this.getStore(def) as ComponentStoreLike<unknown>, value });
+  }
+
+  /** Enqueue a tag add on the next `flushCommands()` call. Throws now if `def` is not registered. */
+  queueAddTag(def: TagDef, id: EntityId): void {
+    this.commandQueue.push({ id, kind: 'addTag', store: this.getTag(def) });
+  }
+
+  /**
+   * Enqueue an entity for destruction on the next `flushCommands()` call.
    * Safe to call during system iteration — `destroyEntity` is not invoked
-   * until the queue is drained, so in-flight queries aren't mutated.
+   * until the queue is drained, so in-flight queries aren't mutated. Repeated
+   * enqueues of the same id collapse to a single destruction per flush.
    */
   queueDestroy(id: EntityId): void {
-    this.destroyQueue.add(id);
+    this.commandQueue.push({ id, kind: 'destroy' });
+  }
+
+  /**
+   * Enqueue a component remove on the next `flushCommands()` call. Safe during
+   * system iteration. Throws now if `def` is not registered.
+   */
+  queueRemove<T>(def: ComponentDef<T>, id: EntityId): void {
+    this.commandQueue.push({ id, kind: 'remove', store: this.getStore(def) as ComponentStoreLike<unknown> });
+  }
+
+  /** Enqueue a tag remove on the next `flushCommands()` call. Throws now if `def` is not registered. */
+  queueRemoveTag(def: TagDef, id: EntityId): void {
+    this.commandQueue.push({ id, kind: 'removeTag', store: this.getTag(def) });
+  }
+
+  /**
+   * Reserve an entity id now and enqueue its creation (and optional template
+   * population) for the next `flushCommands()` call. The id is returned
+   * immediately so a caller can `queueAdd(def, id, …)` against it inside the
+   * same loop; the entity becomes alive and emits `EntityCreated` at flush.
+   *
+   * If `template` references a component name that has not been registered,
+   * the error is thrown at flush time (inside `_populateEntity`), not here.
+   * An error mid-flush aborts the remaining commands in that flush batch.
+   */
+  queueSpawn(template?: EntityTemplate, overrides?: Record<string, unknown>): EntityId {
+    const id = this.nextId++;
+    this.commandQueue.push({ id, kind: 'spawn', overrides, template });
+    return id;
   }
 
   registerComponent<T>(def: ComponentDef<T>, options: ColumnStoreOptions = {}): ComponentStoreLike<T> {
@@ -406,13 +531,14 @@ export class EcsWorld {
 
   /** Create an entity from a template, merging per-component overrides (shallow merge per component). */
   spawn(template: EntityTemplate, overrides?: Record<string, unknown>): EntityId {
+    const wasSpawning = this.spawning;
     this.spawning = true;
     let id: EntityId;
     try {
       id = this._spawnCore(template, overrides);
     }
     finally {
-      this.spawning = false;
+      this.spawning = wasSpawning;
     }
     this._validateEntity(id);
     return id;
@@ -430,6 +556,7 @@ export class EcsWorld {
     entries: readonly { template: EntityTemplate; overrides?: Record<string, unknown> }[],
   ): EntityId[] {
     const ids: EntityId[] = [];
+    const wasSpawning = this.spawning;
     this.spawning = true;
     try {
       for (const { overrides, template } of entries) {
@@ -437,7 +564,7 @@ export class EcsWorld {
       }
     }
     finally {
-      this.spawning = false;
+      this.spawning = wasSpawning;
     }
     for (const id of ids) this._validateEntity(id);
     return ids;

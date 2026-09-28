@@ -366,7 +366,7 @@ describe('lifetime integration', () => {
     });
     const life = makeLifetimeSystem();
     life.run({ dtMs: 100, world });
-    world.flushDestroys();
+    world.flushCommands();
     expect([...world.getTag(ParticleTag)]).toHaveLength(0);
   });
 });

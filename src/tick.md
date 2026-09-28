@@ -19,7 +19,7 @@ Import via `@pierre/ecs/tick-source`.
 1. build `ctx`
 2. run scheduler
 3. `onBeforeFlush` hook
-4. flush events / lifecycle / destroys / dirty
+4. flush events / lifecycle / structural commands / dirty
 5. `onTickComplete` hook
 
 A tick is **atomic**. Consumers queue world swaps between ticks via

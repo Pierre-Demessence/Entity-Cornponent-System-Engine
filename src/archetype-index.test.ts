@@ -165,4 +165,41 @@ describe('archetypeIndex', () => {
       expect([...index.matching(0n, 0n, [a | b])].sort((x, y) => x - y)).toEqual([1, 2]);
     });
   });
+
+  describe('iteration guard', () => {
+    it('throws on a structural change while iterating', () => {
+      const index = new ArchetypeIndex();
+      const a = index.registerStore({});
+      index.addBit(1, a);
+      index.beginIteration();
+      try {
+        expect(() => index.addBit(2, a)).toThrow(/Structural change during query iteration/);
+        expect(() => index.removeEntity(1)).toThrow(/Structural change during query iteration/);
+      }
+      finally {
+        index.endIteration();
+      }
+    });
+
+    it('permits structural changes once iteration ends', () => {
+      const index = new ArchetypeIndex();
+      const a = index.registerStore({});
+      index.beginIteration();
+      index.endIteration();
+      expect(() => index.addBit(1, a)).not.toThrow();
+    });
+
+    it('does not trip on an idempotent bit set (value replace) while iterating', () => {
+      const index = new ArchetypeIndex();
+      const a = index.registerStore({});
+      index.addBit(1, a);
+      index.beginIteration();
+      try {
+        expect(() => index.addBit(1, a)).not.toThrow();
+      }
+      finally {
+        index.endIteration();
+      }
+    });
+  });
 });

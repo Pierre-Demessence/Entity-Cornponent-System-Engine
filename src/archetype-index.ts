@@ -18,6 +18,7 @@ import type { EntityId } from '#entity-id';
 export class ArchetypeIndex {
   private readonly bits = new Map<object, bigint>();
   private readonly buckets = new Map<bigint, Set<EntityId>>();
+  private iterationDepth = 0;
   private readonly matchCache = new Map<string, { buckets: Set<EntityId>[]; version: number }>();
   private nextBit = 1n;
   private readonly signatures = new Map<EntityId, bigint>();
@@ -29,6 +30,16 @@ export class ArchetypeIndex {
     const next = prev | bit;
     if (next !== prev)
       this.moveEntity(id, prev, next);
+  }
+
+  /**
+   * Mark the start of a query iteration. While `iterationDepth > 0`, a
+   * structural change (a bucket move or entity removal) throws in DEV — the
+   * guard that turns "mutating a store during its own query loop" from a silent
+   * skip into a loud failure. Balanced by {@link endIteration}.
+   */
+  beginIteration(): void {
+    this.iterationDepth++;
   }
 
   /** The bit owned by a registered store, or `undefined` if it was never registered. */
@@ -44,6 +55,11 @@ export class ArchetypeIndex {
     this.structuralVersion++;
   }
 
+  /** Balance a {@link beginIteration} call. */
+  endIteration(): void {
+    this.iterationDepth--;
+  }
+
   /**
    * Yield every entity whose signature is a superset of `required`, disjoint
    * from `excluded`, and intersects **every** mask in `anyOf` (each mask being
@@ -56,6 +72,8 @@ export class ArchetypeIndex {
   }
 
   private moveEntity(id: EntityId, prev: bigint, next: bigint): void {
+    if (import.meta.env.DEV && this.iterationDepth > 0)
+      throw new Error('Structural change during query iteration — defer it with world.queueAdd / queueRemove / queueSpawn / queueDestroy and flush after the loop.');
     if (prev !== 0n)
       this.removeFromBucket(prev, id);
     if (next === 0n) {
@@ -98,6 +116,8 @@ export class ArchetypeIndex {
     const prev = this.signatures.get(id);
     if (prev === undefined)
       return;
+    if (import.meta.env.DEV && this.iterationDepth > 0)
+      throw new Error('Structural change during query iteration — defer it with world.queueAdd / queueRemove / queueSpawn / queueDestroy and flush after the loop.');
     this.signatures.delete(id);
     this.removeFromBucket(prev, id);
   }

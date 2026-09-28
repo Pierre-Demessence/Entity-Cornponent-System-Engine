@@ -239,8 +239,16 @@ export class QueryBuilder<T extends unknown[]> {
       // group) selects nothing — the index tracks only entities holding ≥ 1 bit.
       if (masks.required === 0n && masks.anyOf.length === 0)
         return;
-      for (const id of this.index.matching(masks.required, masks.excluded, masks.anyOf))
-        yield this.buildResult(id);
+      // Guard the loop: a structural change to a matched store mid-iteration
+      // throws in DEV instead of silently skipping a swap-removed entity.
+      this.index.beginIteration();
+      try {
+        for (const id of this.index.matching(masks.required, masks.excluded, masks.anyOf))
+          yield this.buildResult(id);
+      }
+      finally {
+        this.index.endIteration();
+      }
       return;
     }
 

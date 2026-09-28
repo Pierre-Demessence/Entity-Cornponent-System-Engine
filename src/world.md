@@ -30,12 +30,17 @@ not in this package.
 |--------|-------------|
 | `createEntity()` | Allocate a new `EntityId`. |
 | `destroyEntity(id)` | Immediately remove `id` from every registered store and tag. **Not safe** to call while iterating a store — use `queueDestroy` instead. |
-| `queueDestroy(id)` | Enqueue `id` for destruction on the next `flushDestroys()` call. Deduped; safe to call repeatedly. |
-| `flushDestroys()` | Drain the destroy queue, calling `destroyEntity` on each id. Call this once per tick, after systems finish iterating. |
+| `queueDestroy(id)` | Enqueue `id` for destruction on the next `flushCommands()` call. Deduped per flush; safe to call during iteration. |
+| `queueSpawn(template?, overrides?)` | Reserve an id now and enqueue its creation (+ optional template population) for the next `flushCommands()`. Returns the id so it can be referenced by other queued commands in the same loop. |
+| `queueAdd(def, id, value)` | Enqueue a component add for the next `flushCommands()`. Throws now if `def` is unregistered. |
+| `queueRemove(def, id)` | Enqueue a component remove for the next `flushCommands()`. |
+| `queueAddTag(def, id)` / `queueRemoveTag(def, id)` | Tag equivalents. |
+| `flushCommands()` | Apply every queued structural change (spawn / destroy / add / remove / add-tag / remove-tag) in insertion order. Call once per tick, after systems finish iterating. |
+| `flushDestroys()` | Back-compat alias for `flushCommands()`. |
 | `isAlive(id)` | Whether `id` refers to a live entity (created and not yet destroyed). |
 | `entityCount()` | Number of live entities. |
 | `liveEntities()` | Iterate the live entity ids (order unspecified). |
-| `endOfTick()` | End-of-tick convenience: runs `flushDestroys()` then `lifecycle.flush()` so subscribers see the final entity set in one pass. Prefer over calling both manually. (`TickRunner` already does this internally.) |
+| `endOfTick()` | End-of-tick convenience: runs `flushCommands()` then `lifecycle.flush()` so subscribers see the final entity set in one pass. Prefer over calling both manually. (`TickRunner` already does this internally.) |
 | `registerComponent(def)` | Register a `ComponentDef<T>`; returns the store. Throws on duplicate name. |
 | `registerTag(def)` | Register a `TagDef`; returns the store. Throws on duplicate name. |
 | `getStore(def)` | Typed store lookup by def (throws if unregistered). |
@@ -106,6 +111,12 @@ The engine is designed to be subclassed. A consumer subclass typically:
   serialized data, so it is not alive after a save/load round-trip.
 - Inside an `EntityDestroyed` lifecycle handler the entity is already gone —
   `isAlive(id)` is `false` and its stores no longer hold it.
+- **Do not mutate a store's structure (add/remove a component or tag, destroy or
+  spawn an entity) while iterating a `world.query(...)`** — a swap-removed entity
+  would be silently skipped. In DEV this throws; the fix is to record the change
+  with `queueAdd` / `queueRemove` / `queueAddTag` / `queueRemoveTag` /
+  `queueDestroy` / `queueSpawn` inside the loop and `flushCommands()` after it.
+  Mutating a component's *values* (not its presence) during iteration is safe.
 
 ## See also
 

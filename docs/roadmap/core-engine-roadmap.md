@@ -5,7 +5,7 @@ module and app: component stores, queries, scheduler, event bus, lifecycle,
 validation, change detection, plugin/extension hooks. No modules, no gameplay
 features.
 
-**Entry IDs are stable references** (`2.5`, `3.2`, `4.7`). The numbering
+**Entry IDs are stable references** (`2.6`, `3.2`, `4.7`). The numbering
 is not contiguous: a gap means that entry shipped, moved to the module backlog,
 or was declined, so citations elsewhere keep resolving to the same item. Shipped
 core work is described by `src/` and dated by `git log`; where a plan exists it
@@ -32,16 +32,6 @@ have shipped. The order at the bottom reflects value, not a dependency graph.
 
 Holes that turn into corruption or missing capability once the entity set is
 large or re-shaped during a tick.
-
-### 2.5 Deferred structural changes (command buffer)
-
-| | |
-|---|---|
-| **Problem** | Only destruction can be deferred (`queueDestroy`). Adding or removing a component mid-iteration has no safe path, and calling `destroyEntity` while iterating is documented as unsafe with nothing enforcing it: a store mutated during a columnar query iteration silently skips the entity swap-removed into the freed slot. |
-| **Solution** | A command-buffer-shaped batch applied at the tick flush — queue add/remove-component and create alongside destroy, then apply in order. Pair it with a DEV-only assertion that fails loudly when a store is mutated under an active query iteration. Canon: Bevy `Commands`, Unity DOTS `EntityCommandBuffer`, Flecs deferred operations. |
-| **Unlocks** | Systems that spawn or re-shape entities inside their own query loop — the pattern consumers already hand-roll by collecting ids and destroying them after the loop. |
-| **Complexity** | Mid — the tick runner already owns a flush point, and `queueDestroy` is a working precedent. |
-| **Dependencies** | `TickRunner`'s flush sequence (shipped). |
 
 ### 2.6 Spatial integration generalized
 
@@ -147,13 +137,11 @@ modding/plugin support.
 By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
-1. **Deferred structural changes** (2.5) — turns a documented hazard into a
-   safe path
-2. **Change-detection filters** (3.7) — a small surface over machinery that
+1. **Change-detection filters** (3.7) — a small surface over machinery that
    already ships
-3. **System run conditions** (4.7) — small
-4. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
-5. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
-6. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
-7. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
+2. **System run conditions** (4.7) — small
+3. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
+4. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
+5. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
+6. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
    strategic piece, above the shipped cache

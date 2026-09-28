@@ -27,6 +27,17 @@ filters.
     component or tag stores.
 - Every result is an `[EntityId, ...data, ...optional]` tuple.
 
+## Mutating during iteration
+
+Iterating a `world.query(...)` (the indexed path) is guarded: in DEV, a
+**structural** change to a matched store mid-loop — adding/removing a component
+or tag, destroying or spawning an entity — throws instead of silently skipping a
+swap-removed entity. Record the change with `world.queueAdd` / `queueRemove` /
+`queueAddTag` / `queueRemoveTag` / `queueDestroy` / `queueSpawn` inside the loop
+and `world.flushCommands()` after it. Mutating a component's *values* (not its
+presence) is safe. The guard covers the indexed `world.query` path; a standalone
+`new QueryBuilder(stores)` with no index is unguarded.
+
 ## API
 
 | Method | Returns | Description |

@@ -262,6 +262,210 @@ describe('ecsWorld', () => {
     });
   });
 
+  describe('deferred structural changes', () => {
+    it('queueAdd and queueRemove apply at flushCommands', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const health = w.registerComponent(HealthDef);
+      const id = w.createEntity();
+      pos.set(id, { x: 0, y: 0 });
+
+      w.queueAdd(HealthDef, id, { hp: 7 });
+      expect(health.has(id)).toBe(false);
+      w.flushCommands();
+      expect(health.get(id)).toEqual({ hp: 7 });
+
+      w.queueRemove(HealthDef, id);
+      expect(health.has(id)).toBe(true);
+      w.flushCommands();
+      expect(health.has(id)).toBe(false);
+    });
+
+    it('queueAddTag and queueRemoveTag apply at flushCommands', () => {
+      const w = new EcsWorld();
+      const tag = w.registerTag(FlagTag);
+      const id = w.createEntity();
+
+      w.queueAddTag(FlagTag, id);
+      expect(tag.has(id)).toBe(false);
+      w.flushCommands();
+      expect(tag.has(id)).toBe(true);
+
+      w.queueRemoveTag(FlagTag, id);
+      w.flushCommands();
+      expect(tag.has(id)).toBe(false);
+    });
+
+    it('queueSpawn reserves an id and applies at flush', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const id = w.queueSpawn({ name: 'p', components: { pos: { x: 2, y: 3 } } });
+
+      expect(w.isAlive(id)).toBe(false);
+      expect(pos.has(id)).toBe(false);
+
+      w.flushCommands();
+      expect(w.isAlive(id)).toBe(true);
+      expect(pos.get(id)).toEqual({ x: 2, y: 3 });
+    });
+
+    it('queueAdd throws immediately for an unregistered component', () => {
+      const w = new EcsWorld();
+      expect(() => w.queueAdd(PosDef, 0, { x: 0, y: 0 })).toThrow(/not registered/);
+    });
+
+    it('applies commands in insertion order (spawn → add → destroy)', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const id = w.queueSpawn();
+      w.queueAdd(PosDef, id, { x: 9, y: 9 });
+      w.queueDestroy(id);
+
+      w.flushCommands();
+      expect(w.isAlive(id)).toBe(false);
+      expect(pos.has(id)).toBe(false);
+    });
+
+    it('collapses repeated queued destroys to one destruction per flush', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const destroyed: number[] = [];
+      w.lifecycle.on('EntityDestroyed', e => destroyed.push(e.id));
+      const id = w.createEntity();
+      pos.set(id, { x: 0, y: 0 });
+
+      w.queueDestroy(id);
+      w.queueDestroy(id);
+      w.queueDestroy(id);
+      w.flushCommands();
+      w.lifecycle.flush();
+
+      expect(destroyed).toEqual([id]);
+    });
+
+    it('deferred queueDestroy in a query loop is safe and applies at flush', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const a = w.createEntity();
+      pos.set(a, { x: 0, y: 0 });
+      const b = w.createEntity();
+      pos.set(b, { x: 5, y: 0 });
+
+      for (const [id, p] of w.query(PosDef)) {
+        if (p.x > 0)
+          w.queueDestroy(id);
+      }
+      w.flushCommands();
+
+      expect(w.isAlive(a)).toBe(true);
+      expect(w.isAlive(b)).toBe(false);
+    });
+
+    it('spawning into a store during its own query loop is safe when deferred', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      w.createEntity();
+      const seed = 0;
+      pos.set(seed, { x: 1, y: 1 });
+
+      for (const [, p] of w.query(PosDef)) {
+        w.queueSpawn({ name: 'clone', components: { pos: { x: p.x, y: p.y } } });
+      }
+      w.flushCommands();
+
+      expect(w.query(PosDef).count()).toBe(2);
+    });
+
+    it('throws in DEV when a store is mutated during query iteration', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const a = w.createEntity();
+      pos.set(a, { x: 0, y: 0 });
+      const b = w.createEntity();
+      pos.set(b, { x: 1, y: 1 });
+
+      expect(() => {
+        for (const [id] of w.query(PosDef)) {
+          pos.delete(id);
+        }
+      }).toThrow(/Structural change during query iteration/);
+    });
+
+    it('a value replace during query iteration does not trip the guard', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const a = w.createEntity();
+      pos.set(a, { x: 0, y: 0 });
+
+      expect(() => {
+        for (const [id, p] of w.query(PosDef)) {
+          pos.set(id, { x: p.x + 1, y: p.y });
+        }
+      }).not.toThrow();
+    });
+
+    it('a queued add after a queued destroy of the same id is dropped', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const id = w.createEntity();
+      pos.set(id, { x: 0, y: 0 });
+
+      w.queueDestroy(id);
+      w.queueAdd(PosDef, id, { x: 9, y: 9 });
+      w.flushCommands();
+
+      expect(w.isAlive(id)).toBe(false);
+      expect(pos.has(id)).toBe(false);
+      expect(w.query(PosDef).count()).toBe(0);
+    });
+
+    it('a queued add ordered before its dependency does not warn (batched validation)', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        const w = new EcsWorld();
+        w.registerComponent(PosDef);
+        w.registerComponent(HealthDef); // requires pos
+        const id = w.queueSpawn();
+        w.queueAdd(HealthDef, id, { hp: 1 }); // enqueued before pos
+        w.queueAdd(PosDef, id, { x: 0, y: 0 });
+        w.flushCommands();
+        expect(warn).not.toHaveBeenCalled();
+      }
+      finally {
+        warn.mockRestore();
+      }
+    });
+
+    it('flush validation still warns when a requirement is genuinely unmet', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        const w = new EcsWorld();
+        w.registerComponent(PosDef);
+        w.registerComponent(HealthDef);
+        const id = w.createEntity();
+        w.queueAdd(HealthDef, id, { hp: 1 }); // pos never provided
+        w.flushCommands();
+        expect(warn).toHaveBeenCalled();
+      }
+      finally {
+        warn.mockRestore();
+      }
+    });
+
+    it('endOfTick applies queued structural changes then dispatches their events in one pass', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      const events: string[] = [];
+      w.lifecycle.on('EntityCreated', () => events.push('Created'));
+
+      const id = w.queueSpawn({ name: 'p', components: { pos: { x: 0, y: 0 } } });
+      w.endOfTick();
+
+      expect(events).toEqual(['Created']);
+      expect(w.isAlive(id)).toBe(true);
+    });
+  });
+
   describe('enableSpatial', () => {
     it('keeps the spatial index in sync with set/delete', () => {
       const w = new EcsWorld();

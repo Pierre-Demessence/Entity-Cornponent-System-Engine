@@ -11,8 +11,9 @@ do while a system is iterating one. `queueDestroy` enqueues instead, and the
 queue drains once per tick.
 
 - `queueDestroy(id)` is deduped and safe to call repeatedly.
-- `flushDestroys()` drains it — the contract is *after systems finish iterating*.
-- `endOfTick()` runs `flushDestroys()` then the lifecycle flush in one pass, so
+- `flushCommands()` drains it — the contract is *after systems finish iterating*.
+  (`flushDestroys()` is a back-compat alias for the same call.)
+- `endOfTick()` runs `flushCommands()` then the lifecycle flush in one pass, so
   subscribers see the final entity set. `TickRunner` already calls this.
 
 So within the tick that queued it, the entity is still queryable, and any count

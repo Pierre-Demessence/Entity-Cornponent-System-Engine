@@ -31,7 +31,7 @@ export interface TickRunnerOptions<TCtx> {
   getWorld: () => EcsWorld;
   /**
    * Optional tick-boundary hook. Fires inside the post-tick `finally`,
-   * **before** `events.flush()` / `lifecycle.flush()` / `flushDestroys()`
+   * **before** `events.flush()` / `flushCommands()` / `lifecycle.flush()`
    * / `clearAllDirty()`. Use this to emit tick-boundary events (e.g.
    * `TurnCompleted`, `FrameCompleted`) so they drain in the same flush
    * as events produced by systems during the tick, rather than sitting
@@ -54,8 +54,8 @@ export interface TickRunnerOptions<TCtx> {
  * 2. `scheduler.run(ctx)`
  * 3. `onBeforeFlush?.(ctx, info)` — emit tick-boundary events here
  * 4. `ctx.events.flush()`
- * 5. `world.lifecycle.flush()`
- * 6. `world.flushDestroys()`
+ * 5. `world.flushCommands()`
+ * 6. `world.lifecycle.flush()`
  * 7. `world.clearAllDirty()`
  * 8. `onTickComplete?.(ctx, info)`
  *
@@ -87,8 +87,8 @@ export class TickRunner<TCtx> {
       onBeforeFlush?.(ctx, info);
       getEvents(ctx).flush();
       const world = getWorld();
+      world.flushCommands();
       world.lifecycle.flush();
-      world.flushDestroys();
       world.clearAllDirty();
     }
     onTickComplete?.(ctx, info);

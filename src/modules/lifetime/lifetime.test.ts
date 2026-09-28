@@ -60,7 +60,7 @@ describe('makeLifetimeSystem', () => {
     store.set(id, makeLifetime(16));
 
     sys.run(ctx);
-    ctx.world.flushDestroys();
+    ctx.world.flushCommands();
 
     expect(store.has(id)).toBe(false);
   });
@@ -72,7 +72,7 @@ describe('makeLifetimeSystem', () => {
     store.set(id, makeLifetime(1));
 
     sys.run(ctx);
-    ctx.world.flushDestroys();
+    ctx.world.flushCommands();
 
     expect(store.has(id)).toBe(false);
   });
@@ -84,7 +84,7 @@ describe('makeLifetimeSystem', () => {
     store.set(id, makeLifetime(100));
 
     for (let i = 0; i < 5; i++) sys.run(ctx);
-    ctx.world.flushDestroys();
+    ctx.world.flushCommands();
 
     expect(store.has(id)).toBe(true);
     expect(store.get(id)?.remainingMs).toBe(20);
@@ -98,7 +98,7 @@ describe('makeLifetimeSystem', () => {
     store.set(id, makeLifetime(5));
 
     sys.run(ctx);
-    ctx.world.flushDestroys();
+    ctx.world.flushCommands();
 
     expect(onExpire).toHaveBeenCalledTimes(1);
     expect(onExpire).toHaveBeenCalledWith(ctx, id);
@@ -116,7 +116,7 @@ describe('makeLifetimeSystem', () => {
     }
 
     sys.run(ctx);
-    ctx.world.flushDestroys();
+    ctx.world.flushCommands();
 
     for (const id of ids) expect(store.has(id)).toBe(false);
   });
