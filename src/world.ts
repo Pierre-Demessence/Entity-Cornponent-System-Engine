@@ -25,6 +25,7 @@ interface TagEntry { def: TagDef; store: TagStore }
 export class EcsWorld {
   private _spatial: SpatialStructure<{ x: number; y: number }> | undefined;
 
+  private readonly alive = new Set<EntityId>();
   private readonly archetypes = new ArchetypeIndex();
   private componentRegistry: ComponentEntry[] = [];
   private destroyQueue = new Set<EntityId>();
@@ -43,7 +44,11 @@ export class EcsWorld {
   private tagByName = new Map<string, TagStore>();
   private tagRegistry: TagEntry[] = [];
 
-  /** Expose `nextId` for subclasses that need to copy it across world instances. */
+  /**
+   * Expose `nextId` for subclasses that need to copy it across world instances.
+   * Setting it does not register entities as alive — use `transferEntity` to
+   * move entities (and their liveness) between worlds.
+   */
   protected get _nextId(): number { return this.nextId; }
 
   protected set _nextId(value: number) { this.nextId = value; }
@@ -116,6 +121,7 @@ export class EcsWorld {
     this.destroyQueue.clear();
     this._spatial?.clear();
     this.lifecycle.clear();
+    this.alive.clear();
     this.nextId = 0;
   }
 
@@ -126,6 +132,7 @@ export class EcsWorld {
 
   createEntity(): EntityId {
     const id = this.nextId++;
+    this.alive.add(id);
     this.lifecycle.emit({ id, type: 'EntityCreated' });
     return id;
   }
@@ -134,6 +141,7 @@ export class EcsWorld {
     for (const { store } of this.componentRegistry) store.delete(id);
     for (const { store } of this.tagRegistry) store.delete(id);
     this.archetypes.removeEntity(id);
+    this.alive.delete(id);
     this.lifecycle.emit({ id, type: 'EntityDestroyed' });
   }
 
@@ -178,6 +186,11 @@ export class EcsWorld {
   endOfTick(): void {
     this.flushDestroys();
     this.lifecycle.flush();
+  }
+
+  /** Number of live entities (created and not yet destroyed). */
+  entityCount(): number {
+    return this.alive.size;
   }
 
   /**
@@ -232,6 +245,16 @@ export class EcsWorld {
     return this.installedPlugins.has(name);
   }
 
+  /** Whether `id` refers to a live entity — created and not yet destroyed. */
+  isAlive(id: EntityId): boolean {
+    return this.alive.has(id);
+  }
+
+  /** Iterate the live entity ids. Order is unspecified. */
+  liveEntities(): IterableIterator<EntityId> {
+    return this.alive.values();
+  }
+
   /** In-place load — clears existing stores and repopulates from the serialized payload. */
   loadJSON(data: unknown): void {
     const source = asObject(data, 'EcsWorld save payload');
@@ -241,6 +264,8 @@ export class EcsWorld {
     // while the row still exists (has() is true), so its bit would otherwise
     // survive as a phantom. The `store.set` calls that follow rebuild it.
     this.archetypes.clear();
+    this.alive.clear();
+    this.destroyQueue.clear();
 
     for (const { def, store } of this.componentRegistry) {
       store.clear();
@@ -250,6 +275,7 @@ export class EcsWorld {
       const loaded = ComponentStore.fromSerialized(raw, `EcsWorld.${def.name}`, def);
       for (const [id, value] of loaded) {
         store.set(id, value);
+        this.alive.add(id);
       }
     }
     for (const { def, store } of this.tagRegistry) {
@@ -260,6 +286,7 @@ export class EcsWorld {
       const loaded = TagStore.fromSerialized(raw, `EcsWorld.${def.name}`);
       for (const id of loaded) {
         store.add(id);
+        this.alive.add(id);
       }
     }
   }
@@ -467,6 +494,7 @@ export class EcsWorld {
         continue;
       store.set(id, structuredClone(value));
     }
+    this.alive.add(id);
   }
 
   /**

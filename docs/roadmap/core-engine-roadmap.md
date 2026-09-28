@@ -5,17 +5,16 @@ module and app: component stores, queries, scheduler, event bus, lifecycle,
 validation, change detection, plugin/extension hooks. No modules, no gameplay
 features.
 
-**Entry IDs are stable references** (`1.5`, `2.5`, `3.2`, `4.7`). The numbering
+**Entry IDs are stable references** (`2.5`, `3.2`, `4.7`). The numbering
 is not contiguous: a gap means that entry shipped, moved to the module backlog,
 or was declined, so citations elsewhere keep resolving to the same item. Shipped
 core work is described by `src/` and dated by `git log`; where a plan exists it
 sits under `plans/done/`, and core work performed before the engine split out is
 in the Roguelike monorepo's `docs/plans/done/`.
 
-**One entanglement to note.** 3.2's id recycling is one design conversation with
-1.5 — recycling ids without a generation counter is the ABA problem. Every other
-entry's dependencies have shipped. The order at the bottom reflects value, not a
-dependency graph.
+**One entanglement to note.** 3.2's id recycling reintroduces the ABA problem —
+recycling ids without a generation counter. Every other entry's dependencies
+have shipped. The order at the bottom reflects value, not a dependency graph.
 
 - Module-level work (camera, audio, render-dom, pathfinding, …) —
   [ecs-module-backlog.md](ecs-module-backlog.md)
@@ -26,19 +25,6 @@ dependency graph.
 ---
 
 ## Tier 1 — Critical Foundations
-
-Primitives that already ship but are incomplete. The entity id space has no
-liveness concept — a hole in the foundations the tier is named for.
-
-### 1.5 Entity liveness / existence API
-
-| | |
-|---|---|
-| **Problem** | Nothing records which entity ids are alive. `createEntity` is `nextId++`, so a caller holding an id cannot ask whether it still refers to anything; consumers probe an unrelated component store as a proxy. |
-| **Solution** | A liveness query on the world — `isAlive(id)`, a live count, or an explicit registry — kept correct across `destroyEntity`, `clearAll`, and `loadJSON`. Canon: Bevy `Entities` / `EntityRef`, Unity `EntityManager.Exists`, Flecs `ecs_is_alive`, EnTT `valid()`. |
-| **Unlocks** | Safe deferred work on ids that may already have died, and the staleness check entity pooling (3.2) needs once ids are recycled. |
-| **Complexity** | Small–mid in isolation, but it is one design conversation with 3.2: recycling ids without a generation counter is the ABA problem. |
-| **Dependencies** | None outstanding. |
 
 ---
 
@@ -82,7 +68,7 @@ complex systems.
 | **Solution** | Entity pool: destroyed entities are recycled (ID reused after a generation counter bump). Stores don't delete on recycle — they mark as inactive. Queries skip inactive entries. |
 | **Unlocks** | Particle effects, projectile physics, summon spells without GC spikes |
 | **Complexity** | Mid — ~150 lines. Generation counter + pool. |
-| **Dependencies** | None outstanding — the query DSL (to filter inactive) and the spatial index both shipped. Confirm the spatial index copes with recycled IDs when this lands, and settle the generation counter together with 1.5. |
+| **Dependencies** | None outstanding — the query DSL (to filter inactive) and the spatial index both shipped. Confirm the spatial index copes with recycled IDs when this lands, and settle the generation counter as part of this work. |
 
 > **Generational handles are the load-bearing, breaking part.** Entity ids are
 > monotonic and **never reused** today (`createEntity` = `nextId++`), which is
@@ -161,14 +147,13 @@ modding/plugin support.
 By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
-1. **Entity liveness** (1.5) — small, and the prerequisite for recycling ids
-2. **Deferred structural changes** (2.5) — turns a documented hazard into a
+1. **Deferred structural changes** (2.5) — turns a documented hazard into a
    safe path
-3. **Change-detection filters** (3.7) — a small surface over machinery that
+2. **Change-detection filters** (3.7) — a small surface over machinery that
    already ships
-4. **System run conditions** (4.7) — small
-5. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
-6. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
-7. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
-8. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
+3. **System run conditions** (4.7) — small
+4. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
+5. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
+6. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
+7. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
    strategic piece, above the shipped cache

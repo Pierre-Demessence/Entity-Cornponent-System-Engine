@@ -32,6 +32,9 @@ not in this package.
 | `destroyEntity(id)` | Immediately remove `id` from every registered store and tag. **Not safe** to call while iterating a store — use `queueDestroy` instead. |
 | `queueDestroy(id)` | Enqueue `id` for destruction on the next `flushDestroys()` call. Deduped; safe to call repeatedly. |
 | `flushDestroys()` | Drain the destroy queue, calling `destroyEntity` on each id. Call this once per tick, after systems finish iterating. |
+| `isAlive(id)` | Whether `id` refers to a live entity (created and not yet destroyed). |
+| `entityCount()` | Number of live entities. |
+| `liveEntities()` | Iterate the live entity ids (order unspecified). |
 | `endOfTick()` | End-of-tick convenience: runs `flushDestroys()` then `lifecycle.flush()` so subscribers see the final entity set in one pass. Prefer over calling both manually. (`TickRunner` already does this internally.) |
 | `registerComponent(def)` | Register a `ComponentDef<T>`; returns the store. Throws on duplicate name. |
 | `registerTag(def)` | Register a `TagDef`; returns the store. Throws on duplicate name. |
@@ -98,6 +101,11 @@ The engine is designed to be subclassed. A consumer subclass typically:
 - `toJSON` / `loadJSON` preserve registration order of components and tags;
   the caller is responsible for registering the same schemas (in any order)
   before calling `loadJSON`.
+- Liveness (`isAlive` / `entityCount` / `liveEntities`) is derived from
+  persisted membership on `loadJSON`: a component-less entity carries no
+  serialized data, so it is not alive after a save/load round-trip.
+- Inside an `EntityDestroyed` lifecycle handler the entity is already gone —
+  `isAlive(id)` is `false` and its stores no longer hold it.
 
 ## See also
 

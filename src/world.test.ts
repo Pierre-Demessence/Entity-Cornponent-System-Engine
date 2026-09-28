@@ -132,6 +132,136 @@ describe('ecsWorld', () => {
     });
   });
 
+  describe('entity liveness', () => {
+    it('isAlive tracks create and destroy', () => {
+      const w = new EcsWorld();
+      const id = w.createEntity();
+      expect(w.isAlive(id)).toBe(true);
+      w.destroyEntity(id);
+      expect(w.isAlive(id)).toBe(false);
+    });
+
+    it('isAlive is false for a never-created id', () => {
+      const w = new EcsWorld();
+      expect(w.isAlive(42)).toBe(false);
+    });
+
+    it('entityCount reflects create and destroy', () => {
+      const w = new EcsWorld();
+      expect(w.entityCount()).toBe(0);
+      const a = w.createEntity();
+      const b = w.createEntity();
+      expect(w.entityCount()).toBe(2);
+      w.destroyEntity(a);
+      expect(w.entityCount()).toBe(1);
+      void b;
+    });
+
+    it('queueDestroy keeps the entity alive until flushDestroys', () => {
+      const w = new EcsWorld();
+      const id = w.createEntity();
+      w.queueDestroy(id);
+      expect(w.isAlive(id)).toBe(true);
+      w.flushDestroys();
+      expect(w.isAlive(id)).toBe(false);
+    });
+
+    it('spawn marks the entity alive', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      w.registerComponent(HealthDef);
+      w.registerTag(FlagTag);
+      const id = w.spawn({ name: 't', components: { health: { hp: 1 }, pos: { x: 0, y: 0 } } });
+      expect(w.isAlive(id)).toBe(true);
+    });
+
+    it('clearAll resets liveness', () => {
+      const w = new EcsWorld();
+      w.createEntity();
+      w.createEntity();
+      w.clearAll();
+      expect(w.entityCount()).toBe(0);
+      expect(w.isAlive(0)).toBe(false);
+    });
+
+    it('liveEntities iterates the live set', () => {
+      const w = new EcsWorld();
+      const a = w.createEntity();
+      const b = w.createEntity();
+      w.destroyEntity(a);
+      expect([...w.liveEntities()]).toEqual([b]);
+    });
+
+    it('spawnBatch marks every entity alive', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      const ids = w.spawnBatch([
+        { template: { name: 'a', components: { pos: { x: 0, y: 0 } } } },
+        { template: { name: 'b', components: { pos: { x: 1, y: 1 } } } },
+      ]);
+      expect(ids.every(id => w.isAlive(id))).toBe(true);
+      expect(w.entityCount()).toBe(2);
+    });
+
+    it('isAlive is already false inside an EntityDestroyed handler', () => {
+      const w = new EcsWorld();
+      const id = w.createEntity();
+      let seen: boolean | undefined;
+      w.lifecycle.on('EntityDestroyed', () => {
+        seen = w.isAlive(id);
+      });
+      w.destroyEntity(id);
+      w.lifecycle.flush();
+      expect(seen).toBe(false);
+    });
+
+    it('loadJSON discards pending queued destroys', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const a = w.createEntity();
+      pos.set(a, { x: 0, y: 0 });
+      const saved = JSON.parse(JSON.stringify(w.toJSON()));
+
+      w.queueDestroy(a);
+      w.loadJSON(saved);
+      w.flushDestroys(); // must not destroy the reloaded entity
+
+      expect(w.isAlive(a)).toBe(true);
+    });
+
+    it('transferEntity marks the entity alive on the destination', () => {
+      const src = new EcsWorld();
+      src.registerComponent(PosDef);
+      const id = src.spawn({ name: 't', components: { pos: { x: 1, y: 2 } } });
+
+      const dst = new EcsWorld();
+      dst.registerComponent(PosDef);
+      dst.transferEntity(id, src);
+
+      expect(dst.isAlive(id)).toBe(true);
+    });
+
+    it('loadJSON rebuilds liveness from persisted membership', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const tag = w.registerTag(FlagTag);
+      const a = w.createEntity();
+      pos.set(a, { x: 0, y: 0 });
+      const b = w.createEntity();
+      tag.add(b);
+      const saved = JSON.parse(JSON.stringify(w.toJSON()));
+
+      const restored = new EcsWorld();
+      restored.registerComponent(PosDef);
+      restored.registerTag(FlagTag);
+      restored.loadJSON(saved);
+
+      expect(restored.isAlive(a)).toBe(true);
+      expect(restored.isAlive(b)).toBe(true);
+      expect(restored.entityCount()).toBe(2);
+    });
+  });
+
   describe('enableSpatial', () => {
     it('keeps the spatial index in sync with set/delete', () => {
       const w = new EcsWorld();
