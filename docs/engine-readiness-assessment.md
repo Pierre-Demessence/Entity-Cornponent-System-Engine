@@ -197,8 +197,10 @@ scheduler, event bus, `modules/save` + `MigrationRegistry`,
 `modules/stats`, the `modules/input` providers, `modules/scene-transition`,
 and — usefully — `modules/fsm`, `modules/behavior-tree`, and
 `modules/goap`, which are pure logic and not bound to 2D.
-`SpatialStructure<TPos>` is generic in core, so a 3D backend drops in
-without a core change.
+`SpatialStructure<TPos>` is generic in core, so the *interface* takes a 3D
+backend unchanged — but the world's wiring (`enableSpatial` / `move` /
+`spatial`) is 2D-only, so reaching it needs the core change tracked as core
+roadmap 2.6.
 
 **Missing.** The 3D stack above the value level. `transform`, `motion`,
 `collision`, and `kinematics` are all 2D, and the 3D books so far cover only
@@ -248,8 +250,9 @@ prevent.
   tilemap V2 backlog entry).
 - **No entity-id remapping on import** (deferred) — relevant the moment
   worlds are merged or third-party content is loaded.
-- **No world streaming or chunking**, no navmesh, and no plugin or mod
-  hooks (`core-engine-roadmap.md` 4.4).
+- **No world streaming or chunking**, and no navmesh. Plugin and mod hooks
+  ship — `world.use` takes a `Plugin`, and `world.lifecycle` subscriptions
+  plus store `subscribe` hooks are the in-engine extension points.
 
 ## Ranked next moves
 

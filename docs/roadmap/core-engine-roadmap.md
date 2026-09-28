@@ -5,16 +5,18 @@ module and app: component stores, queries, scheduler, event bus, lifecycle,
 validation, change detection, plugin/extension hooks. No modules, no gameplay
 features.
 
-**Entry IDs are stable references** (`3.2`, `3.5`, `4.6`). A gap in the
-numbering means that entry shipped and left this file, so citations elsewhere
-keep resolving to the same item. Shipped core work is described by `src/` and
-dated by `git log`; where a plan exists it sits under `plans/done/`, and core
-work performed before the engine split out is in the Roguelike monorepo's
-`docs/plans/done/`.
+**Entry IDs are stable references** (`1.4`, `2.5`, `3.2`, `4.7`). The numbering
+is not contiguous: a gap means that entry shipped, moved to the module backlog,
+or was declined, so citations elsewhere keep resolving to the same item. Shipped
+core work is described by `src/` and dated by `git log`; where a plan exists it
+sits under `plans/done/`, and core work performed before the engine split out is
+in the Roguelike monorepo's `docs/plans/done/`.
 
-**Nothing here is blocked.** Every remaining entry's original dependencies
-have shipped, so the order at the bottom reflects value, not a dependency
-graph.
+**Two entanglements to note.** 3.7 and 3.8 build on the predicate surface 1.4
+opens, and 3.2's id recycling is one design conversation with 1.5 — recycling
+ids without a generation counter is the ABA problem. Every other entry's
+original dependencies have shipped. The order at the bottom reflects value, not
+a dependency graph.
 
 - Module-level work (camera, audio, render-dom, pathfinding, …) —
   [ecs-module-backlog.md](ecs-module-backlog.md)
@@ -24,7 +26,62 @@ graph.
 
 ---
 
-## Performance & Large Scale
+## Tier 1 — Critical Foundations
+
+Primitives that already ship but are incomplete. The query DSL cannot express
+patterns consumers write every day, and the entity id space has no liveness
+concept — both are holes in the foundations the tier is named for.
+
+### 1.4 Query predicate vocabulary
+
+| | |
+|---|---|
+| **Problem** | `world.query` accepts component defs only, and the builder filters tags (`withTag` / `without`). Three everyday patterns are inexpressible: iterate entities that hold *only* a tag ("every enemy"), require A while excluding B when B is a *component* rather than a tag, and take an optional companion component next to a required one. Consumers work around all three by looping a tag store and probing stores per entity. |
+| **Solution** | Extend the query surface with tag-only queries (yielding `[EntityId]`), component-level exclusion, optional components, and any-of groups. Canon shape: Bevy's `With` / `Without` / `Option<&T>` / `Or`, Unity DOTS `WithNone` / `WithAny`, Flecs `not` / `optional` / `or`. |
+| **Unlocks** | Adopting the shipped query engine at all. It has zero call sites in `examples/**` and `src/modules/**`, so the archetype index is maintained on every store mutation and read by nothing. |
+| **Complexity** | Mid — the index's mask test expresses superset plus disjoint only, so any-of and optional components need new index predicates; the rest is surface and typing. |
+| **Dependencies** | The shipped archetype index (`src/archetype-index.ts`) and builder (`src/query.ts`). |
+
+### 1.5 Entity liveness / existence API
+
+| | |
+|---|---|
+| **Problem** | Nothing records which entity ids are alive. `createEntity` is `nextId++`, so a caller holding an id cannot ask whether it still refers to anything; consumers probe an unrelated component store as a proxy. |
+| **Solution** | A liveness query on the world — `isAlive(id)`, a live count, or an explicit registry — kept correct across `destroyEntity`, `clearAll`, and `loadJSON`. Canon: Bevy `Entities` / `EntityRef`, Unity `EntityManager.Exists`, Flecs `ecs_is_alive`, EnTT `valid()`. |
+| **Unlocks** | Safe deferred work on ids that may already have died, and the staleness check entity pooling (3.2) needs once ids are recycled. |
+| **Complexity** | Small–mid in isolation, but it is one design conversation with 3.2: recycling ids without a generation counter is the ABA problem. |
+| **Dependencies** | None outstanding. |
+
+---
+
+## Tier 2 — Robustness & Correctness
+
+Holes that turn into corruption or missing capability once the entity set is
+large or re-shaped during a tick.
+
+### 2.5 Deferred structural changes (command buffer)
+
+| | |
+|---|---|
+| **Problem** | Only destruction can be deferred (`queueDestroy`). Adding or removing a component mid-iteration has no safe path, and calling `destroyEntity` while iterating is documented as unsafe with nothing enforcing it: a store mutated during a columnar query iteration silently skips the entity swap-removed into the freed slot. |
+| **Solution** | A command-buffer-shaped batch applied at the tick flush — queue add/remove-component and create alongside destroy, then apply in order. Pair it with a DEV-only assertion that fails loudly when a store is mutated under an active query iteration. Canon: Bevy `Commands`, Unity DOTS `EntityCommandBuffer`, Flecs deferred operations. |
+| **Unlocks** | Systems that spawn or re-shape entities inside their own query loop — the pattern consumers already hand-roll by collecting ids and destroying them after the loop. |
+| **Complexity** | Mid — the tick runner already owns a flush point, and `queueDestroy` is a working precedent. |
+| **Dependencies** | `TickRunner`'s flush sequence (shipped). |
+
+### 2.6 Spatial integration generalized
+
+| | |
+|---|---|
+| **Problem** | `SpatialStructure<TPos>` is generic, but the world's wiring is not: `enableSpatial` / `move` / `spatial` are hard-wired to `{x, y}` and `HashGrid2D`, and a world may index exactly one component. So a 3D game cannot use the core integration at all, and a 2D game cannot index two populations (bodies plus pickups). |
+| **Solution** | Make the world's spatial wiring generic in `TPos` and allow more than one indexed set. |
+| **Unlocks** | 3D broadphase through the core instead of per-consumer brute force, and per-purpose indexes inside one world. |
+| **Complexity** | Mid — the interface already generalizes; the work is the world's plumbing and its typing. |
+| **Dependencies** | None outstanding. Distinct from the module backlog's `QuadTree` / `BVH` entries, which add backends rather than generalize this wiring. |
+
+---
+
+## Tier 3 — Performance & Large Scale
 
 Optimizations that matter once a game has 100+ entities on large maps with
 complex systems.
@@ -37,7 +94,7 @@ complex systems.
 | **Solution** | Entity pool: destroyed entities are recycled (ID reused after a generation counter bump). Stores don't delete on recycle — they mark as inactive. Queries skip inactive entries. |
 | **Unlocks** | Particle effects, projectile physics, summon spells without GC spikes |
 | **Complexity** | Mid — ~150 lines. Generation counter + pool. |
-| **Dependencies** | None outstanding — the query DSL (to filter inactive) and the spatial index both shipped. Confirm the spatial index copes with recycled IDs when this lands. |
+| **Dependencies** | None outstanding — the query DSL (to filter inactive) and the spatial index both shipped. Confirm the spatial index copes with recycled IDs when this lands, and settle the generation counter together with 1.5. |
 
 > **Generational handles are the load-bearing, breaking part.** Entity ids are
 > monotonic and **never reused** today (`createEntity` = `nextId++`), which is
@@ -62,9 +119,29 @@ complex systems.
 | **Complexity** | Very long — a storage-engine rewrite. add/remove-component becomes a **structural move** (the entity is copied between tables), where sparse-set is O(1). |
 | **Dependencies** | None outstanding — builds on the shipped columnar store, and sits **above** the shipped archetype *cache* (the lighter middle step: it caches query matches, keeping the gather). Detail + the full cheapest→biggest ladder: [../plans/done/ecs-parallelism-and-soa-storage.md](../plans/done/ecs-parallelism-and-soa-storage.md#the-path-beyond-middle--storage-architecture-logged). |
 
+### 3.7 Change-detection query filters
+
+| | |
+|---|---|
+| **Problem** | Stores track which ids are dirty, but nothing can query that: a system that cares only about what changed must iterate everything and test per entity. The tracking is also semantically uneven — mutating a value returned by an object-store `get(id)` does not mark it, while the columnar write-through view marks on assignment — so a filter built on it today would silently under-report. |
+| **Solution** | An `Added` / `Changed` filter on the query surface, over a settled contract: either every write path marks dirty, or the filter is documented as opt-in tracking with the mutation sites that must call `markDirty` listed. Canon: Bevy `Added` / `Changed`, Unity DOTS `WithChangeFilter`. |
+| **Unlocks** | Change-driven systems — re-derive on edit, sync only what moved, stay idle on a quiet tick — without per-entity polling. |
+| **Complexity** | Small surface over shipped machinery; the cost is the contract, not the code. |
+| **Dependencies** | The shipped dirty tracking (`markDirty` / `isDirty` on both store types) and the query surface 1.4 opens. |
+
+### 3.8 Cached query handles + typed arity beyond four
+
+| | |
+|---|---|
+| **Problem** | Every `world.query(...)` call builds a builder and derives a string cache key (`required:excluded`) before the archetype cache is consulted, so a per-tick system pays an allocation it does not need. Separately, the typed overloads stop at four component defs, so a five-component query does not type-check at all. |
+| **Solution** | A reusable query handle, resolved once and iterated per tick, plus variadic tuple typing so arity is not a cliff. Canon: Bevy system params, Flecs cached queries. |
+| **Unlocks** | Query-heavy systems without per-tick allocation, and queries over five or more components that keep their types. |
+| **Complexity** | Mid — the match cache already exists; the work is a handle that owns it, plus the typing. |
+| **Dependencies** | The shipped archetype cache, and 1.4 for the predicate surface the handle would freeze. |
+
 ---
 
-## Extensibility & Developer Experience
+## Tier 4 — Extensibility & Developer Experience
 
 Infrastructure that improves the development workflow and enables
 modding/plugin support.
@@ -79,6 +156,16 @@ modding/plugin support.
 | **Complexity** | Mid, and **false-positive-bound**: measured on the current corpus, only 2 of 35 bare `` `foo()` `` prose mentions resolve to an export — the rest are member names (`dispose()`, `play()`) or external refs (`move_toward()`). Needs member-aware resolution (owner → type → members) or a conservative allowlist before it is worth the noise. Deferred from [`../plans/done/readme-doc-symbol-linter.md`](../plans/done/readme-doc-symbol-linter.md). |
 | **Dependencies** | The export enumeration in `scripts/engine-surface.ts`; the type checker for member existence on a named owner type. |
 
+### 4.7 System run conditions / enable flags
+
+| | |
+|---|---|
+| **Problem** | A registered system runs every tick. "Only while not paused", "only in this game phase", "only when this feature is on" has to be re-checked inside the system body, where the scheduler cannot see it — so ordering and access checks are computed over systems that will not actually run. |
+| **Solution** | An optional `condition` (or `enabled`) predicate on `SchedulableSystem`, evaluated before `run`, alongside the existing `phase` and dependency fields. Canon: Bevy `run_if` / `in_state`, Unity DOTS `Enabled` / system groups. |
+| **Unlocks** | Pause, menus and mode switches expressed where the scheduler holds them, and ordering diagnostics that know a system was skipped. |
+| **Complexity** | Small. |
+| **Dependencies** | None outstanding. |
+
 ---
 
 ## Suggested Implementation Order
@@ -86,6 +173,16 @@ modding/plugin support.
 By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
-1. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
-2. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest,
-   most strategic piece, above the shipped cache
+1. **Query predicate vocabulary** (1.4) — the shipped query engine has no
+   adopter, and this is why; it is also the gate on 3.7 and 3.8
+2. **Entity liveness** (1.5) — small, and the prerequisite for recycling ids
+3. **Deferred structural changes** (2.5) — turns a documented hazard into a
+   safe path
+4. **Change-detection filters** (3.7) — a small surface over machinery that
+   already ships
+5. **System run conditions** (4.7) — small
+6. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
+7. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
+8. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
+9. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
+   strategic piece, above the shipped cache
