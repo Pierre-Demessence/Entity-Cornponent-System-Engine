@@ -1,36 +1,43 @@
 # AGENTS.md
 
-Project-specific overrides for AI coding agents working in this repo.
+Project-specific rules for AI coding agents working in this repo.
 Supplements the global instructions in `~/.copilot/instructions/`.
 
-## Project maturity: pre-1.0, no external consumers
+## What this is
 
-This is `@pierre/ecs`, a TypeScript ECS engine, currently consumed only
-by sibling-repo and in-repo prototypes:
+`@pierre/ecs` is a standalone TypeScript Entity-Component-System engine for
+2D and 3D games and simulations. It is built to a production-grade bar: every
+change ships with tests, updated docs, a green gate (lint, typecheck, tests)
+and a peer review.
 
-- `Roguelike/` (sibling repo, `file:` install)
-- `examples/asteroids`, `examples/snake`, `examples/platformer`,
-  `examples/platformer-3d`, `examples/local-pong`, `examples/rhythm`,
-  `examples/top-down-shooter`, `examples/card-battler`,
-  `examples/hub` — all consume `@pierre/ecs` from this workspace.
+## Status: pre-1.0, no stability guarantee
 
-No external (off-Pierre) consumers. No frozen public API. No published
-release. Breaking the engine surface across all consumers in a single
-commit is the *cheap* path while this is true. Once a real external
-consumer appears, this file gets revisited.
+The engine is pre-1.0 (`0.0.0`, unpublished), and its public API carries no
+compatibility promise:
 
-## Prototype phase: validate shape, not surface stability
+- Breaking changes are made whenever they improve a primitive's shape.
+  Getting the shape right outranks keeping the surface stable.
+- Projects outside this repo that depend on the engine pin a git commit; they
+  are not migrated from here. **Never edit or commit in a repository other
+  than this one.** When a change breaks a known downstream project, name the
+  break in your report instead.
+- Everything inside this repo — `examples/`, `website/`, `scripts/`, docs —
+  migrates in the same commit as the change that breaks it.
 
-The priority is to get each primitive's **shape** right — for novel shapes,
-validated by prototypes (does it survive a genre shift?); for standard
-subsystems, taken from **external canon** up front — not to lock down a
-stable surface. This means:
+This status is what licenses the overrides below. It changes at 1.0; revisit
+this file then.
+
+## Shape over stability
+
+Each primitive's **shape** is what has to be right — for novel shapes,
+validated by the examples (does it survive a genre shift?); for standard
+subsystems, taken from **external canon** up front. This means:
 
 - The sliding-scale promotion rule in [`docs/extending-the-engine.md`](docs/extending-the-engine.md)
   is canon. New core or module additions go through it. Internal
   consumers and external canon are interchangeable shape-evidence:
   unanimous universal canon ships with 0 consumers, solid canon with 1,
-  a novel shape needs 2. These examples are deliberately generic, so a
+  a novel shape needs 2. The examples are deliberately generic, so a
   gap one of them hits is strong generality signal — don't reflexively
   defer canon to "wait for a second consumer". A primitive whose shape
   canon settles is **Ready** in the backlog — authorized to build, gated
@@ -44,16 +51,14 @@ stable surface. This means:
   existence. Half-baked / under-promoted primitives are the failure mode
   this project actually suffers from. Only genuinely *novel* (non-canon)
   shapes wait for a second consumer.
-- Each prototype in `examples/` is a first-class engine consumer, not
+- Each example in `examples/` is a first-class engine consumer, not
   throwaway demo code. Engine gaps it surfaces are logged in
   [`docs/roadmap/engine-gap-ledger.md`](docs/roadmap/engine-gap-ledger.md),
   which a triage pass promotes into
   [`docs/roadmap/ecs-module-backlog.md`](docs/roadmap/ecs-module-backlog.md).
 - Aggressive renames, signature changes, and cross-module refactors
-  are encouraged when shape-validation reveals a better fit. Migrate
-  every consumer in the same commit.
-- Don't preserve compatibility for compatibility's sake. The cheap
-  window to fix a wrong shape is *now*.
+  are encouraged when shape-validation reveals a better fit.
+- Don't preserve compatibility for its own sake.
 
 **Override the conservative defaults from `taming-copilot.instructions.md`
 ("Surgical Code Modification", "Preserve Existing Code", "Minimal
@@ -65,18 +70,14 @@ Necessary Changes", "Integrate, Don't Replace"):**
   `src/modules/<name>/index.ts`) that re-export from many sibling
   files are NOT relays — keep them. The rule applies only to
   single-symbol passthrough files.
-- When renaming, rename everywhere in one pass — including consumer
-  prototypes in `examples/` and the sibling `Roguelike/` repo if the
-  symbol is exported. No parallel old/new names, no deprecation
-  periods, no `@deprecated` JSDoc.
+- When renaming, rename everywhere in this repo in one pass, `examples/`
+  included. No parallel old/new names, no back-compat aliases, no
+  deprecation periods, no `@deprecated` JSDoc.
 - **No git worktrees. Work on the current branch** unless explicitly
   told to create a new one. Don't branch off unless asked.
 
-The cost-benefit of "minimum diff" is calibrated for production:
-review burden, frozen wire formats, bisect history. None of that
-applies here. Once shipped externally, the same cleanup costs months
-of deprecation cycles — update this file then and revert to the
-conservative defaults.
+"Minimum diff" is calibrated for a frozen API — review burden, frozen wire
+formats, deprecation cycles. None of that applies before 1.0.
 
 ## Architectural invariants
 
