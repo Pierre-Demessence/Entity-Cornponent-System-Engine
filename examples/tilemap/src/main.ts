@@ -53,8 +53,8 @@ function spawnTiles(world: EcsWorld, map: TmxMap): number {
  * Renders every tile once into an offscreen canvas at the map's native pixel
  * size. Baking to a single bitmap is the canonical static-tilemap technique
  * (Unity combines tiles into a chunk mesh; we combine into one raster): a
- * lone bitmap has no inter-tile boundaries, so fractional-zoom seams \u2014 the
- * sub-pixel gaps a per-tile draw leaves between 16px tiles at e.g. 1.3\u00d7 \u2014
+ * lone bitmap has no inter-tile boundaries, so fractional-zoom seams — the
+ * sub-pixel gaps a per-tile draw leaves between 16px tiles at e.g. 1.3× —
  * cannot appear. The camera then samples a sub-region of this raster each
  * frame instead of re-drawing thousands of tiles.
  */

@@ -62,9 +62,9 @@ export interface TickRunnerOptions<TCtx> {
  * A tick is an atomic simulation step: one world from build-to-flush.
  * Consumers that need a world swap (level transition, scene change,
  * restart) queue the swap from inside a system and perform it between
- * ticks \u2014 never mid-tick.
+ * ticks — never mid-tick.
  *
- * The runner is deliberately narrow \u2014 it knows nothing about turn
+ * The runner is deliberately narrow — it knows nothing about turn
  * numbers, input actions, rendering, or game state. Those are consumer
  * concerns and live in `contextFactory`, `onBeforeFlush`, and
  * `onTickComplete`.

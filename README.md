@@ -14,22 +14,40 @@ to npm.
 
 ## What's included
 
-- **`ComponentStore<T>`** — typed sparse storage for components with
-  optional dev-mode `requires` validation and mutation hooks.
-- **`TagStore`** — boolean-tag storage with the same hook surface.
-- **`SpatialIndex`** — tile-keyed entity index kept in sync via store
-  hooks (opt-in via `world.enableSpatial(def)`).
-- **`QueryBuilder`** — multi-store intersection queries with typed
-  iteration.
-- **`EntityTemplate` + `world.spawn()`** — declarative prefab system
-  with per-spawn overrides.
-- **`EventBus<TEvent>`** — typed pub/sub bus with context (entity,
-  turn, source).
-- **`Scheduler<TCtx>`** — DAG-sorted system runner with `runAfter`/
-  `runBefore` dependencies.
-- **`EcsWorld`** — integrates all of the above into a single lifecycle
-  with id allocation, component/tag registration, `spawn`, `query`,
-  `toJSON`/`loadJSON`, and opt-in spatial wiring.
+Core (`@pierre/ecs`):
+
+- **`EcsWorld`** — entity ids and liveness (`isAlive`, `entityCount`),
+  component/tag registration, `spawn` from templates, typed `query`,
+  `toJSON` / `loadJSON`, a deferred command buffer (`queueSpawn`,
+  `queueAdd`, `queueRemove`, `queueDestroy`, `flushCommands`), plugins via
+  `use`, and opt-in spatial indexing.
+- **Component storage** — `simpleComponent` / `registryComponent` build a
+  `ComponentDef<T>` from a schema. All-numeric components are stored
+  columnar (typed-array Structure-of-Arrays, with a `column()` / `slotOf()`
+  fast path); the rest use an object-backed `ComponentStore<T>`. `TagStore`
+  holds data-less tags. Stores carry dirty tracking, mutation hooks, schema
+  versioning with migrations, and dev-mode `requires` validation.
+- **`QueryBuilder`** — typed queries with `withComponent`,
+  `withoutComponent`, `withTag`, `without`, `anyOf`, and `optional`, served
+  from an archetype index.
+- **`EntityTemplate`** — declarative prefabs with per-spawn overrides.
+- **`EventBus<TEvent>`** — typed queue-and-flush pub/sub with handler
+  priorities and `stopPropagation`. The world's `lifecycle` bus reports
+  entity and component/tag changes.
+- **`Scheduler<TCtx>`** — DAG-sorted systems (`runAfter` / `runBefore`),
+  optional phases, `init` / `dispose` hooks, and a dev-mode check of declared
+  `reads` / `writes`.
+- **`TickRunner`** — the per-tick ceremony: run systems, flush events,
+  commands and lifecycle, clear dirty sets.
+- **`SpatialStructure`** — the spatial-index contract;
+  `world.enableSpatial(def)` wires one in (`HashGrid2D` by default).
+
+Opt-in modules (`@pierre/ecs/modules/<name>`) cover rendering (Canvas2D,
+DOM), input, audio, collision, kinematics, motion, transforms, camera,
+tilemaps and TMX, animation, particles, AI (FSM, behavior tree, GOAP,
+steering, pathfinding), save/load, math, noise, RNG, workers, and more,
+many with 2D and 3D variants. Each documents itself in
+[`src/modules/<name>/README.md`](./src/modules/).
 
 ## Installation
 
@@ -81,15 +99,11 @@ import type { ComponentDef } from '@pierre/ecs/component-store';
 ## Quick Start
 
 ```ts
+import { simpleComponent } from '@pierre/ecs/component-store';
 import { EcsWorld } from '@pierre/ecs/world';
-import type { ComponentDef } from '@pierre/ecs/component-store';
 
 interface Pos { x: number; y: number }
-const PosDef: ComponentDef<Pos> = {
-  name: 'pos',
-  serialize: v => v,
-  deserialize: raw => raw as Pos,
-};
+const PosDef = simpleComponent<Pos>('pos', { x: 'number', y: 'number' });
 
 const world = new EcsWorld();
 world.registerComponent(PosDef);

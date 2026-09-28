@@ -77,6 +77,8 @@ Open work only — no document here records shipped modules.
 
 Reference material (not status docs):
 
+- [Engine readiness assessment](audit/engine-readiness-assessment.md) - point-in-time audit: would five commercial-scale games ship on this engine, and what blocks each
+
 - [Game AI Landscape](game-ai-landscape.md) - map of game-AI concepts (decision, navigation, perception, …) with engine-commonness and this engine's status
 - [20 Games Challenge](twenty-games-challenge.md) - the ladder of small games built next
 

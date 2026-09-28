@@ -1,5 +1,12 @@
 # Engine readiness assessment
 
+> **Point-in-time audit.** It describes the engine as of its last commit
+> (`git log -1 -- docs/audit/engine-readiness-assessment.md`), and newer work
+> may have closed gaps it lists — e.g. columnar storage, `worker-pool` and
+> the 3D module siblings have shipped since. Open work lives in the
+> [core roadmap](../roadmap/core-engine-roadmap.md) and
+> [module backlog](../roadmap/ecs-module-backlog.md).
+
 A genre-by-genre check of whether the current `@pierre/ecs` surface would
 carry five commercial-scale games: **Vampire Survivors**, **Stardew
 Valley**, **Hollow Knight**, **Factorio**, and **Subnautica**. Each is
@@ -7,11 +14,11 @@ assessed against the engine as it stands — what already fits, what is
 missing, and what the missing piece costs.
 
 Provenance for the claims below: the module tree under
-[`src/modules/`](../src/modules/), the generated
-[engine API catalog](agent/engine-api.md), the
-[module backlog](roadmap/ecs-module-backlog.md), the
-[engine gap ledger](roadmap/engine-gap-ledger.md), and the
-[core-engine roadmap](roadmap/core-engine-roadmap.md). Capability claims
+[`src/modules/`](../../src/modules/), the generated
+[engine API catalog](../agent/engine-api.md), the
+[module backlog](../roadmap/ecs-module-backlog.md), the
+[engine gap ledger](../roadmap/engine-gap-ledger.md), and the
+[core-engine roadmap](../roadmap/core-engine-roadmap.md). Capability claims
 are marked **PRESENT** or **ABSENT** where they drive a verdict.
 
 ## Verdict summary
@@ -163,7 +170,7 @@ foundation, `modules/tilemap` parse plus collision grid, `modules/spatial`.
 **Missing — every item load-bearing.**
 
 - **Storage layout (partially addressed).** The engine's own design capture
-  ([`plans/done/ecs-parallelism-and-soa-storage.md`](plans/done/ecs-parallelism-and-soa-storage.md))
+  ([`plans/done/ecs-parallelism-and-soa-storage.md`](../plans/done/ecs-parallelism-and-soa-storage.md))
   states it plainly: objects in a `Map` is "the real blocker", and SoA
   storage is worth 2–10× single-threaded before parallelism is even
   considered, plus the elimination of per-entity GC. Its "Middle" slice —
@@ -279,4 +286,4 @@ The batched tilemap renderable — `TilemapDef` plus a renderer pass that avoids
 per-cell entities — is **unbuilt**. `TilemapDef` appears only in prose, never in
 `src/`; `spawnTilemap` / `buildTilemapAtlas` / `buildCollisionGrid` are the
 shipped half. Tracked as `modules/tilemap` V2 in the
-[module backlog](roadmap/ecs-module-backlog.md).
+[module backlog](../roadmap/ecs-module-backlog.md).

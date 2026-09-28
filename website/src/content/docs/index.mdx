@@ -38,15 +38,11 @@ sibling folder via a `file:` install — the package's `exports` map points at
 TypeScript sources, so no build step is needed for a TS-aware bundler.
 
 ```ts
+import { simpleComponent } from '@pierre/ecs/component-store';
 import { EcsWorld } from '@pierre/ecs/world';
-import type { ComponentDef } from '@pierre/ecs/component-store';
 
 interface Pos { x: number; y: number }
-const PosDef: ComponentDef<Pos> = {
-  name: 'pos',
-  serialize: v => v,
-  deserialize: raw => raw as Pos,
-};
+const PosDef = simpleComponent<Pos>('pos', { x: 'number', y: 'number' });
 
 const world = new EcsWorld();
 world.registerComponent(PosDef);

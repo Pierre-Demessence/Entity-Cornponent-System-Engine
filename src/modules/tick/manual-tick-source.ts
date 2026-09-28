@@ -9,7 +9,7 @@ import type { TickInfo, TickSource } from '#tick-source';
  *   multiplayer, deterministic lockstep.
  * - REPL/debug harnesses.
  *
- * `start()`/`stop()` are no-ops \u2014 there is no internal timer to toggle;
+ * `start()`/`stop()` are no-ops — there is no internal timer to toggle;
  * they exist for interface parity with time-driven sources.
  */
 export class ManualTickSource implements TickSource {

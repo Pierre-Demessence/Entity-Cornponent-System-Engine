@@ -247,7 +247,8 @@ Slopes need the sweep to become normal-aware, or an explicit slope resolver
 after it. `kinematics-3d` ships without either; they are its own entry below.
 
 Ladder entries #15/#16/#17 (Mario Bros, Pitfall, VVVVVV) all need them, and
-[engine-readiness-assessment.md](../engine-readiness-assessment.md) names
+the
+[engine-readiness-assessment.md](../audit/engine-readiness-assessment.md) audit named
 both as Hollow Knight's load-bearing blocker.
 
 </details>
@@ -713,7 +714,8 @@ different capability (what the *player* can see on a grid, not what the
 Godot's `Light2D` surface (texture, energy, colour, shadow on/off, occluder
 polygons), not guessing a model from scratch.
 
-[engine-readiness-assessment.md](../engine-readiness-assessment.md) names it
+The
+[engine-readiness-assessment.md](../audit/engine-readiness-assessment.md) audit named it
 for Hollow Knight ("Lighting, shaders, post-FX — Canvas2D only").
 
 </details>
