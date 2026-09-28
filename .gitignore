@@ -29,6 +29,8 @@ website/src/content/docs/api/
 !.vscode/settings.json
 .idea
 .DS_Store
+Thumbs.db
+desktop.ini
 *.suo
 *.ntvs*
 *.njsproj

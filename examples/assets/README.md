@@ -19,6 +19,10 @@ examples/assets/
 
 Keep each pack's original `License.txt` next to its files.
 
+Packs are kept **whole**, including files no example uses yet. The catalogue
+is for discovery: when building a new example, browse these packs for art
+before drawing placeholders or adding a new pack. Don't prune unused files.
+
 ## Using a pack from an example
 
 Import the file with Vite's `?url` suffix; the path is relative to the
