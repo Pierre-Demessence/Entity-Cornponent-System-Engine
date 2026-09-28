@@ -33,9 +33,3 @@ Candidate, not yet wanted:
 - **Examples as a top-level section** — its own sidebar and header link beside
   Manual and API reference. Justified once there is a page per example; the
   gallery ships inside the Manual first.
-
-## The site
-
-- [ ] **`favicon.svg` 404s on every page.** Nothing sets `favicon` in
-  `website/astro.config.mjs` and nothing writes the file into `website/dist`, so
-  every built page links an asset that does not exist.
