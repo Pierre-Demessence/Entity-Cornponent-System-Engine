@@ -83,8 +83,8 @@ These are architectural rather than stylistic:
   `motion-3d`, `transform` and `transform-3d`. Changing one means changing its
   twin.
 - **Value primitives live together.** Scalars and vector/rotation types share one
-  module rather than splitting by dimension, so `math` holds `vec2*`, `vec3*` and
-  `quat*` alongside `clamp` and `lerp`.
+  module rather than splitting by dimension, so `math` holds `vec2*`, `vec3*`,
+  `quat*` and `mat4*` alongside `clamp` and `lerp`.
 - **Prefix by family, not by namespace.** Vector and rotation operations take a
   value plus a family prefix — `vec3Normalize`, `quatSlerp` — while scalars stay
   unprefixed.

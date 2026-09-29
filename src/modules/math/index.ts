@@ -1,4 +1,18 @@
 export {
+  type Mat4,
+  mat4Compose,
+  mat4Identity,
+  mat4Invert,
+  mat4LookAt,
+  mat4Multiply,
+  mat4Orthographic,
+  mat4Perspective,
+  mat4TransformDirection,
+  mat4TransformPoint,
+  mat4TransformVec4,
+  mat4Transpose,
+} from './mat4';
+export {
   approximately,
   clamp,
   clamp01,
@@ -18,6 +32,7 @@ export {
   quatConjugate,
   quatForward,
   quatFromAxisAngle,
+  quatLookRotation,
   quatMul,
   quatNormalize,
   quatRotate,

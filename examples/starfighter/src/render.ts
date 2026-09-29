@@ -2,23 +2,19 @@ import type { EcsWorld, TagDef } from '@pierre/ecs';
 
 import type { GameState } from './game';
 
-import { vec3RandomUnit } from '@pierre/ecs/modules/math';
+import { Camera3DDef, getCameraPose } from '@pierre/ecs/modules/camera-3d';
+import { radToDeg, vec3RandomUnit } from '@pierre/ecs/modules/math';
 import { Scene3DRenderer } from '@pierre/ecs/modules/render-scene3d';
 import * as THREE from 'three';
 
-import { BulletTag, Position3DDef, RadiusDef, TargetTag } from './components';
-import {
-  BOUNDS_RADIUS,
-  CAMERA_DISTANCE,
-  CAMERA_HEIGHT,
-  CAMERA_POS_LERP,
-  CAMERA_ROT_LERP,
-} from './game';
+import { BulletTag, Position3DDef, RadiusDef, Rotation3DDef, TargetTag } from './components';
+import { BOUNDS_RADIUS } from './game';
 
 export interface Renderer3D {
   domElement: HTMLCanvasElement;
   dispose: () => void;
   render: (state: GameState) => void;
+  /** Resize the drawing buffer. The aspect follows the camera's `Camera3D` viewport — update that too. */
   resize: (w: number, h: number) => void;
 }
 
@@ -28,8 +24,8 @@ const DUST_RANGE = 60; // half-extent of the wrap cube around the camera
 /**
  * three.js adapter. ECS is the source of truth: every render frame we mirror
  * each ship / bullet / target body's `Position3D` into a derived mesh, orient
- * the ship from its quaternion, and trail a smoothed third-person chase camera
- * behind it. The dust field, boundary sphere, planet, and starfield are pure
+ * the ship from its `Rotation3D`, and copy the chase camera entity's pose and
+ * `Camera3D` lens onto the three.js camera. The dust field, boundary sphere, planet, and starfield are pure
  * presentation (no ECS entities) and give the otherwise-empty void enough
  * parallax landmarks to read the ship's motion and position.
  */
@@ -42,7 +38,6 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   const scene = new THREE.Scene();
 
   const camera = new THREE.PerspectiveCamera(65, width / height, 0.1, 1200);
-  camera.position.set(0, CAMERA_HEIGHT, CAMERA_DISTANCE);
   scene.add(camera);
 
   scene.add(new THREE.AmbientLight(0x8090B0, 0.7));
@@ -149,35 +144,31 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     }),
   ];
 
-  const shipQuat = new THREE.Quaternion();
-  const fwdVec = new THREE.Vector3();
-  const upVec = new THREE.Vector3();
-  const camTarget = new THREE.Vector3();
-
-  function updateShipAndCamera(state: GameState): void {
+  function updateShip(state: GameState): void {
     if (state.playerId == null)
       return;
     const p = state.world.getStore(Position3DDef).get(state.playerId);
-    if (!p)
+    const q = state.world.getStore(Rotation3DDef).get(state.playerId);
+    if (!p || !q)
       return;
-    const q = state.orientation;
-    shipQuat.set(q.x, q.y, q.z, q.w);
     ship.position.set(p.x, p.y, p.z);
-    ship.quaternion.copy(shipQuat);
+    ship.quaternion.set(q.x, q.y, q.z, q.w);
+  }
 
-    fwdVec.set(0, 0, -1).applyQuaternion(shipQuat);
-    upVec.set(0, 1, 0).applyQuaternion(shipQuat);
-
-    // Position trails behind the nose (smoothed) so the ship stays framed; the
-    // camera *orientation* slerps toward the ship's, so it banks with roll and
-    // eases into turns rather than snapping.
-    camTarget.set(
-      p.x - fwdVec.x * CAMERA_DISTANCE + upVec.x * CAMERA_HEIGHT,
-      p.y - fwdVec.y * CAMERA_DISTANCE + upVec.y * CAMERA_HEIGHT,
-      p.z - fwdVec.z * CAMERA_DISTANCE + upVec.z * CAMERA_HEIGHT,
-    );
-    camera.position.lerp(camTarget, CAMERA_POS_LERP);
-    camera.quaternion.slerp(shipQuat, CAMERA_ROT_LERP);
+  function updateCamera(state: GameState): void {
+    if (state.cameraId == null)
+      return;
+    const lens = state.world.getStore(Camera3DDef).get(state.cameraId);
+    if (!lens)
+      return;
+    const { position: p, rotation: q } = getCameraPose(state.world, state.cameraId);
+    camera.position.set(p.x, p.y, p.z);
+    camera.quaternion.set(q.x, q.y, q.z, q.w);
+    camera.fov = radToDeg(lens.fovY);
+    camera.aspect = lens.viewportW / lens.viewportH;
+    camera.near = lens.near;
+    camera.far = lens.far;
+    camera.updateProjectionMatrix();
   }
 
   const dustAttr = dustGeo.getAttribute('position') as THREE.BufferAttribute;
@@ -227,15 +218,14 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     render(state) {
       for (const pass of passes)
         pass.render({ graph: scene, world: state.world });
-      updateShipAndCamera(state);
+      updateShip(state);
+      updateCamera(state);
       stars.position.copy(camera.position);
       updateDust();
       renderer.render(scene, camera);
     },
     resize(w, h) {
       renderer.setSize(w, h);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
     },
   };
 }

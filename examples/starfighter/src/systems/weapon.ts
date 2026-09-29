@@ -4,7 +4,7 @@ import type { GameState } from '../game';
 
 import { quatForward } from '@pierre/ecs/modules/math';
 
-import { Position3DDef, Velocity3DDef } from '../components';
+import { Position3DDef, Rotation3DDef, Velocity3DDef } from '../components';
 import { BULLET_SPEED, FIRE_COOLDOWN_MS, MUZZLE_OFFSET, spawnBullet } from '../game';
 
 /**
@@ -25,10 +25,11 @@ export const weaponSystem: SchedulableSystem<GameState> = {
 
     const pos = ctx.world.getStore(Position3DDef).get(ctx.playerId);
     const vel = ctx.world.getStore(Velocity3DDef).get(ctx.playerId);
-    if (!pos || !vel)
+    const orientation = ctx.world.getStore(Rotation3DDef).get(ctx.playerId);
+    if (!pos || !vel || !orientation)
       return;
 
-    const dir = quatForward(ctx.orientation);
+    const dir = quatForward(orientation);
     spawnBullet(
       ctx,
       {

@@ -1,9 +1,14 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
+import type { OrbitRig } from '@pierre/ecs/modules/camera-3d';
 import type { InputState } from '@pierre/ecs/modules/input';
 
 import { EcsWorld } from '@pierre/ecs';
+import { Camera3DDef, makeCamera3D, makeOrbitRig, OrbitRigDef } from '@pierre/ecs/modules/camera-3d';
+import { degToRad } from '@pierre/ecs/modules/math';
+import { Rotation3DDef } from '@pierre/ecs/modules/transform-3d';
 
 import {
+  CameraTag,
   CoinTag,
   CoinValueDef,
   GroundedDef,
@@ -35,10 +40,17 @@ export const RESPAWN_Y = -20;
 
 // Camera
 export const CAMERA_MOUSE_SENSITIVITY = 0.005; // rad per pixel of mouse drag
-export const CAMERA_DISTANCE = 9;
-export const CAMERA_HEIGHT = 5.5;
-export const CAMERA_LERP = 0.12;
-export const CAMERA_LOOK_OFFSET_Y = 0.5;
+/** The camera orbits a point this far above the player's centre. */
+export const CAMERA_FOCUS_Y = 0.5;
+// 9 back and 5 above the focus point, looking down at it.
+export const CAMERA_DISTANCE = Math.hypot(9, 5);
+export const CAMERA_PITCH = -Math.atan2(5, 9);
+/** Position easing per second; closes 12% of the gap per frame at 60 Hz. */
+export const CAMERA_SMOOTHING = 7.7;
+
+// View.
+export const VIEW_W = 800;
+export const VIEW_H = 600;
 
 export type PlatformerAction = 'forward' | 'back' | 'left' | 'right' | 'jump';
 
@@ -47,7 +59,8 @@ export type Platformer3DEvent
     | { type: 'PlayerFell' };
 
 export interface GameState {
-  cameraYaw: number;
+  /** The camera entity; its `OrbitRig` holds the camera yaw. */
+  cameraId: EntityId | null;
   dtMs: number;
   events: EventBus<Platformer3DEvent>;
   input: InputState<PlatformerAction>;
@@ -59,11 +72,15 @@ export interface GameState {
 export function makeWorld(): EcsWorld {
   const world = new EcsWorld();
   world.registerComponent(Position3DDef);
+  world.registerComponent(Rotation3DDef);
   world.registerComponent(Velocity3DDef);
   world.registerComponent(ShapeAabb3DDef);
   world.registerComponent(GroundedDef);
   world.registerComponent(CoinValueDef);
+  world.registerComponent(Camera3DDef);
+  world.registerComponent(OrbitRigDef);
   world.registerTag(PlayerTag);
+  world.registerTag(CameraTag);
   world.registerTag(StaticBodyTag);
   world.registerTag(CoinTag);
   return world;
@@ -77,6 +94,31 @@ function spawnPlayer(state: GameState, x: number, y: number, z: number): EntityI
   state.world.getStore(GroundedDef).set(id, { onGround: false });
   state.world.getTag(PlayerTag).add(id);
   return id;
+}
+
+/** Spawn the orbit camera; `makeCameraRigSystem` circles it around the player. */
+function spawnCamera(state: GameState): EntityId {
+  const id = state.world.createEntity();
+  state.world.getStore(Camera3DDef).set(id, makeCamera3D({
+    far: 200,
+    fovY: degToRad(60),
+    near: 0.1,
+    viewportH: VIEW_H,
+    viewportW: VIEW_W,
+  }));
+  state.world.getStore(OrbitRigDef).set(id, makeOrbitRig({
+    distance: CAMERA_DISTANCE,
+    pitch: CAMERA_PITCH,
+    smoothing: CAMERA_SMOOTHING,
+    targetOffsetY: CAMERA_FOCUS_Y,
+  }));
+  state.world.getTag(CameraTag).add(id);
+  return id;
+}
+
+/** The camera's orbit rig — its yaw sets which way "forward" walks. */
+export function cameraRig(state: GameState): OrbitRig | undefined {
+  return state.cameraId == null ? undefined : state.world.getStore(OrbitRigDef).get(state.cameraId);
 }
 
 export function spawnPlatform(state: GameState, x: number, y: number, z: number, w: number, h: number, d: number): EntityId {
@@ -104,8 +146,8 @@ export function resetGame(state: GameState): void {
   state.world.clearAll();
   state.events.clear();
   state.score = 0;
-  state.cameraYaw = 0;
   state.playerId = spawnPlayer(state, PLAYER_SPAWN_X, PLAYER_SPAWN_Y, PLAYER_SPAWN_Z);
+  state.cameraId = spawnCamera(state);
   buildLevel(state);
 }
 

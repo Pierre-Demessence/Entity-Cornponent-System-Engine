@@ -4,6 +4,8 @@ import type { Scene3DEntry } from '@pierre/ecs/modules/render-scene3d';
 import type { Position3D, ShapeAabb3D } from './components';
 import type { GameState } from './game';
 
+import { Camera3DDef, getCameraPose } from '@pierre/ecs/modules/camera-3d';
+import { radToDeg } from '@pierre/ecs/modules/math';
 import { Scene3DRenderer } from '@pierre/ecs/modules/render-scene3d';
 import * as THREE from 'three';
 
@@ -14,12 +16,12 @@ import {
   ShapeAabb3DDef,
   StaticBodyTag,
 } from './components';
-import { CAMERA_DISTANCE, CAMERA_HEIGHT, CAMERA_LERP, CAMERA_LOOK_OFFSET_Y } from './game';
 
 export interface Renderer3D {
   domElement: HTMLCanvasElement;
   dispose: () => void;
   render: (state: GameState) => void;
+  /** Resize the drawing buffer. The aspect follows the camera's `Camera3D` viewport — update that too. */
   resize: (w: number, h: number) => void;
 }
 
@@ -39,7 +41,6 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   scene.fog = new THREE.Fog(0x0B0D10, 20, 50);
 
   const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 200);
-  camera.position.set(0, CAMERA_HEIGHT, CAMERA_DISTANCE);
 
   scene.add(new THREE.AmbientLight(0xFFFFFF, 0.55));
   const dir = new THREE.DirectionalLight(0xFFFFFF, 0.9);
@@ -82,21 +83,19 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   ];
 
   function updateCamera(state: GameState): void {
-    if (state.playerId == null)
+    if (state.cameraId == null)
       return;
-    const p = state.world.getStore(Position3DDef).get(state.playerId);
-    if (!p)
+    const lens = state.world.getStore(Camera3DDef).get(state.cameraId);
+    if (!lens)
       return;
-    const sin = Math.sin(state.cameraYaw);
-    const cos = Math.cos(state.cameraYaw);
-    // Camera orbits the player around Y at yaw radians, offset forward by CAMERA_DISTANCE.
-    const targetX = p.x + sin * CAMERA_DISTANCE;
-    const targetZ = p.z + cos * CAMERA_DISTANCE;
-    const targetY = p.y + CAMERA_HEIGHT;
-    camera.position.x += (targetX - camera.position.x) * CAMERA_LERP;
-    camera.position.y += (targetY - camera.position.y) * CAMERA_LERP;
-    camera.position.z += (targetZ - camera.position.z) * CAMERA_LERP;
-    camera.lookAt(p.x, p.y + CAMERA_LOOK_OFFSET_Y, p.z);
+    const { position: p, rotation: q } = getCameraPose(state.world, state.cameraId);
+    camera.position.set(p.x, p.y, p.z);
+    camera.quaternion.set(q.x, q.y, q.z, q.w);
+    camera.fov = radToDeg(lens.fovY);
+    camera.aspect = lens.viewportW / lens.viewportH;
+    camera.near = lens.near;
+    camera.far = lens.far;
+    camera.updateProjectionMatrix();
   }
 
   return {
@@ -124,8 +123,6 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     },
     resize(w, h) {
       renderer.setSize(w, h);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
     },
   };
 }

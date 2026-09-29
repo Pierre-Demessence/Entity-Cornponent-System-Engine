@@ -120,7 +120,10 @@ pinned. `speculative` = shape undetermined or canon split.
 | `modules/motion` V2 (radial force fields) | deferred | Shape — second radial consumer |
 | `modules/motion-3d` V2 (attitude, spherical bounds) | deferred | Shape — second consumer for either |
 | `modules/camera` V3 (rotation, parallax) | ready | Scheduling — consumer needs it; snake zoom adoption |
-| `modules/camera-3d` | ready | Scheduling — build slot |
+| `modules/camera-3d` V2 — spring arm (camera collision) | ready | Scheduling — build slot |
+| `modules/camera-3d` — camera shake | deferred | Shape — trauma vs impulse models split |
+| `modules/camera-3d` — blending + active-camera priority | deferred | Shape — a consumer that switches cameras |
+| `modules/camera-3d` — backend camera copy helper | deferred | Shape — a vendor-neutral target shape |
 | `modules/navmesh-3d` | ready | Scheduling — 3D consumer |
 | `modules/render-webgl` / `render-webgpu` | deferred | Shape — three.js covers 3D today |
 | Rigid-body physics | deferred | Shape — no single canon API; demand + backend choice |
@@ -388,15 +391,53 @@ rather than replacing it.
   ships as another backend with zero core change. That is why spatial is
   dimension-agnostic and is not duplicated below.
 
-### `modules/camera-3d` — ready
+### `modules/camera-3d` V2 — spring arm (camera collision) — ready
 
-**Scope.** Projection (perspective + ortho), frustum, view matrix, and the rig
-family — first-person look, orbit, third-person chase (smoothed, slerped).
+**Scope.** Pull a rig's camera in along the target → camera segment when
+geometry blocks it, so an orbit or chase camera never ends up inside a wall,
+then ease it back out.
 
-**Status.** Ready — Bevy `Camera3dBundle`, Unity `Camera`, Godot `Camera3D`
-ship the same primitives.
+**Status.** Ready — Godot `SpringArm3D`, Unreal `USpringArmComponent` and
+Cinemachine's deoccluder ship the same cast-and-shorten shape. Needs a ray or
+sphere cast against the consumer's colliders, so the probe is a callback
+rather than a hard dependency on `collision-3d`.
 
 **Gate.** Scheduling — build slot.
+
+### `modules/camera-3d` — camera shake — deferred
+
+**Scope.** Additive, decaying positional and rotational noise on a camera's
+pose.
+
+**Status.** Deferred — engines split between a trauma model (a 0–1 trauma
+value squared into noise amplitude) and an impulse model (Cinemachine's
+impulse sources and listeners). No example shakes its camera.
+
+**Gate.** Shape — a consumer that shakes, choosing a model.
+
+### `modules/camera-3d` — blending + active-camera priority — deferred
+
+**Scope.** Several cameras in a world, one active by priority, with a timed
+blend between poses and lenses on a switch (Cinemachine brain, Godot
+`Camera3D.current`, Bevy `Camera::order` / `is_active`).
+
+**Status.** Deferred — every 3D example has exactly one camera.
+
+**Gate.** Shape — a consumer that switches cameras (a cutscene, a death cam).
+
+### `modules/camera-3d` — backend camera copy helper — deferred
+
+**Scope.** One call that copies a `Camera3D` lens and pose onto a renderer's
+camera object. doom, portal, platformer-3d and starfighter each repeat the same
+eight lines (position, quaternion, `radToDeg(fovY)`, aspect, near, far,
+`updateProjectionMatrix`).
+
+**Status.** Deferred — the target is three.js-shaped (degrees, an
+`updateProjectionMatrix` call), and the engine does not depend on `three`. A
+structural target like `render-scene3d`'s `SceneGraph` is possible, but its
+shape would be three.js's under another name.
+
+**Gate.** Shape — a second backend, or a vendor-neutral target shape.
 
 ### `modules/navmesh-3d` — ready
 
@@ -410,7 +451,9 @@ inflation. 2D sibling: `modules/navmesh`.
 
 ### `modules/render-webgl` / `modules/render-webgpu` — deferred
 
-**Scope.** `Renderer<TCtx>` implementations backed by WebGL / WebGPU.
+**Scope.** `Renderer<TCtx>` implementations backed by WebGL / WebGPU. A WebGPU
+backend also brings the `[0, 1]` NDC depth range, which `modules/math`'s
+`mat4Perspective` / `mat4Orthographic` and `camera-3d` do not produce today.
 
 **Status.** Deferred — the capability is canon (three.js, Babylon), but the
 3D examples already render through three.js, so the engine has a primitive

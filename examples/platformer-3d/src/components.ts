@@ -17,5 +17,7 @@ export const CoinValueDef: ComponentDef<CoinValue> = simpleComponent<CoinValue>(
 );
 
 export const PlayerTag: TagDef = { name: 'player' };
+/** The orbit camera entity (its `Camera3D` lens and `OrbitRig`). */
+export const CameraTag: TagDef = { name: 'camera-entity' };
 export const StaticBodyTag: TagDef = { name: 'static-body' };
 export const CoinTag: TagDef = { name: 'coin' };

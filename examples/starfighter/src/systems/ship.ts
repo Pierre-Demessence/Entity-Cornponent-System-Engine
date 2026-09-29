@@ -5,7 +5,7 @@ import type { GameState } from '../game';
 
 import { quatForward, quatFromAxisAngle, quatMul, quatNormalize } from '@pierre/ecs/modules/math';
 
-import { Position3DDef, Velocity3DDef } from '../components';
+import { Position3DDef, Rotation3DDef, Velocity3DDef } from '../components';
 import {
   AIM_DEADZONE,
   BOUNDS_RADIUS,
@@ -34,7 +34,9 @@ export const shipSystem: SchedulableSystem<GameState> = {
     if (ctx.playerId == null)
       return;
     const vel = ctx.world.getStore(Velocity3DDef).get(ctx.playerId);
-    if (!vel)
+    const rotations = ctx.world.getStore(Rotation3DDef);
+    let orientation = rotations.get(ctx.playerId);
+    if (!vel || !orientation)
       return;
 
     const dt = ctx.dtMs / 1000;
@@ -61,11 +63,12 @@ export const shipSystem: SchedulableSystem<GameState> = {
     const speedRad = Math.hypot(ctx.angVel.x, ctx.angVel.y, ctx.angVel.z);
     if (speedRad > 1e-6) {
       const dq = quatFromAxisAngle(ctx.angVel, speedRad * dt);
-      ctx.orientation = quatNormalize(quatMul(ctx.orientation, dq));
+      orientation = quatNormalize(quatMul(orientation, dq));
+      rotations.set(ctx.playerId, orientation);
     }
 
     // Velocity follows the nose (arcade flight); `motion` integrates position.
-    const fwd = quatForward(ctx.orientation);
+    const fwd = quatForward(orientation);
     vel.vx = fwd.x * ctx.speed;
     vel.vy = fwd.y * ctx.speed;
     vel.vz = fwd.z * ctx.speed;

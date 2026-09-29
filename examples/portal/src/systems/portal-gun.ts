@@ -3,18 +3,19 @@ import type { Vec3 } from '@pierre/ecs/modules/math';
 
 import type { GameState, Portal, PortalColor } from '../game';
 
+import { firstPersonForward } from '@pierre/ecs/modules/camera-3d';
 import { rayVsAabb3 } from '@pierre/ecs/modules/collision-3d';
 import { vec3Cross, vec3Normalize } from '@pierre/ecs/modules/math';
 
 import { PortalableSurfaceTag, Position3DDef, ShapeAabb3DDef } from '../components';
 import {
   PLAYER_EYE,
+  playerLook,
   PORTAL_EDGE_MARGIN,
   PORTAL_H,
   PORTAL_SURFACE_OFFSET,
   PORTAL_W,
 } from '../game';
-import { forwardVec } from './portal-math';
 
 type Axis = 'x' | 'y' | 'z';
 const AXES: readonly Axis[] = ['x', 'y', 'z'];
@@ -44,10 +45,11 @@ export const portalGunSystem: SchedulableSystem<GameState> = {
       return;
 
     const eye = ctx.world.getStore(Position3DDef).get(ctx.playerId);
-    if (!eye)
+    const look = playerLook(ctx);
+    if (!eye || !look)
       return;
     const origin: Vec3 = { x: eye.x, y: eye.y + PLAYER_EYE, z: eye.z };
-    const dir = forwardVec(ctx.yaw, ctx.pitch);
+    const dir = firstPersonForward(look.yaw, look.pitch);
 
     const hit = nearestSurface(ctx, origin, dir);
     if (!hit)

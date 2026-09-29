@@ -80,6 +80,7 @@ export const MODULE_CATEGORIES: readonly { modules: readonly string[]; title: st
       'asset-loader',
       'audio',
       'camera',
+      'camera-3d',
       'particles',
       'render-canvas2d',
       'render-dom',

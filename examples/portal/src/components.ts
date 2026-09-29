@@ -9,6 +9,8 @@ export { type Grounded3 as Grounded, Grounded3Def as GroundedDef } from '@pierre
 export { type Position3D, Position3DDef, type Velocity3D, Velocity3DDef } from '@pierre/ecs/modules/transform-3d';
 
 export const PlayerTag: TagDef = { name: 'player' };
+/** The first-person camera entity (its `Camera3D` lens and `FirstPersonRig`). */
+export const CameraTag: TagDef = { name: 'camera-entity' };
 export const CubeTag: TagDef = { name: 'cube' };
 /** Immovable colliders (floors, walls, ceiling). */
 export const StaticBodyTag: TagDef = { name: 'static-body' };

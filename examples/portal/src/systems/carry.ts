@@ -2,11 +2,12 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
+import { firstPersonForward } from '@pierre/ecs/modules/camera-3d';
 import { rayVsAabb3 } from '@pierre/ecs/modules/collision-3d';
 
 import { DynamicBodyTag, HeldTag, Position3DDef, ShapeAabb3DDef, StaticBodyTag, Velocity3DDef } from '../components';
-import { CUBE_SIZE, GRAB_RANGE, HOLD_DIST, PLAYER_EYE } from '../game';
-import { forwardVec, localCoords, withinOpening } from './portal-math';
+import { CUBE_SIZE, GRAB_RANGE, HOLD_DIST, PLAYER_EYE, playerLook } from '../game';
+import { localCoords, withinOpening } from './portal-math';
 
 /**
  * Cube carry. `E` grabs the cube when it's close and roughly in front; pressing
@@ -29,13 +30,14 @@ export const carrySystem: SchedulableSystem<GameState> = {
     const playerPos = posStore.get(ctx.playerId);
     const cubePos = posStore.get(ctx.cubeId);
     const cubeVel = velStore.get(ctx.cubeId);
-    if (!playerPos || !cubePos || !cubeVel)
+    const look = playerLook(ctx);
+    if (!playerPos || !cubePos || !cubeVel || !look)
       return;
 
     const eyeX = playerPos.x;
     const eyeY = playerPos.y + PLAYER_EYE;
     const eyeZ = playerPos.z;
-    const f = forwardVec(ctx.yaw, ctx.pitch);
+    const f = firstPersonForward(look.yaw, look.pitch);
     let held = heldTag.has(ctx.cubeId);
 
     if (ctx.input.justPressed('grab')) {

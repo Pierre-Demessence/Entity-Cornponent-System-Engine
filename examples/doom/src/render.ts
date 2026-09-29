@@ -1,5 +1,7 @@
 import type { GameState } from './game';
 
+import { Camera3DDef, getCameraPose } from '@pierre/ecs/modules/camera-3d';
+import { radToDeg } from '@pierre/ecs/modules/math';
 import { Scene3DRenderer } from '@pierre/ecs/modules/render-scene3d';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -10,12 +12,13 @@ import blasterTexUrl from '../../assets/kenney_blaster-kit_2.1/Models/GLB format
 import enemyGreenUrl from '../../assets/kenney_tiny-dungeon/Tiles/tile_0108.png?url';
 import enemyRedUrl from '../../assets/kenney_tiny-dungeon/Tiles/tile_0110.png?url';
 import { BillboardDef, EnemyTag, PickupDef, PickupTag, Position3DDef, ProjectileTag, ShapeAabb3DDef, StaticBodyTag, TintDef } from './components';
-import { PLAYER_EYE, PROJECTILE_SIZE } from './game';
+import { PROJECTILE_SIZE } from './game';
 
 export interface Renderer3D {
   domElement: HTMLCanvasElement;
   dispose: () => void;
   render: (state: GameState) => void;
+  /** Resize the drawing buffer. The aspect follows the camera's `Camera3D` viewport — update that too. */
   resize: (w: number, h: number) => void;
 }
 
@@ -37,8 +40,8 @@ function disposeModel(root: THREE.Object3D): void {
 /**
  * three.js adapter, first-person. ECS is the source of truth: every frame we
  * mirror each static body's `Position3D`/`ShapeAabb3D` into a derived
- * `THREE.Mesh`, and place the camera at the player's eye, oriented by
- * `yaw`/`pitch`. The player's own body is not drawn (we're inside it).
+ * `THREE.Mesh`, and copy the camera entity's pose and `Camera3D` lens onto the
+ * three.js camera. The player's own body is not drawn (we're inside it).
  */
 export function makeRenderer(width: number, height: number): Renderer3D {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -50,7 +53,6 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   scene.fog = new THREE.Fog(0x14171E, 32, 90);
 
   const camera = new THREE.PerspectiveCamera(75, width / height, 0.05, 300);
-  camera.rotation.order = 'YXZ';
   scene.add(camera); // so the first-person gun viewmodel (a camera child) renders
   let disposed = false;
 
@@ -203,13 +205,19 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   }
 
   function updateCamera(state: GameState): void {
-    if (state.playerId == null)
+    if (state.cameraId == null)
       return;
-    const p = state.world.getStore(Position3DDef).get(state.playerId);
-    if (!p)
+    const lens = state.world.getStore(Camera3DDef).get(state.cameraId);
+    if (!lens)
       return;
-    camera.position.set(p.x, p.y + PLAYER_EYE, p.z);
-    camera.rotation.set(state.pitch, state.yaw, 0);
+    const { position: p, rotation: q } = getCameraPose(state.world, state.cameraId);
+    camera.position.set(p.x, p.y, p.z);
+    camera.quaternion.set(q.x, q.y, q.z, q.w);
+    camera.fov = radToDeg(lens.fovY);
+    camera.aspect = lens.viewportW / lens.viewportH;
+    camera.near = lens.near;
+    camera.far = lens.far;
+    camera.updateProjectionMatrix();
   }
 
   return {
@@ -253,8 +261,6 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     },
     resize(w, h) {
       renderer.setSize(w, h);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
     },
   };
 }

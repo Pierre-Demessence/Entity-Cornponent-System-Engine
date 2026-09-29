@@ -4,12 +4,6 @@ import type { Portal } from '../game';
 
 import { PORTAL_H, PORTAL_W } from '../game';
 
-/** Camera forward unit vector from yaw/pitch (YXZ Euler; looks -Z at 0,0). */
-export function forwardVec(yaw: number, pitch: number): Vec3 {
-  const cp = Math.cos(pitch);
-  return { x: -cp * Math.sin(yaw), y: Math.sin(pitch), z: -cp * Math.cos(yaw) };
-}
-
 /** World point → portal-local coords (right, up, normal) relative to centre. */
 export function localCoords(p: Vec3, portal: Portal): Vec3 {
   const dx = p.x - portal.center.x;

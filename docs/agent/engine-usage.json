@@ -118,6 +118,7 @@
         "attach",
         "audio",
         "camera",
+        "camera-3d",
         "collision",
         "collision-3d",
         "column-store.ts",
@@ -194,6 +195,7 @@
               "attach",
               "audio",
               "camera",
+              "camera-3d",
               "collision",
               "collision-3d",
               "column-store.ts",
@@ -427,6 +429,7 @@
             "consumers": [
               "attach",
               "camera",
+              "camera-3d",
               "collision",
               "collision-3d",
               "cooldown",
@@ -608,6 +611,7 @@
           "other": {
             "consumers": [
               "camera",
+              "camera-3d",
               "kinematics",
               "kinematics-3d",
               "motion",
@@ -622,6 +626,7 @@
           "test": {
             "consumers": [
               "src/archetype-cache.test.ts",
+              "src/modules/camera-3d/rigs.test.ts",
               "src/modules/camera/camera.test.ts",
               "src/modules/motion-3d/motion-3d.test.ts",
               "src/modules/motion/motion.test.ts",
@@ -663,6 +668,7 @@
         "src/archetype-cache.test.ts",
         "src/column-store.test.ts",
         "src/component-store.test.ts",
+        "src/modules/camera-3d/rigs.test.ts",
         "src/modules/camera/camera.test.ts",
         "src/modules/kinematics-3d/kinematics3d-system.test.ts",
         "src/modules/motion-3d/motion-3d.test.ts",
@@ -717,6 +723,7 @@
         "archetype-index.ts",
         "attach",
         "audio",
+        "camera-3d",
         "collision",
         "column-store.ts",
         "component-store.ts",
@@ -780,6 +787,7 @@
               "archetype-index.ts",
               "attach",
               "audio",
+              "camera-3d",
               "collision",
               "column-store.ts",
               "component-store.ts",
@@ -2805,6 +2813,1018 @@
     {
       "coveredByExample": true,
       "examples": [
+        "doom",
+        "platformer-3d",
+        "portal",
+        "starfighter"
+      ],
+      "importPath": "@pierre/ecs/modules/camera-3d",
+      "isModule": true,
+      "other": [],
+      "symbols": [
+        {
+          "name": "addLookDelta",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "doom",
+              "platformer-3d",
+              "portal"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "addOrbitZoom",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "Camera3D",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "camera3DAspect",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/camera3d.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "Camera3DDef",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "doom",
+              "platformer-3d",
+              "portal",
+              "starfighter"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "const",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/camera3d.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "camera3DFrustum",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/frustum.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "Camera3DOptions",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "Camera3DProjection",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "type",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "camera3DProjectionMatrix",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/camera3d.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "camera3DViewMatrix",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/camera3d.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "camera3DViewProjection",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/camera3d.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "CAMERA_RIG_MAX_PITCH",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "const",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "CameraPose",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "CameraRigOptions",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "CameraRigTickCtx",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "chasePose",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "ChaseRig",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "ChaseRigDef",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "starfighter"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "const",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "dampPose",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "firstPersonForward",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "doom",
+              "portal"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "FirstPersonRig",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "doom",
+              "portal"
+            ],
+            "typeOnly": true
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "FirstPersonRigDef",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "doom",
+              "portal"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "const",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "firstPersonRotation",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "Frustum",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "type",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "frustumContainsPoint",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/frustum.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "frustumCorners",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/frustum.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "frustumFromMatrix",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "frustumIntersectsAabb",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/frustum.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "frustumIntersectsSphere",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/frustum.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "getCameraPose",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "doom",
+              "platformer-3d",
+              "portal",
+              "starfighter"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/camera3d.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "isPointBehindCamera",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/project.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "makeCamera3D",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "doom",
+              "platformer-3d",
+              "portal",
+              "starfighter"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/camera3d.test.ts",
+              "src/modules/camera-3d/frustum.test.ts",
+              "src/modules/camera-3d/project.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "makeCameraRigSystem",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "doom",
+              "platformer-3d",
+              "portal",
+              "starfighter"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "makeChaseRig",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "starfighter"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "makeFirstPersonRig",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "doom",
+              "portal"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "makeOrbitRig",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "platformer-3d"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "orbitPose",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "OrbitRig",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "platformer-3d"
+            ],
+            "typeOnly": true
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "OrbitRigDef",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "platformer-3d"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "const",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "PoseSmoothing",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "Ray3",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "ScreenPoint",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "screenPointToRay",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/project.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "screenToWorld",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/frustum.test.ts",
+              "src/modules/camera-3d/project.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "smoothingBlend",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/rigs.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "worldToScreen",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/frustum.test.ts",
+              "src/modules/camera-3d/project.test.ts"
+            ],
+            "typeOnly": false
+          }
+        }
+      ],
+      "tests": [
+        "src/modules/camera-3d/camera3d.test.ts",
+        "src/modules/camera-3d/frustum.test.ts",
+        "src/modules/camera-3d/project.test.ts",
+        "src/modules/camera-3d/rigs.test.ts"
+      ],
+      "typeTotal": 13,
+      "typeUsedByExample": 2,
+      "valueTotal": 33,
+      "valueUsedByExample": 12
+    },
+    {
+      "coveredByExample": true,
+      "examples": [
         "asteroids",
         "breakout",
         "critters",
@@ -3282,6 +4302,7 @@
       "importPath": "@pierre/ecs/modules/collision-3d",
       "isModule": true,
       "other": [
+        "camera-3d",
         "kinematics-3d"
       ],
       "symbols": [
@@ -3299,6 +4320,7 @@
           "noExternalConsumer": false,
           "other": {
             "consumers": [
+              "camera-3d",
               "kinematics-3d"
             ],
             "typeOnly": true
@@ -3537,8 +4559,10 @@
           "kind": "interface",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [],
-            "typeOnly": false
+            "consumers": [
+              "camera-3d"
+            ],
+            "typeOnly": true
           },
           "test": {
             "consumers": [
@@ -3558,11 +4582,14 @@
           "kind": "fn",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [],
+            "consumers": [
+              "camera-3d"
+            ],
             "typeOnly": false
           },
           "test": {
             "consumers": [
+              "src/modules/camera-3d/frustum.test.ts",
               "src/modules/collision-3d/narrowphase3.test.ts"
             ],
             "typeOnly": false
@@ -3824,6 +4851,7 @@
         }
       ],
       "tests": [
+        "src/modules/camera-3d/frustum.test.ts",
         "src/modules/collision-3d/narrowphase3.test.ts",
         "src/modules/collision-3d/obb3.test.ts",
         "src/modules/collision-3d/shapes.test.ts",
@@ -6287,6 +7315,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "platformer-3d",
         "portal",
         "rhythm",
         "river-raid",
@@ -6302,6 +7331,7 @@
       "isModule": true,
       "other": [
         "camera",
+        "camera-3d",
         "collision",
         "collision-3d",
         "kinematics-3d",
@@ -6338,7 +7368,6 @@
           "example": {
             "consumers": [
               "breakout",
-              "doom",
               "frogger",
               "jetpack",
               "local-pong",
@@ -6356,6 +7385,7 @@
           "other": {
             "consumers": [
               "camera",
+              "camera-3d",
               "collision",
               "collision-3d"
             ],
@@ -6400,7 +7430,11 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
-              "breakout"
+              "breakout",
+              "doom",
+              "platformer-3d",
+              "portal",
+              "starfighter"
             ],
             "typeOnly": false
           },
@@ -6491,6 +7525,270 @@
           }
         },
         {
+          "name": "Mat4",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "type",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "camera-3d"
+            ],
+            "typeOnly": true
+          },
+          "test": {
+            "consumers": [
+              "src/modules/math/mat4.test.ts"
+            ],
+            "typeOnly": true
+          }
+        },
+        {
+          "name": "mat4Compose",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "camera-3d"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/math/mat4.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "mat4Identity",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/math/mat4.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "mat4Invert",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/math/mat4.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "mat4LookAt",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/math/mat4.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "mat4Multiply",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "camera-3d"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/camera3d.test.ts",
+              "src/modules/math/mat4.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "mat4Orthographic",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "camera-3d"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/math/mat4.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "mat4Perspective",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "camera-3d"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/math/mat4.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "mat4TransformDirection",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/math/mat4.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "mat4TransformPoint",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/camera-3d/camera3d.test.ts",
+              "src/modules/math/mat4.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "mat4TransformVec4",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/math/mat4.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "mat4Transpose",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/math/mat4.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "pingPong",
           "coveredByExample": false,
           "example": {
@@ -6513,18 +7811,17 @@
         },
         {
           "name": "Quat",
-          "coveredByExample": true,
+          "coveredByExample": false,
           "example": {
-            "consumers": [
-              "starfighter"
-            ],
-            "typeOnly": true
+            "consumers": [],
+            "typeOnly": false
           },
           "isValue": false,
           "kind": "interface",
           "noExternalConsumer": false,
           "other": {
             "consumers": [
+              "camera-3d",
               "collision-3d",
               "transform-3d"
             ],
@@ -6532,6 +7829,7 @@
           },
           "test": {
             "consumers": [
+              "src/modules/camera-3d/rigs.test.ts",
               "src/modules/collision-3d/obb3.test.ts"
             ],
             "typeOnly": true
@@ -6572,6 +7870,7 @@
           "noExternalConsumer": false,
           "other": {
             "consumers": [
+              "camera-3d",
               "collision-3d"
             ],
             "typeOnly": false
@@ -6596,11 +7895,15 @@
           "kind": "fn",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [],
+            "consumers": [
+              "camera-3d"
+            ],
             "typeOnly": false
           },
           "test": {
             "consumers": [
+              "src/modules/camera-3d/project.test.ts",
+              "src/modules/camera-3d/rigs.test.ts",
               "src/modules/math/quat.test.ts"
             ],
             "typeOnly": false
@@ -6619,12 +7922,42 @@
           "kind": "fn",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [],
+            "consumers": [
+              "camera-3d"
+            ],
             "typeOnly": false
           },
           "test": {
             "consumers": [
+              "src/modules/camera-3d/camera3d.test.ts",
+              "src/modules/camera-3d/frustum.test.ts",
+              "src/modules/camera-3d/project.test.ts",
+              "src/modules/camera-3d/rigs.test.ts",
               "src/modules/collision-3d/obb3.test.ts",
+              "src/modules/math/mat4.test.ts",
+              "src/modules/math/quat.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "quatLookRotation",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "camera-3d"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
               "src/modules/math/quat.test.ts"
             ],
             "typeOnly": false
@@ -6643,11 +7976,14 @@
           "kind": "fn",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [],
+            "consumers": [
+              "camera-3d"
+            ],
             "typeOnly": false
           },
           "test": {
             "consumers": [
+              "src/modules/math/mat4.test.ts",
               "src/modules/math/quat.test.ts"
             ],
             "typeOnly": false
@@ -6688,12 +8024,15 @@
           "noExternalConsumer": false,
           "other": {
             "consumers": [
+              "camera-3d",
               "collision-3d"
             ],
             "typeOnly": false
           },
           "test": {
             "consumers": [
+              "src/modules/camera-3d/rigs.test.ts",
+              "src/modules/math/mat4.test.ts",
               "src/modules/math/quat.test.ts"
             ],
             "typeOnly": false
@@ -6710,7 +8049,9 @@
           "kind": "fn",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [],
+            "consumers": [
+              "camera-3d"
+            ],
             "typeOnly": false
           },
           "test": {
@@ -6743,9 +8084,14 @@
         },
         {
           "name": "radToDeg",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "doom",
+              "platformer-3d",
+              "portal",
+              "starfighter"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -6920,6 +8266,7 @@
           "noExternalConsumer": false,
           "other": {
             "consumers": [
+              "camera-3d",
               "collision-3d",
               "kinematics-3d",
               "transform-3d"
@@ -6928,8 +8275,12 @@
           },
           "test": {
             "consumers": [
+              "src/modules/camera-3d/frustum.test.ts",
+              "src/modules/camera-3d/project.test.ts",
+              "src/modules/camera-3d/rigs.test.ts",
               "src/modules/collision-3d/narrowphase3.test.ts",
-              "src/modules/collision-3d/obb3.test.ts"
+              "src/modules/collision-3d/obb3.test.ts",
+              "src/modules/math/mat4.test.ts"
             ],
             "typeOnly": true
           }
@@ -6945,7 +8296,9 @@
           "kind": "fn",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [],
+            "consumers": [
+              "camera-3d"
+            ],
             "typeOnly": false
           },
           "test": {
@@ -7041,6 +8394,7 @@
           },
           "test": {
             "consumers": [
+              "src/modules/camera-3d/rigs.test.ts",
               "src/modules/math/vec3.test.ts"
             ],
             "typeOnly": false
@@ -7126,7 +8480,9 @@
           "kind": "fn",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [],
+            "consumers": [
+              "camera-3d"
+            ],
             "typeOnly": false
           },
           "test": {
@@ -7193,6 +8549,7 @@
           "noExternalConsumer": false,
           "other": {
             "consumers": [
+              "camera-3d",
               "collision-3d"
             ],
             "typeOnly": false
@@ -7301,7 +8658,9 @@
           "kind": "fn",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [],
+            "consumers": [
+              "camera-3d"
+            ],
             "typeOnly": false
           },
           "test": {
@@ -7334,18 +8693,23 @@
         }
       ],
       "tests": [
+        "src/modules/camera-3d/camera3d.test.ts",
+        "src/modules/camera-3d/frustum.test.ts",
+        "src/modules/camera-3d/project.test.ts",
+        "src/modules/camera-3d/rigs.test.ts",
         "src/modules/collision-3d/narrowphase3.test.ts",
         "src/modules/collision-3d/obb3.test.ts",
+        "src/modules/math/mat4.test.ts",
         "src/modules/math/math.test.ts",
         "src/modules/math/quat.test.ts",
         "src/modules/math/vec2.test.ts",
         "src/modules/math/vec3.test.ts",
         "src/modules/steering/steering.test.ts"
       ],
-      "typeTotal": 3,
-      "typeUsedByExample": 3,
-      "valueTotal": 41,
-      "valueUsedByExample": 15
+      "typeTotal": 4,
+      "typeUsedByExample": 2,
+      "valueTotal": 53,
+      "valueUsedByExample": 16
     },
     {
       "coveredByExample": true,
@@ -12016,6 +13380,7 @@
       "importPath": "@pierre/ecs/modules/transform-3d",
       "isModule": true,
       "other": [
+        "camera-3d",
         "motion-3d"
       ],
       "symbols": [
@@ -12060,12 +13425,15 @@
           "noExternalConsumer": false,
           "other": {
             "consumers": [
+              "camera-3d",
               "motion-3d"
             ],
             "typeOnly": false
           },
           "test": {
             "consumers": [
+              "src/modules/camera-3d/camera3d.test.ts",
+              "src/modules/camera-3d/rigs.test.ts",
               "src/modules/motion-3d/motion-3d.test.ts",
               "src/modules/transform-3d/transform-3d.test.ts"
             ],
@@ -12093,20 +13461,29 @@
         },
         {
           "name": "Rotation3DDef",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "doom",
+              "platformer-3d",
+              "portal",
+              "starfighter"
+            ],
             "typeOnly": false
           },
           "isValue": true,
           "kind": "const",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [],
+            "consumers": [
+              "camera-3d"
+            ],
             "typeOnly": false
           },
           "test": {
             "consumers": [
+              "src/modules/camera-3d/camera3d.test.ts",
+              "src/modules/camera-3d/rigs.test.ts",
               "src/modules/transform-3d/transform-3d.test.ts"
             ],
             "typeOnly": false
@@ -12204,13 +13581,15 @@
         }
       ],
       "tests": [
+        "src/modules/camera-3d/camera3d.test.ts",
+        "src/modules/camera-3d/rigs.test.ts",
         "src/modules/motion-3d/motion-3d.test.ts",
         "src/modules/transform-3d/transform-3d.test.ts"
       ],
       "typeTotal": 4,
       "typeUsedByExample": 2,
       "valueTotal": 4,
-      "valueUsedByExample": 2
+      "valueUsedByExample": 3
     },
     {
       "coveredByExample": false,
@@ -12633,6 +14012,7 @@
         "attach",
         "audio",
         "camera",
+        "camera-3d",
         "collision",
         "cooldown",
         "kinematics",
@@ -12702,6 +14082,7 @@
               "attach",
               "audio",
               "camera",
+              "camera-3d",
               "collision",
               "cooldown",
               "kinematics",
@@ -13411,6 +14792,7 @@
         "attach",
         "audio",
         "camera",
+        "camera-3d",
         "cooldown",
         "kinematics",
         "kinematics-3d",
@@ -13473,6 +14855,7 @@
               "attach",
               "audio",
               "camera",
+              "camera-3d",
               "cooldown",
               "kinematics",
               "kinematics-3d",
@@ -13499,6 +14882,8 @@
               "src/modules/animation/sprite-clip.test.ts",
               "src/modules/attach/attach.test.ts",
               "src/modules/audio/audio.test.ts",
+              "src/modules/camera-3d/camera3d.test.ts",
+              "src/modules/camera-3d/rigs.test.ts",
               "src/modules/camera/camera.test.ts",
               "src/modules/collision/trigger.test.ts",
               "src/modules/cooldown/cooldown.test.ts",
@@ -13525,6 +14910,8 @@
         "src/modules/animation/sprite-clip.test.ts",
         "src/modules/attach/attach.test.ts",
         "src/modules/audio/audio.test.ts",
+        "src/modules/camera-3d/camera3d.test.ts",
+        "src/modules/camera-3d/rigs.test.ts",
         "src/modules/camera/camera.test.ts",
         "src/modules/collision/trigger.test.ts",
         "src/modules/cooldown/cooldown.test.ts",
@@ -13579,28 +14966,40 @@
       "value": 33
     },
     {
+      "name": "portal",
+      "entries": 15,
+      "type": 11,
+      "value": 29
+    },
+    {
+      "name": "starfighter",
+      "entries": 15,
+      "type": 7,
+      "value": 33
+    },
+    {
+      "name": "doom",
+      "entries": 15,
+      "type": 7,
+      "value": 30
+    },
+    {
+      "name": "platformer-3d",
+      "entries": 15,
+      "type": 8,
+      "value": 27
+    },
+    {
       "name": "frogger",
       "entries": 15,
       "type": 7,
       "value": 25
     },
     {
-      "name": "starfighter",
-      "entries": 14,
-      "type": 8,
-      "value": 24
-    },
-    {
       "name": "rpg",
       "entries": 11,
       "type": 5,
       "value": 26
-    },
-    {
-      "name": "portal",
-      "entries": 14,
-      "type": 10,
-      "value": 18
     },
     {
       "name": "breakout",
@@ -13633,22 +15032,10 @@
       "value": 19
     },
     {
-      "name": "doom",
-      "entries": 14,
-      "type": 6,
-      "value": 20
-    },
-    {
       "name": "river-raid",
       "entries": 13,
       "type": 6,
       "value": 20
-    },
-    {
-      "name": "platformer-3d",
-      "entries": 13,
-      "type": 7,
-      "value": 17
     },
     {
       "name": "card-battler",
@@ -13719,14 +15106,19 @@
   ],
   "candidates": [
     {
+      "importPath": "@pierre/ecs/modules/math",
+      "missing": 37,
+      "total": 53
+    },
+    {
       "importPath": "@pierre/ecs/modules/easing",
       "missing": 30,
       "total": 31
     },
     {
-      "importPath": "@pierre/ecs/modules/math",
-      "missing": 26,
-      "total": 41
+      "importPath": "@pierre/ecs/modules/camera-3d",
+      "missing": 21,
+      "total": 33
     },
     {
       "importPath": "@pierre/ecs/modules/collision-3d",
@@ -13814,11 +15206,6 @@
       "total": 6
     },
     {
-      "importPath": "@pierre/ecs/modules/transform-3d",
-      "missing": 2,
-      "total": 4
-    },
-    {
       "importPath": "@pierre/ecs/modules/behavior-tree",
       "missing": 1,
       "total": 5
@@ -13849,6 +15236,11 @@
       "total": 4
     },
     {
+      "importPath": "@pierre/ecs/modules/transform-3d",
+      "missing": 1,
+      "total": 4
+    },
+    {
       "importPath": "@pierre/ecs/modules/turn-based",
       "missing": 1,
       "total": 1
@@ -13856,15 +15248,15 @@
   ],
   "headline": {
     "coreEntries": 16,
-    "entries": 59,
-    "entriesWithExample": 42,
+    "entries": 60,
+    "entriesWithExample": 43,
     "entriesWithoutExample": 17,
-    "modules": 43,
-    "noExternalConsumer": 151,
-    "symbols": 522,
-    "typeSymbols": 230,
-    "valueSymbols": 292,
-    "valueWithNoConsumer": 5,
-    "valueWithoutExample": 165
+    "modules": 44,
+    "noExternalConsumer": 163,
+    "symbols": 581,
+    "typeSymbols": 244,
+    "valueSymbols": 337,
+    "valueWithNoConsumer": 6,
+    "valueWithoutExample": 196
   }
 }

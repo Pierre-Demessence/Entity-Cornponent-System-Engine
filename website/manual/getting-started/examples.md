@@ -27,8 +27,8 @@ that prototype imports, which is the surface it exercises.
 - **[`rhythm`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/rhythm)** — Four-lane rhythm: tick source driven by `AudioContext.currentTime`, not `performance.now` — first external-clock test.
   Exercises `easing`, `input`, `math`.
 - **[`platformer-3d`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/platformer-3d)** — 3D platformer via three.js with custom 3D AABB kinematics — the defining test that `@pierre/ecs` is not secretly 2D.
-  Exercises `collision`, `collision-3d`, `input`, `kinematics-3d`,
-  `render-scene3d`, `tick`, `transform-3d`.
+  Exercises `camera-3d`, `collision`, `collision-3d`, `input`, `kinematics-3d`,
+  `math`, `render-scene3d`, `tick`, `transform-3d`.
 - **[`local-pong`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/local-pong)** — Local multiplayer Pong with player-scoped keyboard input and score kept as game state, not entity data.
   Exercises `collision`, `input`, `math`, `render-canvas2d`, `tick`, `transform`.
 - **[`tilemap`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/tilemap)** — First sprite/texture-atlas consumer: parses a Tiled TMX map (base64+zlib) and renders every tile as a sprite entity, layered via `RenderOrderDef`.
@@ -68,10 +68,10 @@ One game per rung of the challenge list, in challenge order.
   `lifetime`, `math`, `motion`, `particles`, `render-canvas2d`, `spatial`, `tick`,
   `transform`.
 - **[`doom`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/doom)** — #24: first-person arena shooter — a 3D controller with verticality (stairs and a moving elevator), billboard-sprite enemies with line-of-sight AI, hitscan and projectile weapons, a health/ammo HUD, and pickups.
-  Exercises `collision-3d`, `input`, `kinematics-3d`, `math`, `motion-3d`,
-  `render-scene3d`, `tick`, `transform-3d`.
+  Exercises `camera-3d`, `collision-3d`, `input`, `kinematics-3d`, `math`,
+  `motion-3d`, `render-scene3d`, `tick`, `transform-3d`.
 - **[`portal`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/portal)** — #27: real 3D portals — recursive see-through rendering, momentum-preserving teleport, floor and ceiling portals, a companion cube, and a pressure-plate door.
-  Exercises `collision-3d`, `input`, `kinematics-3d`, `math`,
+  Exercises `camera-3d`, `collision-3d`, `input`, `kinematics-3d`, `math`,
   `render-scene3d`, `tick`, `transform-3d`.
 
 ## Proving a subsystem
@@ -79,8 +79,8 @@ One game per rung of the challenge list, in challenge order.
 Playgrounds where one module, or one rig, is the whole point.
 
 - **[`starfighter`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/starfighter)** — Third-person space flight: aim-to-steer attitude control (quaternion orientation, rate-based turns), throttle-only motion, a banking chase camera — proves the camera rig is neither yaw-only nor first-person-locked.
-  Exercises `collision-3d`, `input`, `math`, `motion-3d`, `render-scene3d`,
-  `rng`, `tick`, `transform-3d`.
+  Exercises `camera-3d`, `collision-3d`, `input`, `math`, `motion-3d`,
+  `render-scene3d`, `rng`, `tick`, `transform-3d`.
 - **[`boids`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/boids)** — Steering-behaviours playground: 140 boids driven purely by composed Reynolds steering — separation, alignment and cohesion plus wander, cursor-flee and food-arrive, with neighbours from a spatial hash grid.
   Exercises `input`, `motion`, `spatial`, `steering`, `tick`, `transform`.
 - **[`stealth-guard`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/stealth-guard)** — FSM playground: guards run a 5-state machine (patrol → suspicious → chase → search → return) driven by a vision cone and line-of-sight; the chase state composes `modules/steering`.

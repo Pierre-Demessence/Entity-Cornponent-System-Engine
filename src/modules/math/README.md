@@ -11,6 +11,7 @@ freely. **Depends on nothing.**
 | `Vec2` | `vec2.ts` | `vec2Normalize`, `vec2ScaleToLength`, `vec2MoveToward` |
 | `Vec3` | `vec3.ts` | `vec3Add`, `vec3Cross`, `vec3Normalize`, `vec3MoveToward`, … |
 | `Quat` | `quat.ts` | `quatFromAxisAngle`, `quatMul`, `quatRotate`, `quatSlerp`, … |
+| `Mat4` | `mat4.ts` | `mat4Multiply`, `mat4Invert`, `mat4Compose`, `mat4Perspective`, `mat4LookAt`, … |
 
 **Why one module.** Scalars, vectors and rotations are one value layer;
 splitting math by dimension across modules would just scatter closely related
@@ -69,7 +70,27 @@ vec3Reflect(v, normal)         vec3ClampLength(v, max)   vec3RandomUnit(rand?)
 QUAT_IDENTITY                  quatMul(a, b)             quatNormalize(q)
 quatFromAxisAngle(axis, angle) quatRotate(q, v)
 quatForward(q)                 quatUp(q)                 quatSlerp(a, b, t)
+quatLookRotation(forward, up?) // -Z along forward, +Y toward up
 ```
+
+## Matrices
+
+```ts
+type Mat4 = number[]; // 16 entries, column-major
+
+mat4Identity()                 mat4Multiply(a, b)        mat4Transpose(m)
+mat4Invert(m)                  // null when singular
+mat4Compose(translation, rotation, scale?)                // local-to-world
+mat4Perspective(fovY, aspect, near, far)
+mat4Orthographic(left, right, bottom, top, near, far)
+mat4LookAt(eye, target, up?)   // a view matrix: world to camera space
+mat4TransformPoint(m, p)       mat4TransformDirection(m, v)
+mat4TransformVec4(m, x, y, z, w)
+```
+
+`Mat4` is the WebGL / three.js `Matrix4.elements` layout, so a matrix built here
+goes to three.js with `matrix.fromArray(m)` and to WebGL with
+`uniformMatrix4fv(location, false, m)`, with no transposing.
 
 Both vector blocks are the same surface: `vec2X` pairs with `vec3X`, and both
 take a value object rather than loose numbers. `vec2ScaleToLength` is the
@@ -93,6 +114,15 @@ seek/steer delta, or a reflected ball velocity.
   what makes integrating an angular velocity read `quatMul(quatFromAxisAngle(
   axis, w * dt), q)` — the new rotation is applied *after* the existing one.
   Swapping the operands silently gives the wrong rotation.
+- **`Mat4` is column-major.** Entry `(row, col)` is `m[col * 4 + row]`, and the
+  translation sits in `m[12], m[13], m[14]`.
+- **`mat4Multiply(a, b)` applies `b` first, then `a`** — the same order as
+  `quatMul`. A view-projection is `mat4Multiply(projection, view)`.
+- **Projections target WebGL clip space**: NDC `x, y, z ∈ [-1, 1]` with the
+  camera looking down `-Z`. `fovY` is the vertical field of view in radians,
+  like every angle here. WebGPU and Bevy use a `[0, 1]` depth range instead.
+- **`mat4LookAt` returns a view matrix** (world to camera, as in gl-matrix),
+  not three.js `Matrix4.lookAt`'s rotation-only object orientation.
 - **Rotations must be unit-length.** `quatRotate` on a non-unit `q` scales the
   result instead of rotating it, and `vec3Reflect` on a non-unit `normal`
   skews. `quatFromAxisAngle` normalises its axis for you and `quatMul` /
@@ -142,10 +172,9 @@ Deliberate exclusions.
   `modules/collision-3d`'s primitives, per the 3D group table in the
   [module backlog](../../../docs/roadmap/ecs-module-backlog.md). This module
   stays a value-primitive module.
-- **`forwardVec(yaw, pitch)` / a yaw-pitch rig.** Verbatim in two examples
-  (`doom/src/systems/math.ts`, `portal/src/systems/portal-math.ts`), but it
-  bakes in a convention — YXZ Euler order, `-Z` forward — and camera rigs are
-  the 3D group's `camera-3d`. A generic math module must not own an Euler order.
+- **`forwardVec(yaw, pitch)` / a yaw-pitch rig.** It bakes in a convention —
+  YXZ Euler order, `-Z` forward — and belongs with the camera rigs in
+  `modules/camera-3d`. A generic math module must not own an Euler order.
 - **Euler ↔ quaternion conversion.** Nothing hand-rolls it (the examples use
   three.js `Euler`), so it would be speculative, and Euler order is the exact
   can of worms the previous bullet avoids.
@@ -174,6 +203,7 @@ const applied = quatMul(yaw, quatFromAxisAngle({ x: 1, y: 0, z: 0 }, 0.2));
 const forward = quatForward(applied);
 ```
 
-Import via `@pierre/ecs/modules/math`. Depended on by `modules/collision`,
-`modules/collision-3d`, `modules/kinematics-3d`, `modules/transform-3d`,
-`modules/steering`, `modules/camera`, `modules/particles` and `modules/tween`.
+Import via `@pierre/ecs/modules/math`. Depended on by `modules/camera`,
+`modules/camera-3d`, `modules/collision`, `modules/collision-3d`,
+`modules/kinematics-3d`, `modules/transform-3d`, `modules/steering`,
+`modules/particles` and `modules/tween`.
