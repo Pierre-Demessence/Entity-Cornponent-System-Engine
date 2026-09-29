@@ -11,6 +11,7 @@ interface SchedulableSystem<TCtx> {
   readonly phase?: string;    // required when scheduler has phases
   readonly runAfter?: readonly string[];
   readonly runBefore?: readonly string[];
+  readonly runIf?: (ctx: TCtx) => boolean; // skip this pass when false
   readonly reads?: readonly ComponentRef[];  // DEV-mode ordering check
   readonly writes?: readonly ComponentRef[]; // DEV-mode ordering check
   init?(ctx: TCtx): void;     // one-time setup before first run
@@ -49,7 +50,12 @@ Snake might pick `['tick','render']`.
 | `add(system)` | Register a system (invalidates sort cache) |
 | `remove(name)` | Remove a system by name. Defers `dispose(ctx)` until the next `run(ctx)` if the system had been initialized. |
 | `build()` | Topologically sort; returns sorted array |
-| `run(ctx)` | Build (if needed) then run all systems in order. Drains any pending `dispose`s first, then lazy-inits any uninitialized systems before their first run. |
+| `run(ctx)` | Build (if needed) then run all systems in order. Drains any pending `dispose`s first, lazy-inits any uninitialized systems, and skips systems whose gate is closed (see [Run Conditions](#run-conditions)). |
+| `setEnabled(name, enabled)` | Switch a system on or off. Throws on an unknown name. |
+| `isEnabled(name)` | Whether a system is switched on. |
+| `setPhaseEnabled(phase, enabled)` | Switch a whole phase on or off (phase mode only). Throws on an unknown phase. |
+| `isPhaseEnabled(phase)` | Whether a phase is switched on. |
+| `shouldRun(system, ctx)` | The gate `run` applies to a system this pass — for custom run loops. |
 | `disposeAll(ctx)` | Immediately dispose every initialized system (plus any deferred disposes). Use at shutdown. |
 | `[Symbol.iterator]()` | Iterate sorted systems (for custom run loops) |
 | `order` | Getter: sorted system names |
@@ -66,6 +72,40 @@ the next `run` after `remove(name)`, or synchronously via
 Both hooks receive the tick context, so systems can subscribe to
 `ctx.events`, register caches keyed off `ctx.world`, etc., and tear them
 down symmetrically.
+
+## Run Conditions
+
+Three gates decide whether a system runs in a given pass. It runs only when
+all three are open:
+
+1. **Its own flag** — `setEnabled(name, false)` switches it off until
+   `setEnabled(name, true)`. `remove(name)` clears the flag, so a re-added
+   system starts enabled.
+2. **Its phase's flag** — in phase mode, `setPhaseEnabled(phase, false)`
+   switches off every system in that phase without touching their own flags.
+3. **Its `runIf(ctx)`** — evaluated with the live context immediately
+   before the system would run, so a system earlier in the same pass can
+   open or close it. It is only called when both flags are on.
+
+```typescript
+scheduler.add({
+  name: 'fuel',
+  runAfter: ['collision'],
+  runIf: ctx => !ctx.dying && !ctx.gameOver,
+  run: ctx => { /* ... */ },
+});
+
+scheduler.setPhaseEnabled('physics', false); // pause
+```
+
+Gates do not affect `init`: a new system is initialized on the next `run`
+even if it is skipped, so setup such as event subscriptions never depends
+on the first pass's state. They do not affect ordering or the DEV
+access-ordering check either; both are computed over every registered
+system. Compose predicates with plain `&&`, `||` and `!`.
+
+A custom run loop over `[Symbol.iterator]()` sees every system; call
+`shouldRun(system, ctx)` to apply the same gates `run` does.
 
 ## Algorithm
 

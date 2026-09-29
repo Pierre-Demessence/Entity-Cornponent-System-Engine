@@ -9,11 +9,11 @@ import { EcsWorld } from '#world';
 
 interface Pos { x: number; y: number }
 
-/** Minimal cell index — core tests stay free of module imports. */
-class CellIndex implements SpatialStructure<Pos> {
+/** Minimal exact-position index over any numeric shape — core tests stay free of module imports. */
+class CellIndex<P extends object = Pos> implements SpatialStructure<P> {
   private readonly cells = new Map<string, Set<EntityId>>();
-  add(id: EntityId, pos: Pos): void {
-    const key = `${pos.x},${pos.y}`;
+  add(id: EntityId, pos: P): void {
+    const key = keyOf(pos);
     let cell = this.cells.get(key);
     if (!cell) {
       cell = new Set();
@@ -22,17 +22,21 @@ class CellIndex implements SpatialStructure<Pos> {
     cell.add(id);
   }
 
-  at(x: number, y: number): EntityId[] { return [...this.queryAt({ x, y })]; }
+  at(...coords: number[]): EntityId[] { return [...this.cells.get(coords.join(',')) ?? []]; }
   clear(): void { this.cells.clear(); }
-  move(id: EntityId, from: Pos, to: Pos): void {
+  move(id: EntityId, from: P, to: P): void {
     this.remove(id, from);
     this.add(id, to);
   }
 
-  queryAt(pos: Pos): Iterable<EntityId> { return this.cells.get(`${pos.x},${pos.y}`) ?? []; }
+  queryAt(pos: P): Iterable<EntityId> { return this.cells.get(keyOf(pos)) ?? []; }
   queryNear(): Iterable<EntityId> { return []; }
   queryRect(): Iterable<EntityId> { return []; }
-  remove(id: EntityId, pos: Pos): void { this.cells.get(`${pos.x},${pos.y}`)?.delete(id); }
+  remove(id: EntityId, pos: P): void { this.cells.get(keyOf(pos))?.delete(id); }
+}
+
+function keyOf(pos: object): string {
+  return Object.values(pos).join(',');
 }
 interface Health { hp: number }
 
@@ -502,46 +506,132 @@ describe('ecsWorld', () => {
 
       const id = w.createEntity();
       pos.set(id, { x: 3, y: 4 });
-
       expect(grid.at(3, 4)).toEqual([id]);
 
-      pos.delete(id);
+      pos.set(id, { x: 1, y: 1 });
       expect(grid.at(3, 4)).toEqual([]);
+      expect(grid.at(1, 1)).toEqual([id]);
+
+      pos.delete(id);
+      expect(grid.at(1, 1)).toEqual([]);
     });
 
-    it('returns the structure it was given and exposes it as world.spatial', () => {
+    it('returns the structure it was given', () => {
       const w = new EcsWorld();
       w.registerComponent(PosDef);
       const grid = new CellIndex();
       expect(w.enableSpatial(PosDef, grid)).toBe(grid);
-      expect(w.spatial).toBe(grid);
     });
 
-    it('move() updates both position and spatial index', () => {
+    it('indexes entities that already hold the component', () => {
       const w = new EcsWorld();
       const pos = w.registerComponent(PosDef);
+      const id = w.createEntity();
+      pos.set(id, { x: 2, y: 2 });
       const grid = w.enableSpatial(PosDef, new CellIndex());
+      expect(grid.at(2, 2)).toEqual([id]);
+    });
 
+    it('indexes a component of any shape', () => {
+      interface Pos3 { x: number; y: number; z: number }
+      const Pos3Def: ComponentDef<Pos3> = { name: 'pos3', deserialize: raw => raw as Pos3, serialize: v => v };
+      const w = new EcsWorld();
+      const pos = w.registerComponent(Pos3Def);
+      const grid = w.enableSpatial(Pos3Def, new CellIndex<Pos3>());
+      const id = w.createEntity();
+      pos.set(id, { x: 1, y: 2, z: 3 });
+      w.move(Pos3Def, id, { x: 1, y: 2, z: 4 });
+      expect(grid.at(1, 2, 3)).toEqual([]);
+      expect(grid.at(1, 2, 4)).toEqual([id]);
+      expect(pos.get(id)).toEqual({ x: 1, y: 2, z: 4 });
+    });
+
+    it('splits one component into several indexes by tag', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const flag = w.registerTag(FlagTag);
+      const all = w.enableSpatial(PosDef, new CellIndex());
+      const flagged = w.enableSpatial(PosDef, new CellIndex(), { withTag: FlagTag });
+
+      const plain = w.createEntity();
+      pos.set(plain, { x: 0, y: 0 });
+      const tagFirst = w.createEntity();
+      flag.add(tagFirst);
+      pos.set(tagFirst, { x: 0, y: 0 });
+      const tagLast = w.createEntity();
+      pos.set(tagLast, { x: 0, y: 0 });
+      flag.add(tagLast);
+
+      expect(all.at(0, 0)).toEqual([plain, tagFirst, tagLast]);
+      expect(flagged.at(0, 0)).toEqual([tagFirst, tagLast]);
+
+      flag.delete(tagLast);
+      expect(flagged.at(0, 0)).toEqual([tagFirst]);
+      pos.delete(tagFirst);
+      expect(flagged.at(0, 0)).toEqual([]);
+      expect(all.at(0, 0)).toEqual([plain, tagLast]);
+    });
+
+    it('drops a destroyed entity from a tag-filtered index', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const flag = w.registerTag(FlagTag);
+      const flagged = w.enableSpatial(PosDef, new CellIndex(), { withTag: FlagTag });
+      const id = w.createEntity();
+      pos.set(id, { x: 4, y: 4 });
+      flag.add(id);
+      w.destroyEntity(id);
+      expect(flagged.at(4, 4)).toEqual([]);
+    });
+
+    it('move() updates the value and every index holding the entity, and no other', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const flag = w.registerTag(FlagTag);
+      const all = w.enableSpatial(PosDef, new CellIndex());
+      const flagged = w.enableSpatial(PosDef, new CellIndex(), { withTag: FlagTag });
       const id = w.createEntity();
       pos.set(id, { x: 0, y: 0 });
-      w.move(id, 5, 6);
 
+      w.move(PosDef, id, { x: 5, y: 6 });
       expect(pos.get(id)).toEqual({ x: 5, y: 6 });
-      expect(grid.at(0, 0)).toEqual([]);
-      expect([...w.spatial.queryAt({ x: 5, y: 6 })]).toEqual([id]);
+      expect(all.at(0, 0)).toEqual([]);
+      expect(all.at(5, 6)).toEqual([id]);
+      expect(flagged.at(5, 6)).toEqual([]);
+
+      flag.add(id);
+      w.move(PosDef, id, { x: 7, y: 7 });
+      expect(flagged.at(5, 6)).toEqual([]);
+      expect(flagged.at(7, 7)).toEqual([id]);
     });
 
-    it('throws if enableSpatial is called twice', () => {
+    it('move() is a no-op for an entity without the component', () => {
       const w = new EcsWorld();
       w.registerComponent(PosDef);
-      w.enableSpatial(PosDef, new CellIndex());
-      expect(() => w.enableSpatial(PosDef, new CellIndex())).toThrow(/already enabled/);
+      const grid = w.enableSpatial(PosDef, new CellIndex());
+      w.move(PosDef, w.createEntity(), { x: 1, y: 1 });
+      expect(grid.at(1, 1)).toEqual([]);
     });
 
-    it('move() throws if spatial was never enabled', () => {
+    it('throws when one structure backs two indexes', () => {
       const w = new EcsWorld();
       w.registerComponent(PosDef);
-      expect(() => w.move(0, 1, 1)).toThrow(/enableSpatial/);
+      w.registerTag(FlagTag);
+      const grid = w.enableSpatial(PosDef, new CellIndex());
+      expect(() => w.enableSpatial(PosDef, grid, { withTag: FlagTag })).toThrow(/already backs an index/);
+    });
+
+    it('throws on an unregistered component or tag', () => {
+      const w = new EcsWorld();
+      expect(() => w.enableSpatial(PosDef, new CellIndex())).toThrow(/must be registered/);
+      w.registerComponent(PosDef);
+      expect(() => w.enableSpatial(PosDef, new CellIndex(), { withTag: FlagTag })).toThrow(/not registered/);
+    });
+
+    it('move() throws if the component has no index', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      expect(() => w.move(PosDef, 0, { x: 1, y: 1 })).toThrow(/enableSpatial\(\) for component "pos"/);
     });
   });
 
@@ -903,7 +993,7 @@ describe('ecsWorld', () => {
       const id = w.createEntity();
       pos.set(id, { x: 0, y: 0 });
       w.clock.tick = 5;
-      w.move(id, 1, 1);
+      w.move(PosDef, id, { x: 1, y: 1 });
       expect(pos.changedTick(id)).toBe(5);
     });
   });
@@ -929,18 +1019,23 @@ describe('ecsWorld', () => {
       expect(w.createEntity()).toBe(0);
     });
 
-    it('clears the spatial index when spatial is enabled', () => {
+    it('clears every spatial index', () => {
       const w = new EcsWorld();
       const pos = w.registerComponent(PosDef);
+      const flag = w.registerTag(FlagTag);
       const grid = w.enableSpatial(PosDef, new CellIndex());
+      const flagged = w.enableSpatial(PosDef, new CellIndex(), { withTag: FlagTag });
 
       const id = w.createEntity();
       pos.set(id, { x: 5, y: 7 });
+      flag.add(id);
       expect(grid.at(5, 7)).toEqual([id]);
+      expect(flagged.at(5, 7)).toEqual([id]);
 
       w.clearAll();
 
       expect(grid.at(5, 7)).toEqual([]);
+      expect(flagged.at(5, 7)).toEqual([]);
     });
 
     it('drops pending destroys and queued lifecycle events silently', () => {

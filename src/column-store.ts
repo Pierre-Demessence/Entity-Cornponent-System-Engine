@@ -62,7 +62,7 @@ export interface ColumnStoreOptions {
  *
  * Implements the same access surface as {@link ComponentStore} (`get` / `set` /
  * `delete` / iteration / `subscribe` / change ticks / `toSerialized`) so
- * `world`, `QueryBuilder`, the spatial index, and save treat it identically.
+ * `world`, `Query`, the spatial index, and save treat it identically.
  * The compatibility `get(id)` returns a **write-through view**: a small object
  * whose field accessors read and write the underlying columns, so the universal
  * `pos.x += …` mutate-in-place idiom keeps working. The view is cached per

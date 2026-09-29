@@ -133,7 +133,7 @@ export const EXAMPLES = [
     id: 'platformer-3d',
     controls: 'WASD move, Space jump, click to capture mouse for camera (Esc to release)',
     group: 'early',
-    modules: ['camera-3d', 'collision', 'collision-3d', 'input', 'kinematics-3d', 'math', 'render-scene3d', 'tick', 'transform-3d'],
+    modules: ['camera-3d', 'collision', 'collision-3d', 'input', 'kinematics-3d', 'math', 'render-scene3d', 'spatial', 'tick', 'transform-3d'],
     summary: '3D platformer via three.js with custom 3D AABB kinematics — the defining test that @pierre/ecs is not secretly 2D.',
     title: '3D Platformer',
   },

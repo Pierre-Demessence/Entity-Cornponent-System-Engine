@@ -27,18 +27,26 @@ export interface GameState {
   pendingDir: { dx: number; dy: number } | null;
   score: number;
   segments: EntityId[];
-  world: EcsWorld;
+  world: SnakeWorld;
 }
 
-export function makeWorld(): EcsWorld {
-  const w = new EcsWorld();
-  w.registerComponent(PositionDef);
-  w.registerComponent(DirectionDef);
-  w.registerTag(SnakeHeadTag);
-  w.registerTag(SnakeSegmentTag);
-  w.registerTag(FoodTag);
-  w.enableSpatial(PositionDef, new HashGrid2D());
-  return w;
+/** The snake's world, holding the typed handle on its board index. */
+export class SnakeWorld extends EcsWorld {
+  readonly grid: HashGrid2D;
+
+  constructor() {
+    super();
+    this.registerComponent(PositionDef);
+    this.registerComponent(DirectionDef);
+    this.registerTag(SnakeHeadTag);
+    this.registerTag(SnakeSegmentTag);
+    this.registerTag(FoodTag);
+    this.grid = this.enableSpatial(PositionDef, new HashGrid2D());
+  }
+}
+
+export function makeWorld(): SnakeWorld {
+  return new SnakeWorld();
 }
 
 export function spawnSegment(world: EcsWorld, x: number, y: number, isHead: boolean): EntityId {
@@ -52,11 +60,11 @@ export function spawnSegment(world: EcsWorld, x: number, y: number, isHead: bool
   return id;
 }
 
-function randomEmptyCell(world: EcsWorld): { x: number; y: number } | null {
+function randomEmptyCell(world: SnakeWorld): { x: number; y: number } | null {
   const candidates: { x: number; y: number }[] = [];
   for (let x = 0; x < GRID; x++) {
     for (let y = 0; y < GRID; y++) {
-      if (new Set(world.spatial.queryAt({ x, y })).size === 0)
+      if (!world.grid.getAt(x, y))
         candidates.push({ x, y });
     }
   }

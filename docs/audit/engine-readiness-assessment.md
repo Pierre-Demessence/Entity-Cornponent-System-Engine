@@ -181,7 +181,7 @@ foundation, `modules/tilemap` parse plus collision grid, `modules/spatial`.
   offload (`modules/worker-pool` plus the `examples/worker-offload` harness)
   and the columnar storage slice have shipped; parallel *dispatch* (B2) is
   still open.
-- **No entity pooling.** The archetype *cache* now ships, so `QueryBuilder`
+- **No entity pooling.** The archetype *cache* now ships, so `Query`
   matches by archetype signature instead of intersecting store key sets on
   every call; the gather-free archetype *tables* (§3.5) remain unbuilt.
 - **No chunked or streaming world.** `HashGrid2D` is a single `Map` of

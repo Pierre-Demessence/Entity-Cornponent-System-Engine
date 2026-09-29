@@ -1,7 +1,8 @@
 import type { ComponentDef, TagDef } from '#component-store';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
+import { ArchetypeIndex } from '#archetype-index';
 import { simpleComponent } from '#component-store';
 import { EcsWorld } from '#world';
 
@@ -167,5 +168,64 @@ describe('archetype cache (world integration)', () => {
     expect(queryIds(w, [PosDef], [], [HiddenTag])).toEqual([]);
     w.getTag(HiddenTag).delete(id);
     expect(queryIds(w, [PosDef], [], [HiddenTag])).toEqual([id]);
+  });
+});
+
+describe('reusable query handle', () => {
+  it('re-selects buckets only when the archetype set changes', () => {
+    const w = makeWorld();
+    const a = w.createEntity();
+    w.getStore(PosDef).set(a, { x: 0, y: 0 });
+    const q = w.query(PosDef);
+    const select = vi.spyOn(ArchetypeIndex.prototype, 'selectBuckets');
+    try {
+      expect(q.count()).toBe(1);
+      expect(q.count()).toBe(1);
+      const b = w.createEntity();
+      w.getStore(PosDef).set(b, { x: 1, y: 1 });
+      expect(q.count()).toBe(2);
+      expect(select).toHaveBeenCalledOnce();
+      w.getStore(VelDef).set(b, { dx: 0, dy: 0 });
+      expect(q.run().map(r => r[0])).toEqual([a, b]);
+      expect(select).toHaveBeenCalledTimes(2);
+    }
+    finally {
+      select.mockRestore();
+    }
+  });
+
+  it('applies a filter added after a pass', () => {
+    const w = makeWorld();
+    const a = w.createEntity();
+    const b = w.createEntity();
+    w.getStore(PosDef).set(a, { x: 0, y: 0 });
+    w.getStore(PosDef).set(b, { x: 0, y: 0 });
+    w.getTag(FrozenTag).add(b);
+    const q = w.query(PosDef);
+    expect(q.count()).toBe(2);
+    q.without(w.getTag(FrozenTag));
+    expect(q.run().map(r => r[0])).toEqual([a]);
+  });
+
+  it('forgets matched entities after clearAll', () => {
+    const w = makeWorld();
+    w.getStore(PosDef).set(w.createEntity(), { x: 0, y: 0 });
+    const q = w.query(PosDef);
+    expect(q.count()).toBe(1);
+    w.clearAll();
+    expect(q.count()).toBe(0);
+  });
+
+  it('types queries past four components', () => {
+    const w = new EcsWorld();
+    const A = simpleComponent('a', { a: 'number' }) as ComponentDef<{ a: number }>;
+    const B = simpleComponent('b', { b: 'number' }) as ComponentDef<{ b: number }>;
+    const C = simpleComponent('c', { c: 'number' }) as ComponentDef<{ c: number }>;
+    w.registerComponent(A);
+    w.registerComponent(B);
+    w.registerComponent(C);
+    const q = w.query(A, B, C, A, B, C);
+    expectTypeOf(q.first()).toEqualTypeOf<[number, { a: number }, { b: number }, { c: number }, { a: number }, { b: number }, { c: number }] | undefined>();
+    expectTypeOf(w.query().first()).toEqualTypeOf<[number] | undefined>();
   });
 });

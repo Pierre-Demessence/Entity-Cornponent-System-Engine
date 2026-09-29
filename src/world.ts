@@ -1,5 +1,5 @@
 import type { ColumnStoreOptions } from '#column-store';
-import type { ComponentDef, ComponentStoreLike, TagDef } from '#component-store';
+import type { AnyComponentDef, ComponentDef, ComponentStoreLike, ComponentValues, TagDef } from '#component-store';
 import type { EntityId } from '#entity-id';
 import type { LifecycleEvent } from '#lifecycle';
 import type { Plugin } from '#plugin';
@@ -11,11 +11,22 @@ import { ChangeClock } from '#change-clock';
 import { ColumnStore } from '#column-store';
 import { ComponentStore, TagStore } from '#component-store';
 import { EventBus } from '#event-bus';
-import { QueryBuilder } from '#query';
+import { Query } from '#query';
 import { asNumber, asObject } from '#validation';
 
 interface ComponentEntry { def: ComponentDef<unknown>; store: ComponentStoreLike<unknown> }
 interface TagEntry { def: TagDef; store: TagStore }
+interface SpatialBinding { structure: SpatialStructure<unknown>; tag: TagStore | undefined }
+
+/** Options for {@link EcsWorld.enableSpatial}. */
+export interface SpatialOptions {
+  /**
+   * Index only entities that also hold this tag. The index follows the tag
+   * being added and removed as well as the component, in either order.
+   * Omitted: every entity holding the component is indexed.
+   */
+  readonly withTag?: TagDef;
+}
 
 /**
  * A deferred structural change recorded by `queue*` and applied, in insertion
@@ -38,14 +49,12 @@ type StructuralCommand
  * No imports from game-specific code.
  */
 export class EcsWorld {
-  private _spatial: SpatialStructure<{ x: number; y: number }> | undefined;
-
   private readonly alive = new Set<EntityId>();
   private readonly archetypes = new ArchetypeIndex();
   /**
    * Change-detection clock shared by every registered store. Stores stamp
    * added / changed ticks from it; queries with `added` / `changed` filters
-   * advance it. See {@link QueryBuilder.changed}.
+   * advance it. See {@link Query.changed}.
    */
   readonly clock = new ChangeClock();
   private commandQueue: StructuralCommand[] = [];
@@ -63,7 +72,7 @@ export class EcsWorld {
    */
   readonly lifecycle = new EventBus<LifecycleEvent>();
   private nextId = 0;
-  private spatialDef: ComponentDef<unknown> | undefined;
+  private readonly spatialBindings = new Map<string, SpatialBinding[]>();
   private spawning = false;
   private storeByName = new Map<string, ComponentStoreLike<unknown>>();
   private tagByName = new Map<string, TagStore>();
@@ -148,7 +157,9 @@ export class EcsWorld {
     for (const { store } of this.componentRegistry) store.clear();
     for (const { store } of this.tagRegistry) store.clear();
     this.commandQueue = [];
-    this._spatial?.clear();
+    for (const bindings of this.spatialBindings.values()) {
+      for (const { structure } of bindings) structure.clear();
+    }
     this.lifecycle.clear();
     this.alive.clear();
     this.nextId = 0;
@@ -175,32 +186,59 @@ export class EcsWorld {
   }
 
   /**
-   * Opt in to spatial indexing for a component that carries `{x, y}`, backed by
-   * `structure` (e.g. `HashGrid2D` from `@pierre/ecs/modules/spatial`). May only
-   * be called once per world — installs `set`/`delete` subscribers on the store.
+   * Index a component's values in `structure` (e.g. `HashGrid2D` or `HashGrid3D`
+   * from `@pierre/ecs/modules/spatial`), keeping it in sync with the component's
+   * store — and, with `options.withTag`, restricted to entities holding that
+   * tag. Entities that already qualify are indexed immediately.
    *
+   * May be called any number of times: several components, or several indexes
+   * over one component split by tag. Each call needs its own `structure`.
    * Returns `structure` with its own type, so backend-specific extras (a grid's
-   * `getAt`, say) stay typed on the returned handle.
+   * `getAt`, say) stay typed on the returned handle — keep it to query the index.
+   *
+   * Once a component is indexed, change its values through {@link move} so the
+   * indexes see the old and new position.
    */
-  enableSpatial<T extends { x: number; y: number }, S extends SpatialStructure<{ x: number; y: number }>>(
-    def: ComponentDef<T>,
-    structure: S,
-  ): S {
-    if (this.spatialDef) {
-      throw new Error(`Spatial already enabled for "${this.spatialDef.name}"; cannot re-enable for "${def.name}".`);
-    }
-    const store = this.storeByName.get(def.name);
+  enableSpatial<T, S extends SpatialStructure<T>>(def: ComponentDef<T>, structure: S, options: SpatialOptions = {}): S {
+    const store = this.storeByName.get(def.name) as ComponentStoreLike<T> | undefined;
     if (!store)
       throw new Error(`Component "${def.name}" must be registered before enabling spatial.`);
-    this.spatialDef = def as ComponentDef<unknown>;
-    this._spatial = structure;
-    const typedStore = store as ComponentStoreLike<T>;
-    typedStore.subscribe('set', (id, pos) => {
-      structure.add(id, pos);
+    for (const bindings of this.spatialBindings.values()) {
+      if (bindings.some(b => b.structure === structure))
+        throw new Error(`enableSpatial("${def.name}"): this structure already backs an index; pass a new structure.`);
+    }
+    const tag = options.withTag ? this.getTag(options.withTag) : undefined;
+    let bindings = this.spatialBindings.get(def.name);
+    if (!bindings) {
+      bindings = [];
+      this.spatialBindings.set(def.name, bindings);
+    }
+    bindings.push({ structure: structure as SpatialStructure<unknown>, tag });
+
+    store.subscribe('set', (id, pos) => {
+      if (!tag || tag.has(id))
+        structure.add(id, pos);
     });
-    typedStore.subscribe('delete', (id, pos) => {
-      structure.remove(id, pos);
+    store.subscribe('delete', (id, pos) => {
+      if (!tag || tag.has(id))
+        structure.remove(id, pos);
     });
+    if (tag) {
+      tag.subscribe('add', (id) => {
+        const pos = store.get(id);
+        if (pos !== undefined)
+          structure.add(id, pos);
+      });
+      tag.subscribe('delete', (id) => {
+        const pos = store.get(id);
+        if (pos !== undefined)
+          structure.remove(id, pos);
+      });
+    }
+    for (const [id, pos] of store.entries()) {
+      if (!tag || tag.has(id))
+        structure.add(id, pos);
+    }
     return structure;
   }
 
@@ -380,33 +418,42 @@ export class EcsWorld {
     }
   }
 
-  /** Move an entity — updates the spatial index. Requires `enableSpatial` to have been called. */
-  move(id: EntityId, x: number, y: number): void {
-    if (!this.spatialDef || !this._spatial)
-      throw new Error('move() requires enableSpatial() to have been called.');
-    const store = this.storeByName.get(this.spatialDef.name) as ComponentStoreLike<{ x: number; y: number }>;
-    const pos = store.get(id);
-    if (!pos)
+  /**
+   * Move an entity's indexed component to `to`: every index {@link enableSpatial}
+   * bound to `def` that holds the entity moves it from the current value, then
+   * `to`'s fields are written into the stored value and the change is stamped.
+   * A no-op when the entity lacks the component. Throws when `def` has no index.
+   */
+  move<T extends object>(def: ComponentDef<T>, id: EntityId, to: T): void {
+    const bindings = this.spatialBindings.get(def.name);
+    if (!bindings)
+      throw new Error(`move() requires enableSpatial() for component "${def.name}".`);
+    const store = this.storeByName.get(def.name) as ComponentStoreLike<T>;
+    const current = store.get(id);
+    if (current === undefined)
       return;
-    this._spatial.move(id, pos, { x, y });
-    pos.x = x;
-    pos.y = y;
+    for (const { structure, tag } of bindings) {
+      if (!tag || tag.has(id))
+        structure.move(id, current, to);
+    }
+    Object.assign(current, to);
     store.markChanged(id);
   }
 
-  query(): QueryBuilder<[]>;
-  query<A>(d1: ComponentDef<A>): QueryBuilder<[A]>;
-  query<A, B>(d1: ComponentDef<A>, d2: ComponentDef<B>): QueryBuilder<[A, B]>;
-  query<A, B, C>(d1: ComponentDef<A>, d2: ComponentDef<B>, d3: ComponentDef<C>): QueryBuilder<[A, B, C]>;
-  query<A, B, C, D>(d1: ComponentDef<A>, d2: ComponentDef<B>, d3: ComponentDef<C>, d4: ComponentDef<D>): QueryBuilder<[A, B, C, D]>;
-  query(...defs: ComponentDef<unknown>[]): QueryBuilder<unknown[]> {
+  /**
+   * Build a {@link Query} yielding `[id, ...values]` for every entity holding all
+   * of `defs`. Build it once and iterate it every tick: the query caches its
+   * archetype resolution across passes. `world.query()` with no defs is the
+   * entry point for tag-only or filter-only queries.
+   */
+  query<D extends AnyComponentDef[]>(...defs: D): Query<ComponentValues<D>> {
     const stores = defs.map((def) => {
       const store = this.storeByName.get(def.name);
       if (!store)
         throw new Error(`Component "${def.name}" not registered`);
       return store;
     });
-    return new QueryBuilder(stores, this.archetypes);
+    return new Query<ComponentValues<D>>(stores, this.archetypes);
   }
 
   /**
@@ -527,17 +574,6 @@ export class EcsWorld {
     });
 
     return store;
-  }
-
-  /**
-   * The spatial index passed to {@link enableSpatial}, typed as the
-   * {@link SpatialStructure} contract. For backend-specific extras, keep the
-   * handle `enableSpatial` returns (a subclass may narrow this getter to it).
-   */
-  get spatial(): SpatialStructure<{ x: number; y: number }> {
-    if (!this._spatial)
-      throw new Error('spatial requires enableSpatial() to have been called.');
-    return this._spatial;
   }
 
   /** Create an entity from a template, merging per-component overrides (shallow merge per component). */

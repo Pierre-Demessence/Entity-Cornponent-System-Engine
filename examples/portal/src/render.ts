@@ -1,4 +1,4 @@
-import type { EcsWorld, QueryBuilder } from '@pierre/ecs';
+import type { EcsWorld, Query } from '@pierre/ecs';
 import type { Scene3DEntry } from '@pierre/ecs/modules/render-scene3d';
 
 import type { Position3D, ShapeAabb3D } from './components';
@@ -527,7 +527,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     mesh.position.set(p.x, p.y, p.z);
     mesh.scale.set(a.w, a.h, a.d);
   };
-  const boxPass = (material: THREE.Material, select: (world: EcsWorld) => QueryBuilder<[Position3D, ShapeAabb3D]>) =>
+  const boxPass = (material: THREE.Material, select: (world: EcsWorld) => Query<[Position3D, ShapeAabb3D]>) =>
     new Scene3DRenderer({ select, sync: syncBox, create: () => new THREE.Mesh(unitBox, material) });
   const bodies = (world: EcsWorld) => world.query(Position3DDef, ShapeAabb3DDef);
   const doors = boxPass(doorMat, w => bodies(w).withTag(w.getTag(DoorTag)));

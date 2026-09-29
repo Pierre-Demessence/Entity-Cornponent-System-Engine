@@ -27,7 +27,7 @@ Core (`@pierre/ecs`):
   fast path); the rest use an object-backed `ComponentStore<T>`. `TagStore`
   holds data-less tags. Stores carry change ticks, mutation hooks, schema
   versioning with migrations, and dev-mode `requires` validation.
-- **`QueryBuilder`** — typed queries with `withComponent`,
+- **`Query`** — typed queries with `withComponent`,
   `withoutComponent`, `withTag`, `without`, `anyOf`, `optional`, and the
   `added` / `changed` change filters, served from an archetype index.
 - **`EntityTemplate`** — declarative prefabs with per-spawn overrides.
@@ -69,7 +69,7 @@ no build step is required for consumers using a TS-aware bundler (Vite,
 esbuild, etc.). Edits in this repo are picked up live by the consumer.
 
 ```ts
-import { ComponentStore, EcsWorld, QueryBuilder } from '@pierre/ecs';
+import { ComponentStore, EcsWorld, Query } from '@pierre/ecs';
 ```
 
 ## Local development
@@ -138,7 +138,7 @@ Per-primitive deep dives live beside their source in `src/` (and publish to the
 - [World](./src/world.md)
 - [ComponentStore](./src/component-store.md)
 - [SpatialStructure](./src/spatial-structure.md) — interface; concrete backends under [`src/modules/spatial/`](./src/modules/spatial/README.md)
-- [QueryBuilder](./src/query.md)
+- [Query](./src/query.md)
 - [EntityTemplate](./src/template.md)
 - [EventBus](./src/event-bus.md)
 - [Scheduler](./src/scheduler.md)

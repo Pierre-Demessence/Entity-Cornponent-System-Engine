@@ -33,7 +33,7 @@ Import via `@pierre/ecs/spatial-structure`.
 
 Concrete backends live under `src/modules/spatial/`. See
 [`src/modules/spatial/README.md`](./modules/spatial/README.md) for the
-current implementations (`HashGrid2D`, projection helpers) and
+current implementations (`HashGrid2D`, `HashGrid3D`, projection helpers) and
 `enableSpatial` wiring.
 
 ## Why an interface?
@@ -50,5 +50,5 @@ current implementations (`HashGrid2D`, projection helpers) and
 ## See also
 
 - [EcsWorld](world.md) - `world.enableSpatial(def, structure)` wires a structure to component mutations.
-- [`src/modules/spatial/README.md`](./modules/spatial/README.md) - concrete `HashGrid2D` backend.
+- [`src/modules/spatial/README.md`](./modules/spatial/README.md) - concrete `HashGrid2D` / `HashGrid3D` backends.
 

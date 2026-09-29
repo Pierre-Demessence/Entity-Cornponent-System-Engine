@@ -133,7 +133,7 @@ export interface GameState {
   score: number;
   /** Applied between ticks; carries the rebuild that starts the next level. */
   transitions: SceneTransitionQueue;
-  world: EcsWorld;
+  world: PacWorld;
 }
 
 export interface Hud {
@@ -143,31 +143,39 @@ export interface Hud {
   score: EntityId;
 }
 
-export function makeWorld(): EcsWorld {
-  const w = new EcsWorld();
-  w.registerComponent(PositionDef);
-  w.registerComponent(VelocityDef);
-  w.registerComponent(RotationDef);
-  w.registerComponent(ScaleDef);
-  w.registerComponent(OpacityDef);
-  w.registerComponent(RenderableDef);
-  w.registerComponent(RenderOrderDef);
-  w.registerComponent(ScreenSpaceDef);
-  w.registerComponent(SpriteAnimatorDef);
-  w.registerComponent(LifetimeDef);
-  // The audio system reads this store each tick, even though every sound here is a one-shot.
-  w.registerComponent(AudioSourceDef);
-  w.registerComponent(ParticleDef);
-  w.registerComponent(HeadingDef);
-  w.registerComponent(TileDef);
-  w.registerComponent(WantDef);
-  w.registerComponent(GhostDef);
-  w.registerComponent(BrainDef);
-  for (const tag of [PacTag, GhostTag, DotTag, PowerTag, FruitTag, PopupTag, ParticleTag])
-    w.registerTag(tag);
-  // Pellets and fruit are found by the tile they sit on, not by a float position.
-  w.enableSpatial(TileDef, new HashGrid2D());
-  return w;
+/** The game's world, holding the typed handle on its tile index. */
+export class PacWorld extends EcsWorld {
+  /** Pellets and fruit are found by the tile they sit on, not by a float position. */
+  readonly tiles: HashGrid2D;
+
+  constructor() {
+    super();
+    this.registerComponent(PositionDef);
+    this.registerComponent(VelocityDef);
+    this.registerComponent(RotationDef);
+    this.registerComponent(ScaleDef);
+    this.registerComponent(OpacityDef);
+    this.registerComponent(RenderableDef);
+    this.registerComponent(RenderOrderDef);
+    this.registerComponent(ScreenSpaceDef);
+    this.registerComponent(SpriteAnimatorDef);
+    this.registerComponent(LifetimeDef);
+    // The audio system reads this store each tick, even though every sound here is a one-shot.
+    this.registerComponent(AudioSourceDef);
+    this.registerComponent(ParticleDef);
+    this.registerComponent(HeadingDef);
+    this.registerComponent(TileDef);
+    this.registerComponent(WantDef);
+    this.registerComponent(GhostDef);
+    this.registerComponent(BrainDef);
+    for (const tag of [PacTag, GhostTag, DotTag, PowerTag, FruitTag, PopupTag, ParticleTag])
+      this.registerTag(tag);
+    this.tiles = this.enableSpatial(TileDef, new HashGrid2D());
+  }
+}
+
+export function makeWorld(): PacWorld {
+  return new PacWorld();
 }
 
 /** A once-timer that starts already finished, for "is this pause running?" flags. */

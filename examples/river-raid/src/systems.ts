@@ -74,6 +74,10 @@ function movePlayer(ctx: GameState, dir: -1 | 1): void {
   }
 }
 
+function playerInControl(ctx: GameState): boolean {
+  return !ctx.dying && !ctx.gameOver;
+}
+
 // ─── Input System ──────────────────────────────────────────────────
 
 export const inputSystem: SchedulableSystem<GameState> = {
@@ -126,10 +130,8 @@ export const cooldownSystem = makeCooldownSystem<GameState>();
 export const scrollSystem: SchedulableSystem<GameState> = {
   name: 'scroll',
   runAfter: ['input'],
+  runIf: playerInControl,
   run(ctx) {
-    if (ctx.dying || ctx.gameOver)
-      return;
-
     // Advance scroll
     ctx.scrollOffset += ctx.scrollSpeed * (ctx.dtMs / 1000);
     ctx.levelProgress += ctx.scrollSpeed * (ctx.dtMs / 1000);
@@ -251,8 +253,9 @@ function killPlayer(ctx: GameState): void {
 export const collisionSystem: SchedulableSystem<GameState> = {
   name: 'collision',
   runAfter: ['motion'],
+  runIf: playerInControl,
   run(ctx) {
-    if (ctx.dying || ctx.gameOver || ctx.playerId == null)
+    if (ctx.playerId == null)
       return;
 
     const playerPos = ctx.world.getStore(PositionDef).get(ctx.playerId);
@@ -381,9 +384,8 @@ export const collisionSystem: SchedulableSystem<GameState> = {
 export const fuelSystem: SchedulableSystem<GameState> = {
   name: 'fuel',
   runAfter: ['collision'],
+  runIf: playerInControl,
   run(ctx) {
-    if (ctx.dying || ctx.gameOver)
-      return;
     // Fuel drains proportionally to scroll speed
     const drainRate = FUEL_DRAIN_RATE * (ctx.scrollSpeed / 120);
     ctx.fuel -= drainRate * (ctx.dtMs / 1000);

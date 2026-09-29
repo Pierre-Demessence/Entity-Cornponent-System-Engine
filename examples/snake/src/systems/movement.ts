@@ -27,7 +27,7 @@ export const movementSystem: SchedulableSystem<GameState> = {
     // Self-collision: any snake segment except the tail (which is about to move away)
     const tailId = ctx.segments.at(-1)!;
     const segTag = ctx.world.getTag(SnakeSegmentTag);
-    for (const occ of ctx.world.spatial.queryAt({ x: nx, y: ny })) {
+    for (const occ of ctx.world.grid.queryAt({ x: nx, y: ny })) {
       if (segTag.has(occ) && occ !== tailId) {
         ctx.events.emit({ type: 'GameOver' });
         return;
@@ -40,10 +40,10 @@ export const movementSystem: SchedulableSystem<GameState> = {
 
     // Body shift: each segment moves to the position of the one ahead of it.
     const prevPositions = ctx.segments.map(id => ({ ...posStore.get(id)! }));
-    ctx.world.move(headId, nx, ny);
+    ctx.world.move(PositionDef, headId, { x: nx, y: ny });
     for (let i = 1; i < ctx.segments.length; i++) {
       const prev = prevPositions[i - 1]!;
-      ctx.world.move(ctx.segments[i]!, prev.x, prev.y);
+      ctx.world.move(PositionDef, ctx.segments[i]!, { x: prev.x, y: prev.y });
     }
 
     if (ateFood) {

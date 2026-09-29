@@ -88,8 +88,9 @@ writes the world already observes.
 
 - **Register before you use.** Components and tags must be registered on the
   world first, and names must be unique within a world.
-- **Move indexed positions through `world.move(id, x, y)`.** Once a world has a
-  spatial index, writing the indexed component directly leaves the index stale.
+- **Move indexed positions through `world.move(def, id, to)`.** Once a world
+  indexes a component, writing an indexed entity's value directly leaves the
+  index stale.
   Without one, a position is a component like any other — see
   [`world`](../../core/world/).
 - **Do not depend on iteration order.** Nothing in the query contract promises

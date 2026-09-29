@@ -146,6 +146,27 @@
       ],
       "symbols": [
         {
+          "name": "AnyComponentDef",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "type",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "world.ts"
+            ],
+            "typeOnly": true
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "ColumnField",
           "coveredByExample": false,
           "example": {
@@ -226,6 +247,7 @@
               "src/column-store.test.ts",
               "src/component-store.test.ts",
               "src/modules/render-scene3d/render-scene3d.test.ts",
+              "src/modules/spatial/hash-grid-3d.test.ts",
               "src/query.test.ts",
               "src/test-utils.test.ts",
               "src/world.test.ts"
@@ -305,6 +327,27 @@
               "src/query.test.ts"
             ],
             "typeOnly": true
+          }
+        },
+        {
+          "name": "ComponentValues",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "type",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "world.ts"
+            ],
+            "typeOnly": true
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
           }
         },
         {
@@ -694,6 +737,7 @@
         "src/modules/render-dom/dom-renderer.test.ts",
         "src/modules/render-scene3d/render-scene3d.test.ts",
         "src/modules/scene-transition/scene-transition.test.ts",
+        "src/modules/spatial/hash-grid-3d.test.ts",
         "src/modules/turn-based/turn-cycler.test.ts",
         "src/plugin.test.ts",
         "src/query.test.ts",
@@ -702,7 +746,7 @@
         "src/test-utils.test.ts",
         "src/world.test.ts"
       ],
-      "typeTotal": 15,
+      "typeTotal": 17,
       "typeUsedByExample": 2,
       "valueTotal": 4,
       "valueUsedByExample": 2
@@ -7534,14 +7578,16 @@
       "symbols": [
         {
           "name": "Lifetime",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
-            "typeOnly": false
+            "consumers": [
+              "game-of-life"
+            ],
+            "typeOnly": true
           },
           "isValue": false,
           "kind": "type",
-          "noExternalConsumer": true,
+          "noExternalConsumer": false,
           "other": {
             "consumers": [],
             "typeOnly": false
@@ -7697,7 +7743,7 @@
         "src/modules/particles/particles.test.ts"
       ],
       "typeTotal": 3,
-      "typeUsedByExample": 0,
+      "typeUsedByExample": 1,
       "valueTotal": 3,
       "valueUsedByExample": 3
     },
@@ -11891,6 +11937,7 @@
         "game-of-life",
         "pacman",
         "platformer",
+        "platformer-3d",
         "snake",
         "spacewar",
         "top-down-shooter"
@@ -12075,6 +12122,48 @@
           }
         },
         {
+          "name": "HashGrid3D",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "platformer-3d"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "class",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/spatial/hash-grid-3d.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "HashGrid3DOptions",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "makeGridSyncOnMove",
           "coveredByExample": true,
           "example": {
@@ -12105,12 +12194,13 @@
         "src/modules/spatial/continuous-hash-grid-2d.test.ts",
         "src/modules/spatial/grid-sync.test.ts",
         "src/modules/spatial/hash-grid-2d.test.ts",
+        "src/modules/spatial/hash-grid-3d.test.ts",
         "src/modules/spatial/projections.test.ts"
       ],
-      "typeTotal": 3,
+      "typeTotal": 4,
       "typeUsedByExample": 0,
-      "valueTotal": 6,
-      "valueUsedByExample": 4
+      "valueTotal": 7,
+      "valueUsedByExample": 5
     },
     {
       "coveredByExample": true,
@@ -14179,10 +14269,12 @@
       "symbols": [
         {
           "name": "Position",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
-            "typeOnly": false
+            "consumers": [
+              "game-of-life"
+            ],
+            "typeOnly": true
           },
           "isValue": false,
           "kind": "interface",
@@ -14453,7 +14545,7 @@
         "src/modules/transform/transform.test.ts"
       ],
       "typeTotal": 4,
-      "typeUsedByExample": 0,
+      "typeUsedByExample": 1,
       "valueTotal": 4,
       "valueUsedByExample": 4
     },
@@ -14996,6 +15088,7 @@
     {
       "coveredByExample": false,
       "examples": [
+        "game-of-life",
         "portal"
       ],
       "importPath": "@pierre/ecs/query",
@@ -15005,10 +15098,11 @@
       ],
       "symbols": [
         {
-          "name": "QueryBuilder",
+          "name": "Query",
           "coveredByExample": false,
           "example": {
             "consumers": [
+              "game-of-life",
               "portal"
             ],
             "typeOnly": true
@@ -16045,10 +16139,30 @@
               "src/modules/render-dom/entity-at-point.test.ts",
               "src/modules/render-scene3d/render-scene3d.test.ts",
               "src/modules/scene-transition/scene-transition.test.ts",
+              "src/modules/spatial/hash-grid-3d.test.ts",
               "src/plugin.test.ts",
               "src/query.test.ts",
               "src/world.test.ts"
             ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "SpatialOptions",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
             "typeOnly": false
           }
         }
@@ -16076,11 +16190,12 @@
         "src/modules/render-dom/entity-at-point.test.ts",
         "src/modules/render-scene3d/render-scene3d.test.ts",
         "src/modules/scene-transition/scene-transition.test.ts",
+        "src/modules/spatial/hash-grid-3d.test.ts",
         "src/plugin.test.ts",
         "src/query.test.ts",
         "src/world.test.ts"
       ],
-      "typeTotal": 0,
+      "typeTotal": 1,
       "typeUsedByExample": 0,
       "valueTotal": 1,
       "valueUsedByExample": 1
@@ -16112,6 +16227,12 @@
       "value": 54
     },
     {
+      "name": "game-of-life",
+      "entries": 21,
+      "type": 9,
+      "value": 44
+    },
+    {
       "name": "doom",
       "entries": 18,
       "type": 9,
@@ -16122,12 +16243,6 @@
       "entries": 20,
       "type": 7,
       "value": 45
-    },
-    {
-      "name": "game-of-life",
-      "entries": 20,
-      "type": 6,
-      "value": 44
     },
     {
       "name": "spacewar",
@@ -16179,9 +16294,9 @@
     },
     {
       "name": "platformer-3d",
-      "entries": 15,
+      "entries": 16,
       "type": 8,
-      "value": 27
+      "value": 28
     },
     {
       "name": "card-battler",
@@ -16354,7 +16469,7 @@
     {
       "importPath": "@pierre/ecs/modules/spatial",
       "missing": 2,
-      "total": 6
+      "total": 7
     },
     {
       "importPath": "@pierre/ecs/modules/camera",
@@ -16398,10 +16513,10 @@
     "entriesWithExample": 55,
     "entriesWithoutExample": 7,
     "modules": 46,
-    "noExternalConsumer": 166,
-    "symbols": 606,
-    "typeSymbols": 251,
-    "valueSymbols": 355,
+    "noExternalConsumer": 167,
+    "symbols": 611,
+    "typeSymbols": 255,
+    "valueSymbols": 356,
     "valueWithNoConsumer": 5,
     "valueWithoutExample": 139
   }

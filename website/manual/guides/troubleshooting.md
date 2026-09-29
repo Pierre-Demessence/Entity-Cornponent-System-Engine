@@ -22,29 +22,31 @@ Calling `destroyEntity` directly is fine only when you are not iterating.
 
 ## "Collision stopped matching after I moved something"
 
-Once `world.enableSpatial` indexes a component, that component must change
-through `world.move(id, x, y)`. A direct write updates the store and leaves the
-index believing the old position, so spatial queries keep returning the entity
-wherever it used to be. The index is only as current as the writes it is told
-about.
+Once `world.enableSpatial` indexes a component, an indexed entity's value must
+change through `world.move(def, id, to)`. A direct write updates the store and
+leaves the index believing the old position, so spatial queries keep returning
+the entity wherever it used to be. The index is only as current as the writes it
+is told about.
 
-A world without `enableSpatial` has no index to go stale: write positions
-directly, and `world.move` is not available.
+A component without an index has nothing to go stale: write it directly, and
+`world.move` is not available for it. An index built with `withTag` holds only
+entities carrying that tag, so the others can be written directly too.
 
 ## "`world.move` threw"
 
-`move` exists to keep a spatial index current, so it throws
-`move() requires enableSpatial() to have been called` on a world that has none.
-Either write the position component directly, or enable the index at startup —
-see the next entry.
+`move` exists to keep spatial indexes current, so it throws
+`move() requires enableSpatial() for component "…"` when that component has no
+index. Either write the component directly, or index it at startup — see the
+next entry.
 
 ## "`enableSpatial` threw"
 
 It throws in two cases:
 
-- **It was already called.** It may be called once per world; a second call is
-  not a reconfigure, even for a different component.
-- **The component is not registered yet.** Register it first.
+- **The structure already backs an index.** Each call needs its own structure
+  instance; a world may hold any number of indexes, but they cannot share one.
+- **The component, or the `withTag` tag, is not registered yet.** Register it
+  first.
 
 The world ships no default index, so the call also names its backend —
 `world.enableSpatial(PositionDef, new HashGrid2D())`, with the backend from

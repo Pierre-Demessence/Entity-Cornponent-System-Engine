@@ -5,6 +5,7 @@ import type { InputState } from '@pierre/ecs/modules/input';
 import { EcsWorld } from '@pierre/ecs';
 import { Camera3DDef, makeCamera3D, makeOrbitRig, OrbitRigDef } from '@pierre/ecs/modules/camera-3d';
 import { degToRad } from '@pierre/ecs/modules/math';
+import { HashGrid3D } from '@pierre/ecs/modules/spatial';
 import { Rotation3DDef } from '@pierre/ecs/modules/transform-3d';
 
 import {
@@ -66,24 +67,34 @@ export interface GameState {
   input: InputState<PlatformerAction>;
   playerId: EntityId | null;
   score: number;
-  world: EcsWorld;
+  world: PlatformerWorld;
 }
 
-export function makeWorld(): EcsWorld {
-  const world = new EcsWorld();
-  world.registerComponent(Position3DDef);
-  world.registerComponent(Rotation3DDef);
-  world.registerComponent(Velocity3DDef);
-  world.registerComponent(ShapeAabb3DDef);
-  world.registerComponent(GroundedDef);
-  world.registerComponent(CoinValueDef);
-  world.registerComponent(Camera3DDef);
-  world.registerComponent(OrbitRigDef);
-  world.registerTag(PlayerTag);
-  world.registerTag(CameraTag);
-  world.registerTag(StaticBodyTag);
-  world.registerTag(CoinTag);
-  return world;
+/** The game's world, holding the typed handle on its coin index. */
+export class PlatformerWorld extends EcsWorld {
+  /** Coins only, so the pickup broadphase never walks platforms or the player. */
+  readonly coins: HashGrid3D;
+
+  constructor() {
+    super();
+    this.registerComponent(Position3DDef);
+    this.registerComponent(Rotation3DDef);
+    this.registerComponent(Velocity3DDef);
+    this.registerComponent(ShapeAabb3DDef);
+    this.registerComponent(GroundedDef);
+    this.registerComponent(CoinValueDef);
+    this.registerComponent(Camera3DDef);
+    this.registerComponent(OrbitRigDef);
+    this.registerTag(PlayerTag);
+    this.registerTag(CameraTag);
+    this.registerTag(StaticBodyTag);
+    this.registerTag(CoinTag);
+    this.coins = this.enableSpatial(Position3DDef, new HashGrid3D({ cellSize: 2 }), { withTag: CoinTag });
+  }
+}
+
+export function makeWorld(): PlatformerWorld {
+  return new PlatformerWorld();
 }
 
 function spawnPlayer(state: GameState, x: number, y: number, z: number): EntityId {

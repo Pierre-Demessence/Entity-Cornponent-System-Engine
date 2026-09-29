@@ -5,7 +5,7 @@ module and app: component stores, queries, scheduler, event bus, lifecycle,
 validation, change detection, plugin/extension hooks. No modules, no gameplay
 features.
 
-**Entry IDs are stable references** (`2.6`, `3.2`, `4.7`). The numbering
+**Entry IDs are stable references** (`3.2`, `3.5`, `4.6`). The numbering
 is not contiguous: a gap means that entry shipped, moved to the module backlog,
 or was declined, so citations elsewhere keep resolving to the same item. Shipped
 core work is described by `src/` and dated by `git log`; where a plan exists it
@@ -32,16 +32,6 @@ have shipped. The order at the bottom reflects value, not a dependency graph.
 
 Holes that turn into corruption or missing capability once the entity set is
 large or re-shaped during a tick.
-
-### 2.6 Spatial integration generalized
-
-| | |
-|---|---|
-| **Problem** | `SpatialStructure<TPos>` is generic, but the world's wiring is not: `enableSpatial` / `move` / `spatial` are hard-wired to `{x, y}`, and a world may index exactly one component. (The backend is already caller-supplied; the world names none.) So a 3D game cannot use the core integration at all, and a 2D game cannot index two populations (bodies plus pickups). |
-| **Solution** | Make the world's spatial wiring generic in `TPos` and allow more than one indexed set. |
-| **Unlocks** | 3D broadphase through the core instead of per-consumer brute force, and per-purpose indexes inside one world. |
-| **Complexity** | Mid — the interface already generalizes; the work is the world's plumbing and its typing. |
-| **Dependencies** | None outstanding. Distinct from the module backlog's `QuadTree` / `BVH` entries, which add backends rather than generalize this wiring. |
 
 ---
 
@@ -79,19 +69,9 @@ complex systems.
 |---|---|
 | **Problem** | Columnar (SoA) storage shipped, but it is **sparse-set**: single-component iteration is a dense column loop, yet multi-component queries do a per-entity slot **gather** (`slotOf` per store, as `motion.ts` does). Bevy/DOTS-style gather-free iteration needs an entity's components **co-located** in one table — which sparse-set can't give. |
 | **Solution** | Group entities by component set into **archetype tables** with aligned columns → a single-index loop, no gather. The top-tier form is the **"both" model** (Bevy): each component picks table vs sparse storage. The query / `get` / `set` API is preserved, so consumer code is unchanged. |
-| **Unlocks** | The full multi-component iteration win on top of the storage/GC win the columnar store already delivers. |
+| **Unlocks** | The full multi-component iteration win on top of the storage/GC win the columnar store already delivers. A table-backed pass can also drop the two allocations a cached `Query` still makes per pass — the iterator generator and one `[id, ...values]` tuple per entity — e.g. through a column-loop `each` callback. |
 | **Complexity** | Very long — a storage-engine rewrite. add/remove-component becomes a **structural move** (the entity is copied between tables), where sparse-set is O(1). |
 | **Dependencies** | None outstanding — builds on the shipped columnar store, and sits **above** the shipped archetype *cache* (the lighter middle step: it caches query matches, keeping the gather). Detail + the full cheapest→biggest ladder: [../plans/done/ecs-parallelism-and-soa-storage.md](../plans/done/ecs-parallelism-and-soa-storage.md#the-path-beyond-middle--storage-architecture-logged). |
-
-### 3.8 Cached query handles + typed arity beyond four
-
-| | |
-|---|---|
-| **Problem** | Every `world.query(...)` call builds a builder and derives a string cache key (`required:excluded`) before the archetype cache is consulted, so a per-tick system pays an allocation it does not need. Separately, the typed overloads stop at four component defs, so a five-component query does not type-check at all. |
-| **Solution** | A reusable query handle, resolved once and iterated per tick, plus variadic tuple typing so arity is not a cliff. Canon: Bevy system params, Flecs cached queries. |
-| **Unlocks** | Query-heavy systems without per-tick allocation, and queries over five or more components that keep their types. |
-| **Complexity** | Mid — the match cache already exists; the work is a handle that owns it, plus the typing. |
-| **Dependencies** | The shipped archetype cache and query predicate surface, whose shape the handle would freeze. A `QueryBuilder` with `added` / `changed` filters already keeps per-instance state (its previous-pass tick); the handle must carry it. |
 
 ### 3.9 Change-filter iteration from the changed set
 
@@ -120,16 +100,6 @@ modding/plugin support.
 | **Complexity** | Mid, and **false-positive-bound**: measured on the current corpus, only 2 of 35 bare `` `foo()` `` prose mentions resolve to an export — the rest are member names (`dispose()`, `play()`) or external refs (`move_toward()`). Needs member-aware resolution (owner → type → members) or a conservative allowlist before it is worth the noise. Deferred from [`../plans/done/readme-doc-symbol-linter.md`](../plans/done/readme-doc-symbol-linter.md). |
 | **Dependencies** | The export enumeration in `scripts/engine-surface.ts`; the type checker for member existence on a named owner type. |
 
-### 4.7 System run conditions / enable flags
-
-| | |
-|---|---|
-| **Problem** | A registered system runs every tick. "Only while not paused", "only in this game phase", "only when this feature is on" has to be re-checked inside the system body, where the scheduler cannot see it — so ordering and access checks are computed over systems that will not actually run. |
-| **Solution** | An optional `condition` (or `enabled`) predicate on `SchedulableSystem`, evaluated before `run`, alongside the existing `phase` and dependency fields. Canon: Bevy `run_if` / `in_state`, Unity DOTS `Enabled` / system groups. |
-| **Unlocks** | Pause, menus and mode switches expressed where the scheduler holds them, and ordering diagnostics that know a system was skipped. |
-| **Complexity** | Small. |
-| **Dependencies** | None outstanding. |
-
 ---
 
 ## Suggested Implementation Order
@@ -137,11 +107,8 @@ modding/plugin support.
 By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
-1. **System run conditions** (4.7) — small
-2. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
-3. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
-4. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
-5. **Change-filter iteration from the changed set** (3.9) — only once a profile
+1. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
+2. **Change-filter iteration from the changed set** (3.9) — only once a profile
    asks for it
-6. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
+3. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
    strategic piece, above the shipped cache

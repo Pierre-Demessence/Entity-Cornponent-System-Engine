@@ -304,9 +304,9 @@ Layering and module abstraction are not free. Worth naming the costs so
 
 **What it costs:**
 
-- **Extra indirection.** `world.spatial.queryAt({x, y})` involves an
-  interface call. Negligible for normal use; profile and inline if a hot
-  loop ever sting.
+- **Extra indirection.** `grid.queryAt({x, y})` through the
+  `SpatialStructure` contract is an interface call. Negligible for normal
+  use; profile and inline if a hot loop ever sting.
 - **More types.** Every module ships an interface + a default impl,
   doubling the surface area vs a hardcoded implementation.
 - **Learning curve for contributors.** "Where does X go?" requires

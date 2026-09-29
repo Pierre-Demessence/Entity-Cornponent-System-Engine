@@ -20,9 +20,19 @@ export interface Scene3DRendererOptions<TObject, TRow extends unknown[]> {
    */
   create: (entry: Scene3DEntry<TRow>, world: EcsWorld) => TObject;
   /**
-   * The entities this pass draws, re-evaluated every frame — typically
-   * `world.query(...)` narrowed with `.withTag(...)` / `.without(...)`. An
-   * entity absent from the result has its object removed from the graph.
+   * Called once per object right after it is removed from the graph — when
+   * its entity leaves the selection, and for every held object on
+   * {@link Scene3DRenderer.dispose}. Release or recycle what `create` built
+   * (geometries, materials, pooled meshes) here. `world` is the one passed to
+   * the most recent `render`.
+   */
+  remove?: (object: TObject, entityId: EntityId, world: EcsWorld) => void;
+  /**
+   * Builds the selection this pass draws — typically `world.query(...)`
+   * narrowed with `.withTag(...)` / `.without(...)`. Called once per world:
+   * the returned iterable is iterated again every frame, so it must reflect
+   * the world's current state on each iteration, as a query does. An entity
+   * absent from an iteration has its object removed from the graph.
    */
   select: (world: EcsWorld) => Iterable<Scene3DEntry<TRow>>;
   /** Updates an entity's object every frame it is selected, including the frame it was created. */
@@ -45,15 +55,26 @@ implements Renderer<Scene3DRenderContext<TObject>> {
   private readonly objects = new Map<EntityId, TObject>();
   private readonly options: Scene3DRendererOptions<TObject, TRow>;
   private readonly seen = new Set<EntityId>();
+  private selection: Iterable<Scene3DEntry<TRow>> | undefined;
+  private world: EcsWorld | undefined;
 
   constructor(options: Scene3DRendererOptions<TObject, TRow>) {
     this.options = options;
   }
 
-  /** Remove every tracked object from `graph` and forget it; the next `render` recreates what is still selected. */
+  /**
+   * Remove every tracked object from `graph` (calling the `remove` option for
+   * each) and forget it; the next `render` recreates what is still selected.
+   */
   dispose(graph: SceneGraph<TObject>): void {
-    for (const object of this.objects.values())
+    const { remove } = this.options;
+    const world = this.world;
+    for (const [id, object] of this.objects) {
       graph.remove(object);
+      // Objects exist only after a render, so `world` is set whenever this loop runs.
+      if (world !== undefined)
+        remove?.(object, id, world);
+    }
     this.objects.clear();
     this.seen.clear();
   }
@@ -64,8 +85,11 @@ implements Renderer<Scene3DRenderContext<TObject>> {
   }
 
   render({ graph, world }: Scene3DRenderContext<TObject>): void {
-    const { create, select, sync } = this.options;
-    for (const entry of select(world)) {
+    const { create, remove, select, sync } = this.options;
+    if (this.selection === undefined || this.world !== world)
+      this.selection = select(world);
+    this.world = world;
+    for (const entry of this.selection) {
       const id = entry[0];
       let object = this.objects.get(id);
       if (object === undefined) {
@@ -81,6 +105,7 @@ implements Renderer<Scene3DRenderContext<TObject>> {
         continue;
       graph.remove(object);
       this.objects.delete(id);
+      remove?.(object, id, world);
     }
     this.seen.clear();
   }

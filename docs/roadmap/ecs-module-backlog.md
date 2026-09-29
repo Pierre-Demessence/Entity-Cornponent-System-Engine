@@ -386,9 +386,10 @@ rather than replacing it.
   2D contract.
 - Do not preemptively rename `PositionDef` → `Position2DDef`. Retroactive
   rename only if mixed 2D/3D games prove it ambiguous.
-- `SpatialStructure<TPos>` is already generic in core — a future `HashGrid3D`
-  ships as another backend with zero core change. That is why spatial is
-  dimension-agnostic and is not duplicated below.
+- Spatial is dimension-agnostic: `SpatialStructure<TPos>` and
+  `world.enableSpatial` / `world.move` are generic in the position shape, and
+  `HashGrid3D` is one more backend in `modules/spatial`. It is not duplicated
+  below.
 
 ### `modules/camera-3d` V2 — spring arm (camera collision) — ready
 

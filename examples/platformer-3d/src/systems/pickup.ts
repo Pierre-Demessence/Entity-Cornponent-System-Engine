@@ -6,16 +6,18 @@ import { makeTriggerSystem } from '@pierre/ecs/modules/collision';
 import { aabb3VsAabb3 } from '@pierre/ecs/modules/collision-3d';
 
 import {
-  CoinTag,
   CoinValueDef,
   Position3DDef,
   ShapeAabb3DDef,
 } from '../components';
-import { despawn } from '../game';
+import { COIN_SIZE, despawn, PLAYER_SIZE } from '../game';
+
+// Two overlapping cubes have centres at most the sum of their half-diagonals apart.
+const PICKUP_REACH = ((PLAYER_SIZE + COIN_SIZE) / 2) * Math.sqrt(3);
 
 /**
- * Player↔coin pickup. Brute-force pairs against the small `CoinTag` set; the
- * narrowphase is the engine's 3D box overlap.
+ * Player↔coin pickup. The broadphase asks the world's coin-only `HashGrid3D`
+ * for coins near the player; the narrowphase is the engine's 3D box overlap.
  */
 export const pickupSystem: SchedulableSystem<GameState> = makeTriggerSystem<GameState>({
   name: 'pickup',
@@ -24,8 +26,9 @@ export const pickupSystem: SchedulableSystem<GameState> = makeTriggerSystem<Game
     if (ctx.playerId == null)
       return [];
     const playerId = ctx.playerId;
+    const playerPos = ctx.world.getStore(Position3DDef).get(playerId)!;
     const pairs: Array<readonly [EntityId, EntityId]> = [];
-    for (const coinId of ctx.world.getTag(CoinTag))
+    for (const coinId of ctx.world.coins.queryNear(playerPos, PICKUP_REACH))
       pairs.push([playerId, coinId] as const);
     return pairs;
   },
