@@ -156,6 +156,65 @@ describe('@pierre/ecs/modules/render-scene3d', () => {
     expect([...graph.children][0]?.scale).toBe(7);
   });
 
+  describe('remove option', () => {
+    function removingRenderer(remove: (object: FakeObject, id: EntityId, world: EcsWorld) => void) {
+      return new Scene3DRenderer<FakeObject, [Pos]>({
+        remove,
+        create: ([id]) => ({ id, position: { x: 0, y: 0, z: 0 }, scale: 1 }),
+        select: w => w.query(PosDef).withTag(w.getTag(BodyTag)),
+      });
+    }
+
+    it('is called once, after graph.remove, when an entity leaves the selection', () => {
+      const world = makeWorld();
+      const graph = new FakeGraph();
+      const remove = vi.fn((object: FakeObject) => {
+        expect(graph.children.has(object)).toBe(false);
+      });
+      const renderer = removingRenderer(remove);
+      const id = spawnBody(world, { x: 0, y: 0, z: 0 });
+      renderer.render({ graph, world });
+      const [object] = graph.children;
+
+      world.getTag(BodyTag).delete(id);
+      renderer.render({ graph, world });
+      renderer.render({ graph, world });
+
+      expect(remove).toHaveBeenCalledTimes(1);
+      expect(remove).toHaveBeenCalledWith(object, id, world);
+    });
+
+    it('is not called while the entity stays selected', () => {
+      const world = makeWorld();
+      const graph = new FakeGraph();
+      const remove = vi.fn();
+      const renderer = removingRenderer(remove);
+      spawnBody(world, { x: 0, y: 0, z: 0 });
+
+      renderer.render({ graph, world });
+      renderer.render({ graph, world });
+
+      expect(remove).not.toHaveBeenCalled();
+    });
+
+    it('is called for every held object on dispose, and not again afterwards', () => {
+      const world = makeWorld();
+      const graph = new FakeGraph();
+      const remove = vi.fn();
+      const renderer = removingRenderer(remove);
+      const a = spawnBody(world, { x: 0, y: 0, z: 0 });
+      const b = spawnBody(world, { x: 1, y: 0, z: 0 });
+      renderer.render({ graph, world });
+
+      renderer.dispose(graph);
+      renderer.render({ graph: new FakeGraph(), world: makeWorld() });
+
+      expect(remove).toHaveBeenCalledTimes(2);
+      expect(remove.mock.calls.map(c => c[1])).toEqual([a, b]);
+      expect(remove.mock.calls.every(c => c[2] === world)).toBe(true);
+    });
+  });
+
   it('accepts any iterable of entries, not only a query', () => {
     const world = makeWorld();
     const graph = new FakeGraph();

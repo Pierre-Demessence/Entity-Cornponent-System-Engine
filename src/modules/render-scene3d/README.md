@@ -28,6 +28,7 @@ interface Scene3DRendererOptions<TObject, TRow extends unknown[]> {
   select: (world: EcsWorld) => Iterable<Scene3DEntry<TRow>>;
   create: (entry: Scene3DEntry<TRow>, world: EcsWorld) => TObject;
   sync?: (object: TObject, entry: Scene3DEntry<TRow>, world: EcsWorld) => void;
+  remove?: (object: TObject, entityId: EntityId, world: EcsWorld) => void;
 }
 
 class Scene3DRenderer<TObject, TRow extends unknown[] = unknown[]>
@@ -46,11 +47,16 @@ class Scene3DRenderer<TObject, TRow extends unknown[] = unknown[]>
 - **`create`** builds the object for an entity the first frame it is selected.
 - **`sync`** runs every frame the entity is selected, including the frame it
   was created: copy position, scale, material, visibility.
+- **`remove`** (optional) runs once per object, right after it is removed from
+  the graph: when its entity leaves the selection, and for every held object
+  on `dispose`. Recycle a pooled object or dispose its geometry and material
+  here. `world` is the one given to the most recent `render`.
 - **`get`** returns the object held for an entity, for code that adjusts it
   after the pass.
-- **`dispose`** removes every object this pass created from the graph and
-  forgets it. It does not dispose geometries, materials or textures — those
-  were built by your `create` and stay yours to release.
+- **`dispose`** removes every object this pass created from the graph, calls
+  `remove` for each, and forgets them. Without a `remove` option it does not
+  dispose geometries, materials or textures — those were built by your
+  `create` and stay yours to release.
 
 ## Usage
 
@@ -107,8 +113,8 @@ for.
 
 - An entity leaves a pass for any reason `select` stops yielding it: a removed
   tag or component, an excluded tag added, or the entity destroyed. Its object
-  is removed from the graph that frame; if it comes back, `create` builds a new
-  one.
+  is removed from the graph that frame and passed to `remove`; if it comes
+  back, `create` builds a new one.
 - `select` can return any iterable of `[id, ...values]` entries, not only a
   query.
 - No cross-module source dependency. The pose components a `select` reads
