@@ -1,21 +1,25 @@
-import type { TagDef } from '@pierre/ecs';
+import type { SchedulableSystem, TagDef } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
 import type { Canvas2DRenderContext } from '@pierre/ecs/modules/render-canvas2d';
 
-import { EcsWorld } from '@pierre/ecs';
+import { EcsWorld, Scheduler, TickRunner } from '@pierre/ecs';
 import {
-  makeSpriteAnimation,
-  makeSpriteAnimationSystem,
-  SpriteAnimationDef,
+  makeSpriteAnimator,
+  makeSpriteClipAnimationSystem,
+  playClip,
+  SpriteAnimatorDef,
+  SpriteClipRegistry,
 } from '@pierre/ecs/modules/animation';
 import { AssetLoader, imageAsset, textAsset } from '@pierre/ecs/modules/asset-loader';
 import { CameraDef, cameraToView, makeCamera, makeFollowCameraSystem } from '@pierre/ecs/modules/camera';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { vec2ScaleToLength } from '@pierre/ecs/modules/math';
 import {
   Canvas2DRenderer,
   RenderableDef,
   RenderOrderDef,
 } from '@pierre/ecs/modules/render-canvas2d';
+import { AnimationFrameTickSource } from '@pierre/ecs/modules/tick';
 import { PositionDef, RotationDef, ScaleDef } from '@pierre/ecs/modules/transform';
 
 import tmxUrl from '../../assets/kenney_tiny-dungeon/Tiled/sampleMap.tmx?url';
@@ -84,6 +88,16 @@ const CameraTag: TagDef = { name: 'cameraEntity' };
 
 type RpgAction = 'down' | 'interact' | 'left' | 'right' | 'up';
 
+type Direction = 'down' | 'left' | 'right' | 'up';
+const DIRECTIONS: readonly Direction[] = ['down', 'left', 'right', 'up'];
+const walkClip = (dir: Direction): string => `walk-${dir}`;
+
+/** Per-tick context: the frame's (clamped) delta and the world. */
+interface RpgTick { dtMs: number; world: EcsWorld }
+
+/** Longest simulated step, so a stalled tab does not tunnel the player through walls. */
+const MAX_STEP_MS = 50;
+
 function makeWorld(): EcsWorld {
   const world = new EcsWorld();
   world.registerComponent(PositionDef);
@@ -92,7 +106,7 @@ function makeWorld(): EcsWorld {
   world.registerComponent(ScaleDef);
   world.registerComponent(RotationDef);
   world.registerComponent(CameraDef);
-  world.registerComponent(SpriteAnimationDef);
+  world.registerComponent(SpriteAnimatorDef);
   world.registerTag(PlayerTag);
   world.registerTag(CameraTag);
   return world;
@@ -130,7 +144,7 @@ export function start(container: HTMLElement): () => void {
   const assetLoader = new AssetLoader();
   const abort = new AbortController();
   let disposed = false;
-  let raf = 0;
+  let runner: TickRunner<RpgTick> | null = null;
   let input: InputState<RpgAction> | null = null;
 
   void (async () => {
@@ -176,23 +190,27 @@ export function start(container: HTMLElement): () => void {
 
       const spawn = findSpawn(collision, canStand);
 
+      // One walk clip per facing; standing pauses the walk clip on its middle frame.
+      const clips = new SpriteClipRegistry();
+      for (const dir of DIRECTIONS)
+        clips.register(walkClip(dir), { fps: 8, frames: TINY_DIRECTION_FRAMES[dir], loop: true });
+
       // Spawn animated player with the tiny-16-basic character sheet.
       const playerId = world.createEntity();
-      const animStore = world.getStore(SpriteAnimationDef);
       positions.set(playerId, { x: spawn.x, y: spawn.y });
       renderables.set(playerId, {
         anchor: 'center',
         atlas: TINY_CHAR_ATLAS,
         dh: TILE,
         dw: TILE,
-        frame: '0', // initial — animation system overwrites
+        frame: TINY_DIRECTION_FRAMES.down[1]!, // initial — animation system overwrites
         kind: 'sprite',
       });
       orders.set(playerId, { value: RENDER_LAYER });
-      animStore.set(playerId, makeSpriteAnimation(TINY_DIRECTION_FRAMES.down, 8));
+      const animator = makeSpriteAnimator(walkClip('down'), false);
+      animator.currentIndex = 1;
+      world.getStore(SpriteAnimatorDef).set(playerId, animator);
       world.getTag(PlayerTag).add(playerId);
-
-      const animSystem = makeSpriteAnimationSystem<{ dtMs: number; world: typeof world }>();
 
       // NPCs reuse characters already painted into the Objects layer: each is an
       // invisible interaction point centred on its baked tile.
@@ -215,12 +233,6 @@ export function start(container: HTMLElement): () => void {
         y: spawn.y,
       }));
       world.getTag(CameraTag).add(cameraId);
-      const followCamera = makeFollowCameraSystem<{ dtMs: number; world: typeof world }>({
-        cameraTag: CameraTag,
-        positionDef: PositionDef,
-        smoothing: CAMERA_SMOOTHING,
-        targetTag: PlayerTag,
-      });
 
       const keyboard = new KeyboardProvider({
         preventDefaultCodes: [Key.ArrowDown, Key.ArrowLeft, Key.ArrowRight, Key.ArrowUp, Key.Space],
@@ -257,63 +269,63 @@ export function start(container: HTMLElement): () => void {
       hint.textContent = `${map.width}×${map.height} dungeon · ${map.layers.length} layers · `
         + `${tileCount.toLocaleString()} tiles · WASD/arrows to move · Space/E to talk`;
 
-      let last = performance.now();
-      let currentDir: 'down' | 'left' | 'right' | 'up' = 'down';
-      const frame = (now: number): void => {
-        if (disposed)
-          return;
-        const dt = Math.min(0.05, (now - last) / 1000);
-        last = now;
-
-        if (inputState.justPressed('interact')) {
+      /** Space/E opens the nearest NPC's dialogue, or advances the open one. */
+      const interactSystem: SchedulableSystem<RpgTick> = {
+        name: 'interact',
+        run() {
+          if (!inputState.justPressed('interact'))
+            return;
           if (dialogue.open) {
             dialogue.advance();
+            return;
           }
-          else {
-            const npc = nearestNpc();
-            if (npc)
-              dialogue.start(npc.name, npc.dialog);
-          }
-        }
+          const npc = nearestNpc();
+          if (npc)
+            dialogue.start(npc.name, npc.dialog);
+        },
+      };
 
-        if (!dialogue.open) {
+      /** Walks the player tile-collision-aware and picks the facing's walk clip. */
+      const moveSystem: SchedulableSystem<RpgTick> = {
+        name: 'player-move',
+        runAfter: ['interact'],
+        run({ dtMs }) {
+          if (dialogue.open)
+            return;
+          const anim = world.getStore(SpriteAnimatorDef).get(playerId)!;
           let dx = (inputState.isDown('right') ? 1 : 0) - (inputState.isDown('left') ? 1 : 0);
           let dy = (inputState.isDown('down') ? 1 : 0) - (inputState.isDown('up') ? 1 : 0);
-          if (dx !== 0 || dy !== 0) {
-            const inv = 1 / Math.hypot(dx, dy);
-            dx *= inv * PLAYER_SPEED * dt;
-            dy *= inv * PLAYER_SPEED * dt;
-            const pos = positions.get(playerId)!;
-            if (canStand(pos.x + dx, pos.y))
-              pos.x += dx;
-            if (canStand(pos.x, pos.y + dy))
-              pos.y += dy;
-
-            // Walking — play the directional animation.
-            const dir: 'down' | 'left' | 'right' | 'up'
-              = dy > 0 ? 'down' : dy < 0 ? 'up' : dx > 0 ? 'right' : 'left';
-            currentDir = dir;
-            const current = animStore.get(playerId);
-            const targetFrames = TINY_DIRECTION_FRAMES[dir];
-            if (!current || current.frames[0] !== targetFrames[0]) {
-              animStore.set(playerId, makeSpriteAnimation(targetFrames, 8));
-            }
+          if (dx === 0 && dy === 0) {
+            // Standing — hold the current facing's middle frame.
+            anim.playing = false;
+            anim.currentIndex = 1;
+            return;
           }
-          else {
-            // Standing — show the middle frame and pause animation.
-            const standingFrame = TINY_DIRECTION_FRAMES[currentDir][1];
-            const r = renderables.get(playerId)!;
-            if (r.kind === 'sprite' && r.frame !== standingFrame) {
-              renderables.set(playerId, { ...r, frame: standingFrame });
-            }
-            if (animStore.has(playerId)) {
-              animStore.delete(playerId);
-            }
-          }
-        }
+          const step = vec2ScaleToLength({ x: dx, y: dy }, PLAYER_SPEED * (dtMs / 1000));
+          dx = step.x;
+          dy = step.y;
+          const pos = positions.get(playerId)!;
+          if (canStand(pos.x + dx, pos.y))
+            pos.x += dx;
+          if (canStand(pos.x, pos.y + dy))
+            pos.y += dy;
+          playClip(anim, walkClip(dy > 0 ? 'down' : dy < 0 ? 'up' : dx > 0 ? 'right' : 'left'));
+        },
+      };
 
-        animSystem.run({ dtMs: dt * 1000, world });
-        followCamera.run({ dtMs: dt * 1000, world });
+      const scheduler = new Scheduler<RpgTick>()
+        .add(interactSystem)
+        .add(moveSystem)
+        .add(makeSpriteClipAnimationSystem<RpgTick>({ registry: clips, runAfter: ['player-move'] }))
+        .add(makeFollowCameraSystem<RpgTick>({
+          cameraTag: CameraTag,
+          positionDef: PositionDef,
+          runAfter: ['player-move'],
+          smoothing: CAMERA_SMOOTHING,
+          targetTag: PlayerTag,
+        }));
+
+      const draw = (): void => {
         const cam = world.getStore(CameraDef).get(cameraId)!;
         const view = cameraToView(cam);
         // Round to whole pixels so the pixel-art tiles stay crisp.
@@ -326,11 +338,24 @@ export function start(container: HTMLElement): () => void {
         ctx2d.fillStyle = '#0b0d12';
         ctx2d.fillRect(0, 0, VIEW_W, VIEW_H);
         renderer.render({ ...renderCtx, view });
-
-        inputState.clearEdges();
-        raf = requestAnimationFrame(frame);
       };
-      raf = requestAnimationFrame(frame);
+
+      // One variable-rate tick per display frame: simulate, then draw.
+      const tick: RpgTick = { dtMs: 0, world };
+      runner = new TickRunner<RpgTick>({
+        scheduler,
+        source: new AnimationFrameTickSource(),
+        getWorld: () => world,
+        contextFactory: (info) => {
+          tick.dtMs = Math.min(MAX_STEP_MS, info.deltaMs ?? 0);
+          return tick;
+        },
+        onTickComplete: () => {
+          draw();
+          inputState.clearEdges();
+        },
+      });
+      runner.start();
     }
     catch (error) {
       if (disposed)
@@ -344,7 +369,7 @@ export function start(container: HTMLElement): () => void {
 
   return () => {
     disposed = true;
-    cancelAnimationFrame(raf);
+    runner?.stop();
     input?.dispose();
     abort.abort();
     container.innerHTML = '';

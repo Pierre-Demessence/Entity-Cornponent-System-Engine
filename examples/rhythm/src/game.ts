@@ -13,16 +13,19 @@ import { EcsWorld, simpleComponent } from '@pierre/ecs';
 export type Lane = 0 | 1 | 2 | 3;
 export const LANES: readonly Lane[] = [0, 1, 2, 3];
 
-/** Per-note data. `hit` is kept as 0/1 to satisfy `simpleComponent`'s primitive schema. */
+/** Where a note is in its life: still approaching, judged a hit, or missed. */
+export type NoteStatus = 'hit' | 'missed' | 'pending';
+
+/** Per-note data. */
 export interface Note {
-  hit: number;
   lane: number;
+  status: NoteStatus;
   targetTimeS: number;
 }
 
 export const NoteDef = simpleComponent<Note>('note', {
-  hit: 'number',
   lane: 'number',
+  status: 'string',
   targetTimeS: 'number',
 });
 
@@ -111,7 +114,7 @@ export function makeWorld(): EcsWorld {
 export function spawnNote(state: GameState, i: number): EntityId {
   const { lane, targetTimeS } = chartNote(i);
   const id = state.world.createEntity();
-  state.world.getStore(NoteDef).set(id, { hit: 0, lane, targetTimeS });
+  state.world.getStore(NoteDef).set(id, { lane, status: 'pending', targetTimeS });
   state.events.emit({ type: 'NoteSpawned' });
   return id;
 }

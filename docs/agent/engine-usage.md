@@ -42,9 +42,9 @@ references it.
 ## Headline
 
 - 62 public entries (16 core, 46 modules) · 606 symbols (355 value, 251 type)
-- 45 entries referenced by at least one example · 17 with none
-- 202 value symbols referenced by no example (6 of them with no external consumer at all)
-- 169 symbols with no external consumer
+- 47 entries referenced by at least one example · 15 with none
+- 187 value symbols referenced by no example (6 of them with no external consumer at all)
+- 168 symbols with no external consumer
 
 ## Entries with no example reference
 
@@ -60,8 +60,6 @@ only by another module.
 - `@pierre/ecs/modules/pathfinding` — tests: 1 · other: —
 - `@pierre/ecs/modules/save` — tests: 3 · other: —
 - `@pierre/ecs/modules/scene-transition` — tests: 1 · other: —
-- `@pierre/ecs/modules/stats` — tests: 3 · other: —
-- `@pierre/ecs/modules/timer` — tests: 1 · other: cooldown, lifetime, particles, tween
 - `@pierre/ecs/modules/turn-based` — tests: 1 · other: —
 - `@pierre/ecs/modules/tween` — tests: 1 · other: —
 - `@pierre/ecs/query` — tests: 1 · other: world.ts
@@ -76,14 +74,13 @@ Modules ranked by how many of their value exports no example references —
 the shortlist for the next game in
 [twenty-games-challenge.md](../twenty-games-challenge.md).
 
-- `@pierre/ecs/modules/math` — 37 of 53 value exports unreferenced by any example
+- `@pierre/ecs/modules/math` — 32 of 53 value exports unreferenced by any example
 - `@pierre/ecs/modules/easing` — 30 of 31 value exports unreferenced by any example
 - `@pierre/ecs/modules/camera-3d` — 21 of 33 value exports unreferenced by any example
-- `@pierre/ecs/modules/collision-3d` — 13 of 17 value exports unreferenced by any example
+- `@pierre/ecs/modules/collision-3d` — 12 of 17 value exports unreferenced by any example
 - `@pierre/ecs/modules/noise` — 11 of 11 value exports unreferenced by any example
-- `@pierre/ecs/modules/animation` — 9 of 12 value exports unreferenced by any example
+- `@pierre/ecs/modules/animation` — 7 of 12 value exports unreferenced by any example
 - `@pierre/ecs/modules/save` — 7 of 7 value exports unreferenced by any example
-- `@pierre/ecs/modules/timer` — 7 of 7 value exports unreferenced by any example
 - `@pierre/ecs/modules/steering` — 5 of 14 value exports unreferenced by any example
 - `@pierre/ecs/modules/tmx` — 5 of 6 value exports unreferenced by any example
 - `@pierre/ecs/modules/tween` — 5 of 5 value exports unreferenced by any example
@@ -92,12 +89,13 @@ the shortlist for the next game in
 - `@pierre/ecs/modules/pile` — 4 of 14 value exports unreferenced by any example
 - `@pierre/ecs/modules/collision` — 3 of 12 value exports unreferenced by any example
 - `@pierre/ecs/modules/grid-based` — 3 of 3 value exports unreferenced by any example
-- `@pierre/ecs/modules/input` — 3 of 10 value exports unreferenced by any example
-- `@pierre/ecs/modules/stats` — 3 of 3 value exports unreferenced by any example
+- `@pierre/ecs/modules/input` — 2 of 10 value exports unreferenced by any example
 - `@pierre/ecs/modules/particles` — 2 of 6 value exports unreferenced by any example
 - `@pierre/ecs/modules/rng` — 2 of 4 value exports unreferenced by any example
 - `@pierre/ecs/modules/scene-transition` — 2 of 2 value exports unreferenced by any example
 - `@pierre/ecs/modules/spatial` — 2 of 6 value exports unreferenced by any example
+- `@pierre/ecs/modules/stats` — 2 of 3 value exports unreferenced by any example
+- `@pierre/ecs/modules/timer` — 2 of 7 value exports unreferenced by any example
 - `@pierre/ecs/modules/behavior-tree` — 1 of 5 value exports unreferenced by any example
 - `@pierre/ecs/modules/kinematics-3d` — 1 of 2 value exports unreferenced by any example
 - `@pierre/ecs/modules/pathfinding` — 1 of 1 value exports unreferenced by any example
@@ -114,31 +112,31 @@ symbols.
 
 | example | entries | value | type |
 |---|---|---|---|
-| top-down-shooter | 19 | 44 | 7 |
+| starfighter | 18 | 54 | 8 |
+| doom | 18 | 43 | 9 |
+| top-down-shooter | 20 | 45 | 7 |
 | spacewar | 20 | 41 | 5 |
-| asteroids | 17 | 38 | 6 |
-| jetpack | 16 | 34 | 7 |
-| space-invaders | 17 | 33 | 8 |
-| portal | 15 | 29 | 11 |
-| starfighter | 15 | 33 | 7 |
-| doom | 15 | 30 | 7 |
+| asteroids | 18 | 39 | 6 |
+| space-invaders | 17 | 36 | 9 |
+| frogger | 16 | 33 | 9 |
+| portal | 15 | 31 | 11 |
+| jetpack | 16 | 34 | 6 |
+| river-raid | 16 | 30 | 9 |
+| rpg | 15 | 32 | 6 |
 | platformer-3d | 15 | 27 | 8 |
 | card-battler | 13 | 25 | 7 |
-| frogger | 15 | 25 | 7 |
-| rpg | 11 | 26 | 5 |
-| solitaire | 12 | 25 | 4 |
-| breakout | 13 | 21 | 6 |
-| flappy | 13 | 20 | 7 |
+| breakout | 13 | 23 | 7 |
+| solitaire | 13 | 26 | 4 |
+| flappy | 13 | 22 | 7 |
+| stealth-guard | 12 | 22 | 7 |
+| boids | 11 | 20 | 7 |
 | platformer | 13 | 21 | 6 |
-| stealth-guard | 12 | 20 | 7 |
-| boids | 11 | 19 | 7 |
-| river-raid | 13 | 20 | 6 |
-| critters | 12 | 16 | 7 |
-| local-pong | 12 | 16 | 5 |
+| critters | 12 | 17 | 7 |
+| local-pong | 13 | 18 | 5 |
 | tilemap | 9 | 16 | 2 |
-| woodcutter | 11 | 10 | 6 |
-| snake | 11 | 11 | 4 |
-| rhythm | 10 | 9 | 4 |
+| snake | 11 | 13 | 4 |
+| woodcutter | 11 | 11 | 6 |
+| rhythm | 10 | 10 | 4 |
 | stress-storage | 2 | 3 | 0 |
 | parallel-kernel | 2 | 2 | 0 |
 | worker-offload | 1 | 2 | 0 |
@@ -160,7 +158,7 @@ value 0/0 · type 0/3 · examples: — · tests: 1 · other: audio
 value 2/4 · type 2/15 · examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, jetpack +12 more · tests: 18 · other: animation, attach, audio, camera, camera-3d, collision, collision-3d, column-store.ts +17 more
 
 - **`ColumnField`** _(interface)_ — examples: — · tests: src/column-store.test.ts · other: column-store.ts
-- **`ComponentDef`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, jetpack +7 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/component-store.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/test-utils.test.ts, src/world.test.ts · other: animation, attach, audio, camera, camera-3d, collision, collision-3d, column-store.ts +12 more
+- **`ComponentDef`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, local-pong +6 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/component-store.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/test-utils.test.ts, src/world.test.ts · other: animation, attach, audio, camera, camera-3d, collision, collision-3d, column-store.ts +12 more
 - **`ComponentMigration`** _(type)_ — no external consumer
 - **`ComponentStore`** _(class)_ — examples: — · tests: src/column-store.test.ts, src/component-store.test.ts, src/query.test.ts · other: particles, render-dom, world.ts
 - **`ComponentStoreLike`** _(interface)_ — examples: — · tests: src/modules/render-dom/dom-renderer.test.ts · other: column-store.ts, pile, query.ts, render-canvas2d, world.ts
@@ -169,7 +167,7 @@ value 2/4 · type 2/15 · examples: asteroids, boids, breakout, card-battler, do
 - **`RegistryComponentOptions`** _(interface)_ — no external consumer
 - **`RegistryComponentValue`** _(type)_ — no external consumer
 - **`RegistryIdKind`** _(type)_ — no external consumer
-- **`simpleComponent`** _(fn)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, jetpack +8 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/modules/scene-transition/scene-transition.test.ts, src/plugin.test.ts, src/simple-component.test.ts · other: attach, camera, camera-3d, collision, collision-3d, cooldown, kinematics, kinematics-3d +5 more
+- **`simpleComponent`** _(fn)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, local-pong +7 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/modules/scene-transition/scene-transition.test.ts, src/plugin.test.ts, src/simple-component.test.ts · other: attach, camera, camera-3d, collision, collision-3d, cooldown, kinematics, kinematics-3d +5 more
 - **`SimpleComponentOptions`** _(interface)_ — no external consumer
 - **`SimpleFieldKind`** _(type)_ — no external consumer
 - **`SimpleSchema`** _(type)_ — examples: — · tests: — · other: timer
@@ -219,11 +217,11 @@ value 0/0 · type 1/1 · examples: card-battler · tests: — · other: render-c
 
 ### `@pierre/ecs/scheduler`
 
-value 1/1 · type 1/3 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +14 more · tests: 2 · other: animation, attach, audio, camera, camera-3d, collision, cooldown, kinematics +6 more
+value 1/1 · type 1/3 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: 2 · other: animation, attach, audio, camera, camera-3d, collision, cooldown, kinematics +6 more
 
 - **`ComponentRef`** _(interface)_ — no external consumer
-- **`SchedulableSystem`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +14 more · tests: src/scheduler.test.ts · other: animation, attach, audio, camera, camera-3d, collision, cooldown, kinematics +5 more
-- **`Scheduler`** _(class)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +14 more · tests: src/scheduler.test.ts, src/tick-runner.test.ts · other: tick-runner.ts (type only)
+- **`SchedulableSystem`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: src/scheduler.test.ts · other: animation, attach, audio, camera, camera-3d, collision, cooldown, kinematics +5 more
+- **`Scheduler`** _(class)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: src/scheduler.test.ts, src/tick-runner.test.ts · other: tick-runner.ts (type only)
 - **`SchedulerOptions`** _(interface)_ — no external consumer
 
 ### `@pierre/ecs/spatial-structure`
@@ -250,10 +248,10 @@ value 0/4 · type 0/0 · examples: — · tests: 4 · other: —
 
 ### `@pierre/ecs/tick-runner`
 
-value 1/1 · type 0/2 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +14 more · tests: 1 · other: —
+value 1/1 · type 0/2 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: 1 · other: —
 
 - **`TickFlushableEvents`** _(interface)_ — no external consumer
-- **`TickRunner`** _(class)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +14 more · tests: src/tick-runner.test.ts · other: —
+- **`TickRunner`** _(class)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: src/tick-runner.test.ts · other: —
 - **`TickRunnerOptions`** _(interface)_ — no external consumer
 
 ### `@pierre/ecs/tick-source`
@@ -285,25 +283,25 @@ value 1/1 · type 0/0 · examples: asteroids, boids, breakout, card-battler, cri
 
 ### `@pierre/ecs/modules/animation`
 
-value 3/12 · type 0/7 · examples: rpg · tests: 2 · other: —
+value 5/12 · type 0/7 · examples: rpg · tests: 2 · other: —
 
 - **`currentAnimatorFrame`** _(fn)_ — examples: — · tests: src/modules/animation/sprite-clip.test.ts · other: —
 - **`currentFrame`** _(fn)_ — examples: — · tests: src/modules/animation/sprite-animation.test.ts · other: —
-- **`makeSpriteAnimation`** _(fn)_ — examples: rpg · tests: src/modules/animation/sprite-animation.test.ts · other: —
-- **`makeSpriteAnimationSystem`** _(fn)_ — examples: rpg · tests: src/modules/animation/sprite-animation.test.ts · other: —
-- **`makeSpriteAnimator`** _(fn)_ — examples: — · tests: src/modules/animation/sprite-clip.test.ts · other: —
-- **`makeSpriteClipAnimationSystem`** _(fn)_ — examples: — · tests: src/modules/animation/sprite-clip.test.ts · other: —
-- **`playClip`** _(fn)_ — examples: — · tests: src/modules/animation/sprite-clip.test.ts · other: —
+- **`makeSpriteAnimation`** _(fn)_ — examples: — · tests: src/modules/animation/sprite-animation.test.ts · other: —
+- **`makeSpriteAnimationSystem`** _(fn)_ — examples: — · tests: src/modules/animation/sprite-animation.test.ts · other: —
+- **`makeSpriteAnimator`** _(fn)_ — examples: rpg · tests: src/modules/animation/sprite-clip.test.ts · other: —
+- **`makeSpriteClipAnimationSystem`** _(fn)_ — examples: rpg · tests: src/modules/animation/sprite-clip.test.ts · other: —
+- **`playClip`** _(fn)_ — examples: rpg · tests: src/modules/animation/sprite-clip.test.ts · other: —
 - **`SpriteAnimation`** _(interface)_ — no external consumer
-- **`SpriteAnimationDef`** _(const)_ — examples: rpg · tests: src/modules/animation/sprite-animation.test.ts · other: —
+- **`SpriteAnimationDef`** _(const)_ — examples: — · tests: src/modules/animation/sprite-animation.test.ts · other: —
 - **`SpriteAnimationSystemOptions`** _(interface)_ — no external consumer
 - **`SpriteAnimationTickCtx`** _(interface)_ — no external consumer
 - **`SpriteAnimator`** _(interface)_ — no external consumer
-- **`SpriteAnimatorDef`** _(const)_ — examples: — · tests: src/modules/animation/sprite-clip.test.ts · other: —
+- **`SpriteAnimatorDef`** _(const)_ — examples: rpg · tests: src/modules/animation/sprite-clip.test.ts · other: —
 - **`SpriteClip`** _(interface)_ — examples: — · tests: src/modules/animation/sprite-clip.test.ts · other: —
 - **`SpriteClipAnimationSystemOptions`** _(interface)_ — no external consumer
 - **`SpriteClipAnimationTickCtx`** _(interface)_ — no external consumer
-- **`SpriteClipRegistry`** _(class)_ — examples: — · tests: src/modules/animation/sprite-clip.test.ts · other: —
+- **`SpriteClipRegistry`** _(class)_ — examples: rpg · tests: src/modules/animation/sprite-clip.test.ts · other: —
 - **`tickSpriteAnimation`** _(fn)_ — examples: — · tests: src/modules/animation/sprite-animation.test.ts · other: —
 - **`tickSpriteAnimator`** _(fn)_ — examples: — · tests: src/modules/animation/sprite-clip.test.ts · other: —
 
@@ -451,7 +449,7 @@ value 9/12 · type 2/9 · examples: asteroids, breakout, critters, flappy, frogg
 - **`aabbContainsPoint`** _(fn)_ — examples: solitaire, stealth-guard · tests: src/modules/collision/narrowphase.test.ts · other: —
 - **`aabbVsAabb`** _(fn)_ — examples: frogger, jetpack, local-pong, platformer, river-raid, space-invaders · tests: src/modules/collision/narrowphase.test.ts, src/modules/collision/trigger.test.ts · other: kinematics
 - **`aabbVsAabbSwept`** _(fn)_ — examples: — · tests: src/modules/collision/narrowphase.test.ts · other: —
-- **`aabbVsCircle`** _(fn)_ — examples: flappy · tests: src/modules/collision/narrowphase.test.ts · other: —
+- **`aabbVsCircle`** _(fn)_ — examples: breakout, flappy · tests: src/modules/collision/narrowphase.test.ts · other: —
 - **`bounceOffAabb`** _(fn)_ — examples: breakout · tests: src/modules/collision/narrowphase.test.ts · other: —
 - **`BounceResult`** _(interface)_ — no external consumer
 - **`circleContainsPoint`** _(fn)_ — examples: — · tests: src/modules/collision/narrowphase.test.ts · other: —
@@ -461,7 +459,7 @@ value 9/12 · type 2/9 · examples: asteroids, breakout, critters, flappy, frogg
 - **`rayVsAabb`** _(fn)_ — examples: stealth-guard · tests: src/modules/collision/narrowphase.test.ts · other: —
 - **`reflect`** _(fn)_ — examples: — · tests: src/modules/collision/narrowphase.test.ts · other: —
 - **`ShapeAabb`** _(interface)_ — no external consumer
-- **`ShapeAabbDef`** _(const)_ — examples: platformer · tests: src/modules/collision/shapes.test.ts, src/modules/collision/trigger.test.ts, src/modules/kinematics/kinematics-system.test.ts · other: kinematics
+- **`ShapeAabbDef`** _(const)_ — examples: frogger, jetpack, local-pong, platformer, river-raid, space-invaders · tests: src/modules/collision/shapes.test.ts, src/modules/collision/trigger.test.ts, src/modules/kinematics/kinematics-system.test.ts · other: kinematics
 - **`ShapeCircle`** _(interface)_ — no external consumer
 - **`ShapeCircleDef`** _(const)_ — examples: asteroids, spacewar, top-down-shooter · tests: src/modules/collision/shapes.test.ts · other: —
 - **`SweptHit`** _(interface)_ — no external consumer
@@ -470,7 +468,7 @@ value 9/12 · type 2/9 · examples: asteroids, breakout, critters, flappy, frogg
 
 ### `@pierre/ecs/modules/collision-3d`
 
-value 4/17 · type 1/8 · examples: doom, platformer-3d, portal, starfighter · tests: 5 · other: camera-3d, kinematics-3d
+value 5/17 · type 1/8 · examples: doom, platformer-3d, portal, starfighter · tests: 5 · other: camera-3d, kinematics-3d
 
 - **`Aabb3`** _(interface)_ — examples: portal · tests: src/modules/collision-3d/narrowphase3.test.ts, src/modules/collision-3d/obb3.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts · other: camera-3d, kinematics-3d
 - **`Aabb3Axis`** _(type)_ — no external consumer
@@ -492,7 +490,7 @@ value 4/17 · type 1/8 · examples: doom, platformer-3d, portal, starfighter · 
 - **`ShapeAabb3`** _(interface)_ — no external consumer
 - **`ShapeAabb3Def`** _(const)_ — examples: — · tests: src/modules/collision-3d/shapes.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts · other: kinematics-3d
 - **`ShapeSphere3`** _(interface)_ — no external consumer
-- **`ShapeSphere3Def`** _(const)_ — examples: — · tests: src/modules/collision-3d/shapes.test.ts · other: —
+- **`ShapeSphere3Def`** _(const)_ — examples: starfighter · tests: src/modules/collision-3d/shapes.test.ts · other: —
 - **`sphere3ContainsPoint`** _(fn)_ — examples: starfighter · tests: src/modules/collision-3d/narrowphase3.test.ts · other: —
 - **`sphere3VsPlane3`** _(fn)_ — examples: — · tests: src/modules/collision-3d/narrowphase3.test.ts · other: —
 - **`sphere3VsSphere3`** _(fn)_ — examples: starfighter · tests: src/modules/collision-3d/narrowphase3.test.ts · other: —
@@ -500,16 +498,16 @@ value 4/17 · type 1/8 · examples: doom, platformer-3d, portal, starfighter · 
 
 ### `@pierre/ecs/modules/cooldown`
 
-value 5/5 · type 0/3 · examples: asteroids, river-raid, space-invaders, spacewar, top-down-shooter · tests: 1 · other: —
+value 5/5 · type 0/3 · examples: asteroids, doom, river-raid, space-invaders, spacewar, starfighter, top-down-shooter · tests: 1 · other: —
 
 - **`Cooldown`** _(type)_ — no external consumer
-- **`CooldownDef`** _(const)_ — examples: asteroids, river-raid, space-invaders, spacewar, top-down-shooter · tests: src/modules/cooldown/cooldown.test.ts · other: —
+- **`CooldownDef`** _(const)_ — examples: asteroids, doom, river-raid, space-invaders, spacewar, starfighter, top-down-shooter · tests: src/modules/cooldown/cooldown.test.ts · other: —
 - **`CooldownSystemOptions`** _(interface)_ — no external consumer
 - **`CooldownTickCtx`** _(interface)_ — no external consumer
-- **`makeCooldown`** _(fn)_ — examples: asteroids, river-raid, space-invaders, spacewar, top-down-shooter · tests: src/modules/cooldown/cooldown.test.ts · other: —
-- **`makeCooldownSystem`** _(fn)_ — examples: asteroids, river-raid, space-invaders, spacewar, top-down-shooter · tests: src/modules/cooldown/cooldown.test.ts · other: —
-- **`ready`** _(fn)_ — examples: asteroids, river-raid, space-invaders, spacewar, top-down-shooter · tests: src/modules/cooldown/cooldown.test.ts · other: —
-- **`trigger`** _(fn)_ — examples: asteroids, river-raid, space-invaders, spacewar, top-down-shooter · tests: src/modules/cooldown/cooldown.test.ts · other: —
+- **`makeCooldown`** _(fn)_ — examples: asteroids, doom, river-raid, space-invaders, spacewar, starfighter, top-down-shooter · tests: src/modules/cooldown/cooldown.test.ts · other: —
+- **`makeCooldownSystem`** _(fn)_ — examples: asteroids, doom, river-raid, space-invaders, spacewar, starfighter, top-down-shooter · tests: src/modules/cooldown/cooldown.test.ts · other: —
+- **`ready`** _(fn)_ — examples: asteroids, doom, river-raid, space-invaders, spacewar, starfighter, top-down-shooter · tests: src/modules/cooldown/cooldown.test.ts · other: —
+- **`trigger`** _(fn)_ — examples: asteroids, doom, river-raid, space-invaders, spacewar, starfighter, top-down-shooter · tests: src/modules/cooldown/cooldown.test.ts · other: —
 
 ### `@pierre/ecs/modules/drag-drop`
 
@@ -588,9 +586,9 @@ value 0/3 · type 0/2 · examples: — · tests: 1 · other: —
 
 ### `@pierre/ecs/modules/input`
 
-value 7/10 · type 2/21 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: 5 · other: —
+value 8/10 · type 3/21 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: 5 · other: —
 
-- **`createEventInput`** _(fn)_ — examples: — · tests: src/modules/input/event-input.test.ts · other: —
+- **`createEventInput`** _(fn)_ — examples: rhythm, snake · tests: src/modules/input/event-input.test.ts · other: —
 - **`createInput`** _(fn)_ — examples: asteroids, breakout, card-battler, doom, flappy, frogger, jetpack, local-pong +10 more · tests: src/modules/input/gamepad-provider.test.ts, src/modules/input/input.test.ts, src/modules/input/pointer-provider.test.ts · other: —
 - **`EventInput`** _(interface)_ — no external consumer
 - **`Gamepad`** _(const)_ — examples: — · tests: src/modules/input/gamepad-provider.test.ts · other: —
@@ -611,16 +609,16 @@ value 7/10 · type 2/21 · examples: asteroids, boids, breakout, card-battler, c
 - **`LookDelta`** _(interface)_ — no external consumer
 - **`MouseLookOptions`** _(interface)_ — examples: — · tests: src/modules/input/mouse-look.test.ts · other: —
 - **`MouseLookProvider`** _(class)_ — examples: doom, platformer-3d, portal · tests: src/modules/input/mouse-look.test.ts · other: —
-- **`MouseLookState`** _(interface)_ — no external consumer
+- **`MouseLookState`** _(interface)_ — examples: doom · tests: — · other: —
 - **`MouseLookTarget`** _(interface)_ — examples: — · tests: src/modules/input/mouse-look.test.ts · other: —
-- **`Pointer`** _(const)_ — examples: card-battler, jetpack, top-down-shooter · tests: src/modules/input/pointer-provider.test.ts · other: —
+- **`Pointer`** _(const)_ — examples: breakout, card-battler, doom, flappy, frogger, jetpack, portal, space-invaders +2 more · tests: src/modules/input/pointer-provider.test.ts · other: —
 - **`PointerCode`** _(type)_ — no external consumer
 - **`PointerProjector`** _(type)_ — no external consumer
-- **`PointerProvider`** _(class)_ — examples: boids, card-battler, critters, jetpack, top-down-shooter · tests: src/modules/input/pointer-provider.test.ts · other: —
+- **`PointerProvider`** _(class)_ — examples: boids, breakout, card-battler, critters, doom, flappy, frogger, jetpack +4 more · tests: src/modules/input/pointer-provider.test.ts · other: —
 - **`PointerProviderOptions`** _(interface)_ — no external consumer
-- **`PointerState`** _(interface)_ — examples: boids, card-battler, critters, top-down-shooter · tests: — · other: —
+- **`PointerState`** _(interface)_ — examples: boids, breakout, card-battler, critters, frogger, space-invaders, top-down-shooter · tests: — · other: —
 - **`PointerTarget`** _(interface)_ — examples: — · tests: src/modules/input/pointer-provider.test.ts · other: —
-- **`projectPointer`** _(fn)_ — examples: breakout, solitaire · tests: src/modules/input/pointer-provider.test.ts · other: —
+- **`projectPointer`** _(fn)_ — examples: solitaire · tests: src/modules/input/pointer-provider.test.ts · other: —
 
 ### `@pierre/ecs/modules/kinematics`
 
@@ -644,24 +642,24 @@ value 1/2 · type 0/3 · examples: doom, platformer-3d, portal · tests: 1 · ot
 
 ### `@pierre/ecs/modules/lifetime`
 
-value 3/3 · type 0/3 · examples: asteroids, frogger, jetpack, space-invaders, spacewar, top-down-shooter · tests: 2 · other: particles
+value 3/3 · type 0/3 · examples: asteroids, doom, frogger, jetpack, space-invaders, spacewar, starfighter, top-down-shooter · tests: 2 · other: particles
 
 - **`Lifetime`** _(type)_ — no external consumer
-- **`LifetimeDef`** _(const)_ — examples: asteroids, frogger, jetpack, space-invaders, spacewar, top-down-shooter · tests: src/modules/lifetime/lifetime.test.ts, src/modules/particles/particles.test.ts · other: particles
+- **`LifetimeDef`** _(const)_ — examples: asteroids, doom, frogger, jetpack, space-invaders, spacewar, starfighter, top-down-shooter · tests: src/modules/lifetime/lifetime.test.ts, src/modules/particles/particles.test.ts · other: particles
 - **`LifetimeSystemOptions`** _(interface)_ — no external consumer
 - **`LifetimeTickCtx`** _(interface)_ — no external consumer
-- **`makeLifetime`** _(fn)_ — examples: asteroids, jetpack, spacewar, top-down-shooter · tests: src/modules/lifetime/lifetime.test.ts · other: particles
-- **`makeLifetimeSystem`** _(fn)_ — examples: asteroids, frogger, jetpack, space-invaders, spacewar, top-down-shooter · tests: src/modules/lifetime/lifetime.test.ts, src/modules/particles/particles.test.ts · other: —
+- **`makeLifetime`** _(fn)_ — examples: asteroids, doom, jetpack, spacewar, starfighter, top-down-shooter · tests: src/modules/lifetime/lifetime.test.ts · other: particles
+- **`makeLifetimeSystem`** _(fn)_ — examples: asteroids, doom, frogger, jetpack, space-invaders, spacewar, starfighter, top-down-shooter · tests: src/modules/lifetime/lifetime.test.ts, src/modules/particles/particles.test.ts · other: —
 
 ### `@pierre/ecs/modules/math`
 
-value 16/53 · type 2/4 · examples: breakout, critters, doom, frogger, jetpack, local-pong, platformer-3d, portal +9 more · tests: 13 · other: camera, camera-3d, collision, collision-3d, drag-drop, kinematics-3d, particles, steering +2 more
+value 21/53 · type 2/4 · examples: breakout, critters, doom, frogger, jetpack, local-pong, platformer-3d, portal +10 more · tests: 13 · other: camera, camera-3d, collision, collision-3d, drag-drop, kinematics-3d, particles, steering +2 more
 
 - **`approximately`** _(fn)_ — examples: — · tests: src/modules/math/math.test.ts · other: —
 - **`clamp`** _(fn)_ — examples: breakout, frogger, jetpack, local-pong, portal, river-raid, space-invaders, stealth-guard +1 more · tests: src/modules/math/math.test.ts · other: camera, camera-3d, collision, collision-3d
-- **`clamp01`** _(fn)_ — examples: jetpack, rhythm, top-down-shooter · tests: src/modules/math/math.test.ts · other: particles
+- **`clamp01`** _(fn)_ — examples: jetpack, rhythm, starfighter, top-down-shooter · tests: src/modules/math/math.test.ts · other: particles
 - **`degToRad`** _(fn)_ — examples: breakout, doom, platformer-3d, portal, starfighter · tests: src/modules/math/math.test.ts · other: —
-- **`inverseLerp`** _(fn)_ — examples: jetpack · tests: src/modules/math/math.test.ts · other: —
+- **`inverseLerp`** _(fn)_ — examples: jetpack, starfighter · tests: src/modules/math/math.test.ts · other: —
 - **`lerp`** _(fn)_ — examples: jetpack, top-down-shooter · tests: src/modules/math/math.test.ts · other: camera, particles, tween
 - **`lerpAngle`** _(fn)_ — examples: — · tests: src/modules/math/math.test.ts · other: —
 - **`Mat4`** _(type)_ — examples: — · tests: src/modules/math/mat4.test.ts · other: camera-3d
@@ -694,33 +692,33 @@ value 16/53 · type 2/4 · examples: breakout, critters, doom, frogger, jetpack,
 - **`Vec2`** _(interface)_ — examples: critters, stealth-guard, woodcutter · tests: src/modules/drag-drop/drag-drop.test.ts, src/modules/steering/steering.test.ts · other: collision, drag-drop, steering
 - **`vec2MoveToward`** _(fn)_ — examples: — · tests: src/modules/math/vec2.test.ts · other: —
 - **`vec2Normalize`** _(fn)_ — examples: — · tests: src/modules/math/vec2.test.ts · other: steering
-- **`vec2ScaleToLength`** _(fn)_ — examples: breakout, spacewar, stealth-guard, top-down-shooter · tests: src/modules/math/vec2.test.ts · other: steering
+- **`vec2ScaleToLength`** _(fn)_ — examples: breakout, rpg, spacewar, stealth-guard, top-down-shooter · tests: src/modules/math/vec2.test.ts · other: steering
 - **`Vec3`** _(interface)_ — examples: doom, portal, starfighter · tests: src/modules/camera-3d/frustum.test.ts, src/modules/camera-3d/project.test.ts, src/modules/camera-3d/rigs.test.ts, src/modules/collision-3d/narrowphase3.test.ts, src/modules/collision-3d/obb3.test.ts, src/modules/math/mat4.test.ts · other: camera-3d, collision-3d, kinematics-3d, transform-3d
 - **`vec3Add`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: camera-3d
 - **`vec3AddScaled`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
 - **`vec3ClampLength`** _(fn)_ — examples: starfighter · tests: src/modules/math/vec3.test.ts · other: —
 - **`vec3Cross`** _(fn)_ — examples: portal · tests: src/modules/math/quat.test.ts, src/modules/math/vec3.test.ts · other: collision-3d
 - **`vec3Distance`** _(fn)_ — examples: — · tests: src/modules/camera-3d/rigs.test.ts, src/modules/math/vec3.test.ts · other: —
-- **`vec3Dot`** _(fn)_ — examples: — · tests: src/modules/math/quat.test.ts, src/modules/math/vec3.test.ts · other: collision-3d
-- **`vec3Length`** _(fn)_ — examples: — · tests: src/modules/math/quat.test.ts, src/modules/math/vec3.test.ts · other: collision-3d
+- **`vec3Dot`** _(fn)_ — examples: starfighter · tests: src/modules/math/quat.test.ts, src/modules/math/vec3.test.ts · other: collision-3d
+- **`vec3Length`** _(fn)_ — examples: starfighter · tests: src/modules/math/quat.test.ts, src/modules/math/vec3.test.ts · other: collision-3d
 - **`vec3LengthSq`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
-- **`vec3Lerp`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: camera-3d
+- **`vec3Lerp`** _(fn)_ — examples: starfighter · tests: src/modules/math/vec3.test.ts · other: camera-3d
 - **`vec3MoveToward`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
 - **`vec3Negate`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
-- **`vec3Normalize`** _(fn)_ — examples: doom, portal · tests: src/modules/math/vec3.test.ts · other: camera-3d, collision-3d
+- **`vec3Normalize`** _(fn)_ — examples: doom, portal, starfighter · tests: src/modules/math/vec3.test.ts · other: camera-3d, collision-3d
 - **`vec3RandomUnit`** _(fn)_ — examples: starfighter · tests: src/modules/math/vec3.test.ts · other: —
-- **`vec3Reflect`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
+- **`vec3Reflect`** _(fn)_ — examples: starfighter · tests: src/modules/math/vec3.test.ts · other: —
 - **`vec3Scale`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
 - **`vec3ScaleToLength`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
 - **`vec3Sub`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: camera-3d
-- **`wrap`** _(fn)_ — examples: — · tests: src/modules/math/math.test.ts · other: —
+- **`wrap`** _(fn)_ — examples: stealth-guard · tests: src/modules/math/math.test.ts · other: —
 
 ### `@pierre/ecs/modules/motion`
 
-value 1/1 · type 0/4 · examples: asteroids, boids, breakout, critters, flappy, frogger, jetpack, river-raid +5 more · tests: 1 · other: —
+value 1/1 · type 0/4 · examples: asteroids, boids, breakout, critters, flappy, frogger, jetpack, local-pong +6 more · tests: 1 · other: —
 
 - **`Bounds`** _(interface)_ — no external consumer
-- **`makeVelocityIntegrationSystem`** _(fn)_ — examples: asteroids, boids, breakout, critters, flappy, frogger, jetpack, river-raid +5 more · tests: src/modules/motion/motion.test.ts · other: —
+- **`makeVelocityIntegrationSystem`** _(fn)_ — examples: asteroids, boids, breakout, critters, flappy, frogger, jetpack, local-pong +6 more · tests: src/modules/motion/motion.test.ts · other: —
 - **`VelocityIntegrationBoundary`** _(type)_ — no external consumer
 - **`VelocityIntegrationOptions`** _(interface)_ — no external consumer
 - **`VelocityIntegrationTickCtx`** _(interface)_ — examples: — · tests: src/modules/motion/motion.test.ts · other: —
@@ -851,11 +849,11 @@ value 1/1 · type 1/4 · examples: doom, platformer-3d, portal, starfighter · t
 
 ### `@pierre/ecs/modules/rng`
 
-value 2/4 · type 1/1 · examples: snake, solitaire, starfighter · tests: 3 · other: particles, pile
+value 2/4 · type 1/1 · examples: river-raid, snake, solitaire, starfighter · tests: 3 · other: particles, pile
 
-- **`makeSeededRng`** _(fn)_ — examples: starfighter · tests: src/modules/particles/particles.test.ts, src/modules/pile/pile.test.ts, src/modules/rng/rng.test.ts · other: —
-- **`pick`** _(fn)_ — examples: snake, solitaire · tests: src/modules/rng/rng.test.ts · other: particles
-- **`RandomFn`** _(type)_ — examples: starfighter · tests: — · other: particles, pile
+- **`makeSeededRng`** _(fn)_ — examples: river-raid, starfighter · tests: src/modules/particles/particles.test.ts, src/modules/pile/pile.test.ts, src/modules/rng/rng.test.ts · other: —
+- **`pick`** _(fn)_ — examples: river-raid, snake, solitaire · tests: src/modules/rng/rng.test.ts · other: particles
+- **`RandomFn`** _(type)_ — examples: river-raid, starfighter · tests: — · other: particles, pile
 - **`randomInt`** _(fn)_ — examples: — · tests: src/modules/rng/rng.test.ts · other: —
 - **`shuffle`** _(fn)_ — examples: — · tests: src/modules/rng/rng.test.ts · other: pile
 
@@ -898,27 +896,27 @@ value 4/6 · type 0/3 · examples: asteroids, boids, platformer, snake, spacewar
 
 ### `@pierre/ecs/modules/spawner`
 
-value 3/3 · type 1/2 · examples: flappy, jetpack, space-invaders, top-down-shooter · tests: 2 · other: particles
+value 3/3 · type 1/2 · examples: flappy, jetpack, river-raid, space-invaders, starfighter, top-down-shooter · tests: 2 · other: particles
 
-- **`makeSpawner`** _(fn)_ — examples: flappy, jetpack, space-invaders, top-down-shooter · tests: src/modules/particles/particles.test.ts, src/modules/spawner/spawner.test.ts · other: —
-- **`resetSpawner`** _(fn)_ — examples: flappy, jetpack, space-invaders, top-down-shooter · tests: src/modules/spawner/spawner.test.ts · other: —
-- **`Spawner`** _(interface)_ — examples: flappy, jetpack, space-invaders, top-down-shooter · tests: — · other: particles
+- **`makeSpawner`** _(fn)_ — examples: flappy, jetpack, river-raid, space-invaders, starfighter, top-down-shooter · tests: src/modules/particles/particles.test.ts, src/modules/spawner/spawner.test.ts · other: —
+- **`resetSpawner`** _(fn)_ — examples: flappy, jetpack, river-raid, space-invaders, starfighter, top-down-shooter · tests: src/modules/spawner/spawner.test.ts · other: —
+- **`Spawner`** _(interface)_ — examples: flappy, jetpack, river-raid, space-invaders, starfighter, top-down-shooter · tests: — · other: particles
 - **`SpawnerOptions`** _(interface)_ — no external consumer
-- **`tickSpawner`** _(fn)_ — examples: flappy, jetpack, space-invaders, top-down-shooter · tests: src/modules/spawner/spawner.test.ts · other: particles
+- **`tickSpawner`** _(fn)_ — examples: flappy, jetpack, river-raid, space-invaders, starfighter, top-down-shooter · tests: src/modules/spawner/spawner.test.ts · other: particles
 
 ### `@pierre/ecs/modules/stats`
 
-value 0/3 · type 0/2 · examples: — · tests: 3 · other: —
+value 1/3 · type 0/2 · examples: top-down-shooter · tests: 3 · other: —
 
 - **`drawStatsOverlay`** _(fn)_ — examples: — · tests: src/modules/stats/draw-stats-overlay.test.ts · other: —
-- **`FrameStats`** _(class)_ — examples: — · tests: src/modules/stats/draw-stats-overlay.test.ts, src/modules/stats/frame-stats.test.ts, src/modules/stats/timed-tick-source.test.ts · other: —
+- **`FrameStats`** _(class)_ — examples: top-down-shooter · tests: src/modules/stats/draw-stats-overlay.test.ts, src/modules/stats/frame-stats.test.ts, src/modules/stats/timed-tick-source.test.ts · other: —
 - **`FrameStatsOptions`** _(interface)_ — no external consumer
 - **`StatsOverlayOptions`** _(interface)_ — no external consumer
 - **`TimedTickSource`** _(class)_ — examples: — · tests: src/modules/stats/timed-tick-source.test.ts · other: —
 
 ### `@pierre/ecs/modules/steering`
 
-value 9/14 · type 3/8 · examples: boids, critters, stealth-guard, woodcutter · tests: 1 · other: —
+value 9/14 · type 3/8 · examples: asteroids, boids, critters, stealth-guard, woodcutter · tests: 1 · other: —
 
 - **`alignment`** _(fn)_ — examples: boids · tests: src/modules/steering/steering.test.ts · other: —
 - **`arrive`** _(fn)_ — examples: boids, critters, stealth-guard, woodcutter · tests: src/modules/steering/steering.test.ts · other: —
@@ -935,7 +933,7 @@ value 9/14 · type 3/8 · examples: boids, critters, stealth-guard, woodcutter �
 - **`seek`** _(fn)_ — examples: stealth-guard · tests: src/modules/steering/steering.test.ts · other: —
 - **`Segment`** _(interface)_ — no external consumer
 - **`separation`** _(fn)_ — examples: boids · tests: src/modules/steering/steering.test.ts · other: —
-- **`truncate`** _(fn)_ — examples: boids, critters, stealth-guard, woodcutter · tests: src/modules/steering/steering.test.ts · other: —
+- **`truncate`** _(fn)_ — examples: asteroids, boids, critters, stealth-guard, woodcutter · tests: src/modules/steering/steering.test.ts · other: —
 - **`wallFollowing`** _(fn)_ — examples: — · tests: src/modules/steering/steering.test.ts · other: —
 - **`WallFollowParams`** _(interface)_ — no external consumer
 - **`wander`** _(fn)_ — examples: boids, critters · tests: src/modules/steering/steering.test.ts · other: —
@@ -955,9 +953,9 @@ value 2/2 · type 0/3 · examples: rpg, solitaire, tilemap · tests: 1 · other:
 
 ### `@pierre/ecs/modules/tick`
 
-value 3/4 · type 0/2 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +13 more · tests: 4 · other: —
+value 3/4 · type 0/2 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: 4 · other: —
 
-- **`AnimationFrameTickSource`** _(class)_ — examples: asteroids, breakout, card-battler, doom, flappy, frogger, jetpack, local-pong +8 more · tests: src/modules/tick/animation-frame-tick-source.test.ts · other: —
+- **`AnimationFrameTickSource`** _(class)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: src/modules/tick/animation-frame-tick-source.test.ts · other: —
 - **`AnimationFrameTickSourceOptions`** _(interface)_ — no external consumer
 - **`FixedAccumulatorTickSource`** _(class)_ — examples: — · tests: src/modules/tick/fixed-accumulator-tick-source.test.ts · other: —
 - **`FixedAccumulatorTickSourceOptions`** _(interface)_ — no external consumer
@@ -980,15 +978,15 @@ value 4/4 · type 1/5 · examples: rpg, tilemap · tests: 4 · other: —
 
 ### `@pierre/ecs/modules/timer`
 
-value 0/7 · type 0/2 · examples: — · tests: 1 · other: cooldown, lifetime, particles, tween
+value 5/7 · type 1/2 · examples: doom, frogger, river-raid · tests: 1 · other: cooldown, lifetime, particles, tween
 
-- **`finished`** _(fn)_ — examples: — · tests: src/modules/timer/timer.test.ts · other: cooldown, lifetime, tween
-- **`fraction`** _(fn)_ — examples: — · tests: src/modules/timer/timer.test.ts · other: particles, tween
+- **`finished`** _(fn)_ — examples: doom, frogger, river-raid · tests: src/modules/timer/timer.test.ts · other: cooldown, lifetime, tween
+- **`fraction`** _(fn)_ — examples: frogger · tests: src/modules/timer/timer.test.ts · other: particles, tween
 - **`justFinished`** _(fn)_ — examples: — · tests: src/modules/timer/timer.test.ts · other: —
-- **`makeTimer`** _(fn)_ — examples: — · tests: src/modules/timer/timer.test.ts · other: cooldown, lifetime, tween
-- **`restart`** _(fn)_ — examples: — · tests: src/modules/timer/timer.test.ts · other: cooldown, tween
-- **`tickTimer`** _(fn)_ — examples: — · tests: src/modules/timer/timer.test.ts · other: cooldown, lifetime, tween
-- **`Timer`** _(interface)_ — examples: — · tests: — · other: cooldown, lifetime, tween
+- **`makeTimer`** _(fn)_ — examples: doom, frogger, river-raid · tests: src/modules/timer/timer.test.ts · other: cooldown, lifetime, tween
+- **`restart`** _(fn)_ — examples: frogger, river-raid · tests: src/modules/timer/timer.test.ts · other: cooldown, tween
+- **`tickTimer`** _(fn)_ — examples: doom, frogger, river-raid · tests: src/modules/timer/timer.test.ts · other: cooldown, lifetime, tween
+- **`Timer`** _(interface)_ — examples: doom, frogger, river-raid · tests: — · other: cooldown, lifetime, tween
 - **`TimerMode`** _(type)_ — examples: — · tests: — · other: tween
 - **`timerSchema`** _(const)_ — examples: — · tests: — · other: cooldown, lifetime
 

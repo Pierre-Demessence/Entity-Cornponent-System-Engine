@@ -2,19 +2,16 @@ import type { GameState, Lane, RhythmEvent } from './game';
 import type { RenderFeedback } from './render';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
-import { Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { createEventInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 
 import { AudioClockTickSource, AudioEngine } from './audio';
 import { makeWorld, resetGame } from './game';
 import { CANVAS_H, CANVAS_W, render } from './render';
 import { cullSystem, inputSystem, spawnSystem } from './systems';
 
-const LANE_KEYS: Record<string, Lane> = {
-  [Key.KeyD]: 0,
-  [Key.KeyF]: 1,
-  [Key.KeyJ]: 2,
-  [Key.KeyK]: 3,
-};
+type RhythmAction = 'lane0' | 'lane1' | 'lane2' | 'lane3' | 'reset';
+
+const LANE_OF: Record<Exclude<RhythmAction, 'reset'>, Lane> = { lane0: 0, lane1: 1, lane2: 2, lane3: 3 };
 
 export function start(container: HTMLElement): () => void {
   container.innerHTML = '';
@@ -91,17 +88,27 @@ export function start(container: HTMLElement): () => void {
   const keyboard = new KeyboardProvider({
     preventDefaultCodes: [Key.KeyD, Key.KeyF, Key.KeyJ, Key.KeyK, Key.KeyR],
   });
-  const unsubscribeKeys = keyboard.subscribe((raw) => {
-    if (raw.kind !== 'down')
+  // Presses are judged against the audio clock at the moment the key event
+  // fires, so they dispatch immediately rather than waiting for a tick.
+  const input = createEventInput<RhythmAction>(
+    {
+      lane0: [Key.KeyD],
+      lane1: [Key.KeyF],
+      lane2: [Key.KeyJ],
+      lane3: [Key.KeyK],
+      reset: [Key.KeyR],
+    },
+    [keyboard],
+  );
+  const unsubscribeKeys = input.subscribe(({ action, kind }) => {
+    if (kind !== 'down')
       return;
-    if (raw.code === Key.KeyR) {
+    if (action === 'reset') {
       resetGame(state);
       feedback = null;
       return;
     }
-    const lane = LANE_KEYS[raw.code];
-    if (lane === undefined)
-      return;
+    const lane = LANE_OF[action];
     const timeS = audio.ctx.currentTime;
     state.pressQueue.push({ lane, timeS });
     laneFlashUntilS[lane] = timeS + 0.12;
@@ -116,7 +123,7 @@ export function start(container: HTMLElement): () => void {
   return (): void => {
     canvas.removeEventListener('click', onClick);
     unsubscribeKeys();
-    keyboard.dispose();
+    input.dispose();
     unsubscribeRender();
     tickSource.stop();
     runner.stop();

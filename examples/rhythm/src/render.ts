@@ -104,11 +104,11 @@ export function render(
     const x = laneX(note.lane);
     const w = LANE_W - 14;
     const h = 22;
-    if (note.hit === 1) {
+    if (note.status === 'hit') {
       ctx.globalAlpha = easeOutCubic(clamp01(1 - (now - note.targetTimeS) / NOTE_FADE_S));
       ctx.fillStyle = '#ffffff';
     }
-    else if (note.hit === 2) {
+    else if (note.status === 'missed') {
       ctx.globalAlpha = easeOutCubic(clamp01(1 - (now - note.targetTimeS - WINDOW.ok) / NOTE_FADE_S));
       ctx.fillStyle = '#663333';
     }

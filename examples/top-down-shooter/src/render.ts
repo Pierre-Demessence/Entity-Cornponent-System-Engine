@@ -1,4 +1,5 @@
 import type { Canvas2DRenderContext } from '@pierre/ecs/modules/render-canvas2d';
+import type { FrameStats } from '@pierre/ecs/modules/stats';
 
 import type { GameState } from './game';
 
@@ -8,27 +9,6 @@ import { BulletTag, EnemyTag } from './components';
 import { SCREEN_H, SCREEN_W } from './game';
 
 const canvas2d = new Canvas2DRenderer();
-
-interface FpsMeter {
-  frames: number;
-  lastMs: number;
-  value: number;
-}
-
-export function createFpsMeter(): FpsMeter {
-  return { frames: 0, lastMs: performance.now(), value: 0 };
-}
-
-export function sampleFps(meter: FpsMeter): void {
-  meter.frames += 1;
-  const now = performance.now();
-  const elapsed = now - meter.lastMs;
-  if (elapsed >= 500) {
-    meter.value = Math.round((meter.frames * 1000) / elapsed);
-    meter.frames = 0;
-    meter.lastMs = now;
-  }
-}
 
 function drawHud(ctx2d: CanvasRenderingContext2D, state: GameState, fps: number): void {
   ctx2d.fillStyle = '#fff';
@@ -85,9 +65,8 @@ function drawGameOver(ctx2d: CanvasRenderingContext2D, state: GameState): void {
 export function render(
   ctx2d: CanvasRenderingContext2D,
   state: GameState,
-  fpsMeter: FpsMeter,
+  frameStats: FrameStats,
 ): void {
-  sampleFps(fpsMeter);
   ctx2d.fillStyle = '#0d1016';
   ctx2d.fillRect(0, 0, SCREEN_W, SCREEN_H);
 
@@ -95,7 +74,7 @@ export function render(
   canvas2d.render(renderCtx);
 
   drawCrosshair(ctx2d, state);
-  drawHud(ctx2d, state, fpsMeter.value);
+  drawHud(ctx2d, state, Math.round(frameStats.avgFps));
   if (state.dead)
     drawGameOver(ctx2d, state);
 }

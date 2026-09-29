@@ -2,7 +2,7 @@
 
 Migrate examples off hand-rolled code the engine already ships (capability
 `PRESENT`, consumer hand-rolls). Genuinely missing capabilities were logged in
-the [gap ledger](../roadmap/engine-gap-ledger.md) instead and stay local here.
+the [gap ledger](../../roadmap/engine-gap-ledger.md) instead and stay local here.
 Behaviour-preserving: each game must play the same after the swap.
 
 ## Shapes
@@ -17,33 +17,33 @@ Behaviour-preserving: each game must play the same after the swap.
 - [x] frogger / river-raid `deathTimerMs`, frogger `levelFlashMs` → `Timer`
 - [x] doom `fireTimer` / `ai.attackTimer` → `Cooldown`, `tracer.ttl` → `Timer`, `Projectile.ttl` → `LifetimeDef`
 - [x] starfighter `fireTimer` → `Cooldown`, `spawnTimer` → `Spawner`, `Bullet.ttl` → `LifetimeDef`
-- [ ] woodcutter chop / drop `timer` → `Timer`
+- [x] ~~woodcutter chop / drop `timer` → `Timer`~~ — dropped: it is one elapsed accumulator shared by two actions with different thresholds, not a fixed-duration countdown, so `Timer` does not fit without contortion
 
 ## Input
 
 - [x] flappy, breakout, space-invaders, frogger, starfighter, doom, portal: raw mouse/pointer listeners → `PointerProvider` + `Pointer.*` in the action map
-- [ ] snake, rhythm: raw `keyboard.subscribe` switches → `InputMap` (`createInput` / `createEventInput`)
+- [x] snake, rhythm: raw `keyboard.subscribe` switches → `InputMap` (`createInput` / `createEventInput`)
 
 ## Loops
 
-- [ ] boids, critters, stealth-guard, woodcutter, snake, solitaire: raw rAF render loop → `AnimationFrameTickSource`
-- [ ] rpg: hand-rolled frame loop → `Scheduler` + `TickRunner` + tick sources
+- [x] boids, critters, stealth-guard, woodcutter, snake, solitaire: raw rAF render loop → `AnimationFrameTickSource`
+- [x] rpg: hand-rolled frame loop → `Scheduler` + `TickRunner` + tick sources
 
 ## Per-example
 
-- [ ] rpg: per-direction `SpriteAnimation` swap → `SpriteAnimatorDef` + `SpriteClipRegistry` + `playClip`
+- [x] rpg: per-direction `SpriteAnimation` swap → `SpriteAnimatorDef` + `SpriteClipRegistry` + `playClip`
 - [x] local-pong: hand-integrated motion → `makeVelocityIntegrationSystem`
-- [x] jetpack: bespoke particle tag + `spawnParticle` → `modules/particles` (emitter + `burst`)
+- [x] jetpack: bespoke particle tag + `spawnParticle` → `modules/particles` (`burst`; bullets keep a plain `LifetimeDef`)
 - [x] starfighter: spherical clamp → `vec3ClampLength` / `vec3Reflect`; turn ease → `vec3Lerp`; deadzone → `inverseLerp` / `clamp01`
-- [ ] stealth-guard: vision-cone angle wrap → `wrap`
-- [ ] asteroids: speed cap → `truncate`
+- [x] stealth-guard: vision-cone angle wrap → `wrap`
+- [x] asteroids: speed cap → `truncate`
 - [x] breakout: paddle hit test → `aabbVsCircle`
-- [ ] top-down-shooter: FPS meter → `FrameStats`
-- [ ] rhythm: numeric `hit` flag → string state
+- [x] top-down-shooter: FPS meter → `FrameStats`
+- [x] rhythm: numeric `hit` flag → string state
 
 ## Wrap-up
 
-- [ ] `examples/manifest.ts` module lists match the new imports
-- [ ] `npm run docs:usage` regenerated
-- [ ] Ledger consumer stamps re-pointed at post-migration lines
-- [ ] Gate green: `npm run lint`, `npm run typecheck`, `npm run typecheck:examples`, `npm test`
+- [x] `examples/manifest.ts` module lists match the new imports
+- [x] `npm run docs:usage` regenerated
+- [x] Ledger consumer stamps re-pointed at post-migration lines
+- [x] Gate green: `npm run lint`, `npm run typecheck`, `npm run typecheck:examples`, `npm test`

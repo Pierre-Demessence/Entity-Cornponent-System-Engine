@@ -4,7 +4,7 @@ import { Scheduler, TickRunner } from '@pierre/ecs';
 import { PointerProvider } from '@pierre/ecs/modules/input';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 import { ContinuousHashGrid2D, makeGridSyncOnMove } from '@pierre/ecs/modules/spatial';
-import { FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
+import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
   CELL_SIZE,
@@ -68,15 +68,15 @@ export function start(container: HTMLElement): () => void {
   });
   tickRunner.start();
 
-  let rafId = 0;
-  const loop = (): void => {
+  const renderTickSource = new AnimationFrameTickSource();
+  const unsubscribeRender = renderTickSource.subscribe(() => {
     render(ctx2d, state);
-    rafId = window.requestAnimationFrame(loop);
-  };
-  rafId = window.requestAnimationFrame(loop);
+  });
+  renderTickSource.start();
 
   return (): void => {
-    window.cancelAnimationFrame(rafId);
+    unsubscribeRender();
+    renderTickSource.stop();
     tickRunner.stop();
     pointer.dispose();
     container.innerHTML = '';

@@ -1,8 +1,8 @@
 import type { GameState, SnakeEvent } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
-import { Key, KeyboardProvider } from '@pierre/ecs/modules/input';
-import { FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
+import { createEventInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
   CANVAS_PX,
@@ -15,6 +15,15 @@ import {
 } from './game';
 import { render } from './render';
 import { inputSystem, movementSystem } from './systems';
+
+type SnakeAction = 'down' | 'left' | 'reset' | 'right' | 'up';
+
+const DIRECTIONS: Record<Exclude<SnakeAction, 'reset'>, { dx: number; dy: number }> = {
+  down: { dx: 0, dy: 1 },
+  left: { dx: -1, dy: 0 },
+  right: { dx: 1, dy: 0 },
+  up: { dx: 0, dy: -1 },
+};
 
 export function start(container: HTMLElement): () => void {
   container.innerHTML = '';
@@ -62,13 +71,12 @@ export function start(container: HTMLElement): () => void {
   });
   tickRunner.start();
 
-  let rafId = 0;
-  const loop = (): void => {
+  const renderTickSource = new AnimationFrameTickSource();
+  const unsubscribeRender = renderTickSource.subscribe(() => {
     render(ctx2d, state);
     scoreEl.textContent = `Score: ${state.score}`;
-    rafId = window.requestAnimationFrame(loop);
-  };
-  rafId = window.requestAnimationFrame(loop);
+  });
+  renderTickSource.start();
 
   const keyboard = new KeyboardProvider({
     preventDefaultCodes: [
@@ -83,39 +91,33 @@ export function start(container: HTMLElement): () => void {
       Key.KeyR,
     ],
   });
-  const unsubscribeKeys = keyboard.subscribe((raw) => {
-    if (raw.kind !== 'down')
+  const input = createEventInput<SnakeAction>(
+    {
+      down: [Key.ArrowDown, Key.KeyS],
+      left: [Key.ArrowLeft, Key.KeyA],
+      reset: [Key.KeyR],
+      right: [Key.ArrowRight, Key.KeyD],
+      up: [Key.ArrowUp, Key.KeyW],
+    },
+    [keyboard],
+  );
+  // The latest press wins until the next tick consumes it.
+  const unsubscribeKeys = input.subscribe(({ action, kind }) => {
+    if (kind !== 'down')
       return;
-    switch (raw.code) {
-      case Key.ArrowUp:
-      case Key.KeyW:
-        state.pendingDir = { dx: 0, dy: -1 };
-        break;
-      case Key.ArrowDown:
-      case Key.KeyS:
-        state.pendingDir = { dx: 0, dy: 1 };
-        break;
-      case Key.ArrowLeft:
-      case Key.KeyA:
-        state.pendingDir = { dx: -1, dy: 0 };
-        break;
-      case Key.ArrowRight:
-      case Key.KeyD:
-        state.pendingDir = { dx: 1, dy: 0 };
-        break;
-      case Key.KeyR:
-        if (state.dead)
-          resetGame(state);
-        break;
-      default:
-        break;
+    if (action === 'reset') {
+      if (state.dead)
+        resetGame(state);
+      return;
     }
+    state.pendingDir = DIRECTIONS[action];
   });
 
   return (): void => {
     unsubscribeKeys();
-    keyboard.dispose();
-    window.cancelAnimationFrame(rafId);
+    input.dispose();
+    unsubscribeRender();
+    renderTickSource.stop();
     tickRunner.stop();
     container.innerHTML = '';
   };

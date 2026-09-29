@@ -3,6 +3,7 @@ import type { Vec2 } from '@pierre/ecs/modules/math';
 import type { GuardBrain, Wall } from './game';
 
 import { aabbContainsPoint, rayVsAabb } from '@pierre/ecs/modules/collision';
+import { wrap } from '@pierre/ecs/modules/math';
 
 import { VISION_HALF_ANGLE, VISION_RANGE } from './game';
 
@@ -37,9 +38,7 @@ export function guardSeesPlayer(guard: GuardBrain, guardPos: Vec2, player: Vec2,
   if (dist > VISION_RANGE || dist < 1e-3)
     return false;
   const toPlayer = Math.atan2(dy, dx);
-  let delta = Math.abs(toPlayer - guard.facing);
-  if (delta > Math.PI)
-    delta = Math.PI * 2 - delta;
+  const delta = Math.abs(wrap(toPlayer - guard.facing, -Math.PI, Math.PI));
   if (delta > VISION_HALF_ANGLE)
     return false;
   return hasLineOfSight(guardPos, player, walls);
