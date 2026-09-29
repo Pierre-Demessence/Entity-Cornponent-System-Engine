@@ -22,6 +22,7 @@ export const LOADERS: Record<ExampleId, () => Promise<ExampleModule>> = {
   'game-of-life': () => import('@pierre/ecs-example-game-of-life/src/main.ts'),
   'jetpack': () => import('@pierre/ecs-example-jetpack/src/main.ts'),
   'local-pong': () => import('@pierre/ecs-example-local-pong/src/main.ts'),
+  'lunar-lander': () => import('@pierre/ecs-example-lunar-lander/src/main.ts'),
   'pacman': () => import('@pierre/ecs-example-pacman/src/main.ts'),
   'parallel-kernel': () => import('@pierre/ecs-example-parallel-kernel/src/main.ts'),
   'platformer': () => import('@pierre/ecs-example-platformer/src/main.ts'),
