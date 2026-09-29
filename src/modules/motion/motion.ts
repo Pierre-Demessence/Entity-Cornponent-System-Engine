@@ -93,7 +93,7 @@ export function makeVelocityIntegrationSystem<TCtx extends VelocityIntegrationTi
       // Columnar fast path: when both stores are Structure-of-Arrays, integrate
       // directly over the typed-array columns — no per-entity view allocation.
       // Behaviour matches the object path exactly (boundary, skip-if-still,
-      // onMove); direct column writes mark the entity dirty like the view setter.
+      // onMove); direct column writes record the change like the view setter.
       // Column refs are captured once, so `onMove` must not add new Position/
       // Velocity entities (that would grow() and reallocate the columns) — the
       // same constraint the slow path already has on the velStore.keys() iterator.
@@ -125,7 +125,7 @@ export function makeVelocityIntegrationSystem<TCtx extends VelocityIntegrationTi
             continue;
           px[ps] = nextX;
           py[ps] = nextY;
-          posStore.markDirty(id);
+          posStore.markChanged(id);
           onMove?.(ctx, id, { x: prevX, y: prevY }, { x: nextX, y: nextY });
         }
         return;

@@ -219,6 +219,7 @@
               "src/column-store.test.ts",
               "src/component-store.test.ts",
               "src/modules/render-scene3d/render-scene3d.test.ts",
+              "src/query.test.ts",
               "src/test-utils.test.ts",
               "src/world.test.ts"
             ],
@@ -292,7 +293,8 @@
           },
           "test": {
             "consumers": [
-              "src/modules/render-dom/dom-renderer.test.ts"
+              "src/modules/render-dom/dom-renderer.test.ts",
+              "src/query.test.ts"
             ],
             "typeOnly": true
           }
@@ -451,6 +453,7 @@
               "src/modules/render-scene3d/render-scene3d.test.ts",
               "src/modules/scene-transition/scene-transition.test.ts",
               "src/plugin.test.ts",
+              "src/query.test.ts",
               "src/simple-component.test.ts"
             ],
             "typeOnly": false
@@ -14898,6 +14901,7 @@
               "src/modules/render-scene3d/render-scene3d.test.ts",
               "src/modules/scene-transition/scene-transition.test.ts",
               "src/plugin.test.ts",
+              "src/query.test.ts",
               "src/world.test.ts"
             ],
             "typeOnly": false
@@ -14926,6 +14930,7 @@
         "src/modules/render-scene3d/render-scene3d.test.ts",
         "src/modules/scene-transition/scene-transition.test.ts",
         "src/plugin.test.ts",
+        "src/query.test.ts",
         "src/world.test.ts"
       ],
       "typeTotal": 0,

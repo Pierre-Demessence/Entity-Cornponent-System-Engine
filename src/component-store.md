@@ -135,38 +135,45 @@ off();
 by `EcsWorld.spawn` to run post-spawn dependency checks once all components
 are attached.
 
-## Dirty Flags (Change Detection)
+## Change Ticks
 
-Both `ComponentStore` and `TagStore` track per-tick mutations via an internal
-`dirty: Set<EntityId>`:
+Every store stamps each entity with the tick of its last recorded change, read
+from a `ChangeClock` shared by the whole world. Queries turn those stamps into
+[`added` / `changed` filters](query.md); the stamps themselves
+are rarely read directly.
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `isDirty(id)` | `boolean` | Entity was set/deleted this tick |
-| `hasChanges()` | `boolean` | Any entity was mutated this tick |
-| `clearDirty()` | `void` | Reset (called by `World.clearAllDirty()` at end of tick) |
-| `markDirty(id)` | `void` | Manually mark an entity dirty (e.g., after in-place mutation) |
+| `addedTick(id)` | `number` | Tick the entity gained the component or tag; `0` when absent |
+| `changedTick(id)` | `number` | Tick of the last recorded change, insert included; `0` when absent (component stores only) |
+| `getMut(id)` | `T \| undefined` | Read for in-place mutation, recording a change |
+| `markChanged(id)` | `void` | Record a change the store cannot see (component stores only) |
+| `clock` | `ChangeClock` | The stamp source; the world's clock for registered stores |
 
-`set()` / `add()` / `delete()` automatically mark the entity as dirty.
-`clear()` also clears the dirty set.
+What records a change:
 
-`World.clearAllDirty()` iterates all registered component and tag stores and
-calls `clearDirty()`. This is called at the end of each tick by `TickRunner`,
-after events are flushed.
+- `set()` — an insert stamps both added and changed; a replace stamps changed.
+- `getMut(id)` — stamps on access, whether or not the caller then writes.
+- A field write through a columnar store's `get(id)` view (`pos.x += 1`).
+- `markChanged(id)` — for writes made through the columnar fast path
+  (`column()` + `slotOf()`), which bypasses the store.
+- `TagStore.add()` — stamps added when the tag was absent.
 
-### System opt-in example
+What does **not**: `get(id)` on an object-backed store, including mutating the
+object it returns — use `getMut(id)` when you intend to write. `delete()` drops
+the stamps rather than recording a change; removal is observed through the
+world's lifecycle events.
 
 ```ts
-if (!ctx.world.positions.isDirty(entityId)) return;
+const hp = world.getStore(HealthDef);
+hp.getMut(id)!.current -= damage; // recorded
+hp.get(id)!.current -= damage;    // not recorded
 ```
 
-Skips expensive recomputation when the entity didn't change.
-
-**Limitation:** In-place mutations to component objects (e.g.,
-`component.value += x`) are not tracked — only `store.set()`,
-`store.delete()`, and `store.markDirty()` set the dirty flag.
-Code that mutates component data in place should call
-`store.markDirty(id)` explicitly.
+A store built outside a world creates its own clock. Pass one explicitly —
+`new ComponentStore(clock)`, `new TagStore(clock)`,
+`new ColumnStore(fields, { clock })` — when standalone stores are filtered by
+one query.
 
 ## Component Validation (dev-mode only)
 

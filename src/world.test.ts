@@ -887,23 +887,24 @@ describe('ecsWorld', () => {
     });
   });
 
-  describe('clearAllDirty', () => {
-    it('clears dirty flags on all component and tag stores', () => {
+  describe('change clock', () => {
+    it('shares one clock across every registered store', () => {
       const w = new EcsWorld();
       const pos = w.registerComponent(PosDef);
       const tag = w.registerTag(FlagTag);
+      expect(pos.clock).toBe(w.clock);
+      expect(tag.clock).toBe(w.clock);
+    });
 
+    it('move() stamps the position as changed', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      w.enableSpatial(PosDef, new CellIndex());
       const id = w.createEntity();
       pos.set(id, { x: 0, y: 0 });
-      tag.add(id);
-
-      expect(pos.hasChanges()).toBe(true);
-      expect(tag.hasChanges()).toBe(true);
-
-      w.clearAllDirty();
-
-      expect(pos.hasChanges()).toBe(false);
-      expect(tag.hasChanges()).toBe(false);
+      w.clock.tick = 5;
+      w.move(id, 1, 1);
+      expect(pos.changedTick(id)).toBe(5);
     });
   });
 

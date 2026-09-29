@@ -55,7 +55,7 @@ not in this package.
 | `use(...plugins)` | Install one or more `Plugin`s, calling each one's `build(world)` exactly once. Plugin names must be unique per world. Returns `this`. |
 | `hasPlugin(name)` | Whether a plugin with `name` has been installed. |
 | `transferEntity(id, from, componentNames?)` | Copy an entity's components from another world, preserving its id. Tags are not transferred (application-semantic). Optionally filter to a subset of components. |
-| `clearAllDirty()` | Clear dirty flags on every component and tag store. |
+| `clock` | The `ChangeClock` every registered store stamps added / changed ticks from; advanced by queries with `added` / `changed` filters. |
 | `clearAll()` | Empty every component/tag store, the destroy queue, the spatial index (if enabled), and the lifecycle event queue; reset `nextId = 0`. Registrations are preserved. Silent by design — no `EntityDestroyed` storm. Useful for full world resets (level restart, new game). |
 | `toJSON()` | Serialize the registry to `{ nextId, [storeName]: serialized }`. |
 | `loadJSON(data)` | In-place load — clears every registered store, then repopulates each from the payload entry of the same name. |

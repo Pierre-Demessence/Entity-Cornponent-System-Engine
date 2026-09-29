@@ -12,7 +12,7 @@ this order:
 1. Build the tick context.
 2. Run the scheduler.
 3. `onBeforeFlush`.
-4. Flush — events, lifecycle, destroys, dirty flags.
+4. Flush — events, lifecycle, destroys.
 5. `onTickComplete`.
 
 Two implications follow from "atomic":

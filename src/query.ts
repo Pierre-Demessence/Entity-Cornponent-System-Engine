@@ -12,6 +12,12 @@ type ComponentFilter = Pick<ComponentStoreLike<unknown>, 'has' | 'keys' | 'size'
 /** A member of an any-of group or a mandatory scan source: a component or tag store. */
 type FilterStore = ComponentFilter | TagStore;
 
+/** A store an {@link QueryBuilder.added} filter reads: a component or tag store. */
+type AddedSource = Pick<ComponentStoreLike<unknown>, 'addedTick' | 'clock' | 'has' | 'keys' | 'size'> | TagStore;
+
+/** A store a {@link QueryBuilder.changed} filter reads. */
+type ChangedSource = Pick<ComponentStoreLike<unknown>, 'changedTick' | 'clock' | 'has' | 'keys' | 'size'>;
+
 /** Resolve an entity-id iterable from a mandatory source (component or tag store). */
 function idsOf(member: FilterStore): Iterable<EntityId> {
   return 'keys' in member ? member.keys() : member;
@@ -31,12 +37,20 @@ function idsOf(member: FilterStore): Iterable<EntityId> {
  * yielded ({@link withComponent}, {@link withoutComponent}, {@link withTag},
  * {@link without}, {@link anyOf}) or an extra yielded column that may be absent
  * ({@link optional}).
+ *
+ * A query with an {@link added} or {@link changed} filter is stateful: each
+ * pass reports what happened since this instance's previous pass. Build it
+ * once and iterate it every tick; a query rebuilt per tick sees every entity
+ * as new on each pass.
  */
 export class QueryBuilder<T extends unknown[]> {
+  private addedFilters: AddedSource[] = [];
   private anyOfGroups: FilterStore[][] = [];
+  private changedFilters: ChangedSource[] = [];
   private excludedComponents: ComponentFilter[] = [];
   private excludedTags: TagStore[] = [];
   private readonly index: ArchetypeIndex | undefined;
+  private lastRun = 0;
   private optionalStores: ComponentStoreLike<unknown>[] = [];
   private requiredComponents: ComponentFilter[] = [];
   private requiredTags: TagStore[] = [];
@@ -45,6 +59,20 @@ export class QueryBuilder<T extends unknown[]> {
   constructor(stores: ComponentStoreLike<unknown>[], index?: ArchetypeIndex) {
     this.stores = stores;
     this.index = index;
+  }
+
+  /**
+   * Match only entities that gained `store` (a component or tag) since this
+   * query's previous pass (Bevy `Added<T>`). Implicitly requires `store`. A
+   * value replace is not an addition; removing and re-adding is.
+   */
+  added(store: AddedSource): this {
+    this.addedFilters.push(store);
+    if ('keys' in store)
+      this.requiredComponents.push(store);
+    else
+      this.requiredTags.push(store);
+    return this;
   }
 
   /**
@@ -69,6 +97,34 @@ export class QueryBuilder<T extends unknown[]> {
     for (const store of this.optionalStores)
       result.push(store.get(id));
     return result as [EntityId, ...T];
+  }
+
+  /**
+   * Match only entities whose `store` component was inserted or changed since
+   * this query's previous pass (Bevy `Changed<T>`). Implicitly requires
+   * `store`. A change is a `set()`, a `getMut()`, a columnar view field write,
+   * or a `markChanged()`; mutating the object returned by `get()` is not.
+   * Removal is not a change — observe it through lifecycle events.
+   */
+  changed(store: ChangedSource): this {
+    this.changedFilters.push(store);
+    this.requiredComponents.push(store);
+    return this;
+  }
+
+  /** Test the added / changed filters against an entity; `since` undefined means none apply. */
+  private changedSince(id: EntityId, since: number | undefined): boolean {
+    if (since === undefined)
+      return true;
+    for (const store of this.addedFilters) {
+      if (store.addedTick(id) <= since)
+        return false;
+    }
+    for (const store of this.changedFilters) {
+      if (store.changedTick(id) <= since)
+        return false;
+    }
+    return true;
   }
 
   /**
@@ -139,6 +195,26 @@ export class QueryBuilder<T extends unknown[]> {
   }
 
   /**
+   * Start a pass's change window: return the previous pass's tick and advance
+   * the shared clock, so writes from here on stamp strictly later and are seen
+   * next pass. Returns `undefined` when the query has no change filter.
+   */
+  private openChangeWindow(): number | undefined {
+    const sources = [...this.addedFilters, ...this.changedFilters];
+    if (sources.length === 0)
+      return undefined;
+    const clock = sources[0].clock;
+    for (const store of sources) {
+      if (store.clock !== clock)
+        throw new Error('QueryBuilder: added/changed filters span stores with different change clocks (stores from different worlds).');
+    }
+    const since = this.lastRun;
+    this.lastRun = clock.tick;
+    clock.tick++;
+    return since;
+  }
+
+  /**
    * Add an optional yielded column (Bevy `Option<&T>`): its value is appended
    * to every result tuple, and is `undefined` for entities that lack it. Does
    * not affect which entities match.
@@ -194,7 +270,7 @@ export class QueryBuilder<T extends unknown[]> {
    * probe every filter per entity. Falls back to the smallest any-of group's
    * deduplicated union when the query has no mandatory source.
    */
-  private* scan(): Generator<[EntityId, ...T]> {
+  private* scan(since: number | undefined): Generator<[EntityId, ...T]> {
     const sources: FilterStore[] = [...this.stores, ...this.requiredComponents, ...this.requiredTags];
     if (sources.length > 0) {
       let smallest = sources[0];
@@ -203,7 +279,7 @@ export class QueryBuilder<T extends unknown[]> {
           smallest = source;
       }
       for (const id of idsOf(smallest)) {
-        if (this.passesFilters(id))
+        if (this.passesFilters(id) && this.changedSince(id, since))
           yield this.buildResult(id);
       }
       return;
@@ -226,13 +302,14 @@ export class QueryBuilder<T extends unknown[]> {
         if (seen.has(id))
           continue;
         seen.add(id);
-        if (this.passesFilters(id))
+        if (this.passesFilters(id) && this.changedSince(id, since))
           yield this.buildResult(id);
       }
     }
   }
 
   * [Symbol.iterator](): Generator<[EntityId, ...T]> {
+    const since = this.openChangeWindow();
     const masks = this.index ? this.computeMasks(this.index) : undefined;
     if (this.index && masks) {
       // A query with no positive term (no data/with/tag store and no any-of
@@ -243,8 +320,10 @@ export class QueryBuilder<T extends unknown[]> {
       // throws in DEV instead of silently skipping a swap-removed entity.
       this.index.beginIteration();
       try {
-        for (const id of this.index.matching(masks.required, masks.excluded, masks.anyOf))
-          yield this.buildResult(id);
+        for (const id of this.index.matching(masks.required, masks.excluded, masks.anyOf)) {
+          if (this.changedSince(id, since))
+            yield this.buildResult(id);
+        }
       }
       finally {
         this.index.endIteration();
@@ -252,7 +331,7 @@ export class QueryBuilder<T extends unknown[]> {
       return;
     }
 
-    yield* this.scan();
+    yield* this.scan(since);
   }
 
   /** Require the given components without yielding them (Bevy `With<T>`). */
