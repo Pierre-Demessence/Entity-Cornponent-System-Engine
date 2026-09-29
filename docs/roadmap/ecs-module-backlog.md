@@ -1216,8 +1216,8 @@ pointer today.
 
 **Gate.** Shape — the model decision (a polled delta on `InputState`, or a new
 event on the raw union), and whether multi-touch earns a multi-pointer set.
-Demand already exists (`examples/tilemap` hand-rolls a wheel listener), so only
-the shape is open.
+Demand already exists (`examples/tilemap` and `examples/game-of-life` hand-roll
+a wheel listener), so only the shape is open.
 
 <details>
 <summary>Details</summary>

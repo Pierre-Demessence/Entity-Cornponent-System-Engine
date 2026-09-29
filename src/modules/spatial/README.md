@@ -27,8 +27,8 @@ Implements `SpatialStructure<{x, y}>` and adds grid-specific ergonomics:
 
 Convenience extras like `findAt` / `findFirstAt` stay on the
 implementation because they exploit the `Set`-per-cell structure.
-Backend-agnostic code should use `queryAt` and filter via the engine-level
-`world.findFirst` / `world.findAll` helpers instead.
+Backend-agnostic code should use `queryAt` and filter the ids it yields
+instead.
 
 Import via `@pierre/ecs/modules/spatial`.
 

@@ -97,6 +97,7 @@
         "doom",
         "flappy",
         "frogger",
+        "game-of-life",
         "jetpack",
         "local-pong",
         "platformer",
@@ -415,6 +416,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "local-pong",
               "platformer",
               "platformer-3d",
@@ -596,6 +598,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "platformer",
@@ -707,6 +710,7 @@
         "doom",
         "flappy",
         "frogger",
+        "game-of-life",
         "jetpack",
         "local-pong",
         "platformer",
@@ -769,6 +773,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "platformer",
@@ -874,6 +879,7 @@
         "doom",
         "flappy",
         "frogger",
+        "game-of-life",
         "jetpack",
         "local-pong",
         "platformer",
@@ -904,6 +910,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "platformer",
@@ -2544,6 +2551,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "game-of-life",
         "roguelike",
         "rpg",
         "tilemap"
@@ -2680,6 +2688,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "roguelike",
               "rpg",
               "tilemap"
@@ -2705,6 +2714,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "roguelike"
             ],
             "typeOnly": false
@@ -2728,6 +2738,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "roguelike"
             ],
             "typeOnly": false
@@ -2751,6 +2762,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "roguelike",
               "rpg",
               "tilemap"
@@ -2800,6 +2812,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "tilemap"
             ],
             "typeOnly": false
@@ -5308,6 +5321,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "game-of-life",
         "rhythm",
         "roguelike"
       ],
@@ -5656,9 +5670,11 @@
         },
         {
           "name": "easeInQuad",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "game-of-life"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -5807,6 +5823,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "rhythm"
             ],
             "typeOnly": false
@@ -6016,7 +6033,7 @@
       "typeTotal": 1,
       "typeUsedByExample": 1,
       "valueTotal": 31,
-      "valueUsedByExample": 3
+      "valueUsedByExample": 4
     },
     {
       "coveredByExample": true,
@@ -6233,6 +6250,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "game-of-life",
         "roguelike"
       ],
       "importPath": "@pierre/ecs/modules/grid-based",
@@ -6244,6 +6262,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "roguelike"
             ],
             "typeOnly": false
@@ -6313,6 +6332,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "roguelike"
             ],
             "typeOnly": true
@@ -6374,6 +6394,7 @@
         "doom",
         "flappy",
         "frogger",
+        "game-of-life",
         "jetpack",
         "local-pong",
         "platformer",
@@ -6431,6 +6452,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "platformer",
@@ -6689,6 +6711,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "platformer",
@@ -6769,6 +6792,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "platformer",
@@ -6961,6 +6985,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "portal",
               "space-invaders",
@@ -7033,6 +7058,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "portal",
               "space-invaders",
@@ -7127,6 +7153,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "solitaire"
             ],
             "typeOnly": false
@@ -7414,6 +7441,7 @@
         "asteroids",
         "doom",
         "frogger",
+        "game-of-life",
         "jetpack",
         "space-invaders",
         "spacewar",
@@ -7453,6 +7481,7 @@
               "asteroids",
               "doom",
               "frogger",
+              "game-of-life",
               "jetpack",
               "space-invaders",
               "spacewar",
@@ -7523,6 +7552,7 @@
             "consumers": [
               "asteroids",
               "doom",
+              "game-of-life",
               "jetpack",
               "spacewar",
               "starfighter",
@@ -7554,6 +7584,7 @@
               "asteroids",
               "doom",
               "frogger",
+              "game-of-life",
               "jetpack",
               "space-invaders",
               "spacewar",
@@ -7594,6 +7625,7 @@
         "critters",
         "doom",
         "frogger",
+        "game-of-life",
         "jetpack",
         "local-pong",
         "platformer-3d",
@@ -7653,6 +7685,7 @@
             "consumers": [
               "breakout",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "portal",
@@ -7742,6 +7775,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "jetpack",
               "starfighter"
             ],
@@ -7766,6 +7800,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "jetpack",
               "roguelike",
               "top-down-shooter"
@@ -8976,6 +9011,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "stealth-guard"
             ],
             "typeOnly": false
@@ -10485,6 +10521,7 @@
         "breakout",
         "flappy",
         "frogger",
+        "game-of-life",
         "jetpack",
         "local-pong",
         "platformer",
@@ -10545,6 +10582,7 @@
               "breakout",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "platformer",
@@ -10617,6 +10655,7 @@
             "consumers": [
               "asteroids",
               "frogger",
+              "game-of-life",
               "jetpack",
               "roguelike",
               "space-invaders",
@@ -10682,10 +10721,12 @@
         },
         {
           "name": "Renderable",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
-            "typeOnly": false
+            "consumers": [
+              "game-of-life"
+            ],
+            "typeOnly": true
           },
           "isValue": false,
           "kind": "type",
@@ -10713,6 +10754,7 @@
               "breakout",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "platformer",
@@ -10777,6 +10819,7 @@
               "breakout",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "roguelike",
               "rpg",
@@ -10872,6 +10915,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "roguelike"
             ],
             "typeOnly": false
@@ -10922,7 +10966,7 @@
         "src/modules/tilemap/spawn.test.ts"
       ],
       "typeTotal": 11,
-      "typeUsedByExample": 1,
+      "typeUsedByExample": 2,
       "valueTotal": 5,
       "valueUsedByExample": 5
     },
@@ -11210,6 +11254,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "game-of-life",
         "river-raid",
         "roguelike",
         "snake",
@@ -11228,6 +11273,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "river-raid",
               "roguelike",
               "starfighter"
@@ -11309,6 +11355,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "roguelike"
             ],
             "typeOnly": false
@@ -11366,6 +11413,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "game-of-life",
         "roguelike"
       ],
       "importPath": "@pierre/ecs/modules/save",
@@ -11462,6 +11510,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "roguelike"
             ],
             "typeOnly": false
@@ -11684,6 +11733,7 @@
       "examples": [
         "asteroids",
         "boids",
+        "game-of-life",
         "platformer",
         "snake",
         "spacewar",
@@ -11847,6 +11897,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "snake"
             ],
             "typeOnly": false
@@ -12833,6 +12884,7 @@
         "doom",
         "flappy",
         "frogger",
+        "game-of-life",
         "jetpack",
         "local-pong",
         "platformer",
@@ -12866,6 +12918,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "platformer",
@@ -13004,7 +13057,8 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
-              "card-battler"
+              "card-battler",
+              "game-of-life"
             ],
             "typeOnly": false
           },
@@ -13253,6 +13307,7 @@
       "examples": [
         "doom",
         "frogger",
+        "game-of-life",
         "river-raid"
       ],
       "importPath": "@pierre/ecs/modules/timer",
@@ -13271,6 +13326,7 @@
             "consumers": [
               "doom",
               "frogger",
+              "game-of-life",
               "river-raid"
             ],
             "typeOnly": false
@@ -13298,7 +13354,8 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
-              "frogger"
+              "frogger",
+              "game-of-life"
             ],
             "typeOnly": false
           },
@@ -13321,9 +13378,11 @@
         },
         {
           "name": "justFinished",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "game-of-life"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -13347,6 +13406,7 @@
             "consumers": [
               "doom",
               "frogger",
+              "game-of-life",
               "river-raid"
             ],
             "typeOnly": false
@@ -13375,6 +13435,7 @@
           "example": {
             "consumers": [
               "frogger",
+              "game-of-life",
               "river-raid"
             ],
             "typeOnly": false
@@ -13403,6 +13464,7 @@
             "consumers": [
               "doom",
               "frogger",
+              "game-of-life",
               "river-raid"
             ],
             "typeOnly": false
@@ -13502,7 +13564,7 @@
       "typeTotal": 2,
       "typeUsedByExample": 1,
       "valueTotal": 7,
-      "valueUsedByExample": 5
+      "valueUsedByExample": 6
     },
     {
       "coveredByExample": true,
@@ -13905,6 +13967,7 @@
         "critters",
         "flappy",
         "frogger",
+        "game-of-life",
         "jetpack",
         "local-pong",
         "parallel-kernel",
@@ -13967,6 +14030,7 @@
               "critters",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "parallel-kernel",
@@ -14843,6 +14907,7 @@
         "doom",
         "flappy",
         "frogger",
+        "game-of-life",
         "jetpack",
         "local-pong",
         "platformer",
@@ -14910,6 +14975,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "platformer",
@@ -14969,6 +15035,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "platformer",
@@ -15081,6 +15148,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "game-of-life",
         "roguelike"
       ],
       "importPath": "@pierre/ecs/template",
@@ -15117,6 +15185,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "game-of-life",
               "roguelike"
             ],
             "typeOnly": true
@@ -15264,6 +15333,7 @@
         "doom",
         "flappy",
         "frogger",
+        "game-of-life",
         "jetpack",
         "local-pong",
         "platformer",
@@ -15316,6 +15386,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "platformer",
@@ -15633,6 +15704,7 @@
         "doom",
         "flappy",
         "frogger",
+        "game-of-life",
         "jetpack",
         "local-pong",
         "parallel-kernel",
@@ -15694,6 +15766,7 @@
               "doom",
               "flappy",
               "frogger",
+              "game-of-life",
               "jetpack",
               "local-pong",
               "parallel-kernel",
@@ -15836,6 +15909,12 @@
       "entries": 20,
       "type": 7,
       "value": 45
+    },
+    {
+      "name": "game-of-life",
+      "entries": 20,
+      "type": 6,
+      "value": 44
     },
     {
       "name": "spacewar",
@@ -15996,7 +16075,7 @@
     },
     {
       "importPath": "@pierre/ecs/modules/easing",
-      "missing": 28,
+      "missing": 27,
       "total": 31
     },
     {
@@ -16075,11 +16154,6 @@
       "total": 3
     },
     {
-      "importPath": "@pierre/ecs/modules/timer",
-      "missing": 2,
-      "total": 7
-    },
-    {
       "importPath": "@pierre/ecs/modules/kinematics-3d",
       "missing": 1,
       "total": 2
@@ -16088,6 +16162,11 @@
       "importPath": "@pierre/ecs/modules/tick",
       "missing": 1,
       "total": 4
+    },
+    {
+      "importPath": "@pierre/ecs/modules/timer",
+      "missing": 1,
+      "total": 7
     },
     {
       "importPath": "@pierre/ecs/modules/transform-3d",
@@ -16111,6 +16190,6 @@
     "typeSymbols": 251,
     "valueSymbols": 355,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 161
+    "valueWithoutExample": 159
   }
 }
