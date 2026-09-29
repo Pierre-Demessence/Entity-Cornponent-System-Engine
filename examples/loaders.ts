@@ -21,6 +21,7 @@ export const LOADERS: Record<ExampleId, () => Promise<ExampleModule>> = {
   'frogger': () => import('@pierre/ecs-example-frogger/src/main.ts'),
   'jetpack': () => import('@pierre/ecs-example-jetpack/src/main.ts'),
   'local-pong': () => import('@pierre/ecs-example-local-pong/src/main.ts'),
+  'pacman': () => import('@pierre/ecs-example-pacman/src/main.ts'),
   'parallel-kernel': () => import('@pierre/ecs-example-parallel-kernel/src/main.ts'),
   'platformer': () => import('@pierre/ecs-example-platformer/src/main.ts'),
   'platformer-3d': () => import('@pierre/ecs-example-platformer-3d/src/main.ts'),

@@ -99,6 +99,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "platformer",
         "platformer-3d",
         "portal",
@@ -178,6 +179,7 @@
               "flappy",
               "frogger",
               "local-pong",
+              "pacman",
               "platformer",
               "platformer-3d",
               "river-raid",
@@ -416,6 +418,7 @@
               "flappy",
               "frogger",
               "local-pong",
+              "pacman",
               "platformer",
               "platformer-3d",
               "rhythm",
@@ -598,6 +601,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "platformer-3d",
               "portal",
@@ -709,6 +713,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "platformer",
         "platformer-3d",
         "portal",
@@ -771,6 +776,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "platformer-3d",
               "portal",
@@ -876,6 +882,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "platformer",
         "platformer-3d",
         "portal",
@@ -906,6 +913,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "platformer-3d",
               "portal",
@@ -1078,6 +1086,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "pacman",
         "rpg"
       ],
       "importPath": "@pierre/ecs/modules/animation",
@@ -1173,6 +1182,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "rpg"
             ],
             "typeOnly": false
@@ -1196,6 +1206,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "rpg"
             ],
             "typeOnly": false
@@ -1219,6 +1230,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "rpg"
             ],
             "typeOnly": false
@@ -1339,6 +1351,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "rpg"
             ],
             "typeOnly": false
@@ -1421,6 +1434,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "rpg"
             ],
             "typeOnly": false
@@ -2053,6 +2067,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "pacman",
         "solitaire",
         "spacewar",
         "top-down-shooter"
@@ -2104,6 +2119,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "top-down-shooter"
             ],
             "typeOnly": false
@@ -2146,6 +2162,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "top-down-shooter"
             ],
             "typeOnly": false
@@ -2266,6 +2283,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "top-down-shooter"
             ],
             "typeOnly": false
@@ -2308,6 +2326,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "solitaire",
               "spacewar",
               "top-down-shooter"
@@ -2544,6 +2563,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "pacman",
         "roguelike",
         "rpg",
         "tilemap"
@@ -2680,6 +2700,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "roguelike",
               "rpg",
               "tilemap"
@@ -2751,6 +2772,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "roguelike",
               "rpg",
               "tilemap"
@@ -3870,6 +3892,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "platformer",
         "platformer-3d",
         "river-raid",
@@ -4100,6 +4123,7 @@
           "example": {
             "consumers": [
               "asteroids",
+              "pacman",
               "spacewar",
               "top-down-shooter"
             ],
@@ -4125,6 +4149,7 @@
           "example": {
             "consumers": [
               "asteroids",
+              "pacman",
               "platformer",
               "platformer-3d",
               "spacewar",
@@ -5308,6 +5333,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "pacman",
         "rhythm",
         "roguelike"
       ],
@@ -5635,9 +5661,11 @@
         },
         {
           "name": "easeInOutSine",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "pacman"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -5656,9 +5684,11 @@
         },
         {
           "name": "easeInQuad",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "pacman"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -6016,11 +6046,12 @@
       "typeTotal": 1,
       "typeUsedByExample": 1,
       "valueTotal": 31,
-      "valueUsedByExample": 3
+      "valueUsedByExample": 5
     },
     {
       "coveredByExample": true,
       "examples": [
+        "pacman",
         "stealth-guard"
       ],
       "importPath": "@pierre/ecs/modules/fsm",
@@ -6032,6 +6063,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "stealth-guard"
             ],
             "typeOnly": true
@@ -6072,6 +6104,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "stealth-guard"
             ],
             "typeOnly": true
@@ -6095,6 +6128,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "stealth-guard"
             ],
             "typeOnly": false
@@ -6118,6 +6152,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "stealth-guard"
             ],
             "typeOnly": false
@@ -6376,6 +6411,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "platformer",
         "platformer-3d",
         "portal",
@@ -6400,6 +6436,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "rhythm",
               "roguelike",
               "snake"
@@ -6691,6 +6728,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "platformer-3d",
               "portal",
@@ -6771,6 +6809,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "platformer-3d",
               "portal",
@@ -7415,6 +7454,7 @@
         "doom",
         "frogger",
         "jetpack",
+        "pacman",
         "space-invaders",
         "spacewar",
         "starfighter",
@@ -7454,6 +7494,7 @@
               "doom",
               "frogger",
               "jetpack",
+              "pacman",
               "space-invaders",
               "spacewar",
               "starfighter",
@@ -7524,6 +7565,7 @@
               "asteroids",
               "doom",
               "jetpack",
+              "pacman",
               "spacewar",
               "starfighter",
               "top-down-shooter"
@@ -7555,6 +7597,7 @@
               "doom",
               "frogger",
               "jetpack",
+              "pacman",
               "space-invaders",
               "spacewar",
               "starfighter",
@@ -7596,6 +7639,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "platformer-3d",
         "portal",
         "rhythm",
@@ -7767,6 +7811,7 @@
           "example": {
             "consumers": [
               "jetpack",
+              "pacman",
               "roguelike",
               "top-down-shooter"
             ],
@@ -8080,6 +8125,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "roguelike"
             ],
             "typeOnly": false
@@ -8471,9 +8517,11 @@
         },
         {
           "name": "vec2MoveToward",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "pacman"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -9013,7 +9061,7 @@
       "typeTotal": 4,
       "typeUsedByExample": 2,
       "valueTotal": 53,
-      "valueUsedByExample": 22
+      "valueUsedByExample": 23
     },
     {
       "coveredByExample": true,
@@ -9026,6 +9074,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "river-raid",
         "space-invaders",
         "spacewar",
@@ -9069,6 +9118,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "river-raid",
               "space-invaders",
               "spacewar",
@@ -9660,6 +9710,7 @@
         "asteroids",
         "frogger",
         "jetpack",
+        "pacman",
         "space-invaders",
         "spacewar"
       ],
@@ -9675,6 +9726,7 @@
               "asteroids",
               "frogger",
               "jetpack",
+              "pacman",
               "space-invaders",
               "spacewar"
             ],
@@ -9761,6 +9813,7 @@
               "asteroids",
               "frogger",
               "jetpack",
+              "pacman",
               "space-invaders",
               "spacewar"
             ],
@@ -9807,6 +9860,7 @@
               "asteroids",
               "frogger",
               "jetpack",
+              "pacman",
               "space-invaders",
               "spacewar"
             ],
@@ -9931,6 +9985,7 @@
               "asteroids",
               "frogger",
               "jetpack",
+              "pacman",
               "space-invaders",
               "spacewar"
             ],
@@ -10000,6 +10055,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "pacman",
         "roguelike"
       ],
       "importPath": "@pierre/ecs/modules/pathfinding",
@@ -10011,6 +10067,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "roguelike"
             ],
             "typeOnly": false
@@ -10487,6 +10544,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "platformer",
         "roguelike",
         "rpg",
@@ -10547,6 +10605,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "roguelike",
               "rpg",
@@ -10618,6 +10677,7 @@
               "asteroids",
               "frogger",
               "jetpack",
+              "pacman",
               "roguelike",
               "space-invaders",
               "spacewar",
@@ -10715,6 +10775,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "roguelike",
               "rpg",
@@ -10778,6 +10839,7 @@
               "flappy",
               "frogger",
               "jetpack",
+              "pacman",
               "roguelike",
               "rpg",
               "solitaire",
@@ -10872,6 +10934,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "roguelike"
             ],
             "typeOnly": false
@@ -11210,6 +11273,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "pacman",
         "river-raid",
         "roguelike",
         "snake",
@@ -11228,6 +11292,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "river-raid",
               "roguelike",
               "starfighter"
@@ -11255,6 +11320,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "river-raid",
               "roguelike",
               "snake",
@@ -11283,6 +11349,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "river-raid",
               "roguelike",
               "starfighter"
@@ -11366,6 +11433,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "pacman",
         "roguelike"
       ],
       "importPath": "@pierre/ecs/modules/save",
@@ -11462,6 +11530,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "roguelike"
             ],
             "typeOnly": false
@@ -11599,6 +11668,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "pacman",
         "roguelike"
       ],
       "importPath": "@pierre/ecs/modules/scene-transition",
@@ -11610,6 +11680,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "roguelike"
             ],
             "typeOnly": false
@@ -11684,6 +11755,7 @@
       "examples": [
         "asteroids",
         "boids",
+        "pacman",
         "platformer",
         "snake",
         "spacewar",
@@ -11847,6 +11919,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "snake"
             ],
             "typeOnly": false
@@ -12067,6 +12140,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "pacman",
         "top-down-shooter"
       ],
       "importPath": "@pierre/ecs/modules/stats",
@@ -12075,9 +12149,11 @@
       "symbols": [
         {
           "name": "drawStatsOverlay",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "pacman"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -12099,6 +12175,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "top-down-shooter"
             ],
             "typeOnly": false
@@ -12187,7 +12264,7 @@
       "typeTotal": 2,
       "typeUsedByExample": 0,
       "valueTotal": 3,
-      "valueUsedByExample": 1
+      "valueUsedByExample": 2
     },
     {
       "coveredByExample": true,
@@ -12694,6 +12771,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "pacman",
         "roguelike",
         "rpg",
         "solitaire",
@@ -12790,6 +12868,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "pacman",
               "roguelike",
               "rpg",
               "solitaire",
@@ -12835,6 +12914,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "platformer",
         "platformer-3d",
         "portal",
@@ -12868,6 +12948,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "platformer-3d",
               "portal",
@@ -12971,6 +13052,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "platformer-3d",
               "portal",
@@ -13004,7 +13086,8 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
-              "card-battler"
+              "card-battler",
+              "pacman"
             ],
             "typeOnly": false
           },
@@ -13253,6 +13336,7 @@
       "examples": [
         "doom",
         "frogger",
+        "pacman",
         "river-raid"
       ],
       "importPath": "@pierre/ecs/modules/timer",
@@ -13271,6 +13355,7 @@
             "consumers": [
               "doom",
               "frogger",
+              "pacman",
               "river-raid"
             ],
             "typeOnly": false
@@ -13298,7 +13383,8 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
-              "frogger"
+              "frogger",
+              "pacman"
             ],
             "typeOnly": false
           },
@@ -13347,6 +13433,7 @@
             "consumers": [
               "doom",
               "frogger",
+              "pacman",
               "river-raid"
             ],
             "typeOnly": false
@@ -13375,6 +13462,7 @@
           "example": {
             "consumers": [
               "frogger",
+              "pacman",
               "river-raid"
             ],
             "typeOnly": false
@@ -13403,6 +13491,7 @@
             "consumers": [
               "doom",
               "frogger",
+              "pacman",
               "river-raid"
             ],
             "typeOnly": false
@@ -13432,6 +13521,7 @@
             "consumers": [
               "doom",
               "frogger",
+              "pacman",
               "river-raid"
             ],
             "typeOnly": true
@@ -13907,6 +13997,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "parallel-kernel",
         "platformer",
         "river-raid",
@@ -13969,6 +14060,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "parallel-kernel",
               "platformer",
               "river-raid",
@@ -14043,6 +14135,7 @@
           "example": {
             "consumers": [
               "asteroids",
+              "pacman",
               "rpg",
               "spacewar",
               "top-down-shooter"
@@ -14096,6 +14189,7 @@
           "example": {
             "consumers": [
               "asteroids",
+              "pacman",
               "rpg",
               "spacewar"
             ],
@@ -14153,6 +14247,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "river-raid",
               "space-invaders",
@@ -14845,6 +14940,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "platformer",
         "platformer-3d",
         "portal",
@@ -14912,6 +15008,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "platformer-3d",
               "portal",
@@ -14971,6 +15068,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "platformer-3d",
               "portal",
@@ -15266,6 +15364,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "platformer",
         "platformer-3d",
         "portal",
@@ -15318,6 +15417,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "platformer",
               "platformer-3d",
               "portal",
@@ -15635,6 +15735,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "pacman",
         "parallel-kernel",
         "platformer",
         "platformer-3d",
@@ -15696,6 +15797,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "pacman",
               "parallel-kernel",
               "platformer",
               "platformer-3d",
@@ -15813,6 +15915,12 @@
     }
   ],
   "examples": [
+    {
+      "name": "pacman",
+      "entries": 28,
+      "type": 8,
+      "value": 62
+    },
     {
       "name": "roguelike",
       "entries": 21,
@@ -15991,12 +16099,12 @@
   "candidates": [
     {
       "importPath": "@pierre/ecs/modules/math",
-      "missing": 31,
+      "missing": 30,
       "total": 53
     },
     {
       "importPath": "@pierre/ecs/modules/easing",
-      "missing": 28,
+      "missing": 26,
       "total": 31
     },
     {
@@ -16070,11 +16178,6 @@
       "total": 6
     },
     {
-      "importPath": "@pierre/ecs/modules/stats",
-      "missing": 2,
-      "total": 3
-    },
-    {
       "importPath": "@pierre/ecs/modules/timer",
       "missing": 2,
       "total": 7
@@ -16083,6 +16186,11 @@
       "importPath": "@pierre/ecs/modules/kinematics-3d",
       "missing": 1,
       "total": 2
+    },
+    {
+      "importPath": "@pierre/ecs/modules/stats",
+      "missing": 1,
+      "total": 3
     },
     {
       "importPath": "@pierre/ecs/modules/tick",
@@ -16111,6 +16219,6 @@
     "typeSymbols": 251,
     "valueSymbols": 355,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 161
+    "valueWithoutExample": 157
   }
 }

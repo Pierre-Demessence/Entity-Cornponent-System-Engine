@@ -276,6 +276,15 @@ export const EXAMPLES = [
     title: 'Spacewar!',
   },
   {
+    id: 'pacman',
+    challenge: 12,
+    controls: 'Arrows/WASD steer (turns are buffered), F frame stats, R restart after game over',
+    group: 'challenge',
+    modules: ['animation', 'audio', 'camera', 'collision', 'easing', 'fsm', 'input', 'lifetime', 'math', 'motion', 'particles', 'pathfinding', 'render-canvas2d', 'rng', 'save', 'scene-transition', 'spatial', 'stats', 'texture-atlas', 'tick', 'timer', 'transform'],
+    summary: 'Tile-locked maze chase: four ghosts with their own targeting, a scatter/chase clock, frightened and eaten states, tunnel wrap, fruit, and levels — every rule a state machine or a system over components.',
+    title: 'Pac-Man',
+  },
+  {
     id: 'doom',
     challenge: 24,
     controls: 'Click to capture · WASD move · Space jump · LMB fire · 1/2 weapon · R restart',
