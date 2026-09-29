@@ -2,7 +2,9 @@ import type { DoomAction, DoomEvent, GameState } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { addLookDelta, makeCameraRigSystem } from '@pierre/ecs/modules/camera-3d';
-import { createInput, Key, KeyboardProvider, MouseLookProvider } from '@pierre/ecs/modules/input';
+import { makeCooldownSystem } from '@pierre/ecs/modules/cooldown';
+import { createInput, Key, KeyboardProvider, MouseLookProvider, Pointer, PointerProvider } from '@pierre/ecs/modules/input';
+import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import { CameraTag, HealthDef, PlayerTag, Position3DDef } from './components';
@@ -75,9 +77,17 @@ export function start(container: HTMLElement): () => void {
   const keyboard = new KeyboardProvider({
     preventDefaultCodes: [Key.KeyW, Key.KeyA, Key.KeyS, Key.KeyD, Key.Space, Key.KeyR, Key.Digit1, Key.Digit2],
   });
+  // Pointer lock: the LMB press captures the cursor, then the mouse drives
+  // the camera rig's yaw + pitch. Esc (browser-handled) releases it.
+  const look = new MouseLookProvider({
+    sensitivity: MOUSE_SENSITIVITY,
+    target: renderer.domElement,
+  });
+  const pointer = new PointerProvider({ buttons: [0], target: renderer.domElement });
   const input = createInput<DoomAction>(
     {
       back: [Key.KeyS],
+      fire: [Pointer.LeftButton],
       forward: [Key.KeyW],
       jump: [Key.Space],
       left: [Key.KeyA],
@@ -86,7 +96,7 @@ export function start(container: HTMLElement): () => void {
       weapon1: [Key.Digit1],
       weapon2: [Key.Digit2],
     },
-    [keyboard],
+    [keyboard, pointer],
   );
 
   const state: GameState = {
@@ -95,9 +105,8 @@ export function start(container: HTMLElement): () => void {
     dead: false,
     dtMs: LOGIC_TICK_MS,
     events,
-    fireTimer: 0,
-    firing: false,
     input,
+    look: look.state,
     playerId: null,
     tracer: null,
     weapon: 0,
@@ -106,35 +115,21 @@ export function start(container: HTMLElement): () => void {
 
   resetGame(state);
 
-  // Pointer lock: the LMB press captures the cursor, then the mouse drives
-  // the camera rig's yaw + pitch. Esc (browser-handled) releases it.
-  const look = new MouseLookProvider({
-    sensitivity: MOUSE_SENSITIVITY,
-    target: renderer.domElement,
-  });
   look.subscribe(({ x, y }) => {
     const rig = playerLook(state);
     if (rig)
       addLookDelta(rig, x, y);
   });
+  // Requesting the lock needs the click's own user gesture, so it stays a DOM
+  // handler; the weapon ignores `fire` until the lock is granted.
   const onMouseDown = (e: MouseEvent): void => {
-    if (e.button !== 0)
-      return;
-    // The click that captures the cursor shouldn't also fire a shot: the lock
-    // is granted asynchronously, so `locked` is still false right here.
-    if (look.state.locked)
-      state.firing = true;
-    else
+    if (e.button === 0 && !look.state.locked)
       look.requestLock();
   };
-  const onMouseUp = (e: MouseEvent): void => {
-    if (e.button === 0)
-      state.firing = false;
-  };
   renderer.domElement.addEventListener('mousedown', onMouseDown);
-  document.addEventListener('mouseup', onMouseUp);
 
   const scheduler = new Scheduler<GameState>()
+    .add(makeCooldownSystem<GameState>())
     .add(inputSystem)
     .add(weaponSystem)
     .add(aiSystem)
@@ -142,6 +137,7 @@ export function start(container: HTMLElement): () => void {
     .add(kinematics3dSystem)
     .add(projectileMotionSystem)
     .add(projectileSystem)
+    .add(makeLifetimeSystem<GameState>({ runAfter: ['projectile'] }))
     .add(pickupSystem);
 
   const tickSource = new FixedIntervalTickSource(LOGIC_TICK_MS);
@@ -185,7 +181,6 @@ export function start(container: HTMLElement): () => void {
     input.dispose();
     look.dispose();
     renderer.domElement.removeEventListener('mousedown', onMouseDown);
-    document.removeEventListener('mouseup', onMouseUp);
     unsubscribeRender();
     renderTickSource.stop();
     tickRunner.stop();

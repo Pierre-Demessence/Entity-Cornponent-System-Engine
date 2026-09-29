@@ -6,17 +6,19 @@ import type { Facing, GameState } from './game';
 import { aabbVsAabb } from '@pierre/ecs/modules/collision';
 import { clamp } from '@pierre/ecs/modules/math';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
+import { finished, tickTimer } from '@pierre/ecs/modules/timer';
 
 import {
   ObstacleDef,
   ObstacleTag,
   PositionDef,
   RenderableDef,
-  SizeDef,
+  ShapeAabbDef,
   VelocityDef,
 } from './components';
 import {
   FROG,
+  frogCenter,
   GOAL_ROW,
   handleGoalLanding,
   killFrog,
@@ -34,7 +36,7 @@ import {
 
 function boxOf(state: GameState, id: EntityId): Aabb {
   const pos = state.world.getStore(PositionDef).get(id)!;
-  const size = state.world.getStore(SizeDef).get(id)!;
+  const size = state.world.getStore(ShapeAabbDef).get(id)!;
   return { h: size.h, w: size.w, x: pos.x, y: pos.y };
 }
 
@@ -65,15 +67,24 @@ function hop(ctx: GameState, dir: Facing): void {
   pos.x = clamp(pos.x, 0, SCREEN_W - FROG);
 }
 
+/** A tap hops one tile along the dominant axis from the frog toward the pointer. */
+function tapDirection(ctx: GameState): Facing {
+  const c = frogCenter(ctx);
+  const dx = ctx.pointer.x - c.x;
+  const dy = ctx.pointer.y - c.y;
+  if (Math.abs(dx) > Math.abs(dy))
+    return dx < 0 ? 'left' : 'right';
+  return dy < 0 ? 'up' : 'down';
+}
+
 export const inputSystem: SchedulableSystem<GameState> = {
   name: 'input',
   run(ctx) {
-    if (ctx.levelFlashMs > 0)
-      ctx.levelFlashMs -= ctx.dtMs;
+    tickTimer(ctx.levelFlash, ctx.dtMs);
 
     if (ctx.dying) {
-      ctx.deathTimerMs -= ctx.dtMs;
-      if (ctx.deathTimerMs <= 0) {
+      tickTimer(ctx.deathTimer, ctx.dtMs);
+      if (finished(ctx.deathTimer)) {
         if (ctx.lives <= 0) {
           ctx.dying = false;
           ctx.dead = true;
@@ -87,9 +98,8 @@ export const inputSystem: SchedulableSystem<GameState> = {
     }
 
     if (ctx.dead) {
-      if (ctx.input.justPressed('reset'))
+      if (ctx.input.justPressed('reset') || ctx.input.justPressed('tap'))
         resetGame(ctx);
-      ctx.pendingHop = null;
       return;
     }
 
@@ -102,10 +112,9 @@ export const inputSystem: SchedulableSystem<GameState> = {
       dir = 'left';
     else if (ctx.input.justPressed('right'))
       dir = 'right';
-    else if (ctx.pendingHop != null)
-      dir = ctx.pendingHop;
+    else if (ctx.input.justPressed('tap'))
+      dir = tapDirection(ctx);
 
-    ctx.pendingHop = null;
     if (dir != null)
       hop(ctx, dir);
   },
@@ -122,7 +131,7 @@ export const wrapSystem: SchedulableSystem<GameState> = {
   runAfter: ['motion'],
   run(ctx) {
     const posStore = ctx.world.getStore(PositionDef);
-    const sizeStore = ctx.world.getStore(SizeDef);
+    const sizeStore = ctx.world.getStore(ShapeAabbDef);
     const obStore = ctx.world.getStore(ObstacleDef);
     const velStore = ctx.world.getStore(VelocityDef);
     for (const id of ctx.world.getTag(ObstacleTag)) {

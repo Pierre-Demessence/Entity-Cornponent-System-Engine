@@ -5,14 +5,12 @@ import type { GameState } from './game';
 import { aabbVsAabb } from '@pierre/ecs/modules/collision';
 import { clamp } from '@pierre/ecs/modules/math';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
-import { ParticleTag as ParticlesTag } from '@pierre/ecs/modules/particles';
 import { tickSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
   ObstacleTag,
-  ParticleTag,
   PositionDef,
-  SizeDef,
+  ShapeAabbDef,
   VelocityDef,
 } from './components';
 import {
@@ -24,12 +22,11 @@ import {
   MIN_VY,
   PLAYER_H,
   PLAYER_W,
-  SCREEN_W,
+  puffExhaust,
   SCROLL_MAX,
   SCROLL_RAMP,
   spawnBullet,
   spawnObstacle,
-  spawnParticle,
   THRUST_ACCEL,
 } from './game';
 
@@ -85,16 +82,7 @@ export const bulletSystem: SchedulableSystem<GameState> = {
       const pos = ctx.world.getStore(PositionDef).get(ctx.playerId!)!;
       spawnBullet(ctx, pos.x + PLAYER_W, pos.y + PLAYER_H - 6);
       // Jet exhaust puffs beneath the player while rising.
-      spawnParticle(
-        ctx,
-        pos.x + PLAYER_W * 0.3,
-        pos.y + PLAYER_H,
-        -ctx.scrollSpeed * 0.4 - Math.random() * 60,
-        80 + Math.random() * 140,
-        280 + Math.random() * 160,
-        Math.random() < 0.5 ? '#9fd2ff' : '#e8f4ff',
-        3 + Math.random() * 3,
-      );
+      puffExhaust(ctx, pos.x + PLAYER_W * 0.3, pos.y + PLAYER_H);
     });
   },
 };
@@ -129,21 +117,11 @@ export const recycleSystem: SchedulableSystem<GameState> = {
   runAfter: ['motion'],
   run(ctx) {
     const posStore = ctx.world.getStore(PositionDef);
-    const sizeStore = ctx.world.getStore(SizeDef);
+    const sizeStore = ctx.world.getStore(ShapeAabbDef);
     for (const id of ctx.world.getTag(ObstacleTag)) {
       const pos = posStore.get(id);
       const size = sizeStore.get(id);
       if (pos && size && pos.x + size.w < 0)
-        ctx.world.queueDestroy(id);
-    }
-    for (const id of ctx.world.getTag(ParticleTag)) {
-      const pos = posStore.get(id);
-      if (pos && (pos.x > SCREEN_W + 40 || pos.x < -40 || pos.y > FLOOR_Y + 60))
-        ctx.world.queueDestroy(id);
-    }
-    for (const id of ctx.world.getTag(ParticlesTag)) {
-      const pos = posStore.get(id);
-      if (pos && (pos.x > SCREEN_W + 40 || pos.x < -40 || pos.y > FLOOR_Y + 60))
         ctx.world.queueDestroy(id);
     }
   },
@@ -157,7 +135,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
       return;
     const pos = ctx.world.getStore(PositionDef).get(ctx.playerId)!;
     const posStore = ctx.world.getStore(PositionDef);
-    const sizeStore = ctx.world.getStore(SizeDef);
+    const sizeStore = ctx.world.getStore(ShapeAabbDef);
 
     for (const id of ctx.world.getTag(ObstacleTag)) {
       const op = posStore.get(id);

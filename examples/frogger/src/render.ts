@@ -3,8 +3,9 @@ import type { Canvas2DRenderContext } from '@pierre/ecs/modules/render-canvas2d'
 import type { GameState } from './game';
 
 import { Canvas2DRenderer } from '@pierre/ecs/modules/render-canvas2d';
+import { finished, fraction } from '@pierre/ecs/modules/timer';
 
-import { ObstacleDef, ObstacleTag, PositionDef, SizeDef, VelocityDef } from './components';
+import { ObstacleDef, ObstacleTag, PositionDef, ShapeAabbDef, VelocityDef } from './components';
 import {
   FROG,
   GOAL_ROW,
@@ -74,7 +75,7 @@ function drawPads(ctx2d: CanvasRenderingContext2D, state: GameState): void {
 /** Crocodile mouths are drawn over their bodies so the danger reads clearly. */
 function drawCrocMouths(ctx2d: CanvasRenderingContext2D, state: GameState): void {
   const posStore = state.world.getStore(PositionDef);
-  const sizeStore = state.world.getStore(SizeDef);
+  const sizeStore = state.world.getStore(ShapeAabbDef);
   const velStore = state.world.getStore(VelocityDef);
   const obStore = state.world.getStore(ObstacleDef);
   for (const id of state.world.getTag(ObstacleTag)) {
@@ -173,9 +174,9 @@ function drawOverlays(ctx2d: CanvasRenderingContext2D, state: GameState): void {
     ctx2d.fillText('Arrows / W A S D to hop  ·  reach the lillypads', SCREEN_W / 2, rowFrogY(START_ROW) - 6);
   }
 
-  if (state.levelFlashMs > 0 && !state.dead) {
+  if (!finished(state.levelFlash) && !state.dead) {
     ctx2d.textAlign = 'center';
-    ctx2d.fillStyle = `rgba(124,252,155,${Math.min(0.85, state.levelFlashMs / 1100)})`;
+    ctx2d.fillStyle = `rgba(124,252,155,${Math.min(0.85, 1 - fraction(state.levelFlash))})`;
     ctx2d.font = 'bold 40px system-ui, sans-serif';
     ctx2d.fillText(`Level ${state.level}`, SCREEN_W / 2, PLAYFIELD_H / 2);
   }

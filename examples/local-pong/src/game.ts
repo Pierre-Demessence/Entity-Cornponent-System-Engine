@@ -14,7 +14,7 @@ import {
 
   PositionDef,
   RenderableDef,
-  SizeDef,
+  ShapeAabbDef,
   VelocityDef,
 } from './components';
 
@@ -50,6 +50,7 @@ export type LocalPongEvent
 
 export interface GameState {
   ballId: EntityId | null;
+  dtMs: number;
   events: EventBus<LocalPongEvent>;
   inputs: Record<PlayerId, InputState<PongAction>>;
   metaInput: InputState<MetaAction>;
@@ -64,7 +65,7 @@ export function makeWorld(): EcsWorld {
   const world = new EcsWorld();
   world.registerComponent(PositionDef);
   world.registerComponent(VelocityDef);
-  world.registerComponent(SizeDef);
+  world.registerComponent(ShapeAabbDef);
   world.registerComponent(RenderableDef);
   world.registerComponent(PaddleDef);
   world.registerComponent(BallDef);
@@ -91,7 +92,7 @@ export function spawnPaddle(state: GameState, owner: PlayerId): EntityId {
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x: paddleSpawnX(owner), y: centerY(PADDLE_H) });
   state.world.getStore(VelocityDef).set(id, { vx: 0, vy: 0 });
-  state.world.getStore(SizeDef).set(id, { h: PADDLE_H, w: PADDLE_W });
+  state.world.getStore(ShapeAabbDef).set(id, { h: PADDLE_H, w: PADDLE_W });
   state.world.getStore(PaddleDef).set(id, { owner });
   state.world.getStore(RenderableDef).set(id, {
     fill: owner === Player.Left ? '#7bdff2' : '#f7a072',
@@ -110,7 +111,7 @@ export function spawnBall(state: GameState): EntityId {
     y: SCREEN_H / 2 - BALL_SIZE / 2,
   });
   state.world.getStore(VelocityDef).set(id, { vx: 0, vy: 0 });
-  state.world.getStore(SizeDef).set(id, { h: BALL_SIZE, w: BALL_SIZE });
+  state.world.getStore(ShapeAabbDef).set(id, { h: BALL_SIZE, w: BALL_SIZE });
   state.world.getStore(BallDef).set(id, {
     launchSpeed: BALL_LAUNCH_SPEED,
     speedStep: BALL_SPEED_STEP,

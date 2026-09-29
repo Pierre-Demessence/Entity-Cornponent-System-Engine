@@ -30,7 +30,7 @@ interface SurfaceHit {
 }
 
 /**
- * Portal gun. When a fire is queued (`pendingFire`), cast a ray from the eye
+ * Portal gun. On a `fireBlue` / `fireOrange` press (LMB / RMB), cast a ray from the eye
  * along the look direction at the portal-able surfaces; on a valid hit, snap a
  * portal onto that face and replace that colour's portal. An invalid shot
  * (no portal-able surface, or a face too small to hold the portal) leaves the
@@ -39,8 +39,9 @@ interface SurfaceHit {
 export const portalGunSystem: SchedulableSystem<GameState> = {
   name: 'portal-gun',
   run(ctx) {
-    const color = ctx.pendingFire;
-    ctx.pendingFire = null;
+    const color: PortalColor | null = ctx.input.justPressed('fireBlue')
+      ? 'blue'
+      : ctx.input.justPressed('fireOrange') ? 'orange' : null;
     if (!color || ctx.playerId == null)
       return;
 

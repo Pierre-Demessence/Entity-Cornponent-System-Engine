@@ -8,15 +8,17 @@ import { vec3Normalize } from '@pierre/ecs/modules/math';
 
 import {
   AiDef,
+  CooldownDef,
   EnemyTag,
   HealthDef,
   Position3DDef,
+  ready,
   ShapeAabb3DDef,
   StaticBodyTag,
+  trigger,
   Velocity3DDef,
 } from '../components';
 import {
-  ENEMY_ATTACK_COOLDOWN_MS,
   ENEMY_ATTACK_RANGE,
   ENEMY_DAMAGE,
   ENEMY_DETECT_RANGE,
@@ -44,6 +46,7 @@ export const aiSystem: SchedulableSystem<GameState> = {
     const velStore = ctx.world.getStore(Velocity3DDef);
     const aabbStore = ctx.world.getStore(ShapeAabb3DDef);
     const aiStore = ctx.world.getStore(AiDef);
+    const cooldownStore = ctx.world.getStore(CooldownDef);
     const healthStore = ctx.world.getStore(HealthDef);
 
     const ppos = posStore.get(ctx.playerId);
@@ -63,14 +66,12 @@ export const aiSystem: SchedulableSystem<GameState> = {
       const epos = posStore.get(id);
       const evel = velStore.get(id);
       const ai = aiStore.get(id);
-      if (!epos || !evel || !ai)
+      const attack = cooldownStore.get(id);
+      if (!epos || !evel || !ai || !attack)
         continue;
       const eh = healthStore.get(id);
       if (eh && eh.hp <= 0)
         continue; // killed earlier this tick; despawn is deferred to the flush
-
-      if (ai.attackTimer > 0)
-        ai.attackTimer -= ctx.dtMs;
 
       const dx = ppos.x - epos.x;
       const dy = ppos.y - epos.y;
@@ -89,8 +90,8 @@ export const aiSystem: SchedulableSystem<GameState> = {
         ai.mode = 2; // attack
         evel.vx = 0;
         evel.vz = 0;
-        if (ai.attackTimer <= 0) {
-          ai.attackTimer = ENEMY_ATTACK_COOLDOWN_MS;
+        if (ready(attack)) {
+          trigger(attack);
           if (!ctx.dead && ctx.playerId != null) {
             const ph = healthStore.get(ctx.playerId);
             if (ph) {

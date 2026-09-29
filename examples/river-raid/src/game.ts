@@ -1,8 +1,13 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
+import type { RandomFn } from '@pierre/ecs/modules/rng';
+import type { Spawner } from '@pierre/ecs/modules/spawner';
+import type { Timer } from '@pierre/ecs/modules/timer';
 
 import { EcsWorld } from '@pierre/ecs';
 import { CooldownDef, makeCooldown } from '@pierre/ecs/modules/cooldown';
+import { makeSeededRng } from '@pierre/ecs/modules/rng';
+import { resetSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
   BridgeDef,
@@ -15,7 +20,7 @@ import {
   FuelDepotTag,
   PlayerTag,
   PositionDef,
-  SizeDef,
+  ShapeAabbDef,
   VelocityDef,
 } from './components';
 
@@ -96,9 +101,14 @@ export interface RiverSegment {
 export interface GameState {
   best: number;
   bridgeActive: boolean;
-  deathTimerMs: number;
+  /** Whether this level's bridge has been placed ahead of the player. */
+  bridgeSpawned: boolean;
+  /** Counts down the "destroyed" pause before a respawn. */
+  deathTimer: Timer;
+  depotSpawner: Spawner;
   dtMs: number;
   dying: boolean;
+  enemySpawner: Spawner;
   events: EventBus<never>;
   fuel: number;
   gameOver: boolean;
@@ -110,6 +120,8 @@ export interface GameState {
   /** Next world Y for segment generation (above the visible area). */
   nextSpawnY: number;
   playerId: EntityId | null;
+  /** Seeded source for the river layout and enemy placement, reseeded per game. */
+  rng: RandomFn;
   score: number;
   /** How many pixels the world has scrolled. screenY = SCREEN_H + scrollOffset - worldY. */
   scrollOffset: number;
@@ -118,20 +130,10 @@ export interface GameState {
   world: EcsWorld;
 }
 
-/** Simple pseudo-random using a linear congruential generator (seeded). */
-let _seed = 42;
-function rand(): number {
-  _seed = (_seed * 1664525 + 1013904223) | 0;
-  return (_seed >>> 0) / 0xFFFFFFFF;
-}
+const RNG_SEED = 42;
 
-function randRange(min: number, max: number): number {
-  return min + rand() * (max - min);
-}
-
-/** Reset the RNG seed (call at game start). */
-export function resetRng(seed = 42): void {
-  _seed = seed;
+function randRange(state: GameState, min: number, max: number): number {
+  return min + state.rng() * (max - min);
 }
 
 /** Smooth noise for river width variation. */
@@ -196,7 +198,7 @@ export function spawnBridge(state: GameState, worldY: number): void {
   const cx = SCREEN_W / 2;
   const id = w.createEntity();
   w.getStore(PositionDef).set(id, { x: cx - BRIDGE_W / 2, y: worldY });
-  w.getStore(SizeDef).set(id, { h: BRIDGE_H, w: BRIDGE_W });
+  w.getStore(ShapeAabbDef).set(id, { h: BRIDGE_H, w: BRIDGE_W });
   w.getStore(BridgeDef).set(id, { hp: BRIDGE_HP });
   w.getTag(BridgeTag).add(id);
 }
@@ -209,11 +211,11 @@ export function spawnFuelDepot(state: GameState, worldY: number): void {
   const riverW = seg.rightX - seg.leftX;
   if (riverW < DEPOT_W + 20)
     return;
-  const x = seg.leftX + randRange(10, riverW - DEPOT_W - 10);
+  const x = seg.leftX + randRange(state, 10, riverW - DEPOT_W - 10);
   const w = state.world;
   const id = w.createEntity();
   w.getStore(PositionDef).set(id, { x, y: worldY });
-  w.getStore(SizeDef).set(id, { h: DEPOT_H, w: DEPOT_W });
+  w.getStore(ShapeAabbDef).set(id, { h: DEPOT_H, w: DEPOT_W });
   w.getStore(FuelDepotDef).set(id, { fuel: FUEL_DEPOT_REFILL });
   w.getTag(FuelDepotTag).add(id);
 }
@@ -228,8 +230,8 @@ export function spawnEnemy(state: GameState, worldY: number, kind: 'boat' | 'hel
   const pointsMap: Record<string, number> = { boat: 30, helicopter: 60, jet: 100 };
   const speedMap: Record<string, number> = { boat: 60, helicopter: 80, jet: 140 };
   const size = sizes[kind];
-  const dir: -1 | 1 = rand() < 0.5 ? -1 : 1;
-  const speed = speedMap[kind] + randRange(-20, 20);
+  const dir: -1 | 1 = state.rng() < 0.5 ? -1 : 1;
+  const speed = speedMap[kind] + randRange(state, -20, 20);
 
   let x: number;
   if (kind === 'jet') {
@@ -242,14 +244,14 @@ export function spawnEnemy(state: GameState, worldY: number, kind: 'boat' | 'hel
     if (!seg)
       return;
     const riverW = seg.rightX - seg.leftX;
-    x = seg.leftX + randRange(0, Math.max(0, riverW - size.w));
+    x = seg.leftX + randRange(state, 0, Math.max(0, riverW - size.w));
   }
 
   const w = state.world;
   const id = w.createEntity();
   w.getStore(PositionDef).set(id, { x, y: worldY });
   w.getStore(VelocityDef).set(id, { vx: dir * speed, vy: 0 });
-  w.getStore(SizeDef).set(id, size);
+  w.getStore(ShapeAabbDef).set(id, size);
   w.getStore(EnemyDef).set(id, {
     dir,
     kind,
@@ -273,7 +275,7 @@ export function spawnBullet(state: GameState): void {
     y: pos.y - BULLET_H,
   });
   w.getStore(VelocityDef).set(id, { vx: 0, vy: 400 }); // positive = up on screen with new formula
-  w.getStore(SizeDef).set(id, { h: BULLET_H, w: BULLET_W });
+  w.getStore(ShapeAabbDef).set(id, { h: BULLET_H, w: BULLET_W });
   w.getStore(BulletDef).set(id, { damage: 1 });
   w.getTag(BulletTag).add(id);
 }
@@ -283,7 +285,7 @@ export function makeWorld(): EcsWorld {
   const w = new EcsWorld();
   w.registerComponent(PositionDef);
   w.registerComponent(VelocityDef);
-  w.registerComponent(SizeDef);
+  w.registerComponent(ShapeAabbDef);
   w.registerComponent(EnemyDef);
   w.registerComponent(BridgeDef);
   w.registerComponent(FuelDepotDef);
@@ -310,7 +312,7 @@ export function spawnPlayer(state: GameState): EntityId {
     x: (SCREEN_W - JET_W) / 2,
     y: state.scrollOffset + SCREEN_H - PLAYER_SCREEN_Y,
   });
-  w.getStore(SizeDef).set(id, { h: JET_H, w: JET_W });
+  w.getStore(ShapeAabbDef).set(id, { h: JET_H, w: JET_W });
   w.getStore(CooldownDef).set(id, makeCooldown(SHOOT_COOLDOWN_MS));
   w.getTag(PlayerTag).add(id);
   state.playerId = id;
@@ -331,17 +333,18 @@ export function resetGame(state: GameState): void {
   state.levelProgress = 0;
   state.gameOver = false;
   state.dying = false;
-  state.deathTimerMs = 0;
   state.bridgeActive = false;
+  state.bridgeSpawned = false;
+  resetSpawner(state.enemySpawner, 0);
+  resetSpawner(state.depotSpawner, 0);
   state.best = Math.max(state.best, state.score);
-  resetRng();
+  state.rng = makeSeededRng(RNG_SEED);
   spawnPlayer(state);
 }
 
 /** Respawn player after death. */
 export function respawnPlayer(state: GameState): void {
   state.dying = false;
-  state.deathTimerMs = 0;
   state.playerId = null;
   if (state.lives <= 0) {
     state.gameOver = true;

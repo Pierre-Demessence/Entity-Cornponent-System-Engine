@@ -44,8 +44,6 @@ export interface GameState {
   events: EventBus<never>;
   input: InputState<FlappyAction>;
   pipeSpawner: Spawner;
-  /** Click/tap flap queued by the canvas pointer listener, consumed each tick. */
-  pointerFlap: boolean;
   score: number;
   started: boolean;
   world: EcsWorld;

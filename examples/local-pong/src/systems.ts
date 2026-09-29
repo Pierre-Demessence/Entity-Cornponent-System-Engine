@@ -5,14 +5,14 @@ import type { GameState } from './game';
 
 import { aabbVsAabb } from '@pierre/ecs/modules/collision';
 import { clamp } from '@pierre/ecs/modules/math';
+import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 
-import { BallDef, PaddleDef, PaddleTag, Player, PositionDef, SizeDef, VelocityDef } from './components';
+import { BallDef, PaddleDef, PaddleTag, Player, PositionDef, ShapeAabbDef, VelocityDef } from './components';
 import {
   cloneScores,
   COURT_MARGIN,
   freezeMatch,
 
-  LOGIC_TICK_MS,
   MAX_BALL_SPEED,
   MAX_BOUNCE_ANGLE,
   PADDLE_SPEED,
@@ -21,8 +21,6 @@ import {
   SCREEN_W,
   WINNING_SCORE,
 } from './game';
-
-const FIXED_DT_S = LOGIC_TICK_MS / 1000;
 
 function scorePoint(ctx: GameState, scorer: PlayerId): void {
   ctx.scores[scorer] += 1;
@@ -70,31 +68,22 @@ export const inputSystem: SchedulableSystem<GameState> = {
   },
 };
 
-export const movementSystem: SchedulableSystem<GameState> = {
-  name: 'movement',
+/** Integrates every body (paddles and ball) by its velocity. */
+export const movementSystem = makeVelocityIntegrationSystem<GameState>({ name: 'movement', runAfter: ['input'] });
+
+/** Keeps each paddle inside the court after integration. */
+export const paddleBoundsSystem: SchedulableSystem<GameState> = {
+  name: 'paddle-bounds',
+  runAfter: ['movement'],
   run(ctx) {
     const posStore = ctx.world.getStore(PositionDef);
-    const sizeStore = ctx.world.getStore(SizeDef);
-    const velStore = ctx.world.getStore(VelocityDef);
-
+    const sizeStore = ctx.world.getStore(ShapeAabbDef);
     for (const paddleId of ctx.world.getTag(PaddleTag)) {
       const pos = posStore.get(paddleId);
       const size = sizeStore.get(paddleId);
-      const vel = velStore.get(paddleId);
-      if (!pos || !size || !vel)
-        continue;
-      pos.y = clamp(pos.y + vel.vy * FIXED_DT_S, COURT_MARGIN, SCREEN_H - COURT_MARGIN - size.h);
+      if (pos && size)
+        pos.y = clamp(pos.y, COURT_MARGIN, SCREEN_H - COURT_MARGIN - size.h);
     }
-
-    if (ctx.winner || ctx.ballId == null)
-      return;
-
-    const ballPos = posStore.get(ctx.ballId);
-    const ballVel = velStore.get(ctx.ballId);
-    if (!ballPos || !ballVel)
-      return;
-    ballPos.x += ballVel.vx * FIXED_DT_S;
-    ballPos.y += ballVel.vy * FIXED_DT_S;
   },
 };
 
@@ -105,7 +94,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
       return;
 
     const posStore = ctx.world.getStore(PositionDef);
-    const sizeStore = ctx.world.getStore(SizeDef);
+    const sizeStore = ctx.world.getStore(ShapeAabbDef);
     const velStore = ctx.world.getStore(VelocityDef);
     const paddleStore = ctx.world.getStore(PaddleDef);
     const ballStore = ctx.world.getStore(BallDef);
@@ -168,7 +157,7 @@ export const scoreSystem: SchedulableSystem<GameState> = {
       return;
 
     const ballPos = ctx.world.getStore(PositionDef).get(ctx.ballId);
-    const ballSize = ctx.world.getStore(SizeDef).get(ctx.ballId);
+    const ballSize = ctx.world.getStore(ShapeAabbDef).get(ctx.ballId);
     if (!ballPos || !ballSize)
       return;
 

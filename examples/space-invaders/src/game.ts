@@ -1,5 +1,5 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
-import type { InputState } from '@pierre/ecs/modules/input';
+import type { InputState, PointerState } from '@pierre/ecs/modules/input';
 import type { Spawner } from '@pierre/ecs/modules/spawner';
 
 import { EcsWorld } from '@pierre/ecs';
@@ -21,7 +21,7 @@ import {
   RenderableDef,
   RenderOrderDef,
   RocketTag,
-  SizeDef,
+  ShapeAabbDef,
   VelocityDef,
 } from './components';
 
@@ -76,7 +76,8 @@ export const BUNKER_BRICK_ROWS = 4;
 const ROW_POINTS = [30, 20, 20, 10, 10];
 const ROW_COLORS = ['#ff5d8f', '#ffd23f', '#ffd23f', '#5ad1ff', '#5ad1ff'];
 
-export type InvadersAction = 'fire' | 'left' | 'reset' | 'right';
+/** `steer` is the held pointer: the ship heads for the half of the canvas it is on. */
+export type InvadersAction = 'fire' | 'left' | 'reset' | 'right' | 'steer';
 
 export interface GameState {
   best: number;
@@ -84,16 +85,16 @@ export interface GameState {
   dead: boolean;
   dtMs: number;
   events: EventBus<never>;
+  /** The fleet's march beat; its interval shrinks as aliens die. */
+  fleetBeat: Spawner;
   /** Fleet travel direction: 1 right, -1 left. */
   fleetDir: number;
-  fleetStepTimerMs: number;
   input: InputState<InvadersAction>;
   lives: number;
   mothershipSpawner: Spawner;
   playerId: EntityId | null;
-  /** Move intent via on-screen pointer drag (-1, 0, 1); OR-ed with keyboard. */
-  pointerDir: number;
-  pointerFire: boolean;
+  /** Canvas-space pointer, read while `steer` is held. */
+  pointer: PointerState;
   score: number;
   started: boolean;
   wave: number;
@@ -105,7 +106,7 @@ export function makeWorld(): EcsWorld {
   const w = new EcsWorld();
   w.registerComponent(PositionDef);
   w.registerComponent(VelocityDef);
-  w.registerComponent(SizeDef);
+  w.registerComponent(ShapeAabbDef);
   w.registerComponent(AlienDef);
   w.registerComponent(BunkerDef);
   w.registerComponent(CooldownDef);
@@ -129,7 +130,7 @@ function spawnPlayer(state: GameState): EntityId {
   const x = (SCREEN_W - PLAYER_W) / 2;
   state.world.getStore(PositionDef).set(id, { x, y: PLAYER_Y });
   state.world.getStore(VelocityDef).set(id, { vx: 0, vy: 0 });
-  state.world.getStore(SizeDef).set(id, { h: PLAYER_H, w: PLAYER_W });
+  state.world.getStore(ShapeAabbDef).set(id, { h: PLAYER_H, w: PLAYER_W });
   state.world.getStore(RenderableDef).set(id, {
     anchor: 'top-left',
     fill: '#7CFC9B',
@@ -156,7 +157,7 @@ export function spawnFleet(state: GameState): void {
       const x = startX + col * (ALIEN_W + ALIEN_GAP_X);
       const y = startTop + row * (ALIEN_H + ALIEN_GAP_Y);
       state.world.getStore(PositionDef).set(id, { x, y });
-      state.world.getStore(SizeDef).set(id, { h: ALIEN_H, w: ALIEN_W });
+      state.world.getStore(ShapeAabbDef).set(id, { h: ALIEN_H, w: ALIEN_W });
       state.world.getStore(RenderableDef).set(id, {
         anchor: 'top-left',
         fill: ROW_COLORS[row],
@@ -191,7 +192,7 @@ function spawnBunkers(state: GameState): void {
           x: baseX + col * BRICK,
           y: BUNKER_Y + row * BRICK,
         });
-        state.world.getStore(SizeDef).set(id, { h: BRICK, w: BRICK });
+        state.world.getStore(ShapeAabbDef).set(id, { h: BRICK, w: BRICK });
         state.world.getStore(BunkerDef).set(id, { hp: 3 });
         state.world.getStore(RenderableDef).set(id, {
           anchor: 'top-left',
@@ -211,7 +212,7 @@ export function spawnRocket(state: GameState, x: number, y: number): void {
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x, y });
   state.world.getStore(VelocityDef).set(id, { vx: 0, vy: -ROCKET_SPEED });
-  state.world.getStore(SizeDef).set(id, { h: ROCKET_H, w: ROCKET_W });
+  state.world.getStore(ShapeAabbDef).set(id, { h: ROCKET_H, w: ROCKET_W });
   state.world.getStore(RenderableDef).set(id, {
     anchor: 'top-left',
     fill: '#fdfd96',
@@ -227,7 +228,7 @@ export function spawnBomb(state: GameState, x: number, y: number): void {
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x, y });
   state.world.getStore(VelocityDef).set(id, { vx: 0, vy: BOMB_SPEED });
-  state.world.getStore(SizeDef).set(id, { h: BOMB_H, w: BOMB_W });
+  state.world.getStore(ShapeAabbDef).set(id, { h: BOMB_H, w: BOMB_W });
   state.world.getStore(RenderableDef).set(id, {
     anchor: 'top-left',
     fill: '#ff9f1c',
@@ -248,7 +249,7 @@ export function spawnMothership(state: GameState): void {
     vx: fromLeft ? MOTHERSHIP_SPEED : -MOTHERSHIP_SPEED,
     vy: 0,
   });
-  state.world.getStore(SizeDef).set(id, { h: MOTHERSHIP_H, w: MOTHERSHIP_W });
+  state.world.getStore(ShapeAabbDef).set(id, { h: MOTHERSHIP_H, w: MOTHERSHIP_W });
   state.world.getStore(RenderableDef).set(id, {
     anchor: 'top-left',
     fill: '#ff4d6d',
@@ -285,7 +286,7 @@ export function explode(
 export function startWave(state: GameState): void {
   spawnFleet(state);
   state.fleetDir = 1;
-  state.fleetStepTimerMs = beatInterval(state);
+  resetSpawner(state.fleetBeat);
   resetSpawner(state.bombSpawner, BOMB_INTERVAL_MS);
 }
 
@@ -306,8 +307,6 @@ export function resetGame(state: GameState): void {
   state.lives = 3;
   state.wave = 1;
   state.fleetDir = 1;
-  state.pointerDir = 0;
-  state.pointerFire = false;
   resetSpawner(state.mothershipSpawner, MOTHERSHIP_MIN_MS);
   state.playerId = spawnPlayer(state);
   spawnBunkers(state);

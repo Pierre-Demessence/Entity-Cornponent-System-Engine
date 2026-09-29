@@ -19,10 +19,9 @@ import {
   PositionDef,
   RenderableDef,
   RocketTag,
-  SizeDef,
+  ShapeAabbDef,
 } from './components';
 import {
-  beatInterval,
   explode,
   FLEET_STEP_DOWN,
   FLEET_STEP_X,
@@ -42,14 +41,22 @@ import {
 
 function boxOf(state: GameState, id: EntityId): Aabb | null {
   const pos = state.world.getStore(PositionDef).get(id);
-  const size = state.world.getStore(SizeDef).get(id);
+  const size = state.world.getStore(ShapeAabbDef).get(id);
   if (!pos || !size)
     return null;
   return { h: size.h, w: size.w, x: pos.x, y: pos.y };
 }
 
+/** Pointer steering: toward the held pointer's half of the canvas, with a dead band. */
+function pointerDir(ctx: GameState): number {
+  if (!ctx.input.isDown('steer'))
+    return 0;
+  const x = ctx.pointer.x;
+  return x < SCREEN_W / 2 - 20 ? -1 : x > SCREEN_W / 2 + 20 ? 1 : 0;
+}
+
 function moveDir(ctx: GameState): number {
-  let dir = ctx.pointerDir;
+  let dir = pointerDir(ctx);
   if (ctx.input.isDown('left'))
     dir -= 1;
   if (ctx.input.isDown('right'))
@@ -75,7 +82,7 @@ export const inputSystem: SchedulableSystem<GameState> = {
     if (cd && r && r.kind === 'rect')
       r.fill = !ready(cd) && Math.floor(cd.remainingMs / 100) % 2 === 1 ? '#2f7d4d' : '#7CFC9B';
 
-    const fire = ctx.input.isDown('fire') || ctx.pointerFire;
+    const fire = ctx.input.isDown('fire');
     if (fire && [...ctx.world.getTag(RocketTag)].length === 0) {
       ctx.started = true;
       spawnRocket(ctx, pos.x + PLAYER_W / 2 - 2, pos.y - ROCKET_H);
@@ -97,50 +104,52 @@ export const fleetSystem: SchedulableSystem<GameState> = {
     const aliens = [...ctx.world.getTag(AlienTag)];
     if (aliens.length === 0)
       return;
-    ctx.fleetStepTimerMs -= ctx.dtMs;
-    if (ctx.fleetStepTimerMs > 0)
-      return;
-    ctx.fleetStepTimerMs += beatInterval(ctx);
-
-    const posStore = ctx.world.getStore(PositionDef);
-    const sizeStore = ctx.world.getStore(SizeDef);
-    let minX = Infinity;
-    let maxX = -Infinity;
-    for (const id of aliens) {
-      const pos = posStore.get(id)!;
-      const size = sizeStore.get(id)!;
-      minX = Math.min(minX, pos.x);
-      maxX = Math.max(maxX, pos.x + size.w);
-    }
-
-    const wouldCross = ctx.fleetDir > 0
-      ? maxX + FLEET_STEP_X > SCREEN_W - SIDE_MARGIN
-      : minX - FLEET_STEP_X < SIDE_MARGIN;
-
-    if (wouldCross) {
-      ctx.fleetDir *= -1;
-      for (const id of aliens) {
-        const pos = posStore.get(id)!;
-        pos.y += FLEET_STEP_DOWN;
-      }
-    }
-    else {
-      const dx = FLEET_STEP_X * ctx.fleetDir;
-      for (const id of aliens)
-        posStore.get(id)!.x += dx;
-    }
-
-    for (const id of aliens) {
-      const pos = posStore.get(id)!;
-      const size = sizeStore.get(id)!;
-      if (pos.y + size.h >= INVASION_Y) {
-        ctx.dead = true;
-        ctx.best = Math.max(ctx.best, ctx.score);
-        return;
-      }
-    }
+    tickSpawner(ctx.fleetBeat, ctx.dtMs, () => stepFleet(ctx, aliens));
   },
 };
+
+/** One beat: shift the fleet sideways, or drop and reverse at a wall. */
+function stepFleet(ctx: GameState, aliens: readonly EntityId[]): void {
+  if (ctx.dead)
+    return;
+  const posStore = ctx.world.getStore(PositionDef);
+  const sizeStore = ctx.world.getStore(ShapeAabbDef);
+  let minX = Infinity;
+  let maxX = -Infinity;
+  for (const id of aliens) {
+    const pos = posStore.get(id)!;
+    const size = sizeStore.get(id)!;
+    minX = Math.min(minX, pos.x);
+    maxX = Math.max(maxX, pos.x + size.w);
+  }
+
+  const wouldCross = ctx.fleetDir > 0
+    ? maxX + FLEET_STEP_X > SCREEN_W - SIDE_MARGIN
+    : minX - FLEET_STEP_X < SIDE_MARGIN;
+
+  if (wouldCross) {
+    ctx.fleetDir *= -1;
+    for (const id of aliens) {
+      const pos = posStore.get(id)!;
+      pos.y += FLEET_STEP_DOWN;
+    }
+  }
+  else {
+    const dx = FLEET_STEP_X * ctx.fleetDir;
+    for (const id of aliens)
+      posStore.get(id)!.x += dx;
+  }
+
+  for (const id of aliens) {
+    const pos = posStore.get(id)!;
+    const size = sizeStore.get(id)!;
+    if (pos.y + size.h >= INVASION_Y) {
+      ctx.dead = true;
+      ctx.best = Math.max(ctx.best, ctx.score);
+      return;
+    }
+  }
+}
 
 export const bombSystem: SchedulableSystem<GameState> = {
   name: 'bomb',
@@ -339,7 +348,7 @@ export const recycleSystem: SchedulableSystem<GameState> = {
   runAfter: ['motion'],
   run(ctx) {
     const posStore = ctx.world.getStore(PositionDef);
-    const sizeStore = ctx.world.getStore(SizeDef);
+    const sizeStore = ctx.world.getStore(ShapeAabbDef);
     for (const id of ctx.world.getTag(RocketTag)) {
       const pos = posStore.get(id);
       if (pos && pos.y + ROCKET_H < 0)

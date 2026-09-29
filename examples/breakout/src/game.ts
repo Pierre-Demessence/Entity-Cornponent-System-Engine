@@ -1,5 +1,5 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
-import type { InputState } from '@pierre/ecs/modules/input';
+import type { InputState, PointerState } from '@pierre/ecs/modules/input';
 
 import { EcsWorld } from '@pierre/ecs';
 import { degToRad } from '@pierre/ecs/modules/math';
@@ -74,10 +74,12 @@ export interface GameState {
   narrowed: boolean;
   paddleId: EntityId | null;
   paddleW: number;
-  /** Launch queued by a canvas pointer press, consumed next tick. */
-  pointerLaunch: boolean;
-  /** Absolute pointer x within the canvas, or null when the mouse isn't tracking. */
-  pointerX: number | null;
+  /** Canvas-space pointer; its x steers the paddle while `pointerSteering`. */
+  pointer: PointerState;
+  /** Pointer x seen last tick, to notice the mouse moving again. */
+  pointerLastX: number;
+  /** Whether the mouse steers the paddle; keyboard steering releases it until the mouse moves. */
+  pointerSteering: boolean;
   score: number;
   speed: number;
   won: boolean;

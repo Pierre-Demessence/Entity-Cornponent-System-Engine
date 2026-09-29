@@ -1,7 +1,8 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 import type { FirstPersonRig } from '@pierre/ecs/modules/camera-3d';
-import type { InputState } from '@pierre/ecs/modules/input';
+import type { InputState, MouseLookState } from '@pierre/ecs/modules/input';
 import type { Vec3 } from '@pierre/ecs/modules/math';
+import type { Timer } from '@pierre/ecs/modules/timer';
 
 import { EcsWorld } from '@pierre/ecs';
 import { Camera3DDef, FirstPersonRigDef, makeCamera3D, makeFirstPersonRig } from '@pierre/ecs/modules/camera-3d';
@@ -12,12 +13,16 @@ import {
   AiDef,
   BillboardDef,
   CameraTag,
+  CooldownDef,
   DynamicBodyTag,
   ElevatorDef,
   ElevatorTag,
   EnemyTag,
   GroundedDef,
   HealthDef,
+  LifetimeDef,
+  makeCooldown,
+  makeLifetime,
   PickupDef,
   PickupTag,
   PlayerTag,
@@ -99,12 +104,12 @@ const COLOR_STAIR = 0xB08D57; // tan
 const COLOR_PLATFORM = 0x4A6D8C; // steel blue (raised platforms)
 const COLOR_ELEVATOR = 0xC24A3A; // red (it moves)
 
-export type DoomAction = 'back' | 'forward' | 'jump' | 'left' | 'reset' | 'right' | 'weapon1' | 'weapon2';
+export type DoomAction = 'back' | 'fire' | 'forward' | 'jump' | 'left' | 'reset' | 'right' | 'weapon1' | 'weapon2';
 
 export interface DoomEvent { type: 'PlayerRespawned' }
 
-/** A transient hitscan tracer the renderer draws for a few ticks. */
-export interface TracerLine { from: Vec3; to: Vec3; ttl: number }
+/** A transient hitscan tracer the renderer draws until its `timer` runs out. */
+export interface TracerLine { from: Vec3; timer: Timer; to: Vec3 }
 
 export interface GameState {
   ammo: number[]; // per weapon: [hitscan, rocket]
@@ -113,9 +118,9 @@ export interface GameState {
   dead: boolean;
   dtMs: number;
   events: EventBus<DoomEvent>;
-  fireTimer: number;
-  firing: boolean;
   input: InputState<DoomAction>;
+  /** Pointer-lock state: the weapon only fires while the cursor is captured. */
+  look: MouseLookState;
   playerId: EntityId | null;
   tracer: TracerLine | null;
   weapon: number; // 0 = hitscan, 1 = projectile
@@ -136,6 +141,8 @@ export function makeWorld(): EcsWorld {
   world.registerComponent(BillboardDef);
   world.registerComponent(ProjectileDef);
   world.registerComponent(PickupDef);
+  world.registerComponent(CooldownDef);
+  world.registerComponent(LifetimeDef);
   world.registerComponent(Camera3DDef);
   world.registerComponent(FirstPersonRigDef);
   world.registerTag(PlayerTag);
@@ -156,6 +163,7 @@ function spawnPlayer(state: GameState): EntityId {
   state.world.getStore(ShapeAabb3DDef).set(id, { d: PLAYER_D, h: PLAYER_H, w: PLAYER_W });
   state.world.getStore(GroundedDef).set(id, { onGround: false });
   state.world.getStore(HealthDef).set(id, { hp: PLAYER_MAX_HP, max: PLAYER_MAX_HP });
+  state.world.getStore(CooldownDef).set(id, makeCooldown(0));
   state.world.getTag(PlayerTag).add(id);
   state.world.getTag(DynamicBodyTag).add(id);
   return id;
@@ -207,7 +215,8 @@ function spawnEnemy(state: GameState, x: number, z: number, sprite: number): Ent
   state.world.getStore(Velocity3DDef).set(id, { vx: 0, vy: 0, vz: 0 });
   state.world.getStore(ShapeAabb3DDef).set(id, { d: ENEMY_W, h: ENEMY_H, w: ENEMY_W });
   state.world.getStore(HealthDef).set(id, { hp: ENEMY_MAX_HP, max: ENEMY_MAX_HP });
-  state.world.getStore(AiDef).set(id, { attackTimer: 0, mode: 0 });
+  state.world.getStore(AiDef).set(id, { mode: 0 });
+  state.world.getStore(CooldownDef).set(id, makeCooldown(ENEMY_ATTACK_COOLDOWN_MS));
   state.world.getStore(BillboardDef).set(id, { sprite });
   state.world.getTag(EnemyTag).add(id);
   state.world.getTag(DynamicBodyTag).add(id);
@@ -224,7 +233,8 @@ export function spawnProjectile(state: GameState, origin: Vec3, dir: Vec3): Enti
     vz: dir.z * PROJECTILE_SPEED,
   });
   state.world.getStore(ShapeAabb3DDef).set(id, { d: PROJECTILE_SIZE, h: PROJECTILE_SIZE, w: PROJECTILE_SIZE });
-  state.world.getStore(ProjectileDef).set(id, { damage: PROJECTILE_DAMAGE, ttl: PROJECTILE_TTL_MS });
+  state.world.getStore(ProjectileDef).set(id, { damage: PROJECTILE_DAMAGE });
+  state.world.getStore(LifetimeDef).set(id, makeLifetime(PROJECTILE_TTL_MS));
   state.world.getTag(ProjectileTag).add(id);
   return id;
 }
@@ -310,8 +320,6 @@ export function resetGame(state: GameState): void {
   state.events.clear();
   state.dead = false;
   state.weapon = 0;
-  state.firing = false;
-  state.fireTimer = 0;
   state.tracer = null;
   state.ammo = [HITSCAN_AMMO_START, ROCKET_AMMO_START];
   state.playerId = spawnPlayer(state);

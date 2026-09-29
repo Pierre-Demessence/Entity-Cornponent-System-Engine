@@ -30,8 +30,7 @@ function freeze(ctx: GameState): void {
 export const flapSystem: SchedulableSystem<GameState> = {
   name: 'flap',
   run(ctx) {
-    const flap = ctx.input.justPressed('flap') || ctx.pointerFlap;
-    ctx.pointerFlap = false;
+    const flap = ctx.input.justPressed('flap');
     if (ctx.dead || ctx.birdId == null || !flap)
       return;
     ctx.started = true;

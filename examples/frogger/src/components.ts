@@ -2,6 +2,8 @@ import type { ComponentDef, TagDef } from '@pierre/ecs';
 
 import { simpleComponent } from '@pierre/ecs';
 
+/** Axis-aligned size, anchored at the entity's top-left `PositionDef`. */
+export { type ShapeAabb, ShapeAabbDef } from '@pierre/ecs/modules/collision';
 export {
   RenderableDef,
   RenderOrderDef,
@@ -12,17 +14,6 @@ export {
   type Velocity,
   VelocityDef,
 } from '@pierre/ecs/modules/transform';
-
-/** Axis-aligned size, paired with a top-left PositionDef for AABB tests + drawing. */
-export interface Size {
-  h: number;
-  w: number;
-}
-
-export const SizeDef: ComponentDef<Size> = simpleComponent<Size>('size', {
-  h: 'number',
-  w: 'number',
-});
 
 /** What an obstacle is. Cars squash; logs/turtles/crocs carry the frog. */
 export type ObstacleKind = 'car' | 'croc' | 'log' | 'turtle';
