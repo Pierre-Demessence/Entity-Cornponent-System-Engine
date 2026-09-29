@@ -27,6 +27,7 @@ export const LOADERS: Record<ExampleId, () => Promise<ExampleModule>> = {
   'portal': () => import('@pierre/ecs-example-portal/src/main.ts'),
   'rhythm': () => import('@pierre/ecs-example-rhythm/src/main.ts'),
   'river-raid': () => import('@pierre/ecs-example-river-raid/src/main.ts'),
+  'roguelike': () => import('@pierre/ecs-example-roguelike/src/main.ts'),
   'rpg': () => import('@pierre/ecs-example-rpg/src/main.ts'),
   'snake': () => import('@pierre/ecs-example-snake/src/main.ts'),
   'solitaire': () => import('@pierre/ecs-example-solitaire/src/main.ts'),
