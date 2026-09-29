@@ -1,8 +1,8 @@
 /**
  * Per-section sidebars.
  *
- * Starlight configures one sidebar for the whole site, but the Manual and the API
- * reference share nothing, so each section gets its own list here.
+ * Starlight configures one sidebar for the whole site, but the Manual, the API
+ * reference and the Examples share nothing, so each section gets its own list here.
  *
  * The configured sidebar stays the superset: Starlight resolves it (expanding
  * `autogenerate`, computing hrefs and `isCurrent`), and this middleware then keeps
@@ -19,6 +19,7 @@ type SidebarGroup = Extract<SidebarEntry, { type: 'group' }>;
 /** Labels of the top-level groups in `astro.config.mjs`. */
 const MANUAL_GROUP = 'Manual';
 const API_GROUP = 'API reference';
+const EXAMPLES_GROUP = 'Examples';
 /** TypeDoc names module pages after their entry point, e.g. `modules/spatial`. */
 const MODULE_PREFIX = 'modules/';
 
@@ -80,6 +81,13 @@ function apiSidebar(entries: SidebarEntry[], href: string, isCurrent: boolean): 
   ];
 }
 
+function examplesSidebar(entries: SidebarEntry[], href: string, isCurrent: boolean): SidebarEntry[] {
+  // The configured group opens with its own Overview link; the section's is rebuilt
+  // so `isCurrent` reflects this request, exactly as the other two sections do.
+  const groups = (findGroup(entries, EXAMPLES_GROUP)?.entries ?? []).filter(isGroup);
+  return [overviewLink(href, isCurrent), ...groups];
+}
+
 function sectionPath(pathname: string): string {
   const base = import.meta.env.BASE_URL;
   const path = pathname.startsWith(base) ? pathname.slice(base.length) : pathname.replace(/^\//, '');
@@ -96,5 +104,8 @@ export const onRequest = defineRouteMiddleware((context) => {
   }
   else if (path === 'api' || path.startsWith('api/')) {
     route.sidebar = apiSidebar(route.sidebar, `${base}api/`, path === 'api');
+  }
+  else if (path === 'examples' || path.startsWith('examples/')) {
+    route.sidebar = examplesSidebar(route.sidebar, `${base}examples/`, path === 'examples');
   }
 });

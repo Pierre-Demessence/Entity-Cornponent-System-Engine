@@ -1,217 +1,13 @@
+import type { ExampleEntry, ExampleId } from '../../manifest';
+
+import { LOADERS } from '../../loaders';
+import { EXAMPLES } from '../../manifest';
+
 import './style.css';
 
 type Teardown = () => void;
-type StartFn = (container: HTMLElement) => Teardown;
-type ExampleId = 'snake' | 'asteroids' | 'platformer' | 'top-down-shooter' | 'card-battler' | 'rhythm' | 'platformer-3d' | 'local-pong' | 'tilemap' | 'solitaire' | 'rpg' | 'flappy' | 'breakout' | 'jetpack' | 'space-invaders' | 'frogger' | 'river-raid' | 'spacewar' | 'doom' | 'portal' | 'starfighter' | 'boids' | 'stealth-guard' | 'critters' | 'woodcutter' | 'stress-storage' | 'worker-offload' | 'parallel-kernel';
 
-interface ExampleSpec {
-  id: ExampleId;
-  controls: string;
-  summary: string;
-  title: string;
-  load: () => Promise<{ start: StartFn }>;
-}
-
-const EXAMPLES: ExampleSpec[] = [
-  {
-    id: 'snake',
-    controls: 'Arrows/WASD move, R restart after death',
-    summary: 'Arcade grid movement with event-driven growth and restart flow.',
-    title: 'Snake',
-    load: () => import('@pierre/ecs-example-snake/src/main.ts'),
-  },
-  {
-    id: 'asteroids',
-    controls: 'Left/Right rotate, Up thrust, Space fire, R reset',
-    summary: 'Continuous motion, thrust + rotation, bullets, rock splitting.',
-    title: 'Asteroids',
-    load: () => import('@pierre/ecs-example-asteroids/src/main.ts'),
-  },
-  {
-    id: 'platformer',
-    controls: 'Left/Right move, Space/Up jump',
-    summary: 'Side-view gravity + AABB kinematics, pickups, and respawn.',
-    title: 'Platformer',
-    load: () => import('@pierre/ecs-example-platformer/src/main.ts'),
-  },
-  {
-    id: 'top-down-shooter',
-    controls: 'WASD move, mouse aim, LMB/Space fire, R restart',
-    summary: 'Twin-stick arena: continuous mouse aim, held-fire bullets, enemy swarms at scale.',
-    title: 'Top-Down Shooter',
-    load: () => import('@pierre/ecs-example-top-down-shooter/src/main.ts'),
-  },
-  {
-    id: 'card-battler',
-    controls: 'LMB drag cards onto enemy, End Turn to resolve',
-    summary: 'Turn-based card combat: DOM renderer, manual tick, drag-to-play — proves the renderer interface is not canvas-coupled.',
-    title: 'Card Battler',
-    load: () => import('@pierre/ecs-example-card-battler/src/main.ts'),
-  },
-  {
-    id: 'rhythm',
-    controls: 'Click to start audio, D/F/J/K hit lanes, R reset',
-    summary: 'Four-lane rhythm: tick source driven by AudioContext.currentTime, not performance.now — first external-clock test.',
-    title: 'Rhythm',
-    load: () => import('@pierre/ecs-example-rhythm/src/main.ts'),
-  },
-  {
-    id: 'platformer-3d',
-    controls: 'WASD move, Space jump, click to capture mouse for camera (Esc to release)',
-    summary: 'Rung 7: 3D platformer via three.js with custom 3D AABB kinematics — the defining test that @pierre/ecs is not secretly 2D.',
-    title: '3D Platformer',
-    load: () => import('@pierre/ecs-example-platformer-3d/src/main.ts'),
-  },
-  {
-    id: 'local-pong',
-    controls: 'Player 1 W/S, Player 2 Arrow Up/Down, R restart',
-    summary: 'Rung 8: local multiplayer Pong with player-scoped keyboard input and score kept as game state, not entity data.',
-    title: 'Local Pong',
-    load: () => import('@pierre/ecs-example-local-pong/src/main.ts'),
-  },
-  {
-    id: 'tilemap',
-    controls: 'Scroll = zoom · drag = pan',
-    summary: 'First sprite/texture-atlas consumer: parses a Tiled TMX map (base64+zlib) and renders every tile as a sprite entity, layered via RenderOrderDef.',
-    title: 'Tilemap (Tiled TMX)',
-    load: () => import('@pierre/ecs-example-tilemap/src/main.ts'),
-  },
-  {
-    id: 'solitaire',
-    controls: 'Click stock to deal · drag to move · double-click to send to a foundation · New deal to reshuffle',
-    summary: 'First interactive canvas scene: draw-1 Klondike with per-frame card dragging, dynamic z-order via RenderOrderDef, and world-space hit-testing over a texture atlas.',
-    title: 'Solitaire (Klondike)',
-    load: () => import('@pierre/ecs-example-solitaire/src/main.ts'),
-  },
-  {
-    id: 'rpg',
-    controls: 'WASD/arrows move · Space/E talk to nearby NPCs',
-    summary: 'First camera-follow + first NPC dialogue scene: walks a Tiled dungeon (CSV + external .tsx + flipped tiles) with a follow camera, wall collision, and a Kenney-UI nine-slice dialogue box.',
-    title: 'Top-down RPG',
-    load: () => import('@pierre/ecs-example-rpg/src/main.ts'),
-  },
-  {
-    id: 'flappy',
-    controls: 'Click / Space / Up to flap, R to restart',
-    summary: '20 Games Challenge #2: gravity + flap impulse, scrolling recycled pipe pairs, circle-vs-AABB collision, and score-on-pass — first one-Renderable-per-entity composite (pipes drawn manually).',
-    title: 'Flappy Bird',
-    load: () => import('@pierre/ecs-example-flappy/src/main.ts'),
-  },
-  {
-    id: 'breakout',
-    controls: 'Arrows/A D or mouse move paddle, Space/Click launch, R restart',
-    summary: '20 Games Challenge #3: circle-vs-AABB brick field with axis-of-least-penetration bounce response, paddle english, lives, escalating ball speed, and a persisted high score.',
-    title: 'Breakout',
-    load: () => import('@pierre/ecs-example-breakout/src/main.ts'),
-  },
-  {
-    id: 'jetpack',
-    controls: 'Hold Space / Up / mouse to fly, R restart',
-    summary: '20 Games Challenge #4: endless right-to-left scroller with hold-to-rise gravity, script-spawned recycled zappers, distance score + persisted best, machine-gun bullets and particle juice.',
-    title: 'Jetpack Joyride',
-    load: () => import('@pierre/ecs-example-jetpack/src/main.ts'),
-  },
-  {
-    id: 'space-invaders',
-    controls: 'Left/Right or A D move, Space fire, R restart',
-    summary: '20 Games Challenge #5: beat-stepped alien fleet that drops and reverses at the walls and speeds up as it thins, single-rocket fire, bombs the player can shoot down, destructible bunkers, a bonus mothership, lives, waves, and a persisted high score.',
-    title: 'Space Invaders',
-    load: () => import('@pierre/ecs-example-space-invaders/src/main.ts'),
-  },
-  {
-    id: 'frogger',
-    controls: 'Arrows / W A S D to hop, R restart',
-    summary: '20 Games Challenge #6: tile-discrete hopping across five recycled traffic lanes and a river of logs and diving turtles, crocodile mouths, carried platform-rider kinematics, five lillypads to fill, lives, level ramp, and a persisted high score.',
-    title: 'Frogger',
-    load: () => import('@pierre/ecs-example-frogger/src/main.ts'),
-  },
-  {
-    id: 'river-raid',
-    controls: '← → move, ↑ accelerate, ↓ brake, Space fire, R restart',
-    summary: '20 Games Challenge #7: vertically-scrolling jet fighter up a procedurally-generated river with variable-width banks, branching streams, bridges as level checkpoints, enemy boats/helicopters/jets, fuel depots, and a draining fuel gauge.',
-    title: 'River Raid',
-    load: () => import('@pierre/ecs-example-river-raid/src/main.ts'),
-  },
-  {
-    id: 'spacewar',
-    controls: 'P1: A/D rotate, W thrust, S fire  |  P2: ← → rotate, ↑ thrust, ↓ fire  |  R restart',
-    summary: '20 Games Challenge #9: two-player local space duel with star gravity, screen wrapping, torpedoes, and particles — the very first video game.',
-    title: 'Spacewar!',
-    load: () => import('@pierre/ecs-example-spacewar/src/main.ts'),
-  },
-  {
-    id: 'doom',
-    controls: 'Click to capture · WASD move · Space jump · LMB fire · 1/2 weapon · R restart',
-    summary: '20 Games Challenge #24: first-person arena shooter — a 3D controller with verticality (stairs + a moving elevator), billboard-sprite enemies with line-of-sight AI, hitscan + projectile weapons, a health/ammo HUD, and pickups.',
-    title: 'Doom',
-    load: () => import('@pierre/ecs-example-doom/src/main.ts'),
-  },
-  {
-    id: 'portal',
-    controls: 'Click to capture · WASD move · Space jump · E grab/drop · LMB/RMB portals · R restart',
-    summary: '20 Games Challenge #27: real 3D portals — recursive see-through rendering, momentum-preserving teleport, floor/ceiling portals, a companion cube, and a pressure-plate door.',
-    title: 'Portal',
-    load: () => import('@pierre/ecs-example-portal/src/main.ts'),
-  },
-  {
-    id: 'starfighter',
-    controls: 'W/S throttle · A/D roll · move reticle to steer · LMB/Space fire · R reset',
-    summary: 'Third-person space flight: No-Man\'s-Sky-style aim-to-steer attitude control (quaternion orientation, rate-based turns), throttle-only motion, a banking chase camera, and shoot-the-drone targets — proves the camera rig is neither yaw-only nor first-person-locked.',
-    title: 'Starfighter',
-    load: () => import('@pierre/ecs-example-starfighter/src/main.ts'),
-  },
-  {
-    id: 'boids',
-    controls: 'Move the cursor to scatter the flock',
-    summary: 'Steering-behaviours playground: 140 boids driven purely by composed Reynolds steering — separation / alignment / cohesion + wander + cursor-flee + food-arrive, neighbours from a spatial hash grid.',
-    title: 'Boids (steering)',
-    load: () => import('@pierre/ecs-example-boids/src/main.ts'),
-  },
-  {
-    id: 'stealth-guard',
-    controls: 'WASD / arrows to sneak, R reset',
-    summary: 'FSM playground: guards run a 5-state finite state machine (patrol → suspicious → chase → search → return) driven by a vision cone + line-of-sight; the chase state composes modules/steering. Sneak past without entering a cone.',
-    title: 'Stealth Guard (FSM)',
-    load: () => import('@pierre/ecs-example-stealth-guard/src/main.ts'),
-  },
-  {
-    id: 'critters',
-    controls: 'Move the cursor to scare the critters',
-    summary: 'Behaviour-tree playground: critters each tick the same reactive BT (selector of prioritised needs — flee threat > eat when hungry > sleep when tired > wander), with a per-critter blackboard and steering-driven movement. Shows why a BT beats an FSM for layered priorities.',
-    title: 'Critters (behaviour tree)',
-    load: () => import('@pierre/ecs-example-critters/src/main.ts'),
-  },
-  {
-    id: 'woodcutter',
-    controls: 'Watch — no input',
-    summary: 'GOAP planning playground: workers are given actions (get axe / chop / deliver) with preconditions/effects and a goal; an A* planner sequences them. After the first log a worker keeps its axe, so the planner drops the GetAxe step — the same goal, a different plan.',
-    title: 'Woodcutter (GOAP)',
-    load: () => import('@pierre/ecs-example-woodcutter/src/main.ts'),
-  },
-  {
-    id: 'stress-storage',
-    controls: 'Slider = entity count, checkbox = SoA storage',
-    summary: 'Storage benchmark (not a game): runs the same integrate-and-wrap sim over N entities two ways — the ECS Map store vs flat SoA typed arrays — with isolated sim/render/frame timings and a frame-time graph. Evidence for the deferred B1 (SoA hot-component storage) step.',
-    title: 'Storage stress (SoA vs Map)',
-    load: () => import('@pierre/ecs-example-stress-storage/src/main.ts'),
-  },
-  {
-    id: 'worker-offload',
-    controls: 'Job-size slider, "Run in worker" checkbox, Run job button',
-    summary: 'Main-thread-stall demo (not a game): a heavy CPU job run on the main thread freezes the page and spikes the frame-time graph; run in a Web Worker (via modules/worker-pool) the dots keep drifting smoothly. Evidence for step A (message-passing offload).',
-    title: 'Worker offload (no stall)',
-    load: () => import('@pierre/ecs-example-worker-offload/src/main.ts'),
-  },
-  {
-    id: 'parallel-kernel',
-    controls: 'Entities slider, Kernel-K slider',
-    summary: 'Core-bound benchmark (not a game): a heavy O(n·K) per-entity kernel (K attractors) run single-threaded over the columnar store. Raise entities/K until "sim" dominates the frame — evidence for step B2 (parallel dispatch over shared-memory columns).',
-    title: 'Parallel kernel (core-bound)',
-    load: () => import('@pierre/ecs-example-parallel-kernel/src/main.ts'),
-  },
-];
-
-const examplesById = new Map<ExampleId, ExampleSpec>(EXAMPLES.map(spec => [spec.id, spec]));
+const examplesById = new Map<string, ExampleEntry>(EXAMPLES.map(spec => [spec.id, spec]));
 
 const root = document.getElementById('root');
 if (!root)
@@ -230,15 +26,15 @@ function escapeHtml(input: string): string {
     .replaceAll('\'', '&#39;');
 }
 
-function setRoute(id: ExampleId | null): void {
+function setRoute(id: string | null): void {
   window.location.hash = id ? `#${id}` : '';
 }
 
-function readRoute(): ExampleId | null {
+function readRoute(): string | null {
   const hash = window.location.hash.slice(1).trim();
   if (!hash)
     return null;
-  if (examplesById.has(hash as ExampleId))
+  if (examplesById.has(hash))
     return hash as ExampleId;
   return null;
 }
@@ -283,13 +79,13 @@ function renderLanding(): void {
   const launchButtons = appRoot.querySelectorAll<HTMLButtonElement>('[data-example]');
   for (const button of launchButtons) {
     button.addEventListener('click', () => {
-      const id = button.dataset.example as ExampleId;
+      const id = button.dataset.example ?? null;
       setRoute(id);
     });
   }
 }
 
-async function renderExample(id: ExampleId): Promise<void> {
+async function renderExample(id: string): Promise<void> {
   const spec = examplesById.get(id);
   if (!spec) {
     renderLanding();
@@ -358,7 +154,7 @@ async function renderExample(id: ExampleId): Promise<void> {
   }
 
   try {
-    const module = await spec.load();
+    const module = await LOADERS[spec.id as ExampleId]();
     if (token !== loadToken)
       return;
     currentTeardown = module.start(stage);

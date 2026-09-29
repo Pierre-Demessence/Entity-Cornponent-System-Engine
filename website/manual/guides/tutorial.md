@@ -19,7 +19,7 @@ sibling folder through a `file:` install:
 ```
 
 The package's `exports` map points straight at TypeScript sources, so a
-TypeScript-aware bundler — Vite is what every [example](../../getting-started/examples/) uses — needs no
+TypeScript-aware bundler — Vite is what every [example](../../../examples/) uses — needs no
 build step. Projects that neither bundle nor transpile need one.
 
 ## 2. Create a world and a canvas
