@@ -2,9 +2,13 @@ import type { GameState, RiverRaidAction } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { makeSeededRng } from '@pierre/ecs/modules/rng';
+import { makeSpawner } from '@pierre/ecs/modules/spawner';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
+import { makeTimer } from '@pierre/ecs/modules/timer';
 
 import {
+  DEATH_MS,
   makeWorld,
   resetGame,
   SCREEN_H,
@@ -90,9 +94,12 @@ export function start(container: HTMLElement): () => void {
   const state: GameState = {
     best: loadBest(),
     bridgeActive: false,
-    deathTimerMs: 0,
+    bridgeSpawned: false,
+    deathTimer: makeTimer(DEATH_MS),
+    depotSpawner: makeSpawner(() => 3000 + Math.random() * 4000),
     dtMs: LOGIC_TICK_MS,
     dying: false,
+    enemySpawner: makeSpawner(() => 800 + Math.random() * 1200),
     events: new EventBus(),
     fuel: 100,
     gameOver: false,
@@ -102,6 +109,7 @@ export function start(container: HTMLElement): () => void {
     lives: 3,
     nextSpawnY: 0,
     playerId: null,
+    rng: makeSeededRng(0),
     score: 0,
     scrollOffset: 0,
     scrollSpeed: 120,

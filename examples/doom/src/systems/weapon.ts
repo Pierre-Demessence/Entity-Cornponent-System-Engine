@@ -5,8 +5,9 @@ import type { GameState } from '../game';
 
 import { firstPersonForward } from '@pierre/ecs/modules/camera-3d';
 import { rayVsAabb3 } from '@pierre/ecs/modules/collision-3d';
+import { finished, makeTimer, tickTimer } from '@pierre/ecs/modules/timer';
 
-import { EnemyTag, HealthDef, Position3DDef, ShapeAabb3DDef, StaticBodyTag } from '../components';
+import { CooldownDef, EnemyTag, HealthDef, Position3DDef, ready, ShapeAabb3DDef, StaticBodyTag, trigger } from '../components';
 import {
   HITSCAN_COOLDOWN_MS,
   HITSCAN_DAMAGE,
@@ -17,31 +18,35 @@ import {
   spawnProjectile,
 } from '../game';
 
+/** How long a hitscan tracer stays on screen. */
+const TRACER_MS = 60;
+
 /**
- * Player weapons, fired while {@link GameState.firing} (LMB) and gated by a
- * per-shot cooldown. Weapon 0 is **hitscan** — an instant ray that damages the
+ * Player weapons, fired while the `fire` action (LMB) is held with the cursor
+ * captured, and gated by the player's `CooldownDef`. Weapon 0 is **hitscan** — an instant ray that damages the
  * nearest enemy in front of any wall, leaving a brief tracer. Weapon 1 is a
  * **projectile** — spawns a travelling bolt (see `projectileSystem`). Keys 1/2
  * switch. (Ammo gating arrives with the HUD in M5.)
  */
 export const weaponSystem: SchedulableSystem<GameState> = {
   name: 'weapon',
-  runAfter: ['input'],
+  runAfter: ['input', 'cooldown'],
   run(ctx) {
     if (ctx.input.justPressed('weapon1'))
       ctx.weapon = 0;
     if (ctx.input.justPressed('weapon2'))
       ctx.weapon = 1;
 
-    if (ctx.fireTimer > 0)
-      ctx.fireTimer -= ctx.dtMs;
     if (ctx.tracer) {
-      ctx.tracer.ttl -= ctx.dtMs;
-      if (ctx.tracer.ttl <= 0)
+      tickTimer(ctx.tracer.timer, ctx.dtMs);
+      if (finished(ctx.tracer.timer))
         ctx.tracer = null;
     }
 
-    if (ctx.dead || ctx.playerId == null || !ctx.firing || ctx.fireTimer > 0)
+    if (ctx.dead || ctx.playerId == null || !ctx.look.locked || !ctx.input.isDown('fire'))
+      return;
+    const cooldown = ctx.world.getStore(CooldownDef).get(ctx.playerId);
+    if (!cooldown || !ready(cooldown))
       return;
     if (ctx.ammo[ctx.weapon] <= 0)
       return; // out of ammo for this weapon
@@ -59,13 +64,13 @@ export const weaponSystem: SchedulableSystem<GameState> = {
         { x: eye.x + dir.x * 0.6, y: eye.y + dir.y * 0.6, z: eye.z + dir.z * 0.6 },
         dir,
       );
-      ctx.fireTimer = PROJECTILE_COOLDOWN_MS;
+      trigger(cooldown, PROJECTILE_COOLDOWN_MS);
       ctx.ammo[1] -= 1;
       return;
     }
 
     fireHitscan(ctx, eye, dir);
-    ctx.fireTimer = HITSCAN_COOLDOWN_MS;
+    trigger(cooldown, HITSCAN_COOLDOWN_MS);
     ctx.ammo[0] -= 1;
   },
 };
@@ -107,8 +112,8 @@ function fireHitscan(ctx: GameState, eye: Vec3, dir: Vec3): void {
 
   ctx.tracer = {
     from: { x: eye.x, y: eye.y, z: eye.z },
+    timer: makeTimer(TRACER_MS),
     to: { x: eye.x + dir.x * bestT, y: eye.y + dir.y * bestT, z: eye.z + dir.z * bestT },
-    ttl: 60,
   };
 
   if (bestEnemy != null) {

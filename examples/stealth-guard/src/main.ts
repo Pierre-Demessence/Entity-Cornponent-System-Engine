@@ -3,7 +3,7 @@ import type { Action, GameState } from './game';
 import { Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
-import { FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
+import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import { makeWorld, resetGame, SCREEN_H, SCREEN_W } from './game';
 import { render } from './render';
@@ -100,15 +100,15 @@ export function start(container: HTMLElement): () => void {
   });
   tickRunner.start();
 
-  let rafId = 0;
-  const loop = (): void => {
+  const renderTickSource = new AnimationFrameTickSource();
+  const unsubscribeRender = renderTickSource.subscribe(() => {
     render(ctx2d, state);
-    rafId = window.requestAnimationFrame(loop);
-  };
-  rafId = window.requestAnimationFrame(loop);
+  });
+  renderTickSource.start();
 
   return (): void => {
-    window.cancelAnimationFrame(rafId);
+    unsubscribeRender();
+    renderTickSource.stop();
     tickRunner.stop();
     input.dispose();
     container.innerHTML = '';

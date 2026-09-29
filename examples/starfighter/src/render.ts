@@ -7,7 +7,7 @@ import { radToDeg, vec3RandomUnit } from '@pierre/ecs/modules/math';
 import { Scene3DRenderer } from '@pierre/ecs/modules/render-scene3d';
 import * as THREE from 'three';
 
-import { BulletTag, Position3DDef, RadiusDef, Rotation3DDef, TargetTag } from './components';
+import { BulletTag, Position3DDef, Rotation3DDef, ShapeSphere3Def, TargetTag } from './components';
 import { BOUNDS_RADIUS } from './game';
 
 export interface Renderer3D {
@@ -122,14 +122,14 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   const bulletMat = new THREE.MeshBasicMaterial({ color: 0x9CF6FF });
   const targetMat = new THREE.MeshStandardMaterial({ color: 0xE8583C, emissive: 0x5A1206, metalness: 0.3, roughness: 0.5 });
   const bodiesTagged = (tag: TagDef) => (world: EcsWorld) =>
-    world.query(Position3DDef, RadiusDef).withTag(world.getTag(tag));
+    world.query(Position3DDef, ShapeSphere3Def).withTag(world.getTag(tag));
   const passes = [
     new Scene3DRenderer({
       select: bodiesTagged(BulletTag),
       create: () => new THREE.Mesh(unitSphere, bulletMat),
       sync: (mesh, [, p, r]) => {
         mesh.position.set(p.x, p.y, p.z);
-        mesh.scale.setScalar(r.r);
+        mesh.scale.setScalar(r.radius);
       },
     }),
     new Scene3DRenderer({
@@ -137,7 +137,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       create: () => new THREE.Mesh(targetGeo, targetMat),
       sync: (mesh, [, p, r]) => {
         mesh.position.set(p.x, p.y, p.z);
-        mesh.scale.setScalar(r.r);
+        mesh.scale.setScalar(r.radius);
         mesh.rotation.x += 0.01;
         mesh.rotation.y += 0.013;
       },

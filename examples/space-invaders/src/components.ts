@@ -2,6 +2,8 @@ import type { ComponentDef, TagDef } from '@pierre/ecs';
 
 import { simpleComponent } from '@pierre/ecs';
 
+/** Axis-aligned size, anchored at the entity's top-left `PositionDef`. */
+export { type ShapeAabb, ShapeAabbDef } from '@pierre/ecs/modules/collision';
 export {
   OpacityDef,
   RenderableDef,
@@ -13,17 +15,6 @@ export {
   type Velocity,
   VelocityDef,
 } from '@pierre/ecs/modules/transform';
-
-/** Axis-aligned size, paired with a top-left PositionDef for AABB tests + drawing. */
-export interface Size {
-  h: number;
-  w: number;
-}
-
-export const SizeDef: ComponentDef<Size> = simpleComponent<Size>('size', {
-  h: 'number',
-  w: 'number',
-});
 
 /** Grid invader. `row` drives its sprite tier; `points` is the kill score. */
 export interface Alien {

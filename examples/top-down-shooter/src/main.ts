@@ -22,6 +22,7 @@ import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 import { ContinuousHashGrid2D, makeGridSyncOnMove } from '@pierre/ecs/modules/spatial';
 import { makeSpawner } from '@pierre/ecs/modules/spawner';
+import { FrameStats } from '@pierre/ecs/modules/stats';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
@@ -35,7 +36,7 @@ import {
   SCREEN_W,
   SHOOTER_AUDIO_CLIP_IDS,
 } from './game';
-import { createFpsMeter, render } from './render';
+import { render } from './render';
 import {
   enemySteerSystem,
   inputSystem,
@@ -295,10 +296,11 @@ export function start(container: HTMLElement): () => void {
   });
   tickRunner.start();
 
-  const fpsMeter = createFpsMeter();
+  const frameStats = new FrameStats();
   const renderTickSource = new AnimationFrameTickSource();
-  const unsubscribeRender = renderTickSource.subscribe(() => {
-    render(ctx2d, state, fpsMeter);
+  const unsubscribeRender = renderTickSource.subscribe(({ deltaMs }) => {
+    frameStats.sample(deltaMs ?? 0);
+    render(ctx2d, state, frameStats);
   });
   renderTickSource.start();
 

@@ -27,6 +27,7 @@ import { addToPile, installPiles, moveAll, moveTop, pileSize, pileTop } from '@p
 import { RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
 import { pick } from '@pierre/ecs/modules/rng';
 import { parseTexturePackerAtlas, TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
+import { AnimationFrameTickSource } from '@pierre/ecs/modules/tick';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
 import place1Url from '../../assets/kenney_boardgame-pack/Bonus/cardPlace1.ogg?url';
@@ -127,7 +128,6 @@ export function start(container: HTMLElement): () => void {
   let disposed = false;
   let state: GameState | null = null;
   let audio: { place: string[]; provider: WebAudioProvider; slide: string[] } | null = null;
-  let rafId = 0;
 
   // The run's top-left follows the pointer; the drop is tested at the dragged
   // card's centre, so a card counts as over a pile when most of it is.
@@ -267,15 +267,14 @@ export function start(container: HTMLElement): () => void {
 
   // --- Render loop ---
 
-  const loop = (): void => {
-    if (disposed)
+  // Started once the assets have loaded.
+  const renderTickSource = new AnimationFrameTickSource();
+  renderTickSource.subscribe(() => {
+    if (!state)
       return;
-    if (state) {
-      syncLayout(state, drag.session);
-      renderFrame(ctx2d, atlasesOrEmpty(), state);
-    }
-    rafId = requestAnimationFrame(loop);
-  };
+    syncLayout(state, drag.session);
+    renderFrame(ctx2d, atlasesOrEmpty(), state);
+  });
 
   let atlases: TextureAtlasRegistry | null = null;
   function atlasesOrEmpty(): TextureAtlasRegistry {
@@ -307,7 +306,7 @@ export function start(container: HTMLElement): () => void {
       audio = { place, provider: new WebAudioProvider({ clips, context: audioCtx }), slide };
 
       newDeal();
-      loop();
+      renderTickSource.start();
     }
     catch (error) {
       if (disposed)
@@ -322,7 +321,7 @@ export function start(container: HTMLElement): () => void {
   return () => {
     disposed = true;
     abort.abort();
-    cancelAnimationFrame(rafId);
+    renderTickSource.stop();
     audio?.provider.dispose();
     void audioCtx.close().catch(() => undefined);
     container.innerHTML = '';

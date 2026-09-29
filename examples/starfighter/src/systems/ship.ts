@@ -3,7 +3,17 @@ import type { Vec3 } from '@pierre/ecs/modules/math';
 
 import type { GameState } from '../game';
 
-import { quatForward, quatFromAxisAngle, quatMul, quatNormalize } from '@pierre/ecs/modules/math';
+import {
+  clamp01,
+  inverseLerp,
+  quatForward,
+  quatFromAxisAngle,
+  quatMul,
+  quatNormalize,
+  vec3ClampLength,
+  vec3Length,
+  vec3Lerp,
+} from '@pierre/ecs/modules/math';
 
 import { Position3DDef, Rotation3DDef, Velocity3DDef } from '../components';
 import {
@@ -54,13 +64,11 @@ export const shipSystem: SchedulableSystem<GameState> = {
       y: -deadzone(ctx.aimX) * YAW_RATE, // yaw about local +Y (reticle right → nose right)
       z: -roll * ROLL_RATE, // roll about the nose axis
     };
-    ctx.angVel.x += (target.x - ctx.angVel.x) * TURN_RESPONSE;
-    ctx.angVel.y += (target.y - ctx.angVel.y) * TURN_RESPONSE;
-    ctx.angVel.z += (target.z - ctx.angVel.z) * TURN_RESPONSE;
+    ctx.angVel = vec3Lerp(ctx.angVel, target, TURN_RESPONSE);
 
     // Integrate orientation: rotate by the local angular-velocity vector. The
     // module normalises the axis, so the raw vector is the axis.
-    const speedRad = Math.hypot(ctx.angVel.x, ctx.angVel.y, ctx.angVel.z);
+    const speedRad = vec3Length(ctx.angVel);
     if (speedRad > 1e-6) {
       const dq = quatFromAxisAngle(ctx.angVel, speedRad * dt);
       orientation = quatNormalize(quatMul(orientation, dq));
@@ -90,12 +98,9 @@ export const shipBoundsSystem: SchedulableSystem<GameState> = {
     if (!pos || !vel)
       return;
 
-    const limit = BOUNDS_RADIUS - SHIP_RADIUS;
-    const dist = Math.hypot(pos.x, pos.y, pos.z);
-    if (dist > limit && dist > 0) {
-      pos.x = (pos.x / dist) * limit;
-      pos.y = (pos.y / dist) * limit;
-      pos.z = (pos.z / dist) * limit;
+    const clamped = vec3ClampLength(pos, BOUNDS_RADIUS - SHIP_RADIUS);
+    if (clamped !== pos) {
+      Object.assign(pos, clamped);
       // Kill forward momentum if we're driving into the wall.
       if (vel.vx * pos.x + vel.vy * pos.y + vel.vz * pos.z > 0)
         ctx.speed = 0;
@@ -105,9 +110,5 @@ export const shipBoundsSystem: SchedulableSystem<GameState> = {
 
 /** Remap an axis so the central `AIM_DEADZONE` produces no turn, then ramp to ±1. */
 function deadzone(a: number): number {
-  const m = Math.abs(a);
-  if (m <= AIM_DEADZONE)
-    return 0;
-  const scaled = (m - AIM_DEADZONE) / (1 - AIM_DEADZONE);
-  return Math.sign(a) * Math.min(1, scaled);
+  return Math.sign(a) * clamp01(inverseLerp(AIM_DEADZONE, 1, Math.abs(a)));
 }

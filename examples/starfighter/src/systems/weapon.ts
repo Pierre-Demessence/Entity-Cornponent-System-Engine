@@ -4,8 +4,8 @@ import type { GameState } from '../game';
 
 import { quatForward } from '@pierre/ecs/modules/math';
 
-import { Position3DDef, Rotation3DDef, Velocity3DDef } from '../components';
-import { BULLET_SPEED, FIRE_COOLDOWN_MS, MUZZLE_OFFSET, spawnBullet } from '../game';
+import { CooldownDef, Position3DDef, ready, Rotation3DDef, trigger, Velocity3DDef } from '../components';
+import { BULLET_SPEED, MUZZLE_OFFSET, spawnBullet } from '../game';
 
 /**
  * Fires a bullet while the trigger is held (LMB or Space) and the per-shot
@@ -15,12 +15,12 @@ import { BULLET_SPEED, FIRE_COOLDOWN_MS, MUZZLE_OFFSET, spawnBullet } from '../g
  */
 export const weaponSystem: SchedulableSystem<GameState> = {
   name: 'weapon',
-  runAfter: ['ship'],
+  runAfter: ['ship', 'cooldown'],
   run(ctx) {
-    if (ctx.fireTimer > 0)
-      ctx.fireTimer -= ctx.dtMs;
-    const wantsFire = ctx.firing || ctx.input.isDown('fire');
-    if (ctx.playerId == null || !wantsFire || ctx.fireTimer > 0)
+    if (ctx.playerId == null || !ctx.input.isDown('fire'))
+      return;
+    const cooldown = ctx.world.getStore(CooldownDef).get(ctx.playerId);
+    if (!cooldown || !ready(cooldown))
       return;
 
     const pos = ctx.world.getStore(Position3DDef).get(ctx.playerId);
@@ -43,6 +43,6 @@ export const weaponSystem: SchedulableSystem<GameState> = {
         z: vel.vz + dir.z * BULLET_SPEED,
       },
     );
-    ctx.fireTimer = FIRE_COOLDOWN_MS;
+    trigger(cooldown);
   },
 };

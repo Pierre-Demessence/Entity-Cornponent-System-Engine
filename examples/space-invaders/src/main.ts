@@ -2,13 +2,14 @@ import type { GameState, InvadersAction } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { makeCooldownSystem } from '@pierre/ecs/modules/cooldown';
-import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { createInput, Key, KeyboardProvider, Pointer, PointerProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { makeParticleSystem } from '@pierre/ecs/modules/particles';
 import { makeSpawner } from '@pierre/ecs/modules/spawner';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import {
+  beatInterval,
   BOMB_INTERVAL_MS,
   makeWorld,
   MOTHERSHIP_MAX_MS,
@@ -83,14 +84,17 @@ export function start(container: HTMLElement): () => void {
   const keyboard = new KeyboardProvider({
     preventDefaultCodes: [Key.Space, Key.ArrowLeft, Key.ArrowRight, Key.KeyR],
   });
+  // Pointer: hold to fire and steer toward that half of the canvas; tap to restart.
+  const pointer = new PointerProvider({ buttons: [0], target: canvas });
   const input = createInput<InvadersAction>(
     {
-      fire: [Key.Space, Key.ArrowUp],
+      fire: [Key.Space, Key.ArrowUp, Pointer.LeftButton],
       left: [Key.ArrowLeft, Key.KeyA],
-      reset: [Key.KeyR],
+      reset: [Key.KeyR, Pointer.LeftButton],
       right: [Key.ArrowRight, Key.KeyD],
+      steer: [Pointer.LeftButton],
     },
-    [keyboard],
+    [keyboard, pointer],
   );
 
   const state: GameState = {
@@ -99,14 +103,13 @@ export function start(container: HTMLElement): () => void {
     dead: false,
     dtMs: LOGIC_TICK_MS,
     events: new EventBus<never>(),
+    fleetBeat: makeSpawner(() => beatInterval(state)),
     fleetDir: 1,
-    fleetStepTimerMs: 0,
     input,
     lives: 3,
     mothershipSpawner: makeSpawner(() => MOTHERSHIP_MIN_MS + Math.random() * (MOTHERSHIP_MAX_MS - MOTHERSHIP_MIN_MS)),
     playerId: null,
-    pointerDir: 0,
-    pointerFire: false,
+    pointer: pointer.state,
     score: 0,
     started: false,
     wave: 1,
@@ -116,33 +119,6 @@ export function start(container: HTMLElement): () => void {
 
   resetGame(state);
   let savedBest = state.best;
-
-  // Pointer control: steer toward the cursor's half of the canvas, fire on hold.
-  const updatePointerDir = (event: PointerEvent): void => {
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    state.pointerDir = x < SCREEN_W / 2 - 20 ? -1 : x > SCREEN_W / 2 + 20 ? 1 : 0;
-  };
-  const onPointerDown = (event: PointerEvent): void => {
-    event.preventDefault();
-    if (state.dead) {
-      resetGame(state);
-      return;
-    }
-    state.pointerFire = true;
-    updatePointerDir(event);
-  };
-  const onPointerMove = (event: PointerEvent): void => {
-    if (state.pointerFire)
-      updatePointerDir(event);
-  };
-  const onPointerUp = (): void => {
-    state.pointerFire = false;
-    state.pointerDir = 0;
-  };
-  canvas.addEventListener('pointerdown', onPointerDown);
-  canvas.addEventListener('pointermove', onPointerMove);
-  window.addEventListener('pointerup', onPointerUp);
 
   const tickRunner = new TickRunner<GameState>({
     scheduler,
@@ -171,9 +147,6 @@ export function start(container: HTMLElement): () => void {
   renderTickSource.start();
 
   return (): void => {
-    canvas.removeEventListener('pointerdown', onPointerDown);
-    canvas.removeEventListener('pointermove', onPointerMove);
-    window.removeEventListener('pointerup', onPointerUp);
     input.dispose();
     unsubscribeRender();
     renderTickSource.stop();

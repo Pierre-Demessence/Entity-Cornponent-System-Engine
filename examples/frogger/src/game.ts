@@ -1,5 +1,6 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
-import type { InputState } from '@pierre/ecs/modules/input';
+import type { InputState, PointerState } from '@pierre/ecs/modules/input';
+import type { Timer } from '@pierre/ecs/modules/timer';
 
 import type { ObstacleKind } from './components';
 
@@ -7,6 +8,7 @@ import { EcsWorld } from '@pierre/ecs';
 import { LifetimeDef } from '@pierre/ecs/modules/lifetime';
 import { burst as particleBurst, ParticleDef, ParticleTag } from '@pierre/ecs/modules/particles';
 import { OpacityDef } from '@pierre/ecs/modules/render-canvas2d';
+import { makeTimer, restart } from '@pierre/ecs/modules/timer';
 
 import {
   FrogTag,
@@ -15,7 +17,7 @@ import {
   PositionDef,
   RenderableDef,
   RenderOrderDef,
-  SizeDef,
+  ShapeAabbDef,
   VelocityDef,
 } from './components';
 
@@ -48,7 +50,7 @@ export const SCORE_LEVEL = 200;
 
 export type Facing = 'down' | 'left' | 'right' | 'up';
 export type LaneKind = 'goal' | 'road' | 'safe' | 'water';
-export type FroggerAction = 'down' | 'left' | 'reset' | 'right' | 'up';
+export type FroggerAction = 'down' | 'left' | 'reset' | 'right' | 'tap' | 'up';
 
 export interface Pad {
   cx: number;
@@ -93,7 +95,8 @@ export interface GameState {
   best: number;
   dead: boolean;
   deathReason: string;
-  deathTimerMs: number;
+  /** The squash / splash pause before the frog respawns. */
+  deathTimer: Timer;
   dtMs: number;
   dying: boolean;
   events: EventBus<never>;
@@ -104,11 +107,12 @@ export interface GameState {
   furthestRow: number;
   input: InputState<FroggerAction>;
   level: number;
-  levelFlashMs: number;
+  /** The "Level N" banner; finished while no banner shows. */
+  levelFlash: Timer;
   lives: number;
   pads: Pad[];
-  /** Hop intent queued by a pointer tap; consumed next tick. */
-  pendingHop: Facing | null;
+  /** Canvas-space pointer; a `tap` hops toward it. */
+  pointer: PointerState;
   score: number;
   started: boolean;
   world: EcsWorld;
@@ -133,7 +137,7 @@ export function makeWorld(): EcsWorld {
   const w = new EcsWorld();
   w.registerComponent(PositionDef);
   w.registerComponent(VelocityDef);
-  w.registerComponent(SizeDef);
+  w.registerComponent(ShapeAabbDef);
   w.registerComponent(ObstacleDef);
   w.registerComponent(LifetimeDef);
   w.registerComponent(RenderableDef);
@@ -159,7 +163,7 @@ function spawnFrog(state: GameState): EntityId {
     x: (SCREEN_W - FROG) / 2,
     y: rowFrogY(START_ROW),
   });
-  state.world.getStore(SizeDef).set(id, { h: FROG, w: FROG });
+  state.world.getStore(ShapeAabbDef).set(id, { h: FROG, w: FROG });
   state.world.getTag(FrogTag).add(id);
   return id;
 }
@@ -191,7 +195,7 @@ function spawnObstacle(
     y: lane.row * TILE + (TILE - h) / 2,
   });
   state.world.getStore(VelocityDef).set(id, { vx: lane.dir * lane.speed * speedMul, vy: 0 });
-  state.world.getStore(SizeDef).set(id, { h, w: lane.width });
+  state.world.getStore(ShapeAabbDef).set(id, { h, w: lane.width });
   state.world.getStore(ObstacleDef).set(id, {
     diveTimerMs: 0,
     diving,
@@ -273,8 +277,6 @@ export function respawnFrog(state: GameState): void {
   state.furthestRow = START_ROW;
   state.facing = 'up';
   state.dying = false;
-  state.deathTimerMs = 0;
-  state.pendingHop = null;
 }
 
 export function killFrog(state: GameState, reason: string): void {
@@ -282,7 +284,7 @@ export function killFrog(state: GameState, reason: string): void {
     return;
   state.dying = true;
   state.deathReason = reason;
-  state.deathTimerMs = DEATH_MS;
+  restart(state.deathTimer);
   state.lives -= 1;
   const c = frogCenter(state);
   const water = reason === 'drown' || reason === 'eaten';
@@ -292,7 +294,7 @@ export function killFrog(state: GameState, reason: string): void {
 function levelComplete(state: GameState): void {
   state.level += 1;
   state.score += SCORE_LEVEL;
-  state.levelFlashMs = LEVEL_FLASH_MS;
+  restart(state.levelFlash);
   for (const pad of state.pads)
     pad.filled = false;
   clearObstacles(state);
@@ -326,21 +328,26 @@ export function handleGoalLanding(state: GameState): void {
     respawnFrog(state);
 }
 
+/** A timer that has already run out, so it reads as idle until restarted. */
+export function idleTimer(durationMs: number): Timer {
+  const t = makeTimer(durationMs);
+  t.remainingMs = 0;
+  return t;
+}
+
 export function resetGame(state: GameState): void {
   state.world.clearAll();
   state.dead = false;
   state.dying = false;
   state.deathReason = '';
-  state.deathTimerMs = 0;
   state.started = false;
   state.score = 0;
   state.lives = START_LIVES;
   state.level = 1;
-  state.levelFlashMs = 0;
+  state.levelFlash = idleTimer(LEVEL_FLASH_MS);
   state.facing = 'up';
   state.frogRow = START_ROW;
   state.furthestRow = START_ROW;
-  state.pendingHop = null;
   state.pads = makePads();
   state.frogId = spawnFrog(state);
   spawnLanes(state);

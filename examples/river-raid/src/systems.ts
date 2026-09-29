@@ -7,6 +7,9 @@ import { aabbVsAabb } from '@pierre/ecs/modules/collision';
 import { CooldownDef, makeCooldownSystem, ready, trigger } from '@pierre/ecs/modules/cooldown';
 import { clamp } from '@pierre/ecs/modules/math';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
+import { pick } from '@pierre/ecs/modules/rng';
+import { tickSpawner } from '@pierre/ecs/modules/spawner';
+import { finished, restart, tickTimer } from '@pierre/ecs/modules/timer';
 
 import {
   BridgeDef,
@@ -16,10 +19,9 @@ import {
   EnemyTag,
   FuelDepotTag,
   PositionDef,
-  SizeDef,
+  ShapeAabbDef,
 } from './components';
 import {
-  DEATH_MS,
   FUEL_DEPOT_REFILL,
   FUEL_DRAIN_RATE,
   generateSegments,
@@ -79,8 +81,8 @@ export const inputSystem: SchedulableSystem<GameState> = {
   runAfter: ['cooldown'],
   run(ctx) {
     if (ctx.dying) {
-      ctx.deathTimerMs -= ctx.dtMs;
-      if (ctx.deathTimerMs <= 0)
+      tickTimer(ctx.deathTimer, ctx.dtMs);
+      if (finished(ctx.deathTimer))
         respawnPlayer(ctx);
       return;
     }
@@ -158,40 +160,33 @@ export const scrollSystem: SchedulableSystem<GameState> = {
 
 // ─── Spawn Logic ───────────────────────────────────────────────────
 
-let _enemyTimer = 0;
-let _depotTimer = 0;
-let _bridgeSpawnedThisLevel = false;
+const ENEMY_KINDS: ReadonlyArray<'boat' | 'helicopter' | 'jet'> = ['boat', 'boat', 'helicopter', 'jet'];
 
 function spawnContent(ctx: GameState): void {
   // Enemy spawning — spawn ahead (above the visible area, HIGHER world Y)
   // screenY = SCREEN_H + scrollOffset - worldY; for screenY < 0, need worldY > SCREEN_H + scrollOffset
-  _enemyTimer -= ctx.dtMs;
-  if (_enemyTimer <= 0) {
-    const kinds: Array<'boat' | 'helicopter' | 'jet'> = ['boat', 'boat', 'helicopter', 'jet'];
-    const kind = kinds[Math.floor(Math.random() * kinds.length)];
+  tickSpawner(ctx.enemySpawner, ctx.dtMs, () => {
+    const kind = pick(ENEMY_KINDS)!;
     const spawnWorldY = ctx.scrollOffset + SCREEN_H + 40 + Math.random() * 200;
     spawnEnemy(ctx, spawnWorldY, kind);
-    _enemyTimer = 800 + Math.random() * 1200;
-  }
+  });
 
   // Fuel depot spawning — spawn ahead (above the screen)
-  _depotTimer -= ctx.dtMs;
-  if (_depotTimer <= 0) {
+  tickSpawner(ctx.depotSpawner, ctx.dtMs, () => {
     const spawnWorldY = ctx.scrollOffset + SCREEN_H + 60 + Math.random() * 300;
     spawnFuelDepot(ctx, spawnWorldY);
-    _depotTimer = 3000 + Math.random() * 4000;
-  }
+  });
 
   // Bridge spawning (at level boundary) — spawn ahead (above the screen)
   const distInLevel = ctx.levelProgress;
   const bridgeZone = LEVEL_DISTANCE - 200;
-  if (distInLevel >= bridgeZone && !_bridgeSpawnedThisLevel) {
+  if (distInLevel >= bridgeZone && !ctx.bridgeSpawned) {
     const bridgeWorldY = ctx.scrollOffset + SCREEN_H + 40;
     spawnBridge(ctx, bridgeWorldY);
-    _bridgeSpawnedThisLevel = true;
+    ctx.bridgeSpawned = true;
   }
   if (distInLevel < bridgeZone) {
-    _bridgeSpawnedThisLevel = false;
+    ctx.bridgeSpawned = false;
   }
 }
 
@@ -202,7 +197,7 @@ function cleanupOffscreen(ctx: GameState): void {
   for (const tag of [BulletTag, EnemyTag, FuelDepotTag, BridgeTag]) {
     for (const id of ctx.world.getTag(tag)) {
       const pos = stores.getStore(PositionDef).get(id);
-      const size = stores.getStore(SizeDef).get(id);
+      const size = stores.getStore(ShapeAabbDef).get(id);
       if (!pos || !size)
         continue;
       const sy = SCREEN_H + ctx.scrollOffset - pos.y;
@@ -246,7 +241,7 @@ function killPlayer(ctx: GameState): void {
     return;
   ctx.lives--;
   ctx.dying = true;
-  ctx.deathTimerMs = DEATH_MS;
+  restart(ctx.deathTimer);
   if (ctx.playerId != null) {
     ctx.world.destroyEntity(ctx.playerId);
     ctx.playerId = null;
@@ -277,7 +272,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
     // Player vs enemies
     for (const eid of ctx.world.getTag(EnemyTag)) {
       const epos = ctx.world.getStore(PositionDef).get(eid);
-      const esize = ctx.world.getStore(SizeDef).get(eid);
+      const esize = ctx.world.getStore(ShapeAabbDef).get(eid);
       if (!epos || !esize)
         continue;
       // Only check if enemy is roughly on screen
@@ -293,7 +288,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
     // Player vs bridge
     for (const bid of ctx.world.getTag(BridgeTag)) {
       const bpos = ctx.world.getStore(PositionDef).get(bid);
-      const bsize = ctx.world.getStore(SizeDef).get(bid);
+      const bsize = ctx.world.getStore(ShapeAabbDef).get(bid);
       if (!bpos || !bsize)
         continue;
       if (aabbVsAabb(playerBox, boxAt(bpos, bsize))) {
@@ -305,7 +300,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
     // Player vs fuel depots (collect fuel, don't die)
     for (const fid of ctx.world.getTag(FuelDepotTag)) {
       const fpos = ctx.world.getStore(PositionDef).get(fid);
-      const fsize = ctx.world.getStore(SizeDef).get(fid);
+      const fsize = ctx.world.getStore(ShapeAabbDef).get(fid);
       if (!fpos || !fsize)
         continue;
       if (aabbVsAabb(playerBox, boxAt(fpos, fsize))) {
@@ -317,7 +312,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
     // Bullets vs enemies, bridges, fuel depots
     for (const bid of ctx.world.getTag(BulletTag)) {
       const bpos = ctx.world.getStore(PositionDef).get(bid);
-      const bsize = ctx.world.getStore(SizeDef).get(bid);
+      const bsize = ctx.world.getStore(ShapeAabbDef).get(bid);
       if (!bpos || !bsize)
         continue;
       const bulletBox = boxAt(bpos, bsize);
@@ -326,7 +321,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
       // vs enemies
       for (const eid of ctx.world.getTag(EnemyTag)) {
         const epos = ctx.world.getStore(PositionDef).get(eid);
-        const esize = ctx.world.getStore(SizeDef).get(eid);
+        const esize = ctx.world.getStore(ShapeAabbDef).get(eid);
         const edef = ctx.world.getStore(EnemyDef).get(eid);
         if (!epos || !esize || !edef)
           continue;
@@ -342,7 +337,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
       if (!bulletUsed) {
         for (const brid of ctx.world.getTag(BridgeTag)) {
           const brpos = ctx.world.getStore(PositionDef).get(brid);
-          const brsize = ctx.world.getStore(SizeDef).get(brid);
+          const brsize = ctx.world.getStore(ShapeAabbDef).get(brid);
           const brdef = ctx.world.getStore(BridgeDef).get(brid);
           if (!brpos || !brsize || !brdef)
             continue;
@@ -362,7 +357,7 @@ export const collisionSystem: SchedulableSystem<GameState> = {
       if (!bulletUsed) {
         for (const fid of ctx.world.getTag(FuelDepotTag)) {
           const fpos = ctx.world.getStore(PositionDef).get(fid);
-          const fsize = ctx.world.getStore(SizeDef).get(fid);
+          const fsize = ctx.world.getStore(ShapeAabbDef).get(fid);
           if (!fpos || !fsize)
             continue;
           if (aabbVsAabb(bulletBox, boxAt(fpos, fsize))) {

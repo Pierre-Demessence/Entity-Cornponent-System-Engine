@@ -5,8 +5,12 @@ import { simpleComponent } from '@pierre/ecs';
 // Full extents (not half) along X/Y/Z, centre-based: the engine's shape under
 // this game's own name.
 export { type ShapeAabb3 as ShapeAabb3D, ShapeAabb3Def as ShapeAabb3DDef } from '@pierre/ecs/modules/collision-3d';
+/** Per-shot gate: the player's weapon and each enemy's melee attack. */
+export { CooldownDef, makeCooldown, ready, trigger } from '@pierre/ecs/modules/cooldown';
 /** Ground contact: the engine's `Grounded3` under this game's own name. */
 export { type Grounded3 as Grounded, Grounded3Def as GroundedDef } from '@pierre/ecs/modules/kinematics-3d';
+/** Projectile time-to-live. */
+export { LifetimeDef, makeLifetime } from '@pierre/ecs/modules/lifetime';
 /** Position + velocity: the engine's 3D transform components under this game's names. */
 export { type Position3D, Position3DDef, type Velocity3D, Velocity3DDef } from '@pierre/ecs/modules/transform-3d';
 /** A platform that oscillates on Y between `minY` and `maxY`. `dir` is ±1. */
@@ -15,12 +19,12 @@ export interface Elevator { dir: number; maxY: number; minY: number; speed: numb
 export interface Tint { color: number }
 /** Hit points. Death is at `hp <= 0`. */
 export interface Health { hp: number; max: number }
-/** Enemy brain. `mode`: 0 idle, 1 chase, 2 attack. `attackTimer` counts down ms. */
-export interface Ai { attackTimer: number; mode: number }
+/** Enemy brain. `mode`: 0 idle, 1 chase, 2 attack. The attack rate is a `CooldownDef`. */
+export interface Ai { mode: number }
 /** Billboard sprite selector (index into the renderer's enemy texture list). */
 export interface Billboard { sprite: number }
-/** An in-flight projectile: `damage` on contact, `ttl` ms before it expires. */
-export interface Projectile { damage: number; ttl: number }
+/** An in-flight projectile: `damage` on contact. Its time-to-live is a `LifetimeDef`. */
+export interface Projectile { damage: number }
 /** A floor pickup. `kind`: 0 health, 1 hitscan ammo, 2 rocket ammo. */
 export interface Pickup { amount: number; kind: number }
 
@@ -41,7 +45,7 @@ export const HealthDef: ComponentDef<Health> = simpleComponent<Health>(
 
 export const AiDef: ComponentDef<Ai> = simpleComponent<Ai>(
   'ai',
-  { attackTimer: 'number', mode: 'number' },
+  { mode: 'number' },
 );
 
 export const BillboardDef: ComponentDef<Billboard> = simpleComponent<Billboard>(
@@ -51,7 +55,7 @@ export const BillboardDef: ComponentDef<Billboard> = simpleComponent<Billboard>(
 
 export const ProjectileDef: ComponentDef<Projectile> = simpleComponent<Projectile>(
   'projectile',
-  { damage: 'number', ttl: 'number' },
+  { damage: 'number' },
 );
 
 export const PickupDef: ComponentDef<Pickup> = simpleComponent<Pickup>(

@@ -1,13 +1,16 @@
-import type { Facing, FroggerAction, GameState } from './game';
+import type { FroggerAction, GameState } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
-import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { createInput, Key, KeyboardProvider, Pointer, PointerProvider } from '@pierre/ecs/modules/input';
 import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { makeParticleSystem } from '@pierre/ecs/modules/particles';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
+import { makeTimer } from '@pierre/ecs/modules/timer';
 
 import {
-  frogCenter,
+  DEATH_MS,
+  idleTimer,
+  LEVEL_FLASH_MS,
   makePads,
   makeWorld,
   resetGame,
@@ -74,22 +77,25 @@ export function start(container: HTMLElement): () => void {
   const keyboard = new KeyboardProvider({
     preventDefaultCodes: [Key.ArrowUp, Key.ArrowDown, Key.ArrowLeft, Key.ArrowRight],
   });
+  // Tap: hop one tile toward the pointer (or restart after game over).
+  const pointer = new PointerProvider({ buttons: [0], target: canvas });
   const input = createInput<FroggerAction>(
     {
       down: [Key.ArrowDown, Key.KeyS],
       left: [Key.ArrowLeft, Key.KeyA],
       reset: [Key.KeyR],
       right: [Key.ArrowRight, Key.KeyD],
+      tap: [Pointer.LeftButton],
       up: [Key.ArrowUp, Key.KeyW],
     },
-    [keyboard],
+    [keyboard, pointer],
   );
 
   const state: GameState = {
     best: loadBest(),
     dead: false,
     deathReason: '',
-    deathTimerMs: 0,
+    deathTimer: makeTimer(DEATH_MS),
     dtMs: LOGIC_TICK_MS,
     dying: false,
     events: new EventBus<never>(),
@@ -99,10 +105,10 @@ export function start(container: HTMLElement): () => void {
     furthestRow: START_ROW,
     input,
     level: 1,
-    levelFlashMs: 0,
+    levelFlash: idleTimer(LEVEL_FLASH_MS),
     lives: 3,
     pads: makePads(),
-    pendingHop: null,
+    pointer: pointer.state,
     score: 0,
     started: false,
     world,
@@ -110,28 +116,6 @@ export function start(container: HTMLElement): () => void {
 
   resetGame(state);
   let savedBest = state.best;
-
-  // Pointer/tap: hop one tile toward the dominant axis from the frog.
-  const onPointerDown = (event: PointerEvent): void => {
-    event.preventDefault();
-    if (state.dead) {
-      resetGame(state);
-      return;
-    }
-    const rect = canvas.getBoundingClientRect();
-    const px = event.clientX - rect.left;
-    const py = event.clientY - rect.top;
-    const c = frogCenter(state);
-    const dx = px - c.x;
-    const dy = py - c.y;
-    let dir: Facing;
-    if (Math.abs(dx) > Math.abs(dy))
-      dir = dx < 0 ? 'left' : 'right';
-    else
-      dir = dy < 0 ? 'up' : 'down';
-    state.pendingHop = dir;
-  };
-  canvas.addEventListener('pointerdown', onPointerDown);
 
   const tickRunner = new TickRunner<GameState>({
     scheduler,
@@ -156,7 +140,6 @@ export function start(container: HTMLElement): () => void {
   renderTickSource.start();
 
   return (): void => {
-    canvas.removeEventListener('pointerdown', onPointerDown);
     input.dispose();
     unsubscribeRender();
     renderTickSource.stop();

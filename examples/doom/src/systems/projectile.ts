@@ -29,7 +29,7 @@ export const projectileMotionSystem: SchedulableSystem<GameState>
 
 /**
  * Damage the first enemy each {@link ProjectileTag} overlaps and despawn it on
- * an enemy hit, a wall hit, or when its `ttl` runs out. Motion is handled by
+ * an enemy hit or a wall hit (its `LifetimeDef` expires it otherwise). Motion is handled by
  * {@link projectileMotionSystem}; this reads the already-integrated position.
  */
 export const projectileSystem: SchedulableSystem<GameState> = {
@@ -47,8 +47,6 @@ export const projectileSystem: SchedulableSystem<GameState> = {
       const box = aabbStore.get(id);
       if (!pos || !proj || !box)
         continue;
-
-      proj.ttl -= ctx.dtMs;
 
       let consumed = false;
       for (const eid of ctx.world.getTag(EnemyTag)) {
@@ -92,7 +90,7 @@ export const projectileSystem: SchedulableSystem<GameState> = {
         }
       }
 
-      if (consumed || proj.ttl <= 0)
+      if (consumed)
         ctx.world.queueDestroy(id);
     }
   },

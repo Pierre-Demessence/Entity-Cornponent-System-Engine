@@ -2,7 +2,7 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from './game';
 
-import { bounceOffAabb } from '@pierre/ecs/modules/collision';
+import { aabbVsCircle, bounceOffAabb } from '@pierre/ecs/modules/collision';
 import { clamp, vec2ScaleToLength } from '@pierre/ecs/modules/math';
 import { makeVelocityIntegrationSystem } from '@pierre/ecs/modules/motion';
 
@@ -49,13 +49,18 @@ export const paddleInputSystem: SchedulableSystem<GameState> = {
     if (ctx.input.isDown('right'))
       dir += 1;
 
+    const pointerMoved = ctx.pointer.x !== ctx.pointerLastX;
+    ctx.pointerLastX = ctx.pointer.x;
     if (dir !== 0) {
       // Keyboard takes over and releases the mouse from steering.
-      ctx.pointerX = null;
+      ctx.pointerSteering = false;
       pos.x += dir * PADDLE_SPEED * (ctx.dtMs / 1000);
     }
-    else if (ctx.pointerX != null) {
-      pos.x = ctx.pointerX - ctx.paddleW / 2;
+    else {
+      if (pointerMoved)
+        ctx.pointerSteering = true;
+      if (ctx.pointerSteering)
+        pos.x = ctx.pointer.x - ctx.paddleW / 2;
     }
     pos.x = clamp(pos.x, minX, maxX);
   },
@@ -74,8 +79,7 @@ export const launchSystem: SchedulableSystem<GameState> = {
     pos.x = paddleLeft(ctx) + ctx.paddleW / 2;
     pos.y = PADDLE_Y - BALL_R - 1;
 
-    if (ctx.input.justPressed('launch') || ctx.pointerLaunch) {
-      ctx.pointerLaunch = false;
+    if (ctx.input.justPressed('launch')) {
       ctx.launched = true;
       const angle = (Math.random() * 2 - 1) * (BALL_MAX_BOUNCE * 0.5);
       setBallSpeed(ctx, Math.sin(angle), -Math.cos(angle));
@@ -133,13 +137,10 @@ export const paddleBounceSystem: SchedulableSystem<GameState> = {
       return;
 
     const left = paddleLeft(ctx);
-    const top = PADDLE_Y;
-    const withinX = pos.x + BALL_R >= left && pos.x - BALL_R <= left + ctx.paddleW;
-    const hitTop = pos.y + BALL_R >= top && pos.y < top + PADDLE_H;
-    if (!withinX || !hitTop)
+    if (!aabbVsCircle({ h: PADDLE_H, w: ctx.paddleW, x: left, y: PADDLE_Y }, pos, BALL_R))
       return;
 
-    pos.y = top - BALL_R - 0.5;
+    pos.y = PADDLE_Y - BALL_R - 0.5;
     const offset = (pos.x - (left + ctx.paddleW / 2)) / (ctx.paddleW / 2);
     const angle = clamp(offset, -1, 1) * BALL_MAX_BOUNCE;
     setBallSpeed(ctx, Math.sin(angle), -Math.cos(angle));

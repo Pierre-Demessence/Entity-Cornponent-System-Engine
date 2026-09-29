@@ -9,7 +9,7 @@ import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/m
 import { Player } from './components';
 import { LOGIC_TICK_MS, makeWorld, resetGame, SCREEN_H, SCREEN_W } from './game';
 import { render } from './render';
-import { collisionSystem, inputSystem, movementSystem, scoreSystem } from './systems';
+import { collisionSystem, inputSystem, movementSystem, paddleBoundsSystem, scoreSystem } from './systems';
 
 function disposeInput(input: InputState<PongAction> | InputState<MetaAction>): void {
   input.dispose();
@@ -66,6 +66,7 @@ export function start(container: HTMLElement): () => void {
 
   const state: GameState = {
     ballId: null,
+    dtMs: LOGIC_TICK_MS,
     events: new EventBus<LocalPongEvent>(),
     metaInput,
     scores: { left: 0, right: 0 },
@@ -101,6 +102,7 @@ export function start(container: HTMLElement): () => void {
   const scheduler = new Scheduler<GameState>()
     .add(inputSystem)
     .add(movementSystem)
+    .add(paddleBoundsSystem)
     .add(collisionSystem)
     .add(scoreSystem);
 

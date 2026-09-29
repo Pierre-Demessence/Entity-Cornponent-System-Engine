@@ -1,7 +1,7 @@
 import type { BreakoutAction, GameState } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
-import { createInput, Key, KeyboardProvider, projectPointer } from '@pierre/ecs/modules/input';
+import { createInput, Key, KeyboardProvider, Pointer, PointerProvider } from '@pierre/ecs/modules/input';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import { makeWorld, resetGame, SCREEN_H, SCREEN_W } from './game';
@@ -66,14 +66,16 @@ export function start(container: HTMLElement): () => void {
   const keyboard = new KeyboardProvider({
     preventDefaultCodes: [Key.Space, Key.ArrowLeft, Key.ArrowRight, Key.KeyR],
   });
+  // The mouse steers the paddle; a click launches (or restarts after game over).
+  const pointer = new PointerProvider({ buttons: [0], target: canvas });
   const input = createInput<BreakoutAction>(
     {
-      launch: [Key.Space, Key.ArrowUp],
+      launch: [Key.Space, Key.ArrowUp, Pointer.LeftButton],
       left: [Key.ArrowLeft, Key.KeyA],
-      reset: [Key.KeyR],
+      reset: [Key.KeyR, Pointer.LeftButton],
       right: [Key.ArrowRight, Key.KeyD],
     },
-    [keyboard],
+    [keyboard, pointer],
   );
 
   const state: GameState = {
@@ -89,8 +91,9 @@ export function start(container: HTMLElement): () => void {
     narrowed: false,
     paddleId: null,
     paddleW: 0,
-    pointerLaunch: false,
-    pointerX: null,
+    pointer: pointer.state,
+    pointerLastX: 0,
+    pointerSteering: false,
     score: 0,
     speed: 0,
     won: false,
@@ -100,30 +103,16 @@ export function start(container: HTMLElement): () => void {
   resetGame(state);
   let savedBest = state.best;
 
-  const pointerXFromEvent = (event: PointerEvent): number => projectPointer(event, canvas).x;
-
-  const onPointerMove = (event: PointerEvent): void => {
-    state.pointerX = pointerXFromEvent(event);
-  };
-  const onPointerDown = (event: PointerEvent): void => {
-    event.preventDefault();
-    state.pointerX = pointerXFromEvent(event);
-    if (state.dead)
-      resetGame(state);
-    else
-      state.pointerLaunch = true;
-  };
-  canvas.addEventListener('pointermove', onPointerMove);
-  canvas.addEventListener('pointerdown', onPointerDown);
-
   const tickRunner = new TickRunner<GameState>({
     scheduler,
     source: new FixedIntervalTickSource(LOGIC_TICK_MS),
     getEvents: ctx => ctx.events,
     getWorld: () => state.world,
     contextFactory: () => {
-      if (state.dead && input.justPressed('reset'))
+      if (state.dead && input.justPressed('reset')) {
         resetGame(state);
+        input.clearEdges(); // the restarting click is not also a launch
+      }
       return state;
     },
     onTickComplete: () => {
@@ -143,8 +132,6 @@ export function start(container: HTMLElement): () => void {
   renderTickSource.start();
 
   return (): void => {
-    canvas.removeEventListener('pointermove', onPointerMove);
-    canvas.removeEventListener('pointerdown', onPointerDown);
     input.dispose();
     unsubscribeRender();
     renderTickSource.stop();

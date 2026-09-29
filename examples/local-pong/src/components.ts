@@ -2,6 +2,8 @@ import type { ComponentDef, TagDef } from '@pierre/ecs';
 
 import { simpleComponent } from '@pierre/ecs';
 
+/** Axis-aligned size, anchored at the entity's top-left `PositionDef`. */
+export { type ShapeAabb, ShapeAabbDef } from '@pierre/ecs/modules/collision';
 // Re-export engine renderable so entities carry a drawable shape.
 export {
   type Renderable,
@@ -24,17 +26,11 @@ export const Player = {
 export type PlayerId = typeof Player[keyof typeof Player];
 export const PLAYERS: readonly PlayerId[] = [Player.Left, Player.Right];
 
-export interface Size { h: number; w: number }
 export interface Paddle { owner: PlayerId }
 export interface Ball {
   launchSpeed: number;
   speedStep: number;
 }
-
-export const SizeDef: ComponentDef<Size> = simpleComponent<Size>(
-  'size',
-  { h: 'number', w: 'number' },
-);
 
 export const PaddleDef: ComponentDef<Paddle> = simpleComponent<Paddle>(
   'paddle',

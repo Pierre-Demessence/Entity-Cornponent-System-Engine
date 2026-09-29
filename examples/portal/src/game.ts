@@ -105,7 +105,7 @@ export interface Portal {
   up: Vec3;
 }
 
-export type PortalAction = 'back' | 'forward' | 'grab' | 'jump' | 'left' | 'reset' | 'right';
+export type PortalAction = 'back' | 'fireBlue' | 'fireOrange' | 'forward' | 'grab' | 'jump' | 'left' | 'reset' | 'right';
 
 export type PortalEvent
   = | { type: 'PlayerRespawned' }
@@ -120,7 +120,6 @@ export interface GameState {
   dtMs: number;
   events: EventBus<PortalEvent>;
   input: InputState<PortalAction>;
-  pendingFire: PortalColor | null;
   platePressed: boolean;
   playerId: EntityId | null;
   portals: { blue: Portal | null; orange: Portal | null };
@@ -284,7 +283,6 @@ export function resetGame(state: GameState): void {
   state.events.clear();
   state.portals.blue = null;
   state.portals.orange = null;
-  state.pendingFire = null;
   state.platePressed = false;
   state.won = false;
   state.doorId = null;

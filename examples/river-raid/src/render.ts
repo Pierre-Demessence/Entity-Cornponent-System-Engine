@@ -8,7 +8,7 @@ import {
   EnemyTag,
   FuelDepotTag,
   PositionDef,
-  SizeDef,
+  ShapeAabbDef,
 } from './components';
 import {
   BRIDGE_H,
@@ -132,7 +132,7 @@ function drawPlayer(ctx2d: CanvasRenderingContext2D, state: GameState): void {
 function drawEnemy(ctx2d: CanvasRenderingContext2D, state: GameState): void {
   for (const id of state.world.getTag(EnemyTag)) {
     const pos = state.world.getStore(PositionDef).get(id);
-    const size = state.world.getStore(SizeDef).get(id);
+    const size = state.world.getStore(ShapeAabbDef).get(id);
     const enemy = state.world.getStore(EnemyDef).get(id);
     if (!pos || !size || !enemy)
       continue;

@@ -2,13 +2,16 @@ import type { GameState, StarfighterAction, StarfighterEvent } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { makeCameraRigSystem } from '@pierre/ecs/modules/camera-3d';
-import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { makeCooldownSystem } from '@pierre/ecs/modules/cooldown';
+import { createInput, Key, KeyboardProvider, Pointer, PointerProvider } from '@pierre/ecs/modules/input';
+import { makeLifetimeSystem } from '@pierre/ecs/modules/lifetime';
 import { makeVelocityIntegration3DSystem } from '@pierre/ecs/modules/motion-3d';
 import { makeSeededRng } from '@pierre/ecs/modules/rng';
+import { makeSpawner } from '@pierre/ecs/modules/spawner';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
-import { CameraTag, ShipTag } from './components';
-import { AIM_DEADZONE, makeWorld, resetGame, resizeView } from './game';
+import { CameraTag, ShipTag, TargetTag } from './components';
+import { AIM_DEADZONE, makeWorld, resetGame, resizeView, TARGET_CAP, TARGET_SPAWN_MS } from './game';
 import { makeRenderer } from './render';
 import { bulletSystem, shipBoundsSystem, shipSystem, targetSystem, weaponSystem } from './systems';
 
@@ -90,16 +93,27 @@ export function start(container: HTMLElement): () => void {
   const keyboard = new KeyboardProvider({
     preventDefaultCodes: [Key.KeyW, Key.KeyA, Key.KeyS, Key.KeyD, Key.KeyR, Key.Space],
   });
+  // Free-cursor steering: the pointer is reported relative to the view centre
+  // and stays where you leave it — the ship keeps turning until you bring the
+  // reticle back to the deadzone. No pointer lock.
+  const pointer = new PointerProvider({
+    buttons: [0],
+    target: renderer.domElement,
+    project: (ev, target) => {
+      const rect = target.getBoundingClientRect();
+      return { x: ev.clientX - rect.left - rect.width / 2, y: ev.clientY - rect.top - rect.height / 2 };
+    },
+  });
   const input = createInput<StarfighterAction>(
     {
-      fire: [Key.Space],
+      fire: [Key.Space, Pointer.LeftButton],
       reset: [Key.KeyR],
       rollLeft: [Key.KeyA],
       rollRight: [Key.KeyD],
       throttleDown: [Key.KeyS],
       throttleUp: [Key.KeyW],
     },
-    [keyboard],
+    [keyboard, pointer],
   );
 
   const state: GameState = {
@@ -109,43 +123,31 @@ export function start(container: HTMLElement): () => void {
     cameraId: null,
     dtMs: LOGIC_TICK_MS,
     events,
-    fireTimer: 0,
-    firing: false,
     input,
     playerId: null,
     rng: makeSeededRng(0x5EED),
     score: 0,
-    spawnTimer: 0,
     speed: 0,
     viewport: { h, w },
     world,
+    targetSpawner: makeSpawner(() => TARGET_SPAWN_MS, {
+      active: () => state.world.getTag(TargetTag).size < TARGET_CAP,
+    }),
   };
 
   resetGame(state);
 
-  // Free-cursor steering: the reticle follows the mouse (clamped to the ring)
-  // and stays where you leave it — the ship keeps turning until you bring it
-  // back to the deadzone. No pointer lock.
-  const onMouseMove = (e: MouseEvent): void => {
-    const rect = renderer.domElement.getBoundingClientRect();
-    let dx = e.clientX - rect.left - rect.width / 2;
-    let dy = e.clientY - rect.top - rect.height / 2;
+  // The reticle is the pointer clamped to the ring; its offset is the aim.
+  const readAim = (): void => {
+    let dx = pointer.state.x;
+    let dy = pointer.state.y;
     const len = Math.hypot(dx, dy);
-    if (len > ringRadius && len > 0) {
+    if (len > ringRadius) {
       dx *= ringRadius / len;
       dy *= ringRadius / len;
     }
     state.aimX = dx / ringRadius;
     state.aimY = -dy / ringRadius; // screen-down is +Y; invert so up = +
-    reticle.style.transform = `translate(${dx}px, ${dy}px)`;
-  };
-  const onMouseDown = (e: MouseEvent): void => {
-    if (e.button === 0)
-      state.firing = true;
-  };
-  const onMouseUp = (e: MouseEvent): void => {
-    if (e.button === 0)
-      state.firing = false;
   };
   const onResize = (): void => {
     ({ h, w } = sizeOf());
@@ -155,15 +157,14 @@ export function start(container: HTMLElement): () => void {
     ringRadius = Math.min(w, h) * 0.16;
     layoutRing();
   };
-  renderer.domElement.addEventListener('mousemove', onMouseMove);
-  renderer.domElement.addEventListener('mousedown', onMouseDown);
-  document.addEventListener('mouseup', onMouseUp);
   window.addEventListener('resize', onResize);
 
   const scheduler = new Scheduler<GameState>()
+    .add(makeCooldownSystem<GameState>())
     .add(shipSystem)
     .add(weaponSystem)
     .add(makeVelocityIntegration3DSystem<GameState>({ name: 'motion', runAfter: ['weapon'] }))
+    .add(makeLifetimeSystem<GameState>({ runAfter: ['motion'] }))
     .add(shipBoundsSystem)
     .add(bulletSystem)
     .add(targetSystem);
@@ -176,6 +177,7 @@ export function start(container: HTMLElement): () => void {
     getWorld: () => state.world,
     onTickComplete: () => input.clearEdges(),
     contextFactory: () => {
+      readAim();
       if (state.input.justPressed('reset'))
         resetGame(state);
       return state;
@@ -193,14 +195,12 @@ export function start(container: HTMLElement): () => void {
   const renderTickSource = new AnimationFrameTickSource();
   const unsubRender = renderTickSource.subscribe(({ deltaMs }) => {
     cameraRig.run({ dtMs: deltaMs, world: state.world });
+    reticle.style.transform = `translate(${state.aimX * ringRadius}px, ${-state.aimY * ringRadius}px)`;
     renderer.render(state);
   });
   renderTickSource.start();
 
   return (): void => {
-    renderer.domElement.removeEventListener('mousemove', onMouseMove);
-    renderer.domElement.removeEventListener('mousedown', onMouseDown);
-    document.removeEventListener('mouseup', onMouseUp);
     window.removeEventListener('resize', onResize);
     unsubScore();
     unsubRender();

@@ -1,7 +1,7 @@
 import type { FlappyAction, GameState } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
-import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
+import { createInput, Key, KeyboardProvider, Pointer, PointerProvider } from '@pierre/ecs/modules/input';
 import { makeSpawner } from '@pierre/ecs/modules/spawner';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
@@ -46,12 +46,13 @@ export function start(container: HTMLElement): () => void {
   const keyboard = new KeyboardProvider({
     preventDefaultCodes: [Key.Space, Key.ArrowUp, Key.KeyR],
   });
+  const pointer = new PointerProvider({ buttons: [0], target: canvas });
   const input = createInput<FlappyAction>(
     {
-      flap: [Key.Space, Key.ArrowUp],
-      reset: [Key.KeyR],
+      flap: [Key.Space, Key.ArrowUp, Pointer.LeftButton],
+      reset: [Key.KeyR, Pointer.LeftButton],
     },
-    [keyboard],
+    [keyboard, pointer],
   );
 
   const state: GameState = {
@@ -62,22 +63,12 @@ export function start(container: HTMLElement): () => void {
     events: new EventBus<never>(),
     input,
     pipeSpawner: makeSpawner(() => PIPE_SPAWN_MS),
-    pointerFlap: false,
     score: 0,
     started: false,
     world,
   };
 
   resetGame(state);
-
-  const onPointerDown = (event: PointerEvent): void => {
-    event.preventDefault();
-    if (state.dead)
-      resetGame(state);
-    else
-      state.pointerFlap = true;
-  };
-  canvas.addEventListener('pointerdown', onPointerDown);
 
   const tickRunner = new TickRunner<GameState>({
     scheduler,
@@ -86,8 +77,10 @@ export function start(container: HTMLElement): () => void {
     getWorld: () => state.world,
     onTickComplete: () => input.clearEdges(),
     contextFactory: () => {
-      if (state.dead && input.justPressed('reset'))
+      if (state.dead && input.justPressed('reset')) {
         resetGame(state);
+        input.clearEdges(); // the restarting tap is not also the first flap
+      }
       return state;
     },
   });
@@ -100,7 +93,6 @@ export function start(container: HTMLElement): () => void {
   renderTickSource.start();
 
   return (): void => {
-    canvas.removeEventListener('pointerdown', onPointerDown);
     input.dispose();
     unsubscribeRender();
     renderTickSource.stop();

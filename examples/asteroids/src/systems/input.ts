@@ -2,6 +2,8 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
+import { truncate } from '@pierre/ecs/modules/steering';
+
 import { CooldownDef, PositionDef, ready, RotationDef, trigger, VelocityDef } from '../components';
 import {
   SHIP_MAX_SPEED,
@@ -29,11 +31,9 @@ export const inputSystem: SchedulableSystem<GameState> = {
     if (ctx.input.isDown('thrust')) {
       vel.vx += Math.cos(rot.angle) * SHIP_THRUST * dt;
       vel.vy += Math.sin(rot.angle) * SHIP_THRUST * dt;
-      const sp = Math.hypot(vel.vx, vel.vy);
-      if (sp > SHIP_MAX_SPEED) {
-        vel.vx = (vel.vx / sp) * SHIP_MAX_SPEED;
-        vel.vy = (vel.vy / sp) * SHIP_MAX_SPEED;
-      }
+      const capped = truncate({ x: vel.vx, y: vel.vy }, SHIP_MAX_SPEED);
+      vel.vx = capped.x;
+      vel.vy = capped.y;
     }
 
     const cd = ctx.world.getStore(CooldownDef).get(ctx.shipId)!;

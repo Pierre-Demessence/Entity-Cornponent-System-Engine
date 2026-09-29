@@ -5,18 +5,18 @@ import type { Spawner } from '@pierre/ecs/modules/spawner';
 import { EcsWorld } from '@pierre/ecs';
 import { LifetimeDef, makeLifetime } from '@pierre/ecs/modules/lifetime';
 import { clamp01, inverseLerp, lerp } from '@pierre/ecs/modules/math';
-import { burst, ParticleDef, ParticleTag as ParticlesTag } from '@pierre/ecs/modules/particles';
+import { burst, ParticleDef, ParticleTag } from '@pierre/ecs/modules/particles';
 import { OpacityDef } from '@pierre/ecs/modules/render-canvas2d';
 import { resetSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
+  BulletTag,
   ObstacleTag,
-  ParticleTag,
   PlayerTag,
   PositionDef,
   RenderableDef,
   RenderOrderDef,
-  SizeDef,
+  ShapeAabbDef,
   VelocityDef,
 } from './components';
 
@@ -70,7 +70,7 @@ export function makeWorld(): EcsWorld {
   const w = new EcsWorld();
   w.registerComponent(PositionDef);
   w.registerComponent(VelocityDef);
-  w.registerComponent(SizeDef);
+  w.registerComponent(ShapeAabbDef);
   w.registerComponent(LifetimeDef);
   w.registerComponent(RenderableDef);
   w.registerComponent(RenderOrderDef);
@@ -78,8 +78,8 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(OpacityDef);
   w.registerTag(PlayerTag);
   w.registerTag(ObstacleTag);
+  w.registerTag(BulletTag);
   w.registerTag(ParticleTag);
-  w.registerTag(ParticlesTag);
   return w;
 }
 
@@ -87,7 +87,7 @@ function spawnPlayer(state: GameState): EntityId {
   const id = state.world.createEntity();
   state.world.getStore(PositionDef).set(id, { x: PLAYER_X, y: FLOOR_Y - PLAYER_H });
   state.world.getStore(VelocityDef).set(id, { vx: 0, vy: 0 });
-  state.world.getStore(SizeDef).set(id, { h: PLAYER_H, w: PLAYER_W });
+  state.world.getStore(ShapeAabbDef).set(id, { h: PLAYER_H, w: PLAYER_W });
   state.world.getStore(RenderableDef).set(id, {
     anchor: 'top-left',
     fill: '#ffce3a',
@@ -129,7 +129,7 @@ export function spawnObstacle(state: GameState): void {
 
   state.world.getStore(PositionDef).set(id, { x: SCREEN_W + w, y });
   state.world.getStore(VelocityDef).set(id, { vx: -state.scrollSpeed, vy: 0 });
-  state.world.getStore(SizeDef).set(id, { h, w });
+  state.world.getStore(ShapeAabbDef).set(id, { h, w });
   state.world.getStore(RenderableDef).set(id, {
     anchor: 'top-left',
     fill: '#ff4d6d',
@@ -150,7 +150,7 @@ export function spawnBullet(state: GameState, x: number, y: number): void {
     vx: BULLET_SPEED,
     vy: 120 + Math.random() * 180,
   });
-  state.world.getStore(SizeDef).set(id, { h: 3, w: 8 });
+  state.world.getStore(ShapeAabbDef).set(id, { h: 3, w: 8 });
   state.world.getStore(RenderableDef).set(id, {
     anchor: 'center',
     fill: '#fff3b0',
@@ -159,33 +159,23 @@ export function spawnBullet(state: GameState, x: number, y: number): void {
     w: 8,
   });
   state.world.getStore(RenderOrderDef).set(id, { value: 25 });
-  state.world.getTag(ParticleTag).add(id);
+  state.world.getTag(BulletTag).add(id);
   state.world.getStore(LifetimeDef).set(id, makeLifetime(700));
 }
 
-export function spawnParticle(
-  state: GameState,
-  x: number,
-  y: number,
-  vx: number,
-  vy: number,
-  lifeMs: number,
-  fill: string,
-  size: number,
-): void {
-  const id = state.world.createEntity();
-  state.world.getStore(PositionDef).set(id, { x, y });
-  state.world.getStore(VelocityDef).set(id, { vx, vy });
-  state.world.getStore(LifetimeDef).set(id, makeLifetime(lifeMs));
-  state.world.getStore(RenderableDef).set(id, {
-    anchor: 'center',
-    fill,
-    h: size,
-    kind: 'rect',
-    w: size,
+/** One exhaust puff below the pack while thrusting, blown back by the scroll. */
+export function puffExhaust(state: GameState, x: number, y: number): void {
+  burst(state.world, {
+    angle: Math.atan2(150, -(state.scrollSpeed * 0.4 + 30)),
+    colors: ['#9fd2ff', '#e8f4ff'],
+    count: 1,
+    lifetimeMs: [280, 440],
+    position: { x, y },
+    renderOrder: 28,
+    size: [3, 6],
+    speed: [110, 260],
+    spread: 0.35,
   });
-  state.world.getStore(RenderOrderDef).set(id, { value: 28 });
-  state.world.getTag(ParticleTag).add(id);
 }
 
 export function explode(state: GameState, x: number, y: number): void {

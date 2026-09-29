@@ -2,19 +2,24 @@ import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
 import type { Vec3 } from '@pierre/ecs/modules/math';
 import type { RandomFn } from '@pierre/ecs/modules/rng';
+import type { Spawner } from '@pierre/ecs/modules/spawner';
 
 import { EcsWorld } from '@pierre/ecs';
 import { Camera3DDef, ChaseRigDef, makeCamera3D, makeChaseRig } from '@pierre/ecs/modules/camera-3d';
 import { degToRad, QUAT_IDENTITY, vec3ClampLength, vec3RandomUnit } from '@pierre/ecs/modules/math';
 import { makeSeededRng } from '@pierre/ecs/modules/rng';
+import { resetSpawner } from '@pierre/ecs/modules/spawner';
 
 import {
-  BulletDef,
   BulletTag,
   CameraTag,
+  CooldownDef,
+  LifetimeDef,
+  makeCooldown,
+  makeLifetime,
   Position3DDef,
-  RadiusDef,
   Rotation3DDef,
+  ShapeSphere3Def,
   ShipTag,
   TargetDef,
   TargetTag,
@@ -81,14 +86,13 @@ export interface GameState {
   cameraId: EntityId | null;
   dtMs: number;
   events: EventBus<StarfighterEvent>;
-  fireTimer: number;
-  firing: boolean;
   input: InputState<StarfighterAction>;
   playerId: EntityId | null;
   rng: RandomFn;
   score: number;
-  spawnTimer: number;
   speed: number; // forward speed along the nose
+  /** Tops the target field back up to `TARGET_CAP`; held while the field is full. */
+  targetSpawner: Spawner;
   /** Drawing-surface size in pixels; the camera lens follows it (see {@link resizeView}). */
   viewport: { h: number; w: number };
   world: EcsWorld;
@@ -99,9 +103,10 @@ export function makeWorld(): EcsWorld {
   world.registerComponent(Position3DDef);
   world.registerComponent(Rotation3DDef);
   world.registerComponent(Velocity3DDef);
-  world.registerComponent(RadiusDef);
+  world.registerComponent(ShapeSphere3Def);
   world.registerComponent(TargetDef);
-  world.registerComponent(BulletDef);
+  world.registerComponent(LifetimeDef);
+  world.registerComponent(CooldownDef);
   world.registerComponent(Camera3DDef);
   world.registerComponent(ChaseRigDef);
   world.registerTag(ShipTag);
@@ -116,7 +121,8 @@ function spawnShip(state: GameState): EntityId {
   state.world.getStore(Position3DDef).set(id, { x: 0, y: 0, z: 0 });
   state.world.getStore(Rotation3DDef).set(id, { ...QUAT_IDENTITY });
   state.world.getStore(Velocity3DDef).set(id, { vx: 0, vy: 0, vz: 0 });
-  state.world.getStore(RadiusDef).set(id, { r: SHIP_RADIUS });
+  state.world.getStore(ShapeSphere3Def).set(id, { radius: SHIP_RADIUS });
+  state.world.getStore(CooldownDef).set(id, makeCooldown(FIRE_COOLDOWN_MS));
   state.world.getTag(ShipTag).add(id);
   return id;
 }
@@ -155,8 +161,8 @@ export function spawnBullet(state: GameState, pos: Vec3, vel: Vec3): EntityId {
   const id = state.world.createEntity();
   state.world.getStore(Position3DDef).set(id, { ...pos });
   state.world.getStore(Velocity3DDef).set(id, { vx: vel.x, vy: vel.y, vz: vel.z });
-  state.world.getStore(RadiusDef).set(id, { r: BULLET_RADIUS });
-  state.world.getStore(BulletDef).set(id, { ttl: BULLET_TTL_MS });
+  state.world.getStore(ShapeSphere3Def).set(id, { radius: BULLET_RADIUS });
+  state.world.getStore(LifetimeDef).set(id, makeLifetime(BULLET_TTL_MS));
   state.world.getTag(BulletTag).add(id);
   return id;
 }
@@ -184,7 +190,7 @@ export function spawnTarget(state: GameState): EntityId {
     vy: drift.y * TARGET_DRIFT_SPEED,
     vz: drift.z * TARGET_DRIFT_SPEED,
   });
-  state.world.getStore(RadiusDef).set(id, { r: TARGET_RADIUS });
+  state.world.getStore(ShapeSphere3Def).set(id, { radius: TARGET_RADIUS });
   state.world.getStore(TargetDef).set(id, { hp: 1 });
   state.world.getTag(TargetTag).add(id);
   return id;
@@ -198,8 +204,7 @@ export function resetGame(state: GameState): void {
   state.speed = 0;
   state.aimX = 0;
   state.aimY = 0;
-  state.fireTimer = 0;
-  state.spawnTimer = 0;
+  resetSpawner(state.targetSpawner, 0);
   state.rng = makeSeededRng(0x5EED);
   state.playerId = spawnShip(state);
   state.cameraId = spawnCamera(state);

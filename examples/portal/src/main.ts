@@ -2,7 +2,7 @@ import type { GameState, PortalAction, PortalEvent } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
 import { addLookDelta, makeCameraRigSystem } from '@pierre/ecs/modules/camera-3d';
-import { createInput, Key, KeyboardProvider, MouseLookProvider } from '@pierre/ecs/modules/input';
+import { createInput, Key, KeyboardProvider, MouseLookProvider, Pointer, PointerProvider } from '@pierre/ecs/modules/input';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
 import { CameraTag, PlayerTag, Position3DDef } from './components';
@@ -65,9 +65,13 @@ export function start(container: HTMLElement): () => void {
   const keyboard = new KeyboardProvider({
     preventDefaultCodes: [Key.KeyW, Key.KeyA, Key.KeyS, Key.KeyD, Key.Space, Key.KeyE, Key.KeyR],
   });
+  // LMB / RMB fire; the provider also suppresses the context menu on RMB.
+  const pointer = new PointerProvider({ buttons: [0, 2], target: renderer.domElement });
   const input = createInput<PortalAction>(
     {
       back: [Key.KeyS],
+      fireBlue: [Pointer.LeftButton],
+      fireOrange: [Pointer.RightButton],
       forward: [Key.KeyW],
       grab: [Key.KeyE],
       jump: [Key.Space],
@@ -75,7 +79,7 @@ export function start(container: HTMLElement): () => void {
       reset: [Key.KeyR],
       right: [Key.KeyD],
     },
-    [keyboard],
+    [keyboard, pointer],
   );
 
   const state: GameState = {
@@ -85,7 +89,6 @@ export function start(container: HTMLElement): () => void {
     dtMs: LOGIC_TICK_MS,
     events,
     input,
-    pendingFire: null,
     platePressed: false,
     playerId: null,
     portals: { blue: null, orange: null },
@@ -106,20 +109,13 @@ export function start(container: HTMLElement): () => void {
     if (rig)
       addLookDelta(rig, x, y);
   });
+  // Requesting the lock needs the click's own user gesture, so it stays a DOM
+  // handler; the blue shot itself arrives through the `fireBlue` action.
   const onMouseDown = (e: MouseEvent): void => {
-    if (e.button === 0) {
-      state.pendingFire = 'blue';
+    if (e.button === 0)
       look.requestLock();
-    }
-    else if (e.button === 2) {
-      state.pendingFire = 'orange';
-    }
-  };
-  const onContextMenu = (e: Event): void => {
-    e.preventDefault();
   };
   renderer.domElement.addEventListener('mousedown', onMouseDown);
-  renderer.domElement.addEventListener('contextmenu', onContextMenu);
 
   const scheduler = new Scheduler<GameState>()
     .add(inputSystem)
@@ -171,7 +167,6 @@ export function start(container: HTMLElement): () => void {
     input.dispose();
     look.dispose();
     renderer.domElement.removeEventListener('mousedown', onMouseDown);
-    renderer.domElement.removeEventListener('contextmenu', onContextMenu);
     unsubscribeRender();
     renderTickSource.stop();
     tickRunner.stop();

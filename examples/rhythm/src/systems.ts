@@ -70,7 +70,7 @@ export const inputSystem: SchedulableSystem<GameState> = {
       let bestAbs = Infinity;
       let bestOffset = 0;
       for (const [id, note] of store.entries()) {
-        if (note.hit !== 0 || note.lane !== press.lane)
+        if (note.status !== 'pending' || note.lane !== press.lane)
           continue;
         const offset = press.timeS - note.targetTimeS;
         const abs = Math.abs(offset);
@@ -88,7 +88,7 @@ export const inputSystem: SchedulableSystem<GameState> = {
       if (!hitKind)
         continue;
       const note = store.get(bestId)!;
-      store.set(bestId, { ...note, hit: 1 });
+      store.set(bestId, { ...note, status: 'hit' });
       ctx.scores[hitKind] += 1;
       ctx.audio.playHitBlip();
       ctx.events.emit({
@@ -114,8 +114,8 @@ export const cullSystem: SchedulableSystem<GameState> = {
     const store = ctx.world.getStore(NoteDef);
     for (const [id, note] of store.entries()) {
       const dt = ctx.audioTimeS - note.targetTimeS;
-      if (note.hit === 0 && dt > WINDOW.ok) {
-        store.set(id, { ...note, hit: 2 });
+      if (note.status === 'pending' && dt > WINDOW.ok) {
+        store.set(id, { ...note, status: 'missed' });
         ctx.scores.miss += 1;
         ctx.events.emit({
           hit: 'miss',
