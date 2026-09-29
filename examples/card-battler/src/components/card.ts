@@ -7,9 +7,9 @@ import { registryComponent, simpleComponent } from '@pierre/ecs';
 import { getCardDef } from '../cards';
 
 /**
- * Card component: binds an entity to its card definition. Zone membership
- * is expressed via tags (`InHandTag` / `InDeckTag` / `InDiscardTag`), so
- * the card component itself only stores the def reference.
+ * Card component: binds an entity to its card definition. Which pile a card
+ * sits in (deck, hand, discard) is `modules/pile` state, so the card
+ * component itself only stores the def reference.
  *
  * Serialization is id-based — `CardDef` carries a function ref that
  * can't round-trip through JSON. Not actually used this rung, but the

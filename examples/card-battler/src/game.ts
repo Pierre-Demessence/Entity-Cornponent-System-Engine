@@ -1,11 +1,12 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
+import type { DragDrop } from '@pierre/ecs/modules/drag-drop';
 import type { InputState, PointerState } from '@pierre/ecs/modules/input';
 
 import type { CardDef } from './cards';
 
 import { EcsWorld } from '@pierre/ecs';
+import { addToPile, createPile, installPiles, moveAll, moveTop, pileSize, shufflePile } from '@pierre/ecs/modules/pile';
 import { DomRenderableDef } from '@pierre/ecs/modules/render-dom';
-import { pick, shuffle } from '@pierre/ecs/modules/rng';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
 import { buildStartingDeck } from './cards';
@@ -15,9 +16,6 @@ import {
   EnemyIntentDef,
   EnemyTag,
   HealthDef,
-  InDeckTag,
-  InDiscardTag,
-  InHandTag,
   PlayerTag,
 } from './components';
 
@@ -38,14 +36,20 @@ export type CardEvent
     | { type: 'PlayerDamaged'; amount: number }
     | { type: 'TurnEnded' };
 
-export interface DragState {
-  cardId: EntityId;
-  offsetX: number;
-  offsetY: number;
+/** The three pile entities a card moves between. */
+export interface Piles {
+  deck: EntityId;
+  discard: EntityId;
+  hand: EntityId;
 }
 
 export interface GameState {
-  drag: DragState | null;
+  /**
+   * Card drag, in client (viewport) pixels — the space `entityAtPoint`
+   * hit-tests in. The payload is the dragged card; the one drop target is the
+   * enemy.
+   */
+  drag: DragDrop<EntityId, EntityId>;
   dtMs: number;
   elapsedMs: number;
   /** Set by the End-Turn button handler, drained by `turnSystem`. */
@@ -56,6 +60,8 @@ export interface GameState {
   events: EventBus<CardEvent>;
   input: InputState<Action>;
   phase: Phase;
+  /** Replaced by `resetGame`, which recreates the world's piles. */
+  piles: Piles;
   playerId: EntityId;
   pointer: PointerState;
   world: EcsWorld;
@@ -69,23 +75,25 @@ export function makeWorld(): EcsWorld {
   w.registerComponent(BlockDef);
   w.registerComponent(EnemyIntentDef);
   w.registerComponent(PositionDef);
-  w.registerTag(InHandTag);
-  w.registerTag(InDeckTag);
-  w.registerTag(InDiscardTag);
+  installPiles(w);
   w.registerTag(PlayerTag);
   w.registerTag(EnemyTag);
   return w;
 }
 
-/** Create all card entities for the deck and tag them InDeck. */
-function spawnDeck(state: GameState, deck: CardDef[]): void {
+/** Create the card entities and the three piles, with every card in the deck. */
+function spawnPiles(state: GameState, deck: CardDef[]): Piles {
   const cardStore = state.world.getStore(CardDefComp);
-  const inDeck = state.world.getTag(InDeckTag);
-  for (const def of deck) {
+  const cards = deck.map((def) => {
     const id = state.world.createEntity();
     cardStore.set(id, { def });
-    inDeck.add(id);
-  }
+    return id;
+  });
+  return {
+    deck: createPile(state.world, cards),
+    discard: createPile(state.world),
+    hand: createPile(state.world),
+  };
 }
 
 function spawnPlayer(state: GameState): EntityId {
@@ -113,68 +121,45 @@ export function resetGame(state: GameState): void {
   state.phase = 'player';
   state.energyMax = ENERGY_PER_TURN;
   state.energy = ENERGY_PER_TURN;
-  state.drag = null;
+  state.drag.cancel();
   state.endTurnPending = false;
   state.elapsedMs = 0;
 
   state.playerId = spawnPlayer(state);
   state.enemyId = spawnEnemy(state);
 
-  const deck = buildStartingDeck();
-  shuffle(deck);
-  spawnDeck(state, deck);
+  state.piles = spawnPiles(state, buildStartingDeck());
+  shufflePile(state.world, state.piles.deck);
 
   drawCards(state, HAND_SIZE);
 }
 
 /**
- * Move `count` cards from deck to hand, reshuffling discard into deck
- * if deck runs empty mid-draw. If both are empty the draw stops early.
+ * Draw `count` cards from the top of the deck into the hand, reshuffling the
+ * discard pile into the deck if it runs empty mid-draw. If both are empty the
+ * draw stops early.
  */
 export function drawCards(state: GameState, count: number): void {
-  const inDeck = state.world.getTag(InDeckTag);
-  const inDiscard = state.world.getTag(InDiscardTag);
-  const inHand = state.world.getTag(InHandTag);
+  const { deck, discard, hand } = state.piles;
   for (let i = 0; i < count; i++) {
-    if (inDeck.size === 0) {
-      if (inDiscard.size === 0) {
+    if (pileSize(state.world, deck) === 0) {
+      if (pileSize(state.world, discard) === 0) {
         console.warn('[card-battler] draw aborted: deck and discard are both empty');
         return;
       }
-      reshuffleDiscardIntoDeck(state);
+      moveAll(state.world, discard, deck);
+      shufflePile(state.world, deck);
     }
-    const cardId = pick([...inDeck]);
-    if (cardId == null)
-      return;
-    inDeck.delete(cardId);
-    inHand.add(cardId);
-  }
-}
-
-function reshuffleDiscardIntoDeck(state: GameState): void {
-  const inDeck = state.world.getTag(InDeckTag);
-  const inDiscard = state.world.getTag(InDiscardTag);
-  const cardsToShuffle: EntityId[] = [...inDiscard];
-  shuffle(cardsToShuffle);
-  for (const id of cardsToShuffle) {
-    inDiscard.delete(id);
-    inDeck.add(id);
+    moveTop(state.world, deck, hand);
   }
 }
 
 /** Discard entire hand (end-of-turn ceremony). */
 export function discardHand(state: GameState): void {
-  const inHand = state.world.getTag(InHandTag);
-  const inDiscard = state.world.getTag(InDiscardTag);
-  const handIds: EntityId[] = [...inHand];
-  for (const id of handIds) {
-    inHand.delete(id);
-    inDiscard.add(id);
-  }
+  moveAll(state.world, state.piles.hand, state.piles.discard);
 }
 
 /** Move a single card from hand to discard. */
 export function discardCard(state: GameState, cardId: EntityId): void {
-  state.world.getTag(InHandTag).delete(cardId);
-  state.world.getTag(InDiscardTag).add(cardId);
+  addToPile(state.world, state.piles.discard, cardId);
 }

@@ -129,6 +129,7 @@
         "motion",
         "motion-3d",
         "particles",
+        "pile",
         "query.ts",
         "render-canvas2d",
         "render-dom",
@@ -204,6 +205,7 @@
               "kinematics-3d",
               "lifetime",
               "particles",
+              "pile",
               "render-canvas2d",
               "render-dom",
               "test-utils.ts",
@@ -284,6 +286,7 @@
           "other": {
             "consumers": [
               "column-store.ts",
+              "pile",
               "query.ts",
               "render-canvas2d",
               "world.ts"
@@ -734,6 +737,7 @@
         "motion",
         "motion-3d",
         "particles",
+        "pile",
         "query.ts",
         "render-canvas2d",
         "render-dom",
@@ -798,6 +802,7 @@
               "motion",
               "motion-3d",
               "particles",
+              "pile",
               "query.ts",
               "render-canvas2d",
               "render-dom",
@@ -823,6 +828,7 @@
               "src/modules/lifetime/lifetime.test.ts",
               "src/modules/motion-3d/motion-3d.test.ts",
               "src/modules/motion/motion.test.ts",
+              "src/modules/pile/pile.test.ts",
               "src/modules/render-scene3d/render-scene3d.test.ts",
               "src/modules/spatial/grid-sync.test.ts",
               "src/spatial-structure.test.ts",
@@ -842,6 +848,7 @@
         "src/modules/lifetime/lifetime.test.ts",
         "src/modules/motion-3d/motion-3d.test.ts",
         "src/modules/motion/motion.test.ts",
+        "src/modules/pile/pile.test.ts",
         "src/modules/render-scene3d/render-scene3d.test.ts",
         "src/modules/spatial/grid-sync.test.ts",
         "src/spatial-structure.test.ts",
@@ -3835,6 +3842,7 @@
         "platformer",
         "platformer-3d",
         "river-raid",
+        "solitaire",
         "space-invaders",
         "spacewar",
         "stealth-guard",
@@ -3844,6 +3852,7 @@
       "importPath": "@pierre/ecs/modules/collision",
       "isModule": true,
       "other": [
+        "drag-drop",
         "kinematics",
         "steering"
       ],
@@ -3855,6 +3864,7 @@
             "consumers": [
               "frogger",
               "river-raid",
+              "solitaire",
               "space-invaders"
             ],
             "typeOnly": true
@@ -3891,6 +3901,30 @@
           }
         },
         {
+          "name": "aabbContainsPoint",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "solitaire",
+              "stealth-guard"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/collision/narrowphase.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "aabbVsAabb",
           "coveredByExample": true,
           "example": {
@@ -3900,8 +3934,7 @@
               "local-pong",
               "platformer",
               "river-raid",
-              "space-invaders",
-              "stealth-guard"
+              "space-invaders"
             ],
             "typeOnly": false
           },
@@ -4005,6 +4038,27 @@
           },
           "test": {
             "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "circleContainsPoint",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/collision/narrowphase.test.ts"
+            ],
             "typeOnly": false
           }
         },
@@ -4267,12 +4321,14 @@
           "noExternalConsumer": false,
           "other": {
             "consumers": [
+              "drag-drop",
               "steering"
             ],
             "typeOnly": true
           },
           "test": {
             "consumers": [
+              "src/modules/drag-drop/drag-drop.test.ts",
               "src/modules/steering/steering.test.ts"
             ],
             "typeOnly": true
@@ -4283,13 +4339,14 @@
         "src/modules/collision/narrowphase.test.ts",
         "src/modules/collision/shapes.test.ts",
         "src/modules/collision/trigger.test.ts",
+        "src/modules/drag-drop/drag-drop.test.ts",
         "src/modules/kinematics/kinematics-system.test.ts",
         "src/modules/steering/steering.test.ts"
       ],
       "typeTotal": 9,
       "typeUsedByExample": 2,
-      "valueTotal": 10,
-      "valueUsedByExample": 8
+      "valueTotal": 12,
+      "valueUsedByExample": 9
     },
     {
       "coveredByExample": true,
@@ -5075,6 +5132,127 @@
       "typeUsedByExample": 0,
       "valueTotal": 5,
       "valueUsedByExample": 5
+    },
+    {
+      "coveredByExample": true,
+      "examples": [
+        "card-battler",
+        "solitaire"
+      ],
+      "importPath": "@pierre/ecs/modules/drag-drop",
+      "isModule": true,
+      "other": [],
+      "symbols": [
+        {
+          "name": "DragDrop",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler",
+              "solitaire"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "class",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/drag-drop/drag-drop.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "DragDropOptions",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "DragProbe",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "type",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "DragSession",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "solitaire"
+            ],
+            "typeOnly": true
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "DropResult",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        }
+      ],
+      "tests": [
+        "src/modules/drag-drop/drag-drop.test.ts"
+      ],
+      "typeTotal": 4,
+      "typeUsedByExample": 1,
+      "valueTotal": 1,
+      "valueUsedByExample": 1
     },
     {
       "coveredByExample": true,
@@ -7334,6 +7512,7 @@
         "camera-3d",
         "collision",
         "collision-3d",
+        "drag-drop",
         "kinematics-3d",
         "particles",
         "steering",
@@ -8167,12 +8346,14 @@
           "other": {
             "consumers": [
               "collision",
+              "drag-drop",
               "steering"
             ],
             "typeOnly": true
           },
           "test": {
             "consumers": [
+              "src/modules/drag-drop/drag-drop.test.ts",
               "src/modules/steering/steering.test.ts"
             ],
             "typeOnly": true
@@ -8699,6 +8880,7 @@
         "src/modules/camera-3d/rigs.test.ts",
         "src/modules/collision-3d/narrowphase3.test.ts",
         "src/modules/collision-3d/obb3.test.ts",
+        "src/modules/drag-drop/drag-drop.test.ts",
         "src/modules/math/mat4.test.ts",
         "src/modules/math/math.test.ts",
         "src/modules/math/quat.test.ts",
@@ -9765,6 +9947,404 @@
     {
       "coveredByExample": true,
       "examples": [
+        "card-battler",
+        "solitaire"
+      ],
+      "importPath": "@pierre/ecs/modules/pile",
+      "isModule": true,
+      "other": [],
+      "symbols": [
+        {
+          "name": "addToPile",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler",
+              "solitaire"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "createPile",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler",
+              "solitaire"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "indexInPile",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "InPile",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "InPileDef",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "const",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "installPiles",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler",
+              "solitaire"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "moveAll",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler",
+              "solitaire"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "MoveAllOptions",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "moveTop",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler",
+              "solitaire"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "Pile",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "PileDef",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "const",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "pileItems",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler",
+              "solitaire"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "pileOf",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "pileSize",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler",
+              "solitaire"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "pileTop",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "solitaire"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "removeFromPile",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "shufflePile",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler",
+              "solitaire"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        }
+      ],
+      "tests": [
+        "src/modules/pile/pile.test.ts"
+      ],
+      "typeTotal": 3,
+      "typeUsedByExample": 0,
+      "valueTotal": 14,
+      "valueUsedByExample": 10
+    },
+    {
+      "coveredByExample": true,
+      "examples": [
         "asteroids",
         "breakout",
         "flappy",
@@ -10082,6 +10662,7 @@
               "src/modules/particles/particles.test.ts",
               "src/modules/render-canvas2d/render-canvas2d.test.ts",
               "src/modules/render-dom/dom-renderer.test.ts",
+              "src/modules/render-dom/entity-at-point.test.ts",
               "src/modules/tilemap/spawn.test.ts"
             ],
             "typeOnly": false
@@ -10193,6 +10774,7 @@
         "src/modules/particles/particles.test.ts",
         "src/modules/render-canvas2d/render-canvas2d.test.ts",
         "src/modules/render-dom/dom-renderer.test.ts",
+        "src/modules/render-dom/entity-at-point.test.ts",
         "src/modules/tilemap/spawn.test.ts"
       ],
       "typeTotal": 11,
@@ -10249,7 +10831,8 @@
           "test": {
             "consumers": [
               "src/modules/render-dom/dom-renderable.test.ts",
-              "src/modules/render-dom/dom-renderer.test.ts"
+              "src/modules/render-dom/dom-renderer.test.ts",
+              "src/modules/render-dom/entity-at-point.test.ts"
             ],
             "typeOnly": false
           }
@@ -10291,7 +10874,8 @@
           },
           "test": {
             "consumers": [
-              "src/modules/render-dom/dom-renderer.test.ts"
+              "src/modules/render-dom/dom-renderer.test.ts",
+              "src/modules/render-dom/entity-at-point.test.ts"
             ],
             "typeOnly": false
           }
@@ -10314,16 +10898,40 @@
             "consumers": [],
             "typeOnly": false
           }
+        },
+        {
+          "name": "entityAtPoint",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/render-dom/entity-at-point.test.ts"
+            ],
+            "typeOnly": false
+          }
         }
       ],
       "tests": [
         "src/modules/render-dom/dom-renderable.test.ts",
-        "src/modules/render-dom/dom-renderer.test.ts"
+        "src/modules/render-dom/dom-renderer.test.ts",
+        "src/modules/render-dom/entity-at-point.test.ts"
       ],
       "typeTotal": 3,
       "typeUsedByExample": 0,
-      "valueTotal": 2,
-      "valueUsedByExample": 2
+      "valueTotal": 3,
+      "valueUsedByExample": 3
     },
     {
       "coveredByExample": true,
@@ -10458,7 +11066,6 @@
     {
       "coveredByExample": true,
       "examples": [
-        "card-battler",
         "snake",
         "solitaire",
         "starfighter"
@@ -10466,7 +11073,8 @@
       "importPath": "@pierre/ecs/modules/rng",
       "isModule": true,
       "other": [
-        "particles"
+        "particles",
+        "pile"
       ],
       "symbols": [
         {
@@ -10488,6 +11096,7 @@
           "test": {
             "consumers": [
               "src/modules/particles/particles.test.ts",
+              "src/modules/pile/pile.test.ts",
               "src/modules/rng/rng.test.ts"
             ],
             "typeOnly": false
@@ -10498,7 +11107,6 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
-              "card-battler",
               "snake",
               "solitaire"
             ],
@@ -10534,7 +11142,8 @@
           "noExternalConsumer": false,
           "other": {
             "consumers": [
-              "particles"
+              "particles",
+              "pile"
             ],
             "typeOnly": true
           },
@@ -10566,19 +11175,18 @@
         },
         {
           "name": "shuffle",
-          "coveredByExample": true,
+          "coveredByExample": false,
           "example": {
-            "consumers": [
-              "card-battler",
-              "solitaire"
-            ],
+            "consumers": [],
             "typeOnly": false
           },
           "isValue": true,
           "kind": "fn",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [],
+            "consumers": [
+              "pile"
+            ],
             "typeOnly": false
           },
           "test": {
@@ -10591,12 +11199,13 @@
       ],
       "tests": [
         "src/modules/particles/particles.test.ts",
+        "src/modules/pile/pile.test.ts",
         "src/modules/rng/rng.test.ts"
       ],
       "typeTotal": 1,
       "typeUsedByExample": 1,
       "valueTotal": 4,
-      "valueUsedByExample": 3
+      "valueUsedByExample": 2
     },
     {
       "coveredByExample": false,
@@ -13176,6 +13785,7 @@
               "src/modules/particles/particles.test.ts",
               "src/modules/render-canvas2d/render-canvas2d.test.ts",
               "src/modules/render-dom/dom-renderer.test.ts",
+              "src/modules/render-dom/entity-at-point.test.ts",
               "src/modules/tilemap/spawn.test.ts",
               "src/modules/transform/transform.test.ts"
             ],
@@ -13361,6 +13971,7 @@
         "src/modules/particles/particles.test.ts",
         "src/modules/render-canvas2d/render-canvas2d.test.ts",
         "src/modules/render-dom/dom-renderer.test.ts",
+        "src/modules/render-dom/entity-at-point.test.ts",
         "src/modules/tilemap/spawn.test.ts",
         "src/modules/transform/transform.test.ts"
       ],
@@ -14606,6 +15217,7 @@
         "animation",
         "audio",
         "component-store.ts",
+        "pile",
         "render-canvas2d",
         "render-dom",
         "world.ts"
@@ -14625,6 +15237,7 @@
             "consumers": [
               "animation",
               "component-store.ts",
+              "pile",
               "render-canvas2d"
             ],
             "typeOnly": false
@@ -14678,6 +15291,7 @@
               "animation",
               "audio",
               "component-store.ts",
+              "pile",
               "render-canvas2d",
               "world.ts"
             ],
@@ -14705,6 +15319,7 @@
               "animation",
               "audio",
               "component-store.ts",
+              "pile",
               "render-canvas2d",
               "render-dom",
               "world.ts"
@@ -14800,6 +15415,7 @@
         "motion",
         "motion-3d",
         "particles",
+        "pile",
         "plugin.ts",
         "render-canvas2d",
         "render-dom",
@@ -14863,6 +15479,7 @@
               "motion",
               "motion-3d",
               "particles",
+              "pile",
               "plugin.ts",
               "render-canvas2d",
               "render-dom",
@@ -14893,8 +15510,10 @@
               "src/modules/motion-3d/motion-3d.test.ts",
               "src/modules/motion/motion.test.ts",
               "src/modules/particles/particles.test.ts",
+              "src/modules/pile/pile.test.ts",
               "src/modules/render-canvas2d/render-canvas2d.test.ts",
               "src/modules/render-dom/dom-renderer.test.ts",
+              "src/modules/render-dom/entity-at-point.test.ts",
               "src/modules/render-scene3d/render-scene3d.test.ts",
               "src/modules/scene-transition/scene-transition.test.ts",
               "src/plugin.test.ts",
@@ -14921,8 +15540,10 @@
         "src/modules/motion-3d/motion-3d.test.ts",
         "src/modules/motion/motion.test.ts",
         "src/modules/particles/particles.test.ts",
+        "src/modules/pile/pile.test.ts",
         "src/modules/render-canvas2d/render-canvas2d.test.ts",
         "src/modules/render-dom/dom-renderer.test.ts",
+        "src/modules/render-dom/entity-at-point.test.ts",
         "src/modules/render-scene3d/render-scene3d.test.ts",
         "src/modules/scene-transition/scene-transition.test.ts",
         "src/plugin.test.ts",
@@ -14990,6 +15611,12 @@
       "value": 27
     },
     {
+      "name": "card-battler",
+      "entries": 13,
+      "type": 7,
+      "value": 25
+    },
+    {
       "name": "frogger",
       "entries": 15,
       "type": 7,
@@ -15000,6 +15627,12 @@
       "entries": 11,
       "type": 5,
       "value": 26
+    },
+    {
+      "name": "solitaire",
+      "entries": 12,
+      "type": 4,
+      "value": 25
     },
     {
       "name": "breakout",
@@ -15038,12 +15671,6 @@
       "value": 20
     },
     {
-      "name": "card-battler",
-      "entries": 12,
-      "type": 7,
-      "value": 16
-    },
-    {
       "name": "critters",
       "entries": 12,
       "type": 7,
@@ -15060,12 +15687,6 @@
       "entries": 9,
       "type": 2,
       "value": 16
-    },
-    {
-      "name": "solitaire",
-      "entries": 9,
-      "type": 2,
-      "value": 15
     },
     {
       "name": "woodcutter",
@@ -15171,6 +15792,16 @@
       "total": 9
     },
     {
+      "importPath": "@pierre/ecs/modules/pile",
+      "missing": 4,
+      "total": 14
+    },
+    {
+      "importPath": "@pierre/ecs/modules/collision",
+      "missing": 3,
+      "total": 12
+    },
+    {
       "importPath": "@pierre/ecs/modules/grid-based",
       "missing": 3,
       "total": 3
@@ -15186,14 +15817,14 @@
       "total": 3
     },
     {
-      "importPath": "@pierre/ecs/modules/collision",
-      "missing": 2,
-      "total": 10
-    },
-    {
       "importPath": "@pierre/ecs/modules/particles",
       "missing": 2,
       "total": 6
+    },
+    {
+      "importPath": "@pierre/ecs/modules/rng",
+      "missing": 2,
+      "total": 4
     },
     {
       "importPath": "@pierre/ecs/modules/scene-transition",
@@ -15226,11 +15857,6 @@
       "total": 5
     },
     {
-      "importPath": "@pierre/ecs/modules/rng",
-      "missing": 1,
-      "total": 4
-    },
-    {
       "importPath": "@pierre/ecs/modules/tick",
       "missing": 1,
       "total": 4
@@ -15248,15 +15874,15 @@
   ],
   "headline": {
     "coreEntries": 16,
-    "entries": 60,
-    "entriesWithExample": 43,
+    "entries": 62,
+    "entriesWithExample": 45,
     "entriesWithoutExample": 17,
-    "modules": 44,
-    "noExternalConsumer": 163,
-    "symbols": 581,
-    "typeSymbols": 244,
-    "valueSymbols": 337,
+    "modules": 46,
+    "noExternalConsumer": 169,
+    "symbols": 606,
+    "typeSymbols": 251,
+    "valueSymbols": 355,
     "valueWithNoConsumer": 6,
-    "valueWithoutExample": 196
+    "valueWithoutExample": 202
   }
 }

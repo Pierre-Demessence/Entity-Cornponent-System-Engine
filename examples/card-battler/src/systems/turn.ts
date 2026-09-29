@@ -2,11 +2,12 @@ import type { SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState } from '../game';
 
+import { pileSize } from '@pierre/ecs/modules/pile';
+
 import {
   BlockDef,
   EnemyIntentDef,
   HealthDef,
-  InHandTag,
 } from '../components';
 import {
   discardHand,
@@ -52,7 +53,7 @@ export const turnSystem: SchedulableSystem<GameState> = {
       return;
     if (ctx.phase !== 'player')
       return; // ignore end-turn during enemy resolution
-    if (ctx.drag !== null)
+    if (ctx.drag.session !== null)
       return; // don't end turn mid-drag (see plan §edge cases)
 
     ctx.endTurnPending = false;
@@ -113,5 +114,5 @@ function startPlayerTurn(ctx: GameState): void {
   if (playerBlock)
     playerBlock.amount = 0;
   ctx.energy = ENERGY_PER_TURN;
-  drawCards(ctx, HAND_SIZE - ctx.world.getTag(InHandTag).size);
+  drawCards(ctx, HAND_SIZE - pileSize(ctx.world, ctx.piles.hand));
 }

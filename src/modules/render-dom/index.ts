@@ -7,3 +7,4 @@ export {
   DomRenderer,
   type DomRendererOptions,
 } from './dom-renderer';
+export { entityAtPoint } from './entity-at-point';

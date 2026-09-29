@@ -2,6 +2,7 @@ import type { EcsWorld, EntityId, Renderer } from '@pierre/ecs';
 
 import type { GameState, Phase } from './game';
 
+import { pileItems, pileOf, pileSize } from '@pierre/ecs/modules/pile';
 import { DomRenderableDef, DomRenderer as EcsDomRenderer } from '@pierre/ecs/modules/render-dom';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
@@ -11,9 +12,6 @@ import {
   EnemyIntentDef,
   EnemyTag,
   HealthDef,
-  InDeckTag,
-  InDiscardTag,
-  InHandTag,
   PlayerTag,
 } from './components';
 
@@ -141,7 +139,7 @@ export class DomRenderer implements Renderer<DomRenderContext> {
     if (!this.mounted)
       this.mount(ctx);
 
-    this.dragCardId = ctx.state.drag?.cardId ?? null;
+    this.dragCardId = ctx.state.drag.session?.payload ?? null;
     this.syncRenderableState(ctx);
     this.entityRenderer.render({ root: ctx.root, world: ctx.world });
 
@@ -201,10 +199,12 @@ export class DomRenderer implements Renderer<DomRenderContext> {
     }
 
     // Resolve target zone.
-    const inHand = ctx.world.getTag(InHandTag).has(id);
-    const inDeck = ctx.world.getTag(InDeckTag).has(id);
-    const inDiscard = ctx.world.getTag(InDiscardTag).has(id);
-    const isDragging = ctx.state.drag?.cardId === id;
+    const { deck, discard, hand } = ctx.state.piles;
+    const pile = pileOf(ctx.world, id);
+    const inHand = pile === hand;
+    const inDeck = pile === deck;
+    const inDiscard = pile === discard;
+    const isDragging = this.dragCardId === id;
 
     const desiredParent = isDragging
       ? this.zones.dragLayer
@@ -233,17 +233,8 @@ export class DomRenderer implements Renderer<DomRenderContext> {
 
   private renderCards(ctx: DomRenderContext): void {
     const cardStore = ctx.world.getStore(CardDefComp);
-    const zoneTags = [
-      ctx.world.getTag(InHandTag),
-      ctx.world.getTag(InDeckTag),
-      ctx.world.getTag(InDiscardTag),
-    ];
-
-    for (const zoneTag of zoneTags) {
-      for (const id of zoneTag) {
-        this.renderCard(ctx, id, cardStore.get(id)?.def.name ?? '?');
-      }
-    }
+    for (const id of cardIds(ctx))
+      this.renderCard(ctx, id, cardStore.get(id)?.def.name ?? '?');
   }
 
   private renderHud(ctx: DomRenderContext): void {
@@ -255,8 +246,8 @@ export class DomRenderer implements Renderer<DomRenderContext> {
       : '';
     this.zones.endTurnButton.disabled = ctx.state.phase !== 'player';
     this.zones.resetButton.disabled = false;
-    this.zones.deckZone.textContent = `Deck (${ctx.world.getTag(InDeckTag).size})`;
-    this.zones.discardZone.textContent = `Discard (${ctx.world.getTag(InDiscardTag).size})`;
+    this.zones.deckZone.textContent = `Deck (${pileSize(ctx.world, ctx.state.piles.deck)})`;
+    this.zones.discardZone.textContent = `Discard (${pileSize(ctx.world, ctx.state.piles.discard)})`;
   }
 
   // --- HUD + overlay ----------------------------------------------------
@@ -292,21 +283,16 @@ export class DomRenderer implements Renderer<DomRenderContext> {
       posStore.set(enemyId, { x: 0, y: 0 });
     }
 
-    const zoneTags = [
-      ctx.world.getTag(InHandTag),
-      ctx.world.getTag(InDeckTag),
-      ctx.world.getTag(InDiscardTag),
-    ];
-    for (const zoneTag of zoneTags) {
-      for (const id of zoneTag) {
-        present.add(id);
-        const isDragging = ctx.state.drag?.cardId === id;
-        domStore.set(id, { className: 'cb-card' });
-        posStore.set(id, {
-          x: isDragging ? ctx.state.pointer.x : 0,
-          y: isDragging ? ctx.state.pointer.y : 0,
-        });
-      }
+    // The drag runs in client pixels; the drag layer is positioned against
+    // the root, so shift the dragged card into root-local space.
+    const session = ctx.state.drag.session;
+    const rootRect = session ? ctx.root.getBoundingClientRect() : null;
+    for (const id of cardIds(ctx)) {
+      present.add(id);
+      domStore.set(id, { className: 'cb-card' });
+      posStore.set(id, session?.payload === id && rootRect
+        ? { x: session.position.x - rootRect.left, y: session.position.y - rootRect.top }
+        : { x: 0, y: 0 });
     }
 
     for (const [id] of domStore) {
@@ -316,6 +302,12 @@ export class DomRenderer implements Renderer<DomRenderContext> {
       posStore.delete(id);
     }
   }
+}
+
+/** Every card, hand first, then deck, then discard — each pile bottom to top. */
+function cardIds(ctx: DomRenderContext): EntityId[] {
+  const { deck, discard, hand } = ctx.state.piles;
+  return [hand, deck, discard].flatMap(pile => [...pileItems(ctx.world, pile)]);
 }
 
 function ensureActorStructure(node: HTMLElement, which: 'player' | 'enemy'): void {
