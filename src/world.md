@@ -49,7 +49,7 @@ not in this package.
 | `spatial` | The structure passed to `enableSpatial`, typed as the `SpatialStructure` contract (`queryAt`, `queryNear`, `queryRect`, …). A subclass may narrow the getter to its concrete backend. |
 | `move(id, x, y)` | Atomically update the spatial component and the index. Throws unless `enableSpatial` has been called. |
 | `getColumnStore(def)` | Fast-path accessor for an all-numeric component's columnar store, exposing `column()` / `slotOf()` for zero-allocation hot loops. Throws if the component uses object storage. |
-| `query(...defs)` | Build a typed `QueryBuilder` over the given component defs. |
+| `query(...defs)` | Build a typed `Query` over the given component defs. |
 | `spawn(template, overrides?)` | Create an entity from a template, shallow-merging per-component overrides. |
 | `spawnBatch(entries)` | Spawn many entities at once. Validates all at the end instead of per call. |
 | `use(...plugins)` | Install one or more `Plugin`s, calling each one's `build(world)` exactly once. Plugin names must be unique per world. Returns `this`. |

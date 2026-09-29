@@ -1,7 +1,7 @@
 import type { EntityId } from '#entity-id';
 
 /**
- * Incremental archetype index behind {@link query!QueryBuilder}. Groups
+ * Incremental archetype index behind {@link query!Query}. Groups
  * entities by their exact component/tag set (an **archetype**) so a query
  * selects whole buckets by signature instead of probing every store per
  * entity.
@@ -133,7 +133,12 @@ export class ArchetypeIndex {
     }
   }
 
-  private selectBuckets(required: bigint, excluded: bigint, anyOf: readonly bigint[]): Set<EntityId>[] {
+  /**
+   * The buckets {@link matching} walks, as a reusable list. The list stays valid
+   * until {@link version} changes; a caller holding it may keep iterating it
+   * across passes without re-selecting.
+   */
+  selectBuckets(required: bigint, excluded: bigint, anyOf: readonly bigint[] = []): readonly Set<EntityId>[] {
     const key = `${required}:${excluded}:${anyOf.join(',')}`;
     const cached = this.matchCache.get(key);
     if (cached && cached.version === this.structuralVersion)
@@ -154,5 +159,10 @@ export class ArchetypeIndex {
     }
     this.matchCache.set(key, { buckets: result, version: this.structuralVersion });
     return result;
+  }
+
+  /** Structural version: bumps whenever a bucket is created or emptied, or the index is cleared. */
+  get version(): number {
+    return this.structuralVersion;
   }
 }

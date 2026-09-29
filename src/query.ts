@@ -1,4 +1,5 @@
 import type { ArchetypeIndex } from '#archetype-index';
+import type { ChangeClock } from '#change-clock';
 import type { ComponentStoreLike, TagStore } from '#component-store';
 import type { EntityId } from '#entity-id';
 
@@ -12,11 +13,30 @@ type ComponentFilter = Pick<ComponentStoreLike<unknown>, 'has' | 'keys' | 'size'
 /** A member of an any-of group or a mandatory scan source: a component or tag store. */
 type FilterStore = ComponentFilter | TagStore;
 
-/** A store an {@link QueryBuilder.added} filter reads: a component or tag store. */
+/** A store an {@link Query.added} filter reads: a component or tag store. */
 type AddedSource = Pick<ComponentStoreLike<unknown>, 'addedTick' | 'clock' | 'has' | 'keys' | 'size'> | TagStore;
 
-/** A store a {@link QueryBuilder.changed} filter reads. */
+/** A store a {@link Query.changed} filter reads. */
 type ChangedSource = Pick<ComponentStoreLike<unknown>, 'changedTick' | 'clock' | 'has' | 'keys' | 'size'>;
+
+interface Masks {
+  anyOf: bigint[];
+  excluded: bigint;
+  required: bigint;
+}
+
+/**
+ * What a query derives from its filters on the first pass and reuses after:
+ * the change clock, the archetype masks (`undefined` when a filter store has
+ * no index bit, so passes fall back to scanning), and the matched bucket list
+ * together with the index version it was selected at.
+ */
+interface Resolved {
+  buckets: readonly Set<EntityId>[];
+  bucketsVersion: number;
+  clock: ChangeClock | undefined;
+  masks: Masks | undefined;
+}
 
 /** Resolve an entity-id iterable from a mandatory source (component or tag store). */
 function idsOf(member: FilterStore): Iterable<EntityId> {
@@ -38,12 +58,15 @@ function idsOf(member: FilterStore): Iterable<EntityId> {
  * {@link without}, {@link anyOf}) or an extra yielded column that may be absent
  * ({@link optional}).
  *
- * A query with an {@link added} or {@link changed} filter is stateful: each
- * pass reports what happened since this instance's previous pass. Build it
- * once and iterate it every tick; a query rebuilt per tick sees every entity
- * as new on each pass.
+ * A query is a reusable handle: build it once and iterate it every tick. The
+ * first pass resolves its filters against the archetype index and later passes
+ * reuse that resolution, re-resolving only when a filter is added or the set
+ * of archetypes changes. A query with an {@link added} or {@link changed}
+ * filter is also stateful: each pass reports what happened since this
+ * instance's previous pass, so a query rebuilt per tick sees every entity as
+ * new on each pass.
  */
-export class QueryBuilder<T extends unknown[]> {
+export class Query<T extends unknown[]> {
   private addedFilters: AddedSource[] = [];
   private anyOfGroups: FilterStore[][] = [];
   private changedFilters: ChangedSource[] = [];
@@ -54,6 +77,7 @@ export class QueryBuilder<T extends unknown[]> {
   private optionalStores: ComponentStoreLike<unknown>[] = [];
   private requiredComponents: ComponentFilter[] = [];
   private requiredTags: TagStore[] = [];
+  private resolved: Resolved | undefined;
   private stores: ComponentStoreLike<unknown>[];
 
   constructor(stores: ComponentStoreLike<unknown>[], index?: ArchetypeIndex) {
@@ -67,6 +91,7 @@ export class QueryBuilder<T extends unknown[]> {
    * value replace is not an addition; removing and re-adding is.
    */
   added(store: AddedSource): this {
+    this.resolved = undefined;
     this.addedFilters.push(store);
     if ('keys' in store)
       this.requiredComponents.push(store);
@@ -81,8 +106,10 @@ export class QueryBuilder<T extends unknown[]> {
    * be component stores or tag stores.
    */
   anyOf(...members: FilterStore[]): this {
-    if (members.length > 0)
+    if (members.length > 0) {
+      this.resolved = undefined;
       this.anyOfGroups.push(members);
+    }
     return this;
   }
 
@@ -107,6 +134,7 @@ export class QueryBuilder<T extends unknown[]> {
    * Removal is not a change — observe it through lifecycle events.
    */
   changed(store: ChangedSource): this {
+    this.resolved = undefined;
     this.changedFilters.push(store);
     this.requiredComponents.push(store);
     return this;
@@ -133,7 +161,7 @@ export class QueryBuilder<T extends unknown[]> {
    * lacks a bit (not index-registered), so the caller falls back to the scan
    * path. Optional stores are read-only and need no bit.
    */
-  private computeMasks(index: ArchetypeIndex): { anyOf: bigint[]; excluded: bigint; required: bigint } | undefined {
+  private computeMasks(index: ArchetypeIndex): Masks | undefined {
     let required = 0n;
     for (const store of this.stores) {
       const bit = index.bitOf(store);
@@ -199,15 +227,9 @@ export class QueryBuilder<T extends unknown[]> {
    * the shared clock, so writes from here on stamp strictly later and are seen
    * next pass. Returns `undefined` when the query has no change filter.
    */
-  private openChangeWindow(): number | undefined {
-    const sources = [...this.addedFilters, ...this.changedFilters];
-    if (sources.length === 0)
+  private openChangeWindow(clock: ChangeClock | undefined): number | undefined {
+    if (!clock)
       return undefined;
-    const clock = sources[0].clock;
-    for (const store of sources) {
-      if (store.clock !== clock)
-        throw new Error('QueryBuilder: added/changed filters span stores with different change clocks (stores from different worlds).');
-    }
     const since = this.lastRun;
     this.lastRun = clock.tick;
     clock.tick++;
@@ -219,9 +241,9 @@ export class QueryBuilder<T extends unknown[]> {
    * to every result tuple, and is `undefined` for entities that lack it. Does
    * not affect which entities match.
    */
-  optional<O>(store: ComponentStoreLike<O>): QueryBuilder<[...T, O | undefined]> {
+  optional<O>(store: ComponentStoreLike<O>): Query<[...T, O | undefined]> {
     this.optionalStores.push(store as ComponentStoreLike<unknown>);
-    return this as unknown as QueryBuilder<[...T, O | undefined]>;
+    return this as unknown as Query<[...T, O | undefined]>;
   }
 
   /** Test every non-data filter against an entity (used by the scan path). */
@@ -258,6 +280,37 @@ export class QueryBuilder<T extends unknown[]> {
         return false;
     }
     return true;
+  }
+
+  /**
+   * Return the pass's resolution, deriving it on the first pass (or after a
+   * filter change) and re-selecting buckets only when the index version moved.
+   */
+  private resolve(): Resolved {
+    let resolved = this.resolved;
+    if (!resolved) {
+      const masks = this.index ? this.computeMasks(this.index) : undefined;
+      resolved = { buckets: [], bucketsVersion: -1, clock: this.resolveClock(), masks };
+      this.resolved = resolved;
+    }
+    const { index } = this;
+    const { masks } = resolved;
+    if (index && masks && resolved.bucketsVersion !== index.version) {
+      resolved.buckets = index.selectBuckets(masks.required, masks.excluded, masks.anyOf);
+      resolved.bucketsVersion = index.version;
+    }
+    return resolved;
+  }
+
+  /** The one change clock every added/changed filter shares, or `undefined` without change filters. */
+  private resolveClock(): ChangeClock | undefined {
+    let clock: ChangeClock | undefined;
+    for (const store of [...this.addedFilters, ...this.changedFilters]) {
+      clock ??= store.clock;
+      if (store.clock !== clock)
+        throw new Error('Query: added/changed filters span stores with different change clocks (stores from different worlds).');
+    }
+    return clock;
   }
 
   /** Collect all matching results into an array. */
@@ -309,8 +362,8 @@ export class QueryBuilder<T extends unknown[]> {
   }
 
   * [Symbol.iterator](): Generator<[EntityId, ...T]> {
-    const since = this.openChangeWindow();
-    const masks = this.index ? this.computeMasks(this.index) : undefined;
+    const { buckets, clock, masks } = this.resolve();
+    const since = this.openChangeWindow(clock);
     if (this.index && masks) {
       // A query with no positive term (no data/with/tag store and no any-of
       // group) selects nothing — the index tracks only entities holding ≥ 1 bit.
@@ -320,9 +373,11 @@ export class QueryBuilder<T extends unknown[]> {
       // throws in DEV instead of silently skipping a swap-removed entity.
       this.index.beginIteration();
       try {
-        for (const id of this.index.matching(masks.required, masks.excluded, masks.anyOf)) {
-          if (this.changedSince(id, since))
-            yield this.buildResult(id);
+        for (const bucket of buckets) {
+          for (const id of bucket) {
+            if (this.changedSince(id, since))
+              yield this.buildResult(id);
+          }
         }
       }
       finally {
@@ -336,24 +391,28 @@ export class QueryBuilder<T extends unknown[]> {
 
   /** Require the given components without yielding them (Bevy `With<T>`). */
   withComponent(...stores: ComponentFilter[]): this {
+    this.resolved = undefined;
     this.requiredComponents.push(...stores);
     return this;
   }
 
   /** Exclude entities that have any of the given tags. */
   without(...tags: TagStore[]): this {
+    this.resolved = undefined;
     this.excludedTags.push(...tags);
     return this;
   }
 
   /** Exclude entities that have any of the given components (Bevy `Without<T>`). */
   withoutComponent(...stores: ComponentFilter[]): this {
+    this.resolved = undefined;
     this.excludedComponents.push(...stores);
     return this;
   }
 
   /** Require entities to have all given tags. */
   withTag(...tags: TagStore[]): this {
+    this.resolved = undefined;
     this.requiredTags.push(...tags);
     return this;
   }

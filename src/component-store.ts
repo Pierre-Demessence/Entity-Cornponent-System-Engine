@@ -46,6 +46,19 @@ export interface ComponentDef<T> {
   serialize: (value: T) => unknown;
 }
 
+/**
+ * Any component def, whatever its value type. `ComponentDef<T>` is invariant in
+ * `T` (`serialize` takes it, `deserialize` returns it), so only `any` admits
+ * every def.
+ */
+
+export type AnyComponentDef = ComponentDef<any>;
+
+/** Maps a tuple of component defs to the tuple of their value types: `[ComponentDef<A>, ComponentDef<B>]` → `[A, B]`. */
+export type ComponentValues<D extends readonly AnyComponentDef[]> = {
+  -readonly [K in keyof D]: D[K] extends ComponentDef<infer V> ? V : never;
+};
+
 /** Schema definition for a boolean tag (presence/absence, no associated data). */
 export interface TagDef {
   readonly name: string;
@@ -61,7 +74,7 @@ export type StoreValidateHandler = (id: EntityId) => void;
 /**
  * The storage-agnostic access surface shared by the object-backed
  * {@link ComponentStore} and the columnar `ColumnStore`. `world`,
- * `QueryBuilder`, the spatial index, and save all consume this interface, so
+ * `Query`, the spatial index, and save all consume this interface, so
  * a component's storage layout (object vs Structure-of-Arrays) is invisible
  * to them. Static `ComponentStore.fromSerialized` and the columnar-only fast
  * path (`column` / `slotOf`) are deliberately excluded — callers that need

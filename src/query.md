@@ -1,6 +1,6 @@
-# Query Builder
+# Query
 
-A fluent query builder for typed component iteration with tag and component
+A reusable, fluent query for typed component iteration with tag and component
 filters.
 
 ## How It Works
@@ -8,8 +8,7 @@ filters.
 - Constructed with an array of `ComponentStore` instances — the **data** columns.
   They are required, and their values are yielded in order.
 - Built by `world.query(...)`, it selects whole archetype buckets by
-  component/tag signature, so a match costs no per-entity store probing and the
-  bucket list is cached until the world's archetype set changes.
+  component/tag signature, so a match costs no per-entity store probing.
 - Constructed directly, with no world, it iterates the **smallest** mandatory
   store and checks every other filter for the entity. Both paths yield identical
   results.
@@ -30,6 +29,51 @@ filters.
     [Change filters](#change-filters).
 - Every result is an `[EntityId, ...data, ...optional]` tuple.
 
+## Build once, iterate every tick
+
+A query is a handle. Its first pass resolves the filters against the world's
+archetype index — the masks and the list of matching buckets — and every later
+pass reuses that resolution. It re-resolves only when:
+
+- a fluent filter method is called on it after a pass, or
+- the world's set of archetypes changed (an entity moved into a component/tag
+  combination no entity held before, or the last entity left one, or the world
+  was cleared).
+
+Entities joining or leaving an archetype that already exists cost nothing to
+pick up: the query iterates the live buckets. Build queries outside the
+per-tick body — in a system's `init`, or once at setup — and iterate them in
+`run`:
+
+```typescript
+import type { EcsWorld, Query, SchedulableSystem } from '@pierre/ecs';
+
+import { simpleComponent } from '@pierre/ecs';
+
+interface Vec { x: number; y: number }
+const PositionDef = simpleComponent<Vec>('position', { x: 'number', y: 'number' });
+const VelocityDef = simpleComponent<Vec>('velocity', { x: 'number', y: 'number' });
+
+interface Ctx { dt: number; world: EcsWorld }
+
+let moving: Query<[Vec, Vec]>;
+
+export const motion: SchedulableSystem<Ctx> = {
+  name: 'motion',
+  init: ({ world }) => {
+    moving = world.query(PositionDef, VelocityDef);
+  },
+  run: ({ dt }) => {
+    for (const [, pos, vel] of moving) {
+      pos.x += vel.x * dt;
+      pos.y += vel.y * dt;
+    }
+  },
+};
+```
+
+A query built inside `run` still works; it pays the resolution on every pass.
+
 ## Mutating during iteration
 
 Iterating a `world.query(...)` (the indexed path) is guarded: in DEV, a
@@ -39,7 +83,7 @@ swap-removed entity. Record the change with `world.queueAdd` / `queueRemove` /
 `queueAddTag` / `queueRemoveTag` / `queueDestroy` / `queueSpawn` inside the loop
 and `world.flushCommands()` after it. Mutating a component's *values* (not its
 presence) is safe. The guard covers the indexed `world.query` path; a standalone
-`new QueryBuilder(stores)` with no index is unguarded.
+`new Query(stores)` with no index is unguarded.
 
 ## Change filters
 
@@ -85,7 +129,7 @@ scheduler.add({
 | `.without(...TagStore[])` | `this` | Exclude entities with any tag |
 | `.withComponent(...store[])` | `this` | Require component(s), not yielded |
 | `.withoutComponent(...store[])` | `this` | Exclude entities holding component(s) |
-| `.optional(store)` | `QueryBuilder<[...T, O \| undefined]>` | Append optional yielded column |
+| `.optional(store)` | `Query<[...T, O \| undefined]>` | Append optional yielded column |
 | `.anyOf(...members[])` | `this` | Require one member per group (groups AND) |
 | `.added(store)` | `this` | Keep entities that gained a component or tag since the previous pass |
 | `.changed(store)` | `this` | Keep entities whose component changed since the previous pass |
@@ -96,9 +140,10 @@ scheduler.add({
 
 ## Integration with World
 
-`World.query()` provides typed overloads (0–4 component defs) that resolve
-`ComponentDef<T>` → `ComponentStore<T>` via an internal `storeByName` map,
-then construct a `QueryBuilder`. The zero-arg `world.query()` is the entry point
+`world.query(...defs)` takes any number of component defs and resolves each
+`ComponentDef<T>` to its registered store, yielding a `Query` typed as
+`[EntityId, ...values]` — `ComponentValues<D>` maps the def tuple to the value
+tuple. The zero-arg `world.query()` is the entry point
 for tag-only and filter-only queries (yielding `[EntityId]`). Component and tag
 stores for the filter methods come from `world.getStore(def)` / `world.getTag(def)`.
 

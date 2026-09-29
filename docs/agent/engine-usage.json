@@ -145,6 +145,27 @@
       ],
       "symbols": [
         {
+          "name": "AnyComponentDef",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "type",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "world.ts"
+            ],
+            "typeOnly": true
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "ColumnField",
           "coveredByExample": false,
           "example": {
@@ -303,6 +324,27 @@
               "src/query.test.ts"
             ],
             "typeOnly": true
+          }
+        },
+        {
+          "name": "ComponentValues",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "type",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "world.ts"
+            ],
+            "typeOnly": true
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
           }
         },
         {
@@ -698,7 +740,7 @@
         "src/test-utils.test.ts",
         "src/world.test.ts"
       ],
-      "typeTotal": 15,
+      "typeTotal": 17,
       "typeUsedByExample": 2,
       "valueTotal": 4,
       "valueUsedByExample": 2
@@ -7495,14 +7537,16 @@
       "symbols": [
         {
           "name": "Lifetime",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
-            "typeOnly": false
+            "consumers": [
+              "game-of-life"
+            ],
+            "typeOnly": true
           },
           "isValue": false,
           "kind": "type",
-          "noExternalConsumer": true,
+          "noExternalConsumer": false,
           "other": {
             "consumers": [],
             "typeOnly": false
@@ -7656,7 +7700,7 @@
         "src/modules/particles/particles.test.ts"
       ],
       "typeTotal": 3,
-      "typeUsedByExample": 0,
+      "typeUsedByExample": 1,
       "valueTotal": 3,
       "valueUsedByExample": 3
     },
@@ -14089,10 +14133,12 @@
       "symbols": [
         {
           "name": "Position",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
-            "typeOnly": false
+            "consumers": [
+              "game-of-life"
+            ],
+            "typeOnly": true
           },
           "isValue": false,
           "kind": "interface",
@@ -14360,7 +14406,7 @@
         "src/modules/transform/transform.test.ts"
       ],
       "typeTotal": 4,
-      "typeUsedByExample": 0,
+      "typeUsedByExample": 1,
       "valueTotal": 4,
       "valueUsedByExample": 4
     },
@@ -14903,6 +14949,7 @@
     {
       "coveredByExample": false,
       "examples": [
+        "game-of-life",
         "portal"
       ],
       "importPath": "@pierre/ecs/query",
@@ -14912,10 +14959,11 @@
       ],
       "symbols": [
         {
-          "name": "QueryBuilder",
+          "name": "Query",
           "coveredByExample": false,
           "example": {
             "consumers": [
+              "game-of-life",
               "portal"
             ],
             "typeOnly": true
@@ -16006,6 +16054,12 @@
       "value": 54
     },
     {
+      "name": "game-of-life",
+      "entries": 21,
+      "type": 9,
+      "value": 44
+    },
+    {
       "name": "doom",
       "entries": 18,
       "type": 9,
@@ -16016,12 +16070,6 @@
       "entries": 20,
       "type": 7,
       "value": 45
-    },
-    {
-      "name": "game-of-life",
-      "entries": 20,
-      "type": 6,
-      "value": 44
     },
     {
       "name": "spacewar",
@@ -16292,9 +16340,9 @@
     "entriesWithExample": 55,
     "entriesWithoutExample": 7,
     "modules": 46,
-    "noExternalConsumer": 166,
-    "symbols": 606,
-    "typeSymbols": 251,
+    "noExternalConsumer": 165,
+    "symbols": 608,
+    "typeSymbols": 253,
     "valueSymbols": 355,
     "valueWithNoConsumer": 5,
     "valueWithoutExample": 156

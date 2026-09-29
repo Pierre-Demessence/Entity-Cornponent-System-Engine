@@ -1,6 +1,8 @@
-import type { EntityId, EventBus, SchedulableSystem } from '@pierre/ecs';
+import type { EntityId, EventBus, Query, SchedulableSystem } from '@pierre/ecs';
+import type { Lifetime } from '@pierre/ecs/modules/lifetime';
+import type { Position } from '@pierre/ecs/modules/transform';
 
-import type { LifeWorld } from './defs';
+import type { Age, LifeWorld } from './defs';
 import type { Rule } from './rules';
 
 import { Scheduler } from '@pierre/ecs';
@@ -80,99 +82,117 @@ function becomeGhost(world: LifeWorld, id: EntityId): void {
  * `TickRunner` flushes after the tick: the command buffer is the double buffer
  * synchronous update needs.
  */
-export const rulesSystem: SchedulableSystem<SimCtx> = {
-  name: 'rules',
-  phase: 'simulate',
-  reads: [PositionDef],
-  run({ events, sim, world }) {
-    stamp++;
-    const cells = world.getTag(CellTag);
-    const births: number[] = [];
-    let deaths = 0;
-    let hash = 0;
+export function makeRulesSystem(): SchedulableSystem<SimCtx> {
+  let liveCells: Query<[Position]>;
+  return {
+    name: 'rules',
+    phase: 'simulate',
+    reads: [PositionDef],
+    init({ world }) {
+      liveCells = world.query(PositionDef).withTag(world.getTag(CellTag));
+    },
+    run({ events, sim, world }) {
+      stamp++;
+      const cells = world.getTag(CellTag);
+      const births: number[] = [];
+      let deaths = 0;
+      let hash = 0;
 
-    for (const [id, pos] of world.query(PositionDef).withTag(cells)) {
-      hash = (hash + mix(pos.x, pos.y)) | 0;
-      let n = 0;
-      for (const [dx, dy] of NEIGHBOURS) {
-        const nx = wrap(pos.x + dx, 0, BOARD_W);
-        const ny = wrap(pos.y + dy, 0, BOARD_H);
-        if (world.hasCellAt(nx, ny)) {
-          n++;
-          continue;
+      for (const [id, pos] of liveCells) {
+        hash = (hash + mix(pos.x, pos.y)) | 0;
+        let n = 0;
+        for (const [dx, dy] of NEIGHBOURS) {
+          const nx = wrap(pos.x + dx, 0, BOARD_W);
+          const ny = wrap(pos.y + dy, 0, BOARD_H);
+          if (world.hasCellAt(nx, ny)) {
+            n++;
+            continue;
+          }
+          const key = ny * BOARD_W + nx;
+          if (seen[key] === stamp)
+            continue;
+          seen[key] = stamp;
+          if (sim.rule.birth.has(liveNeighbours(world, nx, ny)))
+            births.push(nx, ny);
         }
-        const key = ny * BOARD_W + nx;
-        if (seen[key] === stamp)
-          continue;
-        seen[key] = stamp;
-        if (sim.rule.birth.has(liveNeighbours(world, nx, ny)))
-          births.push(nx, ny);
+        if (!sim.rule.survive.has(n)) {
+          deaths++;
+          if (sim.trails)
+            becomeGhost(world, id);
+          else
+            world.queueDestroy(id);
+        }
       }
-      if (!sim.rule.survive.has(n)) {
-        deaths++;
-        if (sim.trails)
-          becomeGhost(world, id);
-        else
-          world.queueDestroy(id);
+      for (let i = 0; i < births.length; i += 2)
+        world.queueSpawn(CELL, { position: { x: births[i], y: births[i + 1] } });
+
+      sim.generation++;
+      const population = cells.size - deaths + births.length / 2;
+      if (population === 0 && cells.size > 0)
+        events.emit({ generation: sim.generation, type: 'Extinct' });
+
+      // Still lifes repeat after one generation, blinkers and friends after two.
+      const seenAt = sim.history.lastIndexOf(hash);
+      const period = seenAt === -1 ? Infinity : sim.history.length - seenAt;
+      sim.history.push(hash);
+      if (sim.history.length > 2)
+        sim.history.shift();
+      if (period <= 2 && cells.size > 0) {
+        if (!sim.settled)
+          events.emit({ generation: sim.generation, period, type: 'Settled' });
+        sim.settled = true;
       }
-    }
-    for (let i = 0; i < births.length; i += 2)
-      world.queueSpawn(CELL, { position: { x: births[i], y: births[i + 1] } });
-
-    sim.generation++;
-    const population = cells.size - deaths + births.length / 2;
-    if (population === 0 && cells.size > 0)
-      events.emit({ generation: sim.generation, type: 'Extinct' });
-
-    // Still lifes repeat after one generation, blinkers and friends after two.
-    const seenAt = sim.history.lastIndexOf(hash);
-    const period = seenAt === -1 ? Infinity : sim.history.length - seenAt;
-    sim.history.push(hash);
-    if (sim.history.length > 2)
-      sim.history.shift();
-    if (period <= 2 && cells.size > 0) {
-      if (!sim.settled)
-        events.emit({ generation: sim.generation, period, type: 'Settled' });
-      sim.settled = true;
-    }
-    else {
-      sim.settled = false;
-    }
-  },
-};
+      else {
+        sim.settled = false;
+      }
+    },
+  };
+}
 
 /** Survivors grow older until `AGE_CAP`; a capped cell stops changing, so the recolour query skips it. */
-export const agingSystem: SchedulableSystem<SimCtx> = {
-  name: 'aging',
-  phase: 'simulate',
-  runAfter: ['rules'],
-  writes: [AgeDef],
-  run({ world }) {
-    const ages = world.getStore(AgeDef);
-    for (const [id, age] of world.query(AgeDef)) {
-      if (age.gens < AGE_CAP)
-        ages.set(id, { gens: age.gens + 1 });
-    }
-  },
-};
+export function makeAgingSystem(): SchedulableSystem<SimCtx> {
+  let aged: Query<[Age]>;
+  return {
+    name: 'aging',
+    phase: 'simulate',
+    runAfter: ['rules'],
+    writes: [AgeDef],
+    init({ world }) {
+      aged = world.query(AgeDef);
+    },
+    run({ world }) {
+      const ages = world.getStore(AgeDef);
+      for (const [id, age] of aged) {
+        if (age.gens < AGE_CAP)
+          ages.set(id, { gens: age.gens + 1 });
+      }
+    },
+  };
+}
 
 /** Ghosts fade out over their lifetime. */
-export const ghostFadeSystem: SchedulableSystem<SimCtx> = {
-  name: 'ghost-fade',
-  phase: 'fade',
-  runAfter: ['lifetime'],
-  run({ world }) {
-    const opacity = world.getStore(OpacityDef);
-    for (const [id, life] of world.query(LifetimeDef).withTag(world.getTag(GhostTag)))
-      opacity.set(id, { value: GHOST_OPACITY * (1 - easeInQuad(fraction(life))) });
-  },
-};
+export function makeGhostFadeSystem(): SchedulableSystem<SimCtx> {
+  let ghosts: Query<[Lifetime]>;
+  return {
+    name: 'ghost-fade',
+    phase: 'fade',
+    runAfter: ['lifetime'],
+    init({ world }) {
+      ghosts = world.query(LifetimeDef).withTag(world.getTag(GhostTag));
+    },
+    run({ world }) {
+      const opacity = world.getStore(OpacityDef);
+      for (const [id, life] of ghosts)
+        opacity.set(id, { value: GHOST_OPACITY * (1 - easeInQuad(fraction(life))) });
+    },
+  };
+}
 
 export function makeScheduler(): Scheduler<SimCtx> {
   const lifetime = makeLifetimeSystem<SimCtx>();
   return new Scheduler<SimCtx>({ phases: ['simulate', 'fade'] })
-    .add(rulesSystem)
-    .add(agingSystem)
+    .add(makeRulesSystem())
+    .add(makeAgingSystem())
     .add({ ...lifetime, phase: 'fade' })
-    .add(ghostFadeSystem);
+    .add(makeGhostFadeSystem());
 }

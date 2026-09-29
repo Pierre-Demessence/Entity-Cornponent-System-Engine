@@ -228,4 +228,27 @@ describe('@pierre/ecs/modules/render-scene3d', () => {
 
     expect([...graph.children].map(o => [o.id, o.scale])).toEqual([[10, 1], [11, 2]]);
   });
+
+  it('calls select once per world and re-iterates its result every frame', () => {
+    const world = makeWorld();
+    const graph = new FakeGraph();
+    const select = vi.fn((w: EcsWorld) => w.query(PosDef));
+    const renderer = new Scene3DRenderer<FakeObject, [Pos]>({
+      select,
+      create: ([id, position]) => ({ id, position, scale: 1 }),
+    });
+
+    spawnBody(world, { x: 0, y: 0, z: 0 });
+    renderer.render({ graph, world });
+    spawnBody(world, { x: 1, y: 0, z: 0 });
+    renderer.render({ graph, world });
+    expect(select).toHaveBeenCalledOnce();
+    expect(graph.children.size).toBe(2);
+
+    const other = makeWorld();
+    renderer.render({ graph, world: other });
+    expect(select).toHaveBeenCalledTimes(2);
+    expect(select).toHaveBeenLastCalledWith(other);
+    expect(graph.children.size).toBe(0);
+  });
 });

@@ -41,10 +41,10 @@ references it.
 
 ## Headline
 
-- 62 public entries (16 core, 46 modules) · 606 symbols (355 value, 251 type)
+- 62 public entries (16 core, 46 modules) · 608 symbols (355 value, 253 type)
 - 55 entries referenced by at least one example · 7 with none
 - 156 value symbols referenced by no example (5 of them with no external consumer at all)
-- 166 symbols with no external consumer
+- 165 symbols with no external consumer
 
 ## Entries with no example reference
 
@@ -100,9 +100,9 @@ symbols.
 | pacman | 28 | 62 | 8 |
 | roguelike | 21 | 50 | 12 |
 | starfighter | 18 | 54 | 8 |
+| game-of-life | 21 | 44 | 9 |
 | doom | 18 | 43 | 9 |
 | top-down-shooter | 20 | 45 | 7 |
-| game-of-life | 20 | 44 | 6 |
 | spacewar | 20 | 41 | 5 |
 | asteroids | 18 | 39 | 6 |
 | space-invaders | 17 | 36 | 9 |
@@ -143,13 +143,15 @@ value 0/0 · type 0/3 · examples: — · tests: 1 · other: audio
 
 ### `@pierre/ecs/component-store`
 
-value 2/4 · type 2/15 · examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, game-of-life +15 more · tests: 18 · other: animation, attach, audio, camera, camera-3d, collision, collision-3d, column-store.ts +17 more
+value 2/4 · type 2/17 · examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, game-of-life +15 more · tests: 18 · other: animation, attach, audio, camera, camera-3d, collision, collision-3d, column-store.ts +17 more
 
+- **`AnyComponentDef`** _(type)_ — examples: — · tests: — · other: world.ts
 - **`ColumnField`** _(interface)_ — examples: — · tests: src/column-store.test.ts · other: column-store.ts
 - **`ComponentDef`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, local-pong +7 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/component-store.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/query.test.ts, src/test-utils.test.ts, src/world.test.ts · other: animation, attach, audio, camera, camera-3d, collision, collision-3d, column-store.ts +12 more
 - **`ComponentMigration`** _(type)_ — no external consumer
 - **`ComponentStore`** _(class)_ — examples: — · tests: src/column-store.test.ts, src/component-store.test.ts, src/query.test.ts · other: particles, render-dom, world.ts
 - **`ComponentStoreLike`** _(interface)_ — examples: — · tests: src/modules/render-dom/dom-renderer.test.ts, src/query.test.ts · other: column-store.ts, pile, query.ts, render-canvas2d, world.ts
+- **`ComponentValues`** _(type)_ — examples: — · tests: — · other: world.ts
 - **`NumericColumnKind`** _(type)_ — examples: — · tests: — · other: column-store.ts
 - **`registryComponent`** _(fn)_ — examples: card-battler · tests: src/registry-component.test.ts · other: —
 - **`RegistryComponentOptions`** _(interface)_ — no external consumer
@@ -193,9 +195,9 @@ value 0/0 · type 0/1 · examples: — · tests: — · other: world.ts
 
 ### `@pierre/ecs/query`
 
-value 0/1 · type 0/0 · examples: portal · tests: 1 · other: world.ts
+value 0/1 · type 0/0 · examples: game-of-life, portal · tests: 1 · other: world.ts
 
-- **`QueryBuilder`** _(class)_ — examples: portal (type only) · tests: src/query.test.ts · other: world.ts
+- **`Query`** _(class)_ — examples: game-of-life, portal (type only) · tests: src/query.test.ts · other: world.ts
 
 ### `@pierre/ecs/renderer`
 
@@ -630,9 +632,9 @@ value 1/2 · type 0/3 · examples: doom, platformer-3d, portal · tests: 1 · ot
 
 ### `@pierre/ecs/modules/lifetime`
 
-value 3/3 · type 0/3 · examples: asteroids, doom, frogger, game-of-life, jetpack, pacman, space-invaders, spacewar +2 more · tests: 2 · other: particles
+value 3/3 · type 1/3 · examples: asteroids, doom, frogger, game-of-life, jetpack, pacman, space-invaders, spacewar +2 more · tests: 2 · other: particles
 
-- **`Lifetime`** _(type)_ — no external consumer
+- **`Lifetime`** _(type)_ — examples: game-of-life · tests: — · other: —
 - **`LifetimeDef`** _(const)_ — examples: asteroids, doom, frogger, game-of-life, jetpack, pacman, space-invaders, spacewar +2 more · tests: src/modules/lifetime/lifetime.test.ts, src/modules/particles/particles.test.ts · other: particles
 - **`LifetimeSystemOptions`** _(interface)_ — no external consumer
 - **`LifetimeTickCtx`** _(interface)_ — no external consumer
@@ -1002,9 +1004,9 @@ value 1/6 · type 1/11 · examples: rpg, tilemap · tests: 5 · other: tilemap
 
 ### `@pierre/ecs/modules/transform`
 
-value 4/4 · type 0/4 · examples: asteroids, boids, breakout, card-battler, critters, flappy, frogger, game-of-life +17 more · tests: 11 · other: attach, kinematics, motion, particles, render-canvas2d, render-dom, tilemap
+value 4/4 · type 1/4 · examples: asteroids, boids, breakout, card-battler, critters, flappy, frogger, game-of-life +17 more · tests: 11 · other: attach, kinematics, motion, particles, render-canvas2d, render-dom, tilemap
 
-- **`Position`** _(interface)_ — examples: — · tests: — · other: motion
+- **`Position`** _(interface)_ — examples: game-of-life · tests: — · other: motion
 - **`PositionDef`** _(const)_ — examples: asteroids, boids, breakout, card-battler, critters, flappy, frogger, game-of-life +17 more · tests: src/modules/attach/attach.test.ts, src/modules/camera/camera.test.ts, src/modules/collision/trigger.test.ts, src/modules/kinematics/kinematics-system.test.ts, src/modules/motion/motion.test.ts, src/modules/particles/particles.test.ts, src/modules/render-canvas2d/render-canvas2d.test.ts, src/modules/render-dom/dom-renderer.test.ts +3 more · other: attach, kinematics, motion, particles, render-canvas2d, render-dom, tilemap
 - **`Rotation`** _(interface)_ — no external consumer
 - **`RotationDef`** _(const)_ — examples: asteroids, pacman, rpg, spacewar, top-down-shooter · tests: src/modules/attach/attach.test.ts, src/modules/particles/particles.test.ts, src/modules/render-canvas2d/render-canvas2d.test.ts, src/modules/tilemap/spawn.test.ts, src/modules/transform/transform.test.ts · other: attach, particles, render-canvas2d

@@ -40,10 +40,12 @@ class Scene3DRenderer<TObject, TRow extends unknown[] = unknown[]>
 }
 ```
 
-- **`select`** runs every frame and returns the entities this pass draws —
-  usually a `world.query(...)` narrowed with `.withTag(...)` and
-  `.without(...)`. Its component columns become the entry `create` and `sync`
-  receive, typed.
+- **`select`** builds the selection this pass draws — usually a
+  `world.query(...)` narrowed with `.withTag(...)` and `.without(...)`. It is
+  called once per world, and the query it returns is iterated every frame, so
+  return something that reflects the world on each iteration (a query does; an
+  array snapshot does not). Its component columns become the entry `create`
+  and `sync` receive, typed.
 - **`create`** builds the object for an entity the first frame it is selected.
 - **`sync`** runs every frame the entity is selected, including the frame it
   was created: copy position, scale, material, visibility.

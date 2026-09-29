@@ -1,5 +1,5 @@
 import type { ColumnStoreOptions } from '#column-store';
-import type { ComponentDef, ComponentStoreLike, TagDef } from '#component-store';
+import type { AnyComponentDef, ComponentDef, ComponentStoreLike, ComponentValues, TagDef } from '#component-store';
 import type { EntityId } from '#entity-id';
 import type { LifecycleEvent } from '#lifecycle';
 import type { Plugin } from '#plugin';
@@ -11,7 +11,7 @@ import { ChangeClock } from '#change-clock';
 import { ColumnStore } from '#column-store';
 import { ComponentStore, TagStore } from '#component-store';
 import { EventBus } from '#event-bus';
-import { QueryBuilder } from '#query';
+import { Query } from '#query';
 import { asNumber, asObject } from '#validation';
 
 interface ComponentEntry { def: ComponentDef<unknown>; store: ComponentStoreLike<unknown> }
@@ -45,7 +45,7 @@ export class EcsWorld {
   /**
    * Change-detection clock shared by every registered store. Stores stamp
    * added / changed ticks from it; queries with `added` / `changed` filters
-   * advance it. See {@link QueryBuilder.changed}.
+   * advance it. See {@link Query.changed}.
    */
   readonly clock = new ChangeClock();
   private commandQueue: StructuralCommand[] = [];
@@ -394,19 +394,20 @@ export class EcsWorld {
     store.markChanged(id);
   }
 
-  query(): QueryBuilder<[]>;
-  query<A>(d1: ComponentDef<A>): QueryBuilder<[A]>;
-  query<A, B>(d1: ComponentDef<A>, d2: ComponentDef<B>): QueryBuilder<[A, B]>;
-  query<A, B, C>(d1: ComponentDef<A>, d2: ComponentDef<B>, d3: ComponentDef<C>): QueryBuilder<[A, B, C]>;
-  query<A, B, C, D>(d1: ComponentDef<A>, d2: ComponentDef<B>, d3: ComponentDef<C>, d4: ComponentDef<D>): QueryBuilder<[A, B, C, D]>;
-  query(...defs: ComponentDef<unknown>[]): QueryBuilder<unknown[]> {
+  /**
+   * Build a {@link Query} yielding `[id, ...values]` for every entity holding all
+   * of `defs`. Build it once and iterate it every tick: the query caches its
+   * archetype resolution across passes. `world.query()` with no defs is the
+   * entry point for tag-only or filter-only queries.
+   */
+  query<D extends AnyComponentDef[]>(...defs: D): Query<ComponentValues<D>> {
     const stores = defs.map((def) => {
       const store = this.storeByName.get(def.name);
       if (!store)
         throw new Error(`Component "${def.name}" not registered`);
       return store;
     });
-    return new QueryBuilder(stores, this.archetypes);
+    return new Query<ComponentValues<D>>(stores, this.archetypes);
   }
 
   /**

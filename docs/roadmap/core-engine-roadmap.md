@@ -79,19 +79,9 @@ complex systems.
 |---|---|
 | **Problem** | Columnar (SoA) storage shipped, but it is **sparse-set**: single-component iteration is a dense column loop, yet multi-component queries do a per-entity slot **gather** (`slotOf` per store, as `motion.ts` does). Bevy/DOTS-style gather-free iteration needs an entity's components **co-located** in one table — which sparse-set can't give. |
 | **Solution** | Group entities by component set into **archetype tables** with aligned columns → a single-index loop, no gather. The top-tier form is the **"both" model** (Bevy): each component picks table vs sparse storage. The query / `get` / `set` API is preserved, so consumer code is unchanged. |
-| **Unlocks** | The full multi-component iteration win on top of the storage/GC win the columnar store already delivers. |
+| **Unlocks** | The full multi-component iteration win on top of the storage/GC win the columnar store already delivers. A table-backed pass can also drop the two allocations a cached `Query` still makes per pass — the iterator generator and one `[id, ...values]` tuple per entity — e.g. through a column-loop `each` callback. |
 | **Complexity** | Very long — a storage-engine rewrite. add/remove-component becomes a **structural move** (the entity is copied between tables), where sparse-set is O(1). |
 | **Dependencies** | None outstanding — builds on the shipped columnar store, and sits **above** the shipped archetype *cache* (the lighter middle step: it caches query matches, keeping the gather). Detail + the full cheapest→biggest ladder: [../plans/done/ecs-parallelism-and-soa-storage.md](../plans/done/ecs-parallelism-and-soa-storage.md#the-path-beyond-middle--storage-architecture-logged). |
-
-### 3.8 Cached query handles + typed arity beyond four
-
-| | |
-|---|---|
-| **Problem** | Every `world.query(...)` call builds a builder and derives a string cache key (`required:excluded`) before the archetype cache is consulted, so a per-tick system pays an allocation it does not need. Separately, the typed overloads stop at four component defs, so a five-component query does not type-check at all. |
-| **Solution** | A reusable query handle, resolved once and iterated per tick, plus variadic tuple typing so arity is not a cliff. Canon: Bevy system params, Flecs cached queries. |
-| **Unlocks** | Query-heavy systems without per-tick allocation, and queries over five or more components that keep their types. |
-| **Complexity** | Mid — the match cache already exists; the work is a handle that owns it, plus the typing. |
-| **Dependencies** | The shipped archetype cache and query predicate surface, whose shape the handle would freeze. A `QueryBuilder` with `added` / `changed` filters already keeps per-instance state (its previous-pass tick); the handle must carry it. |
 
 ### 3.9 Change-filter iteration from the changed set
 
@@ -127,10 +117,9 @@ modding/plugin support.
 By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
-1. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
-2. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
-3. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
-4. **Change-filter iteration from the changed set** (3.9) — only once a profile
+1. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
+2. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
+3. **Change-filter iteration from the changed set** (3.9) — only once a profile
    asks for it
-5. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
+4. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
    strategic piece, above the shipped cache
