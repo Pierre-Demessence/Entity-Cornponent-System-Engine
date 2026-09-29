@@ -32,6 +32,48 @@ instead.
 
 Import via `@pierre/ecs/modules/spatial`.
 
+## `HashGrid3D` — continuous 3D hash
+
+A spatial hash over continuous `{x, y, z}` positions, implementing
+`SpatialStructure<{x, y, z}>` so it plugs straight into
+`world.enableSpatial(Position3DDef, …)`. `new HashGrid3D({ cellSize })`
+buckets each position into the cubic cell `floor(p / cellSize)` (default
+`cellSize` `1`).
+
+- It stores a copy of each entity's position, so `queryNear` (Euclidean,
+  inclusive) and `queryRect` (inclusive box) are exact rather than "shares a
+  cell".
+- An entity holds one position: `add` on an entity already present moves it,
+  and `remove` / `move` locate the current cell from the stored copy.
+- `queryAt(pos)` yields the entities in the cell containing `pos`.
+- Extras: `has(id)`, `positionOf(id)`, `size`, `cellSize`.
+
+Pick `cellSize` near your typical query radius. A query whose box spans more
+cells than the grid holds entities scans the stored positions instead, so an
+oversized radius stays bounded by the population.
+
+```ts
+import { EcsWorld } from '@pierre/ecs';
+import { HashGrid3D } from '@pierre/ecs/modules/spatial';
+import { Position3DDef } from '@pierre/ecs/modules/transform-3d';
+
+const PickupTag = { name: 'pickup' };
+const world = new EcsWorld();
+world.registerComponent(Position3DDef);
+world.registerTag(PickupTag);
+
+// Only pickups are indexed; everything else with a Position3D is ignored.
+const pickups = world.enableSpatial(Position3DDef, new HashGrid3D({ cellSize: 2 }), { withTag: PickupTag });
+
+const id = world.createEntity();
+world.getStore(Position3DDef).set(id, { x: 1, y: 0, z: 1 });
+world.getTag(PickupTag).add(id);
+world.move(Position3DDef, id, { x: 4, y: 0, z: 1 });
+
+for (const near of pickups.queryNear({ x: 4, y: 0, z: 0 }, 1.5))
+  world.queueDestroy(near);
+```
+
 ## Projection helpers
 
 For games that work in continuous coordinates and index into an integer
@@ -79,27 +121,29 @@ the motion step.
 
 ## Backends — shipped and future
 
-Shipped: `HashGrid2D` (above) and `ContinuousHashGrid2D` (a continuous-space
-grid taking a `cellSize`).
+Shipped: `HashGrid2D` and `HashGrid3D` (above), and `ContinuousHashGrid2D` (a
+continuous-space 2D grid taking a `cellSize`).
 
 Tracked as a deferred gap (`modules/spatial` — `QuadTree` / `BVH` backends)
 in the [module backlog](../../../docs/roadmap/ecs-module-backlog.md):
 `QuadTree`, and `BVH` / `SweepAndPrune` for AABB sets — for consumers a uniform
-grid cannot serve (very uneven entity density, or static AABB sets). An
-`Octree` for the 3D stack stays out of scope until a 3D consumer needs it.
+grid cannot serve (very uneven entity density, or static AABB sets).
 
 ## Integration with `EcsWorld`
 
 ```ts
-const grid = world.enableSpatial(PositionDef, new HashGrid2D()); // or any SpatialStructure<{x,y}>
+const grid = world.enableSpatial(PositionDef, new HashGrid2D()); // any SpatialStructure<T> for a ComponentDef<T>
+const pickups = world.enableSpatial(PositionDef, new HashGrid2D(), { withTag: PickupTag });
 ```
 
-- `enableSpatial` installs `set`/`delete` subscribers on the position
-  store, so writes automatically keep the index in sync.
+- `enableSpatial` subscribes to the component's store (and, with `withTag`,
+  to the tag), so adding, replacing and removing the component — or the tag —
+  keeps the index in sync. Entities that already qualify are indexed at once.
+- A world can hold any number of indexes: one per component, or several over
+  one component split by tag. Each needs its own structure instance.
 - `enableSpatial` returns the structure with its own type, so the handle
-  keeps the grid-specific extras (`getAt`, `findAt`, `getInRect`).
-  `world.spatial` is typed as the `SpatialStructure` contract; a `World`
-  subclass can narrow the getter to its backend.
-- `world.move(id, x, y)` atomically updates both the position component
-  and the spatial index via the interface. Game code should always use
-  `world.move()` rather than mutating positions directly.
+  keeps the grid-specific extras (`getAt`, `findAt`, `getInRect`). Keep it —
+  in a `World` subclass field or your game state — to query the index.
+- `world.move(PositionDef, id, { x, y })` moves the entity in every index on
+  `PositionDef` that holds it, then writes the new value. Move indexed
+  entities through `world.move()` rather than mutating positions directly.

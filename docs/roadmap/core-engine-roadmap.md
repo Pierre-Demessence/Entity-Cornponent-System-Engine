@@ -5,7 +5,7 @@ module and app: component stores, queries, scheduler, event bus, lifecycle,
 validation, change detection, plugin/extension hooks. No modules, no gameplay
 features.
 
-**Entry IDs are stable references** (`2.6`, `3.2`, `4.6`). The numbering
+**Entry IDs are stable references** (`3.2`, `3.5`, `4.6`). The numbering
 is not contiguous: a gap means that entry shipped, moved to the module backlog,
 or was declined, so citations elsewhere keep resolving to the same item. Shipped
 core work is described by `src/` and dated by `git log`; where a plan exists it
@@ -32,16 +32,6 @@ have shipped. The order at the bottom reflects value, not a dependency graph.
 
 Holes that turn into corruption or missing capability once the entity set is
 large or re-shaped during a tick.
-
-### 2.6 Spatial integration generalized
-
-| | |
-|---|---|
-| **Problem** | `SpatialStructure<TPos>` is generic, but the world's wiring is not: `enableSpatial` / `move` / `spatial` are hard-wired to `{x, y}`, and a world may index exactly one component. (The backend is already caller-supplied; the world names none.) So a 3D game cannot use the core integration at all, and a 2D game cannot index two populations (bodies plus pickups). |
-| **Solution** | Make the world's spatial wiring generic in `TPos` and allow more than one indexed set. |
-| **Unlocks** | 3D broadphase through the core instead of per-consumer brute force, and per-purpose indexes inside one world. |
-| **Complexity** | Mid — the interface already generalizes; the work is the world's plumbing and its typing. |
-| **Dependencies** | None outstanding. Distinct from the module backlog's `QuadTree` / `BVH` entries, which add backends rather than generalize this wiring. |
 
 ---
 
@@ -117,9 +107,8 @@ modding/plugin support.
 By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
-1. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
-2. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
-3. **Change-filter iteration from the changed set** (3.9) — only once a profile
+1. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
+2. **Change-filter iteration from the changed set** (3.9) — only once a profile
    asks for it
-4. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
+3. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
    strategic piece, above the shipped cache

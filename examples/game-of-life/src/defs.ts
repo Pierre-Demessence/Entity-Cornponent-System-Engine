@@ -83,23 +83,21 @@ export const CELL: EntityTemplate = {
 
 /**
  * The example's world: the plugin's registrations plus a typed handle on the
- * spatial index, which the rules read for every neighbour count.
+ * live-cell spatial index, which the rules read for every neighbour count.
  */
 export class LifeWorld extends EcsWorld {
+  /** Live cells only: ghosts and HUD text share `Position` but lack `CellTag`. */
   readonly grid: HashGrid2D;
-  private readonly isCell: (id: EntityId) => boolean;
 
   constructor() {
     super();
     this.use(lifePlugin);
-    this.grid = this.enableSpatial(PositionDef, new HashGrid2D());
-    const cells = this.getTag(CellTag);
-    this.isCell = id => cells.has(id);
+    this.grid = this.enableSpatial(PositionDef, new HashGrid2D(), { withTag: CellTag });
   }
 
-  /** The live cell at `(x, y)`; ghosts and HUD text share the index but don't count. */
+  /** The live cell at `(x, y)`, if any. */
   cellAt(x: number, y: number): EntityId | undefined {
-    return this.grid.findFirstAt(x, y, this.isCell);
+    return this.grid.getAt(x, y)?.values().next().value;
   }
 
   hasCellAt(x: number, y: number): boolean {

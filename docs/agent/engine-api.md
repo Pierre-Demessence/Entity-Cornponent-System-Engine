@@ -107,6 +107,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 
 ### `@pierre/ecs/world`
 - **`EcsWorld`** _(class)_ `new (): EcsWorld` — Generic, project-agnostic ECS registry: entity id allocation, component/tag stores, queries, template spawn, serialization, and opt-in sp...
+- **`SpatialOptions`** _(interface)_ — Options for EcsWorld.enableSpatial.
 
 ---
 
@@ -624,6 +625,8 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`GridSyncOnMove`** _(type)_ `<TCtx>(ctx: TCtx, id: EntityId, prev: Pos, next: Pos) => void` — Shape matches `VelocityIntegrationOptions<TCtx>['onMove']` exactly so the returned callback plugs straight into a velocity integration sy...
 - **`GridSyncOnMoveOptions`** _(interface)_ — Options for makeGridSyncOnMove: the `grid` to keep in sync and its `cellSize`.
 - **`HashGrid2D`** _(class)_ `new (): HashGrid2D` — Grid-based spatial index mapping integer `(x, y)` cells to sets of entity IDs. Implements SpatialStructure with `TPos = {x, y}`. Suitable...
+- **`HashGrid3D`** _(class)_ `new (options?: HashGrid3DOptions): HashGrid3D` — Spatial hash over continuous `{x, y, z}` positions. Implements SpatialStructure with `TPos = {x, y, z}`, so it plugs into `world.enableSp...
+- **`HashGrid3DOptions`** _(interface)_ — HashGrid3D construction options.
 - **`makeGridSyncOnMove`** _(fn)_ `(options: GridSyncOnMoveOptions): GridSyncOnMove` — Build an `onMove` callback that keeps a HashGrid2D in sync with per-entity position changes produced by `makeVelocityIntegrationSystem`. ...
 
 ### `@pierre/ecs/modules/spawner`

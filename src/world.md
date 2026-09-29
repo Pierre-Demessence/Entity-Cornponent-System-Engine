@@ -19,7 +19,9 @@ not in this package.
 - Spawn entities from `EntityTemplate` blueprints with optional per-component
   overrides.
 - Serialize to / load from a plain JSON payload.
-- Opt-in spatial indexing via `enableSpatial(def, structure)` for a `{ x, y }` component.
+- Opt-in spatial indexing via `enableSpatial(def, structure, options?)`: any
+  number of indexes, over components of any shape (`{ x, y }`, `{ x, y, z }`,
+  …), each optionally restricted to entities holding a tag.
 - Suppress dev-mode `requires` validation during `spawn()` (components arrive
   in arbitrary order; full validation runs once per entity after the template
   has been fully applied).
@@ -45,9 +47,8 @@ not in this package.
 | `getStore(def)` | Typed store lookup by def (throws if unregistered). |
 | `getStoreByName(name)` | Untyped store lookup by string name. |
 | `getTag(def)` / `getTagByName(name)` | Tag-store equivalents. |
-| `enableSpatial(def, structure)` | Index the given component in `structure` (any `SpatialStructure`, e.g. `HashGrid2D` from `@pierre/ecs/modules/spatial`) by subscribing `set` / `delete` handlers on its store. Returns `structure` with its own type, so backend extras stay typed on the handle. May be called at most once; a second call throws. |
-| `spatial` | The structure passed to `enableSpatial`, typed as the `SpatialStructure` contract (`queryAt`, `queryNear`, `queryRect`, …). A subclass may narrow the getter to its concrete backend. |
-| `move(id, x, y)` | Atomically update the spatial component and the index. Throws unless `enableSpatial` has been called. |
+| `enableSpatial(def, structure, { withTag? })` | Index the component's values in `structure` (any `SpatialStructure`, e.g. `HashGrid2D` / `HashGrid3D` from `@pierre/ecs/modules/spatial`) and keep it in sync with the store. With `withTag`, only entities that also hold the tag are indexed, following the tag's add / remove too. Entities that already qualify are indexed at once. Returns `structure` with its own type — keep it to query the index. Callable any number of times; each call needs its own structure. |
+| `move(def, id, to)` | Move an indexed component to `to`: every index on `def` that holds the entity moves it, then `to`'s fields are written into the stored value and the change is stamped. No-op if the entity lacks the component; throws if `def` has no index. |
 | `getColumnStore(def)` | Fast-path accessor for an all-numeric component's columnar store, exposing `column()` / `slotOf()` for zero-allocation hot loops. Throws if the component uses object storage. |
 | `query(...defs)` | Build a typed `Query` over the given component defs. |
 | `spawn(template, overrides?)` | Create an entity from a template, shallow-merging per-component overrides. |
@@ -56,7 +57,7 @@ not in this package.
 | `hasPlugin(name)` | Whether a plugin with `name` has been installed. |
 | `transferEntity(id, from, componentNames?)` | Copy an entity's components from another world, preserving its id. Tags are not transferred (application-semantic). Optionally filter to a subset of components. |
 | `clock` | The `ChangeClock` every registered store stamps added / changed ticks from; advanced by queries with `added` / `changed` filters. |
-| `clearAll()` | Empty every component/tag store, the destroy queue, the spatial index (if enabled), and the lifecycle event queue; reset `nextId = 0`. Registrations are preserved. Silent by design — no `EntityDestroyed` storm. Useful for full world resets (level restart, new game). |
+| `clearAll()` | Empty every component/tag store, the destroy queue, every spatial index, and the lifecycle event queue; reset `nextId = 0`. Registrations are preserved. Silent by design — no `EntityDestroyed` storm. Useful for full world resets (level restart, new game). |
 | `toJSON()` | Serialize the registry to `{ nextId, [storeName]: serialized }`. |
 | `loadJSON(data)` | In-place load — clears every registered store, then repopulates each from the payload entry of the same name. |
 | `lifecycle` | `EventBus<LifecycleEvent>` — emits `EntityCreated`, `EntityDestroyed`, `ComponentAdded`, `ComponentRemoved`, `TagAdded`, `TagRemoved`. Queue-based; call `lifecycle.flush()` to dispatch (typically once per tick). An event is only built while its type has a subscriber, so a handler sees only changes made after it subscribed, and an unobserved world allocates nothing per mutation. `destroyEntity` on an id that is already dead emits nothing. Subscribers are **not** preserved across world swaps. |
@@ -76,7 +77,7 @@ const positions = world.registerComponent(PosDef);
 const grid = world.enableSpatial(PosDef, new HashGrid2D());
 
 const id = world.spawn({ name: 'marker', components: { pos: { x: 3, y: 4 } } });
-world.move(id, 5, 6);
+world.move(PosDef, id, { x: 5, y: 6 });
 grid.getAt(5, 6); // Set { id }
 ```
 
@@ -88,19 +89,20 @@ The engine is designed to be subclassed. A consumer subclass typically:
 2. Calls `this.registerComponent(...)` for every consumer component,
    storing the returned store as a typed `readonly` field.
 3. Calls `this.registerTag(...)` for every consumer tag.
-4. Calls `this.enableSpatial(PositionDef, backend)` once (if the consumer
-   uses a spatial component), keeping the returned handle in a field — and
-   optionally narrowing `get spatial()` to its concrete type.
+4. Calls `this.enableSpatial(PositionDef, backend, options?)` for each spatial
+   index it needs, keeping each returned handle in a typed `readonly` field.
 5. Adds consumer-specific helpers on top of the generic API.
 
 ## Invariants
 
-- `enableSpatial` may only be called once per world.
+- A structure backs at most one index.
 - Component and tag names must be unique per world.
-- Once `enableSpatial` has indexed a component, change that component's `x` /
-  `y` only via `world.move(id, x, y)` — a direct write leaves the index
-  believing the old position. Without `enableSpatial` there is no index to keep
-  current, and `move` throws; write the component like any other.
+- Once `enableSpatial` has indexed a component, change an indexed entity's
+  value only via `world.move(def, id, to)` — a direct write leaves the index
+  believing the old position. A component with no index has nothing to keep
+  current, and `move` throws for it; write it like any other. With `withTag`,
+  entities outside the tag are not indexed, so writing their values directly
+  is fine.
 - `loadJSON` restores by name into the components and tags registered on the
   world, so register the same schemas (in any order) before calling it. Payload
   keys with no registered store are ignored, not an error.
@@ -121,6 +123,6 @@ The engine is designed to be subclassed. A consumer subclass typically:
 - [Component Store](component-store.md) - typed storage registered on the world.
 - [Query Builder](query.md) - `world.query(...)` entry point.
 - [Entity Templates](template.md) - `world.spawn(template, overrides)`.
-- [Spatial Structure](spatial-structure.md) - `world.enableSpatial(def, structure)` and `world.move(id, x, y)`.
+- [Spatial Structure](spatial-structure.md) - `world.enableSpatial(def, structure)` and `world.move(def, id, to)`.
 - [Tick](tick.md) - drives the game loop around the world.
 

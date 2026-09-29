@@ -44,4 +44,4 @@ export {
   asObject,
   asString,
 } from '#validation';
-export { EcsWorld } from '#world';
+export { EcsWorld, type SpatialOptions } from '#world';

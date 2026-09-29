@@ -231,7 +231,7 @@ export const eatSystem: SchedulableSystem<GameState> = {
     const { world } = g;
     const pos = world.getStore(PositionDef).get(g.pacId)!;
     const tile = tileOf(pos);
-    for (const id of world.spatial.queryAt(tile)) {
+    for (const id of world.tiles.queryAt(tile)) {
       const power = world.getTag(PowerTag).has(id);
       if (!power && !world.getTag(DotTag).has(id))
         continue;
