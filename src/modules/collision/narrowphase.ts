@@ -40,6 +40,25 @@ export function circleVsCircle(pa: Vec2, ra: number, pb: Vec2, rb: number): bool
   return dx * dx + dy * dy <= sum * sum;
 }
 
+/**
+ * True when `p` lies inside the box or exactly on its edge. Boundary-inclusive,
+ * unlike the strict {@link aabbVsAabb}, so a point on a shared edge belongs to
+ * both boxes — the answer picking and "am I inside a wall?" both want.
+ */
+export function aabbContainsPoint(box: Aabb, p: Vec2): boolean {
+  return p.x >= box.x
+    && p.x <= box.x + box.w
+    && p.y >= box.y
+    && p.y <= box.y + box.h;
+}
+
+/** True when `p` lies inside the circle or exactly on its rim. */
+export function circleContainsPoint(center: Vec2, radius: number, p: Vec2): boolean {
+  const dx = p.x - center.x;
+  const dy = p.y - center.y;
+  return dx * dx + dy * dy <= radius * radius;
+}
+
 /** Circle–AABB overlap: closest point on the AABB to the circle centre lies within the radius. */
 export function aabbVsCircle(a: Aabb, c: Vec2, r: number): boolean {
   const cx = clamp(c.x, a.x, a.x + a.w);
@@ -175,8 +194,7 @@ export interface RayHit {
  * zero test, so a port is not a byte-for-byte match.
  *
  * For "is the origin already inside?" — which this function answers `null` —
- * compose `aabbVsAabb` with a zero-size box at the origin instead of paying
- * for a flag on this path.
+ * call {@link aabbContainsPoint} instead of paying for a flag on this path.
  */
 export function rayVsAabb(origin: Vec2, dir: Vec2, box: Aabb): RayHit | null {
   const maxX = box.x + box.w;

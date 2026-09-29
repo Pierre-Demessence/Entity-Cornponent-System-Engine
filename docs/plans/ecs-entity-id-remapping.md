@@ -40,6 +40,11 @@ component def serializes/deserializes opaquely via `def.serialize` — we'd
 either extend `ComponentDef<T>` with an optional `remapRefs?(value, remap)`
 hook, or require consumers to own the rewrite themselves.
 
+Engine components that already hold entity ids, and so need the rewrite:
+
+- `modules/pile` — `PileDef.items` (the members, in order) and
+  `InPileDef.pile` (each member's pile).
+
 Likely ~100 lines + per-def hooks where needed + tests covering every
 reference-carrying component.
 

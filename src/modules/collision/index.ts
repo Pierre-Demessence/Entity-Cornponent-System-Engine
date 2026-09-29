@@ -1,11 +1,13 @@
 export {
   type Aabb,
   type AabbAxis,
+  aabbContainsPoint,
   aabbVsAabb,
   aabbVsAabbSwept,
   aabbVsCircle,
   bounceOffAabb,
   type BounceResult,
+  circleContainsPoint,
   circleVsCircle,
   type RayHit,
   rayVsAabb,

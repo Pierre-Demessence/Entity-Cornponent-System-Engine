@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  aabbContainsPoint,
   aabbVsAabb,
   aabbVsAabbSwept,
   aabbVsCircle,
   bounceOffAabb,
+  circleContainsPoint,
   circleVsCircle,
   rayVsAabb,
   reflect,
@@ -37,6 +39,50 @@ describe('aabbVsAabb', () => {
       { h: 100, w: 100, x: 0, y: 0 },
       { h: 5, w: 5, x: 10, y: 10 },
     )).toBe(true);
+  });
+});
+
+describe('aabbContainsPoint', () => {
+  const box = { h: 20, w: 10, x: 5, y: 5 };
+
+  it('contains an interior point', () => {
+    expect(aabbContainsPoint(box, { x: 10, y: 15 })).toBe(true);
+  });
+
+  it('contains points on every edge and corner (inclusive)', () => {
+    expect(aabbContainsPoint(box, { x: 5, y: 15 })).toBe(true);
+    expect(aabbContainsPoint(box, { x: 15, y: 15 })).toBe(true);
+    expect(aabbContainsPoint(box, { x: 10, y: 5 })).toBe(true);
+    expect(aabbContainsPoint(box, { x: 10, y: 25 })).toBe(true);
+    expect(aabbContainsPoint(box, { x: 15, y: 25 })).toBe(true);
+  });
+
+  it('rejects points outside on each axis', () => {
+    expect(aabbContainsPoint(box, { x: 4.9, y: 15 })).toBe(false);
+    expect(aabbContainsPoint(box, { x: 15.1, y: 15 })).toBe(false);
+    expect(aabbContainsPoint(box, { x: 10, y: 4.9 })).toBe(false);
+    expect(aabbContainsPoint(box, { x: 10, y: 25.1 })).toBe(false);
+  });
+
+  it('a zero-size box contains exactly its own point', () => {
+    const dot = { h: 0, w: 0, x: 3, y: 4 };
+    expect(aabbContainsPoint(dot, { x: 3, y: 4 })).toBe(true);
+    expect(aabbContainsPoint(dot, { x: 3, y: 4.01 })).toBe(false);
+  });
+});
+
+describe('circleContainsPoint', () => {
+  it('contains the centre and interior points', () => {
+    expect(circleContainsPoint({ x: 0, y: 0 }, 5, { x: 0, y: 0 })).toBe(true);
+    expect(circleContainsPoint({ x: 0, y: 0 }, 5, { x: 3, y: 3 })).toBe(true);
+  });
+
+  it('contains a point on the rim (inclusive)', () => {
+    expect(circleContainsPoint({ x: 1, y: 1 }, 5, { x: 4, y: 5 })).toBe(true);
+  });
+
+  it('rejects a point just outside', () => {
+    expect(circleContainsPoint({ x: 0, y: 0 }, 5, { x: 3.6, y: 3.6 })).toBe(false);
   });
 });
 
