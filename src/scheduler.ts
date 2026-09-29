@@ -33,6 +33,13 @@ export interface SchedulableSystem<TCtx> {
   /** Optional one-time setup called by the scheduler before the system's first `run`. */
   init?: (ctx: TCtx) => void;
   run: (ctx: TCtx) => void;
+  /**
+   * Optional run condition, evaluated with the live ctx immediately before
+   * each `run` — a system earlier in the same pass can change the verdict.
+   * When it returns `false` the system is skipped for that pass. It does not
+   * gate `init`, and it does not affect ordering or the DEV access check.
+   */
+  readonly runIf?: (ctx: TCtx) => boolean;
 }
 
 /** Construction options for {@link Scheduler}: an optional ordered `phases` list that switches it into phase mode. */
@@ -60,12 +67,19 @@ export interface SchedulerOptions {
  * phase. Cross-phase `runAfter`/`runBefore` edges are rejected — use the phase list
  * to express cross-phase ordering.
  *
- * Lifecycle: systems added via `add()` receive `init(ctx)` on the next `run(ctx)` before
- * their first tick. Systems removed via `remove()` receive `dispose(ctx)` on the following
+ * Gating: a system is skipped for a pass when it has been switched off with
+ * `setEnabled(name, false)`, when its phase has been switched off with
+ * `setPhaseEnabled(phase, false)`, or when its `runIf(ctx)` returns `false`.
+ * {@link Scheduler.shouldRun} gives the same verdict to custom run loops.
+ *
+ * Lifecycle: systems added via `add()` receive `init(ctx)` on the next `run(ctx)`, whether
+ * or not they are gated off for that pass. Systems removed via `remove()` receive `dispose(ctx)` on the following
  * `run(ctx)`, or immediately via `disposeAll(ctx)`.
  */
 export class Scheduler<TCtx> {
   private readonly declaredPhases: readonly string[];
+  private readonly disabled = new Set<string>();
+  private readonly disabledPhases = new Set<string>();
   private entries: SchedulableSystem<TCtx>[] = [];
   private initialized = new Set<string>();
   private pendingDispose: SchedulableSystem<TCtx>[] = [];
@@ -102,6 +116,19 @@ export class Scheduler<TCtx> {
     this.entries.push(system);
     this.sorted = null;
     return this;
+  }
+
+  private assertKnownPhase(phase: string): void {
+    if (!this.phaseIndex.has(phase)) {
+      throw new Error(this.declaredPhases.length === 0
+        ? `Unknown phase "${phase}": scheduler was constructed without phases`
+        : `Unknown phase "${phase}" (known: ${this.declaredPhases.join(', ')})`);
+    }
+  }
+
+  private assertKnownSystem(name: string): void {
+    if (!this.entries.some(s => s.name === name))
+      throw new Error(`Unknown system "${name}"`);
   }
 
   /** Resolve dependency graph and return the execution order. Throws on cycles or unknown dependencies. */
@@ -220,6 +247,18 @@ export class Scheduler<TCtx> {
     }
   }
 
+  /** Whether the named system is switched on. Throws if no system has that name. */
+  isEnabled(name: string): boolean {
+    this.assertKnownSystem(name);
+    return !this.disabled.has(name);
+  }
+
+  /** Whether the phase is switched on. Throws if the phase is not in the scheduler's phase list. */
+  isPhaseEnabled(phase: string): boolean {
+    this.assertKnownPhase(phase);
+    return !this.disabledPhases.has(phase);
+  }
+
   /** Sorted system names in execution order. Builds if needed. */
   get order(): readonly string[] {
     if (!this.sorted)
@@ -238,11 +277,12 @@ export class Scheduler<TCtx> {
       if (removed.dispose)
         this.pendingDispose.push(removed);
     }
+    this.disabled.delete(name);
     this.sorted = null;
     return this;
   }
 
-  /** Execute all systems in dependency order, building if needed. Drains deferred `dispose`s and lazy-inits new systems with the given ctx. */
+  /** Execute all systems in dependency order, building if needed. Drains deferred `dispose`s, lazy-inits new systems, and skips systems {@link Scheduler.shouldRun} rejects. */
   run(ctx: TCtx): void {
     if (this.pendingDispose.length > 0) {
       const toDispose = this.pendingDispose;
@@ -254,8 +294,38 @@ export class Scheduler<TCtx> {
         this.initialized.add(sys.name);
         sys.init?.(ctx);
       }
-      sys.run(ctx);
+      if (this.shouldRun(sys, ctx))
+        sys.run(ctx);
     }
+  }
+
+  /** Switch a system on or off. A disabled system is skipped regardless of its `runIf`. Throws if no system has that name. */
+  setEnabled(name: string, enabled: boolean): this {
+    this.assertKnownSystem(name);
+    if (enabled)
+      this.disabled.delete(name);
+    else
+      this.disabled.add(name);
+    return this;
+  }
+
+  /** Switch every system of a phase on or off, without touching their own flags. Throws if the phase is not in the scheduler's phase list. */
+  setPhaseEnabled(phase: string, enabled: boolean): this {
+    this.assertKnownPhase(phase);
+    if (enabled)
+      this.disabledPhases.delete(phase);
+    else
+      this.disabledPhases.add(phase);
+    return this;
+  }
+
+  /** The gate `run` applies to each system: its own flag, its phase's flag, then `runIf(ctx)`. For custom run loops. */
+  shouldRun(system: SchedulableSystem<TCtx>, ctx: TCtx): boolean {
+    if (this.disabled.has(system.name))
+      return false;
+    if (system.phase !== undefined && this.disabledPhases.has(system.phase))
+      return false;
+    return system.runIf?.(ctx) ?? true;
   }
 
   get size(): number {

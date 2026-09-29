@@ -5,7 +5,7 @@ module and app: component stores, queries, scheduler, event bus, lifecycle,
 validation, change detection, plugin/extension hooks. No modules, no gameplay
 features.
 
-**Entry IDs are stable references** (`2.6`, `3.2`, `4.7`). The numbering
+**Entry IDs are stable references** (`2.6`, `3.2`, `4.6`). The numbering
 is not contiguous: a gap means that entry shipped, moved to the module backlog,
 or was declined, so citations elsewhere keep resolving to the same item. Shipped
 core work is described by `src/` and dated by `git log`; where a plan exists it
@@ -120,16 +120,6 @@ modding/plugin support.
 | **Complexity** | Mid, and **false-positive-bound**: measured on the current corpus, only 2 of 35 bare `` `foo()` `` prose mentions resolve to an export — the rest are member names (`dispose()`, `play()`) or external refs (`move_toward()`). Needs member-aware resolution (owner → type → members) or a conservative allowlist before it is worth the noise. Deferred from [`../plans/done/readme-doc-symbol-linter.md`](../plans/done/readme-doc-symbol-linter.md). |
 | **Dependencies** | The export enumeration in `scripts/engine-surface.ts`; the type checker for member existence on a named owner type. |
 
-### 4.7 System run conditions / enable flags
-
-| | |
-|---|---|
-| **Problem** | A registered system runs every tick. "Only while not paused", "only in this game phase", "only when this feature is on" has to be re-checked inside the system body, where the scheduler cannot see it — so ordering and access checks are computed over systems that will not actually run. |
-| **Solution** | An optional `condition` (or `enabled`) predicate on `SchedulableSystem`, evaluated before `run`, alongside the existing `phase` and dependency fields. Canon: Bevy `run_if` / `in_state`, Unity DOTS `Enabled` / system groups. |
-| **Unlocks** | Pause, menus and mode switches expressed where the scheduler holds them, and ordering diagnostics that know a system was skipped. |
-| **Complexity** | Small. |
-| **Dependencies** | None outstanding. |
-
 ---
 
 ## Suggested Implementation Order
@@ -137,11 +127,10 @@ modding/plugin support.
 By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
-1. **System run conditions** (4.7) — small
-2. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
-3. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
-4. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
-5. **Change-filter iteration from the changed set** (3.9) — only once a profile
+1. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
+2. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
+3. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
+4. **Change-filter iteration from the changed set** (3.9) — only once a profile
    asks for it
-6. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
+5. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
    strategic piece, above the shipped cache

@@ -361,4 +361,111 @@ describe('scheduler', () => {
       warn.mockRestore();
     });
   });
+
+  describe('run conditions', () => {
+    it('skips a system whose runIf returns false and re-evaluates it every pass', () => {
+      const s = new Scheduler<{ on: boolean }>();
+      const run = vi.fn();
+      s.add({ name: 'a', run, runIf: ctx => ctx.on });
+      s.run({ on: false });
+      expect(run).not.toHaveBeenCalled();
+      s.run({ on: true });
+      expect(run).toHaveBeenCalledOnce();
+    });
+
+    it('evaluates runIf after earlier systems in the same pass', () => {
+      const s = new Scheduler<{ on: boolean }>();
+      const run = vi.fn();
+      s.add({
+        name: 'toggle',
+        run: (ctx) => {
+          ctx.on = true;
+        },
+      });
+      s.add({ name: 'gated', run, runAfter: ['toggle'], runIf: ctx => ctx.on });
+      s.run({ on: false });
+      expect(run).toHaveBeenCalledOnce();
+    });
+
+    it('still calls init on a gated system', () => {
+      const s = new Scheduler<void>();
+      const init = vi.fn();
+      const run = vi.fn();
+      s.add({ name: 'a', init, run, runIf: () => false });
+      s.add({ name: 'b', init, run });
+      s.setEnabled('b', false);
+      s.run();
+      expect(init).toHaveBeenCalledTimes(2);
+      expect(run).not.toHaveBeenCalled();
+    });
+
+    it('setEnabled switches a system off and back on, overriding runIf', () => {
+      const s = new Scheduler<void>();
+      const runIf = vi.fn(() => true);
+      const run = vi.fn();
+      s.add({ name: 'a', run, runIf });
+      s.setEnabled('a', false);
+      expect(s.isEnabled('a')).toBe(false);
+      s.run();
+      expect(run).not.toHaveBeenCalled();
+      expect(runIf).not.toHaveBeenCalled();
+      s.setEnabled('a', true);
+      expect(s.isEnabled('a')).toBe(true);
+      s.run();
+      expect(run).toHaveBeenCalledOnce();
+    });
+
+    it('throws on an unknown system name', () => {
+      const s = new Scheduler<void>();
+      expect(() => s.setEnabled('ghost', false)).toThrow(/Unknown system "ghost"/);
+      expect(() => s.isEnabled('ghost')).toThrow(/Unknown system "ghost"/);
+    });
+
+    it('remove clears the flag, so a re-added system starts enabled', () => {
+      const s = new Scheduler<void>();
+      s.add(sys('a'));
+      s.setEnabled('a', false);
+      s.remove('a');
+      const again = sys('a');
+      s.add(again);
+      expect(s.isEnabled('a')).toBe(true);
+      s.run();
+      expect(again.run).toHaveBeenCalledOnce();
+    });
+
+    it('setPhaseEnabled skips every system of the phase and keeps their own flags', () => {
+      const s = new Scheduler<void>({ phases: ['logic', 'render'] });
+      const log: string[] = [];
+      s.add({ name: 'a', phase: 'logic', run: () => log.push('a') });
+      s.add({ name: 'b', phase: 'logic', run: () => log.push('b') });
+      s.add({ name: 'r', phase: 'render', run: () => log.push('r') });
+      s.setEnabled('b', false);
+      s.setPhaseEnabled('logic', false);
+      expect(s.isPhaseEnabled('logic')).toBe(false);
+      s.run();
+      expect(log).toEqual(['r']);
+      s.setPhaseEnabled('logic', true);
+      s.run();
+      expect(log).toEqual(['r', 'a', 'r']);
+    });
+
+    it('throws on an unknown phase, and on any phase in legacy mode', () => {
+      expect(() => new Scheduler<void>({ phases: ['logic'] }).setPhaseEnabled('physics', false))
+        .toThrow(/Unknown phase "physics" \(known: logic\)/);
+      expect(() => new Scheduler<void>().isPhaseEnabled('logic'))
+        .toThrow(/constructed without phases/);
+    });
+
+    it('shouldRun gives custom loops the same verdict as run', () => {
+      const s = new Scheduler<{ on: boolean }>({ phases: ['logic'] });
+      s.add({ name: 'a', phase: 'logic', run: vi.fn(), runIf: ctx => ctx.on });
+      s.add({ name: 'b', phase: 'logic', run: vi.fn() });
+      s.setEnabled('b', false);
+      const verdicts = (ctx: { on: boolean }) => [...s].map(sys => s.shouldRun(sys, ctx));
+      expect(verdicts({ on: true })).toEqual([true, false]);
+      expect(verdicts({ on: false })).toEqual([false, false]);
+      s.setEnabled('b', true).setPhaseEnabled('logic', false);
+      expect(verdicts({ on: true })).toEqual([false, false]);
+    });
+  });
 });
