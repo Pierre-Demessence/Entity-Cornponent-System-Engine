@@ -40,8 +40,9 @@
     "test:watch": "vitest",
     "docs:api": "jiti scripts/engine-api.gen.ts",
     "docs:usage": "jiti scripts/engine-usage.gen.ts",
-    "docs:site": "jiti scripts/manual.gen.ts && astro build --root website",
-    "docs:dev": "jiti scripts/manual.gen.ts && astro dev --root website",
+    "docs:site": "jiti scripts/manual.gen.ts && jiti scripts/examples.gen.ts && astro build --root website",
+    "docs:dev": "jiti scripts/manual.gen.ts && jiti scripts/examples.gen.ts && astro dev --root website",
+    "docs:examples": "jiti scripts/examples.gen.ts",
     "docs:manual": "jiti scripts/manual.gen.ts",
     "prepare": "husky || true"
   },

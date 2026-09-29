@@ -34,7 +34,6 @@ const AUTHORED_ORDER: Record<string, number> = {
   'concepts/model.md': 1,
   'concepts/structural-changes.md': 2,
   'concepts/ticks-and-order.md': 3,
-  'getting-started/examples.md': 3,
   'getting-started/introduction.md': 1,
   'guides/custom-drawing.md': 6,
   'guides/debug-overlay.md': 7,

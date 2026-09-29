@@ -1,6 +1,6 @@
 ---
 /**
- * Copy of Starlight's `Header.astro` with the two section links added next to
+ * Copy of Starlight's `Header.astro` with the section links added next to
  * the search box.
  *
  * The links sit inside the search column. At ≥50rem the header is a three-column
@@ -33,6 +33,7 @@ const { id } = Astro.locals.starlightRoute;
 const sections = [
   { href: `${base}manual/`, label: 'Manual', slug: 'manual' },
   { href: `${base}api/`, label: 'API reference', slug: 'api' },
+  { href: `${base}examples/`, label: 'Examples', slug: 'examples' },
 ];
 
 const isCurrent = (slug: string): boolean => id === slug || id.startsWith(`${slug}/`);

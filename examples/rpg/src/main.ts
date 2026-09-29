@@ -222,7 +222,9 @@ export function start(container: HTMLElement): () => void {
         targetTag: PlayerTag,
       });
 
-      const keyboard = new KeyboardProvider();
+      const keyboard = new KeyboardProvider({
+        preventDefaultCodes: [Key.ArrowDown, Key.ArrowLeft, Key.ArrowRight, Key.ArrowUp, Key.Space],
+      });
       const inputState = createInput<RpgAction>(
         {
           down: [Key.ArrowDown, Key.KeyS],

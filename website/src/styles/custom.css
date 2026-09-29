@@ -1,5 +1,5 @@
 /*
- * Home page: the two section cards are whole-card links.
+ * Home page: the section cards are whole-card links.
  *
  * `LinkCard` has no icon prop (it hardcodes a right-arrow), so the cards are
  * Starlight's `Card` — which does take an icon — wrapped in an anchor. Two

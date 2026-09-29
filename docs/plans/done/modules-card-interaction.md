@@ -393,8 +393,10 @@ function circleContainsPoint(center: Vec2, radius: number, p: Vec2): boolean;
       `modules/card-interaction` entry and its status-table row.
 - [x] `docs/plans/ecs-entity-id-remapping.md` — name `PileDef` / `InPileDef`
       among the components a remap must rewrite.
-- [x] `website/manual/getting-started/examples.md` — add the new modules (and
-      `collision` for solitaire) to both examples' "Exercises" lists.
+- [x] `examples/manifest.ts` — add the new modules (and `collision` for
+      solitaire) to both examples' `modules` lists. (Planned against
+      `website/manual/getting-started/examples.md`, which `main` retired for
+      this generated catalogue while this change was in flight.)
 - [x] Gate green: lint, typecheck, `npm test`, every example typechecks; both
       card examples played through in a browser with no console errors — draw,
       play, reshuffle and reset in card-battler; deal, run move, foundation
