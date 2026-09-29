@@ -39,7 +39,35 @@ class DomRenderer implements Renderer<DomRenderContext> {
   constructor(options?: DomRendererOptions);
   render(ctx: DomRenderContext): void;
 }
+
+function entityAtPoint(x: number, y: number, root?: Element): EntityId | null;
 ```
+
+## Picking
+
+`entityAtPoint(clientX, clientY, root?)` answers "which entity is under the
+pointer?" for anything `DomRenderer` drew. It asks the browser for the topmost
+element at the point and walks up to the nearest node carrying
+`data-entity-id`, so a hit on a node's child text still resolves to the entity.
+
+```ts
+import { entityAtPoint } from '@pierre/ecs/modules/render-dom';
+
+const container = document.getElementById('game')!;
+container.addEventListener('pointerdown', (ev) => {
+  const id = entityAtPoint(ev.clientX, ev.clientY, container);
+  if (id !== null)
+    console.log('picked entity', id);
+});
+```
+
+- Coordinates are **client** pixels (`clientX` / `clientY`), what the browser
+  hit-tests in.
+- Pass `root` to ignore entities rendered outside it — a second renderer on
+  the page, or an overlay.
+- An element with `pointer-events: none` is invisible to the browser's hit
+  test. Put a dragged node in a layer styled that way so the drop target under
+  it stays pickable.
 
 ## Notes
 

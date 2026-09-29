@@ -11,8 +11,8 @@ broadphase acceleration structure, and it does **not** decide what
 - The data shapes (`ShapeAabbDef`, `ShapeCircleDef`) so multiple
   systems and consumers share a vocabulary.
 - The math helpers (`aabbVsAabb`, `aabbVsAabbSwept`, `circleVsCircle`,
-  `aabbVsCircle`, `rayVsAabb`) so every game is not rewriting the same
-  formulas.
+  `aabbVsCircle`, `rayVsAabb`, `aabbContainsPoint`,
+  `circleContainsPoint`) so every game is not rewriting the same formulas.
 - The system glue (`makeTriggerSystem`) so overlap handlers have a
   consistent shape, schedulable identity, and obvious seam for swept
   queries / spatial indices.
@@ -47,12 +47,17 @@ aabbVsCircle(a: Aabb, c: Vec2, r: number): boolean
 circleVsCircle(a: Vec2, ra: number, b: Vec2, rb: number): boolean
 aabbVsAabbSwept(a: Aabb, motionA: Vec2, b: Aabb): SweptHit
 rayVsAabb(origin: Vec2, dir: Vec2, box: Aabb): RayHit | null   // { axis: 'x'|'y', t }
+aabbContainsPoint(box: Aabb, p: Vec2): boolean
+circleContainsPoint(center: Vec2, radius: number, p: Vec2): boolean
 ```
 
 - `aabbVsAabb` uses strict inequality — edge contact does **not**
   count as overlap.
 - `circleVsCircle` and `aabbVsCircle` use `≤` — touching counts as
   overlap.
+- `aabbContainsPoint` and `circleContainsPoint` are boundary-inclusive: a
+  point on the edge or rim is inside. Use them for pointer picking (is the
+  cursor over this card or button?) and for "is this point inside a wall?".
 - `aabbVsAabbSwept` returns `{ hit, tEntry, normal }`. `tEntry ∈ [0,1]`
   is the fraction of `motionA` at first contact; `normal` is the unit
   vector on `b`'s surface at contact.
@@ -71,11 +76,11 @@ serve both ray shapes:
 - Pass a **unit** vector → `t` is a world distance (hitscan, picking).
 - Pass the **segment** vector `to - from` → `t` is the fraction along the
   segment, so `t <= 1` answers "does the segment cross the box?"
-  (line-of-sight against walls). An origin already *inside* the box is a
-  `null`, so pair this with the point-inside check below when an inside
-  origin must count as blocked. The pair is not quite a cover:
-  `aabbVsAabb` is a **strict-interior** test, so an origin sitting exactly
-  on the wall's boundary is caught by neither half.
+  (line-of-sight against walls). An origin already *inside* the box, or on
+  its boundary, is a `null`, so pair this with `aabbContainsPoint` when such
+  an origin must count as blocked. The pair covers every origin: the
+  boundary-inclusive containment test catches exactly the origins the ray
+  test leaves out.
 
 A zero-length `dir` never hits. A ray travelling exactly along a face
 counts as a hit once it enters that face's span from outside — boxes are
@@ -89,8 +94,8 @@ that the 3D copies in `examples/portal` and `examples/doom` break that tie
 the other way.
 
 For "is this point already inside a box?" — which `rayVsAabb` answers
-`null` — compose `aabbVsAabb` with a zero-size box at the point, rather
-than paying for a flag on this path.
+`null` — call `aabbContainsPoint` rather than paying for a flag on this
+path.
 
 ## Trigger system
 

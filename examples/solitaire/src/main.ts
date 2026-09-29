@@ -14,14 +14,16 @@
  * via a render-order bump. Card SFX go through the audio module.
  */
 
-import type { EntityId } from '@pierre/ecs';
-
-import type { Card, GameState, PileRef } from './game';
+import type { GameState, PileRef } from './game';
+import type { Run } from './render';
 
 import { EcsWorld } from '@pierre/ecs';
 import { AssetLoader, audioBufferAsset, imageAsset, textAsset } from '@pierre/ecs/modules/asset-loader';
 import { WebAudioProvider } from '@pierre/ecs/modules/audio';
+import { aabbContainsPoint } from '@pierre/ecs/modules/collision';
+import { DragDrop } from '@pierre/ecs/modules/drag-drop';
 import { projectPointer } from '@pierre/ecs/modules/input';
+import { addToPile, installPiles, moveAll, moveTop, pileSize, pileTop } from '@pierre/ecs/modules/pile';
 import { RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
 import { pick } from '@pierre/ecs/modules/rng';
 import { parseTexturePackerAtlas, TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
@@ -46,17 +48,19 @@ import {
   canDropOnTableau,
   CANVAS_H,
   CANVAS_W,
-
   CARD_H,
   CARD_W,
+  cardOf,
   cardPosition,
+  cardRect,
+  cardsIn,
   dealNewGame,
+  dropRect,
   findFoundationFor,
-
   isWon,
-  pileArray,
-
+  pileEntity,
   slotPosition,
+  topCard,
 } from './game';
 import {
   BACKS_ATLAS,
@@ -68,20 +72,24 @@ import {
 const slideUrls = [slide1Url, slide2Url, slide3Url];
 const placeUrls = [place1Url, place2Url, place3Url];
 
-interface Drag {
-  cards: Card[];
-  from: PileRef;
-  grabX: number;
-  grabY: number;
-  pointerX: number;
-  pointerY: number;
-}
+/**
+ * Pointer travel (canvas pixels) before a press becomes a drag, so a click or
+ * a double-click on a card never starts one.
+ */
+const DRAG_THRESHOLD = 4;
+
+/** Where a drop may land, in priority order: foundations before tableau columns. */
+const DROP_TARGETS: readonly PileRef[] = [
+  ...[0, 1, 2, 3].map((index): PileRef => ({ index, kind: 'foundation' })),
+  ...[0, 1, 2, 3, 4, 5, 6].map((index): PileRef => ({ index, kind: 'tableau' })),
+];
 
 function makeWorld(): EcsWorld {
   const world = new EcsWorld();
   world.registerComponent(PositionDef);
   world.registerComponent(RenderableDef);
   world.registerComponent(RenderOrderDef);
+  installPiles(world);
   return world;
 }
 
@@ -117,16 +125,23 @@ export function start(container: HTMLElement): () => void {
   }).webkitAudioContext)();
 
   let disposed = false;
-  let world = makeWorld();
   let state: GameState | null = null;
-  let drag: Drag | null = null;
   let audio: { place: string[]; provider: WebAudioProvider; slide: string[] } | null = null;
   let rafId = 0;
 
+  // The run's top-left follows the pointer; the drop is tested at the dragged
+  // card's centre, so a card counts as over a pile when most of it is.
+  const drag = new DragDrop<Run, PileRef>({
+    threshold: DRAG_THRESHOLD,
+    accepts: (target, run) => canDrop(state!, run, target),
+    contains: (target, point) => aabbContainsPoint(dropRect(state!, target), point),
+    probe: s => ({ x: s.position.x + CARD_W / 2, y: s.position.y + CARD_H / 2 }),
+    targets: () => DROP_TARGETS,
+  });
+
   const newDeal = (): void => {
-    world = makeWorld();
-    state = dealNewGame((): EntityId => world.createEntity());
-    drag = null;
+    state = dealNewGame(makeWorld());
+    drag.cancel();
     hint.textContent = 'Click the stock to deal · drag to move · double-click to send to a foundation';
   };
 
@@ -154,7 +169,7 @@ export function start(container: HTMLElement): () => void {
     void audioCtx.resume();
     const point = toWorld(event);
 
-    if (inSlot(point, slotPosition({ index: 0, kind: 'stock' }))) {
+    if (aabbContainsPoint(cardRect(slotPosition({ index: 0, kind: 'stock' })), point)) {
       dealFromStock(state, playSfx);
       return;
     }
@@ -162,41 +177,45 @@ export function start(container: HTMLElement): () => void {
     const hit = pickCard(state, point);
     if (!hit)
       return;
-    const pile = pileArray(state, hit.pile);
-    const card = pile[hit.index]!;
-    if (!card.faceUp)
+    const pile = cardsIn(state, hit.pile);
+    if (!cardOf(state, pile[hit.index]!).faceUp)
       return;
-    if (hit.pile.kind === 'tableau' ? false : hit.index !== pile.length - 1)
+    if (hit.pile.kind !== 'tableau' && hit.index !== pile.length - 1)
       return; // only the top card of waste/foundation is draggable
 
-    const cards = hit.pile.kind === 'tableau' ? pile.slice(hit.index) : [card];
-    const origin = cardPosition(state, hit.pile, hit.index);
-    drag = {
-      cards,
-      from: hit.pile,
-      grabX: point.x - origin.x,
-      grabY: point.y - origin.y,
-      pointerX: point.x,
-      pointerY: point.y,
-    };
+    // A tableau card drags the whole run above it.
+    const run: Run = { cards: pile.slice(hit.index), from: hit.pile };
+    drag.begin(run, point, cardPosition(state, hit.pile, hit.index));
     canvas.setPointerCapture(event.pointerId);
   };
 
   const onPointerMove = (event: PointerEvent): void => {
-    if (!drag)
-      return;
-    const point = toWorld(event);
-    drag.pointerX = point.x;
-    drag.pointerY = point.y;
+    drag.move(toWorld(event));
   };
 
   const onPointerUp = (event: PointerEvent): void => {
-    if (!drag || !state)
+    if (!drag.session || !state)
       return;
     if (canvas.hasPointerCapture(event.pointerId))
       canvas.releasePointerCapture(event.pointerId);
-    resolveDrop(state, drag, playSfx);
-    drag = null;
+    const drop = drag.end(toWorld(event));
+    if (!drop)
+      return; // a click, not a drag
+    if (!drop.target) {
+      playSfx('slide');
+      return; // snap back: next layout restores positions
+    }
+    const { cards, from } = drop.payload;
+    moveTop(state.world, pileEntity(state, from), pileEntity(state, drop.target), cards.length);
+    flipExposed(from, state);
+    playSfx('place');
+    finishMove(state);
+  };
+
+  const onPointerCancel = (event: PointerEvent): void => {
+    if (canvas.hasPointerCapture(event.pointerId))
+      canvas.releasePointerCapture(event.pointerId);
+    drag.cancel();
   };
 
   const onDoubleClick = (event: MouseEvent): void => {
@@ -205,15 +224,15 @@ export function start(container: HTMLElement): () => void {
     const hit = pickCard(state, toWorld(event));
     if (!hit || hit.pile.kind === 'foundation' || hit.pile.kind === 'stock')
       return;
-    const pile = pileArray(state, hit.pile);
-    const card = pile[hit.index]!;
+    const pile = cardsIn(state, hit.pile);
+    const id = pile[hit.index]!;
+    const card = cardOf(state, id);
     if (!card.faceUp || hit.index !== pile.length - 1)
       return;
     const target = findFoundationFor(state, card);
     if (target === -1)
       return;
-    pile.pop();
-    state.foundations[target]!.push(card);
+    addToPile(state.world, state.foundations[target]!, id);
     flipExposed(hit.pile, state);
     playSfx('place');
     finishMove(state);
@@ -222,7 +241,7 @@ export function start(container: HTMLElement): () => void {
   canvas.addEventListener('pointerdown', onPointerDown, { signal: abort.signal });
   canvas.addEventListener('pointermove', onPointerMove, { signal: abort.signal });
   canvas.addEventListener('pointerup', onPointerUp, { signal: abort.signal });
-  canvas.addEventListener('pointercancel', onPointerUp, { signal: abort.signal });
+  canvas.addEventListener('pointercancel', onPointerCancel, { signal: abort.signal });
   canvas.addEventListener('dblclick', onDoubleClick, { signal: abort.signal });
   newDealBtn.addEventListener('click', newDeal, { signal: abort.signal });
 
@@ -233,41 +252,15 @@ export function start(container: HTMLElement): () => void {
     }
   }
 
-  function resolveDrop(
-    s: GameState,
-    d: Drag,
-    sfx: (kind: 'place' | 'slide') => void,
-  ): void {
-    const center = {
-      x: d.pointerX - d.grabX + CARD_W / 2,
-      y: d.pointerY - d.grabY + CARD_H / 2,
-    };
-    const target = dropTarget(s, center, d);
-    if (!target) {
-      sfx('slide');
-      return; // snap back: next layout restores positions
-    }
-
-    const source = pileArray(s, d.from);
-    source.splice(source.length - d.cards.length, d.cards.length);
-    pileArray(s, target).push(...d.cards);
-    flipExposed(d.from, s);
-    sfx('place');
-    finishMove(s);
-  }
-
   function dealFromStock(s: GameState, sfx: (kind: 'place' | 'slide') => void): void {
-    if (s.stock.length > 0) {
-      const card = s.stock.pop()!;
-      card.faceUp = true;
-      s.waste.push(card);
+    if (pileSize(s.world, s.stock) > 0) {
+      const [id] = moveTop(s.world, s.stock, s.waste);
+      cardOf(s, id!).faceUp = true;
     }
     else {
-      while (s.waste.length > 0) {
-        const card = s.waste.pop()!;
-        card.faceUp = false;
-        s.stock.push(card);
-      }
+      // Turning the waste over reverses it: its top card becomes the stock's bottom.
+      for (const id of moveAll(s.world, s.waste, s.stock, { reverse: true }))
+        cardOf(s, id).faceUp = false;
     }
     sfx('slide');
   }
@@ -278,8 +271,8 @@ export function start(container: HTMLElement): () => void {
     if (disposed)
       return;
     if (state) {
-      syncLayout(world, state, drag);
-      renderFrame(ctx2d, world, atlasesOrEmpty(), state);
+      syncLayout(state, drag.session);
+      renderFrame(ctx2d, atlasesOrEmpty(), state);
     }
     rafId = requestAnimationFrame(loop);
   };
@@ -341,71 +334,45 @@ function registerClip(clips: Record<string, AudioBuffer>, id: string, buf: Audio
   return id;
 }
 
-function inSlot(point: { x: number; y: number }, slot: { x: number; y: number }): boolean {
-  return point.x >= slot.x && point.x <= slot.x + CARD_W
-    && point.y >= slot.y && point.y <= slot.y + CARD_H;
-}
-
 /** Topmost card whose rect contains `point`, searching exposed cards. */
 function pickCard(
   state: GameState,
   point: { x: number; y: number },
 ): { index: number; pile: PileRef } | null {
   for (let t = 0; t < 7; t++) {
-    const column = state.tableau[t]!;
-    for (let i = column.length - 1; i >= 0; i--) {
-      if (inSlot(point, cardPosition(state, { index: t, kind: 'tableau' }, i)))
-        return { index: i, pile: { index: t, kind: 'tableau' } };
+    const pile: PileRef = { index: t, kind: 'tableau' };
+    for (let i = cardsIn(state, pile).length - 1; i >= 0; i--) {
+      if (aabbContainsPoint(cardRect(cardPosition(state, pile, i)), point))
+        return { index: i, pile };
     }
   }
-  if (state.waste.length > 0
-    && inSlot(point, slotPosition({ index: 0, kind: 'waste' }))) {
-    return { index: state.waste.length - 1, pile: { index: 0, kind: 'waste' } };
-  }
-  for (let f = 0; f < 4; f++) {
-    const pile = state.foundations[f]!;
-    if (pile.length > 0 && inSlot(point, slotPosition({ index: f, kind: 'foundation' })))
-      return { index: pile.length - 1, pile: { index: f, kind: 'foundation' } };
+  const piles: PileRef[] = [
+    { index: 0, kind: 'waste' },
+    ...[0, 1, 2, 3].map((index): PileRef => ({ index, kind: 'foundation' })),
+  ];
+  for (const pile of piles) {
+    const size = cardsIn(state, pile).length;
+    if (size > 0 && aabbContainsPoint(cardRect(slotPosition(pile)), point))
+      return { index: size - 1, pile };
   }
   return null;
 }
 
-/** Pile under the dropped stack's centre that legally accepts it. */
-function dropTarget(
-  state: GameState,
-  center: { x: number; y: number },
-  drag: Drag,
-): PileRef | null {
-  if (drag.cards.length === 1) {
-    for (let f = 0; f < 4; f++) {
-      const pileRef: PileRef = { index: f, kind: 'foundation' };
-      if (inSlot(center, slotPosition(pileRef))
-        && canDropOnFoundation(drag.cards[0]!, state.foundations[f]!)) {
-        return pileRef;
-      }
-    }
-  }
-  for (let t = 0; t < 7; t++) {
-    if (t === drag.from.index && drag.from.kind === 'tableau')
-      continue;
-    const slot = slotPosition({ index: t, kind: 'tableau' });
-    const column = state.tableau[t]!;
-    const bottom = column.length === 0
-      ? slot.y + CARD_H
-      : cardPosition(state, { index: t, kind: 'tableau' }, column.length - 1).y + CARD_H;
-    const inColumn = center.x >= slot.x && center.x <= slot.x + CARD_W
-      && center.y >= slot.y && center.y <= bottom + 40;
-    if (inColumn && canDropOnTableau(drag.cards[0]!, column))
-      return { index: t, kind: 'tableau' };
-  }
-  return null;
+/** Whether `run` may land on `target` under Klondike rules. */
+function canDrop(state: GameState, run: Run, target: PileRef): boolean {
+  const first = cardOf(state, run.cards[0]!);
+  if (target.kind === 'foundation')
+    return run.cards.length === 1 && canDropOnFoundation(first, topCard(state, target));
+  if (run.from.kind === 'tableau' && run.from.index === target.index)
+    return false;
+  return canDropOnTableau(first, topCard(state, target));
 }
 
 /** Flip the newly-exposed top card of a tableau pile face-up. */
 function flipExposed(from: PileRef, state: GameState): void {
   if (from.kind !== 'tableau')
     return;
-  const top = state.tableau[from.index]!.at(-1);
-  if (top && !top.faceUp)
-    top.faceUp = true;
+  const top = pileTop(state.world, pileEntity(state, from));
+  if (top !== undefined)
+    cardOf(state, top).faceUp = true;
 }

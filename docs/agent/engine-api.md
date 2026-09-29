@@ -251,11 +251,13 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 ### `@pierre/ecs/modules/collision`
 - **`Aabb`** _(interface)_ — Axis-aligned bounding box: top-left `x` / `y` plus width `w` and height `h`.
 - **`AabbAxis`** _(type)_ `'x' | 'y'` — Which face of an AABB a hit is on — `'x'` (a vertical face) or `'y'` (a horizontal face).
+- **`aabbContainsPoint`** _(fn)_ `(box: Aabb, p: Vec2): boolean` — True when `p` lies inside the box or exactly on its edge. Boundary-inclusive, unlike the strict aabbVsAabb, so a point on a shared edge b...
 - **`aabbVsAabb`** _(fn)_ `(a: Aabb, b: Aabb): boolean` — Two AABBs overlap when their projections on both axes overlap. Edge contact does NOT count as overlap.
 - **`aabbVsAabbSwept`** _(fn)_ `(a: Aabb, motionA: Vec2, b: Aabb): SweptHit` — Swept AABB: `a` moves by `motionA` toward static `b`. Returns the first fraction of motion at which they touch (`tEntry ∈ [0, 1]`) and th...
 - **`aabbVsCircle`** _(fn)_ `(a: Aabb, c: Vec2, r: number): boolean` — Circle–AABB overlap: closest point on the AABB to the circle centre lies within the radius.
 - **`bounceOffAabb`** _(fn)_ `(mover: Aabb, vel: Vec2, obstacle: Aabb): BounceResult | null` — Resolve an AABB overlap with a pure velocity reflection on the minimum-separation axis. Returns `null` when the two boxes are **not** ove...
 - **`BounceResult`** _(interface)_ — A collision resolution: `pushOut` to separate the mover from the obstacle, and its reflected `velocity`.
+- **`circleContainsPoint`** _(fn)_ `(center: Vec2, radius: number, p: Vec2): boolean` — True when `p` lies inside the circle or exactly on its rim.
 - **`circleVsCircle`** _(fn)_ `(pa: Vec2, ra: number, pb: Vec2, rb: number): boolean` — Two circles overlap (or touch) when the distance between centres ≤ sum of radii.
 - **`makeTriggerSystem`** _(fn)_ `<TCtx>(options: TriggerSystemOptions<TCtx>): SchedulableSystem<TCtx>` — Builds a schedulable system that iterates a broadphase, runs an optional narrowphase filter, and invokes `onOverlap` for each surviving p...
 - **`RayHit`** _(interface)_ — Result of a ray-vs-AABB hit: the entry `axis` and parametric distance `t` along `dir`.
@@ -305,6 +307,13 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`makeCooldownSystem`** _(fn)_ `<TCtx extends CooldownTickCtx>(options?: CooldownSystemOptions): SchedulableSystem<TCtx>` — Build a schedulable system that advances every CooldownDef each tick. Consumers poll ready and re-arm with trigger.
 - **`ready`** _(fn)_ `(c: Cooldown): boolean` — Whether the cooldown has elapsed and the gated action may fire.
 - **`trigger`** _(fn)_ `(c: Cooldown, durationMs?: number): void` — Re-arm the cooldown after firing (optionally changing its duration).
+
+### `@pierre/ecs/modules/drag-drop`
+- **`DragDrop`** _(class)_ `new <TPayload, TTarget>(options: DragDropOptions<TPayload, TTarget>): DragDrop<TPayload, TTarget>` — One drag-and-drop interaction at a time: grab a payload, follow the pointer, find the target under it that accepts the payload, drop ther...
+- **`DragDropOptions`** _(interface)_ — Options for DragDrop.
+- **`DragProbe`** _(type)_ `<TPayload>'origin' | 'pointer' | ((session: DragSession<TPayload>) => Vec2)` — Where a drop is tested: the pointer, the dragged item's origin (DragSession.position), or any point you derive from the session — the dra...
+- **`DragSession`** _(interface)_ — The state of one drag, from press to drop. All points are in the space the consumer passes to DragDrop — client pixels, canvas pixels or ...
+- **`DropResult`** _(interface)_ — The outcome of DragDrop.end: the payload, and where it landed.
 
 ### `@pierre/ecs/modules/easing`
 - **`easeInBack`** _(const)_ `(t: number): number` — —
@@ -528,6 +537,25 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`FindPathOptions`** _(interface)_ — Inputs to findPath: `from`/`to` and a `traversable` test, plus optional `cost`, `heuristic`, `neighbors`, and `maxCost` overrides.
 - **`PathNode`** _(interface)_ — An integer grid cell on a path — `x` / `y`.
 
+### `@pierre/ecs/modules/pile`
+- **`addToPile`** _(fn)_ `(world: EcsWorld, pile: EntityId, item: EntityId, index?: number): void` — Put `item` into `pile` at `index` (default: on top). The item first leaves the pile it was in — the same pile included — so `index` count...
+- **`createPile`** _(fn)_ `(world: EcsWorld, items?: readonly EntityId[]): EntityId` — Create a pile entity holding `items` in order (bottom first). Each item leaves any pile it was in.
+- **`indexInPile`** _(fn)_ `(world: EcsWorld, item: EntityId): number` — `item`'s position in its pile (`0` = bottom), or `-1` when it is in none.
+- **`InPile`** _(interface)_ — Back-reference on a pile member: the pile entity it sits in.
+- **`InPileDef`** _(const)_ — The InPile component, carried by each pile member; serializes under `'inPile'`.
+- **`installPiles`** _(fn)_ `(world: EcsWorld): void` — Register PileDef and InPileDef on `world` and install the cleanup that keeps them consistent when entities go away: - destroying a member...
+- **`moveAll`** _(fn)_ `(world: EcsWorld, from: EntityId, to: EntityId, options?: MoveAllOptions): EntityId[]` — Move every entity of `from` onto the top of `to`, keeping their order unless `reverse` is set. Returns the moved entities in the order th...
+- **`MoveAllOptions`** _(interface)_ — Options for moveAll.
+- **`moveTop`** _(fn)_ `(world: EcsWorld, from: EntityId, to: EntityId, count?: number): EntityId[]` — Move the top `count` entities of `from` onto `to`, keeping their order — a draw, or a run of cards moved as one. Moves fewer when `from` ...
+- **`Pile`** _(interface)_ — An ordered pile of entities — a deck, a hand, a discard pile, a tableau column. Index `0` is the bottom, the last index is the top. Read ...
+- **`PileDef`** _(const)_ — The Pile component, carried by a pile entity; serializes under `'pile'`.
+- **`pileItems`** _(fn)_ `(world: EcsWorld, pile: EntityId): readonly EntityId[]` — The pile's members, bottom first. This is the live array — read it, do not mutate it; a change that bypasses this module leaves `InPile` ...
+- **`pileOf`** _(fn)_ `(world: EcsWorld, item: EntityId): EntityId | undefined` — The pile `item` sits in, or `undefined` when it is in none.
+- **`pileSize`** _(fn)_ `(world: EcsWorld, pile: EntityId): number` — How many entities are in the pile.
+- **`pileTop`** _(fn)_ `(world: EcsWorld, pile: EntityId): EntityId | undefined` — The top entity of the pile, or `undefined` when it is empty.
+- **`removeFromPile`** _(fn)_ `(world: EcsWorld, item: EntityId): boolean` — Take `item` out of its pile. Returns `false` when it was in none.
+- **`shufflePile`** _(fn)_ `(world: EcsWorld, pile: EntityId, rand?: RandomFn): void` — Shuffle the pile in place (Fisher–Yates). Pass a seeded `rand` for a reproducible deal.
+
 ### `@pierre/ecs/modules/render-canvas2d`
 - **`Canvas2DRenderContext`** _(interface)_ — The context a Canvas2D render pass draws from: the `ctx2d`, the `world`, optional sprite `atlases`, and an optional camera `view`.
 - **`Canvas2DRenderer`** _(class)_ `new (): Canvas2DRenderer` — Draws every entity carrying `PositionDef + RenderableDef`. Optional reads: `RotationDef`, `ScaleDef`, `OpacityDef`, `RenderOrderDef`, `Sc...
@@ -552,6 +580,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`DomRenderContext`** _(interface)_ — The context DomRenderer draws from: the `root` element to mount into and the `world`.
 - **`DomRenderer`** _(class)_ `new (options?: DomRendererOptions): DomRenderer` — A `Renderer` that reconciles `DomRenderable` components to real DOM nodes — one element per entity, created, re-tagged, or removed to mat...
 - **`DomRendererOptions`** _(interface)_ — DomRenderer options: a `reconcile` hook to apply per-entity attributes or content the renderer does not manage itself.
+- **`entityAtPoint`** _(fn)_ `(x: number, y: number, root?: Element): EntityId | null` — The entity whose node DomRenderer rendered at client coordinates `(x, y)`, or `null` when nothing there belongs to an entity. Asks the br...
 
 ### `@pierre/ecs/modules/render-scene3d`
 - **`Scene3DEntry`** _(type)_ `<TRow extends unknown[]>[ EntityId, ...TRow ]` — One selected entity: its id followed by the component values `select` yields.

@@ -9,7 +9,8 @@ import { PositionDef } from '../transform';
 import { DomRenderableDef } from './dom-renderable';
 
 const DEFAULT_TAG = 'div';
-const ENTITY_ID_ATTR = 'data-entity-id';
+/** The attribute {@link DomRenderer} writes on every node it owns. */
+export const ENTITY_ID_ATTR = 'data-entity-id';
 
 interface DrawEntry {
   node: HTMLElement;

@@ -158,7 +158,6 @@ pinned. `speculative` = shape undetermined or canon split.
 | `modules/rhythm` | speculative | Shape — second rhythm prototype |
 | App-host mount / teardown helper | speculative | Shape — second app host |
 | `modules/destructible-terrain` | ready | Scheduling — depends on `modules/tilemap` V2 |
-| `modules/card-interaction` | ready | Scheduling — build slot |
 | `modules/input` — wheel + multi-touch | deferred | Shape — wheel model and multi-pointer set unpinned |
 | `modules/input` — rebinding registry (overrides, conflicts, chords) | deferred | Shape — remap consumer + settled chord model |
 | `modules/steering` — `SteeringAgentDef` component | deferred | Shape — a consumer wanting the component form |
@@ -1189,40 +1188,6 @@ re-upload the dirty region instead of respawning entities.
 
 **Ladder.** Entries #18 (Worms), #19 (Dig Dug) and #20 (Motherload) are all
 built on it — three consecutive games, none started.
-
-</details>
-
-### `modules/card-interaction` — ready
-
-**Scope.** Two genre-clustered capabilities for card and deck games:
-**zone/pile management** (move a card between hand ↔ deck ↔ discard, or stock
-↔ waste, keeping pile metadata consistent) and **drag-and-drop hit-testing**
-(reverse hit-test plus a legal-drop predicate).
-
-**Status.** Ready — trigger met, 2 consumers agreeing on the same *operations*:
-card-battler and solitaire. Compare `modules/grid-movement`, which stayed
-deferred because three consumers turned out to have three shapes; here two
-consumers agree on the operation surface.
-
-**Gate.** Scheduling — build slot.
-
-<details>
-<summary>Details</summary>
-
-**Evidence.** Both ABSENT in `src/`: no zone/pile helper (the tag swaps are
-hand-rolled) and no hit-test / drop-predicate helper (card-battler and
-solitaire each hand-roll reverse hit-testing for DOM and canvas).
-
-**Representation choice to make during the build.** card-battler models zones
-as *tags*; a *component* model would put the pile a card sits in on its row
-rather than in a separate store. Both are observable — `TagAdded` /
-`TagRemoved` and `ComponentAdded` / `ComponentRemoved` are all emitted — so
-the choice turns on read pattern, not reactivity. This does not change the
-operation surface (move a card between piles; hit-test a drop), so it does not
-gate the module — it is a design decision the plan settles.
-
-**Canon.** Unity UI drag handlers, Godot `Control` drag-and-drop, Phaser's
-drag plugins, every card-game tutorial's hand-rolled pile manager.
 
 </details>
 

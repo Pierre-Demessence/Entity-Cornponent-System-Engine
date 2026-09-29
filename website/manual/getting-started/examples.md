@@ -23,7 +23,7 @@ that prototype imports, which is the surface it exercises.
   Exercises `asset-loader`, `audio`, `collision`, `cooldown`, `input`, `lifetime`,
   `math`, `motion`, `render-canvas2d`, `spatial`, `spawner`, `tick`, `transform`.
 - **[`card-battler`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/card-battler)** — Turn-based card combat: DOM renderer, manual tick, drag-to-play — proves the renderer interface is not canvas-coupled.
-  Exercises `input`, `render-dom`, `rng`, `tick`, `transform`.
+  Exercises `drag-drop`, `input`, `pile`, `render-dom`, `tick`, `transform`.
 - **[`rhythm`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/rhythm)** — Four-lane rhythm: tick source driven by `AudioContext.currentTime`, not `performance.now` — first external-clock test.
   Exercises `easing`, `input`, `math`.
 - **[`platformer-3d`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/platformer-3d)** — 3D platformer via three.js with custom 3D AABB kinematics — the defining test that `@pierre/ecs` is not secretly 2D.
@@ -35,8 +35,8 @@ that prototype imports, which is the surface it exercises.
   Exercises `asset-loader`, `camera`, `math`, `render-canvas2d`, `texture-atlas`,
   `tilemap`, `tmx`, `transform`.
 - **[`solitaire`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/solitaire)** — First interactive canvas scene: draw-1 Klondike with per-frame card dragging, dynamic z-order via `RenderOrderDef`, and world-space hit-testing over a texture atlas.
-  Exercises `asset-loader`, `audio`, `input`, `render-canvas2d`, `rng`,
-  `texture-atlas`, `transform`.
+  Exercises `asset-loader`, `audio`, `collision`, `drag-drop`, `input`, `pile`,
+  `render-canvas2d`, `rng`, `texture-atlas`, `transform`.
 - **[`rpg`](https://github.com/Pierre-Demessence/Entity-Cornponent-System-Engine/tree/main/examples/rpg)** — First camera-follow and first NPC dialogue scene: walks a Tiled dungeon (CSV + external `.tsx` + flipped tiles) with a follow camera, wall collision, and a nine-slice dialogue box.
   Exercises `animation`, `asset-loader`, `camera`, `input`, `render-canvas2d`,
   `texture-atlas`, `tilemap`, `tmx`, `transform`.

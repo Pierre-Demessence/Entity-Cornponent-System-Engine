@@ -88,7 +88,7 @@ export const MODULE_CATEGORIES: readonly { modules: readonly string[]; title: st
       'texture-atlas',
     ],
   },
-  { modules: ['cooldown', 'input', 'lifetime', 'tick', 'timer'], title: 'Input and timing' },
+  { modules: ['cooldown', 'drag-drop', 'input', 'lifetime', 'tick', 'timer'], title: 'Input and timing' },
   {
     modules: ['behavior-tree', 'fsm', 'goap', 'grid-based', 'pathfinding', 'steering'],
     title: 'AI and decision making',
@@ -96,6 +96,7 @@ export const MODULE_CATEGORIES: readonly { modules: readonly string[]; title: st
   {
     title: 'World, saves and services',
     modules: [
+      'pile',
       'save',
       'scene-transition',
       'spawner',

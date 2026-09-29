@@ -187,7 +187,6 @@
 
 .cb-card--dragging {
   position: absolute;
-  transform: translate(-50%, -50%);
   cursor: grabbing;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
   pointer-events: none;

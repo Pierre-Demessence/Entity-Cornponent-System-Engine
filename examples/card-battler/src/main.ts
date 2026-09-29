@@ -6,7 +6,7 @@ import { AnimationFrameTickSource, ManualTickSource } from '@pierre/ecs/modules/
 
 import { makeWorld, resetGame } from './game';
 import { DomRenderer } from './render';
-import { dragSystem, turnSystem } from './systems';
+import { dragSystem, makeCardDrag, turnSystem } from './systems';
 
 import './style.css';
 
@@ -27,7 +27,7 @@ export function start(container: HTMLElement): () => void {
   );
 
   const state: GameState = {
-    drag: null,
+    drag: makeCardDrag(() => state),
     dtMs: 0,
     elapsedMs: 0,
     endTurnPending: false,
@@ -37,6 +37,7 @@ export function start(container: HTMLElement): () => void {
     events,
     input,
     phase: 'player',
+    piles: { deck: 0, discard: 0, hand: 0 }, // replaced by resetGame
     playerId: 0, // replaced by resetGame
     pointer: pointer.state,
     world,
@@ -89,7 +90,12 @@ export function start(container: HTMLElement): () => void {
   const onPointerUp = (): void => {
     logicTick.tick();
   };
+  // Pointer moves don't tick the logic; they only move the dragged card.
+  const onPointerMove = (event: PointerEvent): void => {
+    state.drag.move({ x: event.clientX, y: event.clientY });
+  };
   container.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
   // Use window-level pointerup so release off-container still resolves
   // the drag (matches PointerProvider's own default `windowTarget`).
   window.addEventListener('pointerup', onPointerUp);
@@ -97,6 +103,7 @@ export function start(container: HTMLElement): () => void {
   return (): void => {
     container.removeEventListener('pointerdown', onPointerDown);
     window.removeEventListener('pointerup', onPointerUp);
+    window.removeEventListener('pointermove', onPointerMove);
     input.dispose();
     unsubscribeRender();
     renderTick.stop();

@@ -2,23 +2,22 @@ import type { Vec2 } from '@pierre/ecs/modules/math';
 
 import type { GuardBrain, Wall } from './game';
 
-import { aabbVsAabb, rayVsAabb } from '@pierre/ecs/modules/collision';
+import { aabbContainsPoint, rayVsAabb } from '@pierre/ecs/modules/collision';
 
 import { VISION_HALF_ANGLE, VISION_RANGE } from './game';
 
 /**
  * True if no wall blocks the straight line from `from` to `to`.
  *
- * Composed from two engine primitives rather than a bespoke segment test: a
- * zero-size AABB at the origin answers "am I standing in a wall?" (which must
- * block sight), and the ray query takes the segment vector as its direction,
- * so `t <= 1` means "crossed before reaching `to`".
+ * Composed from two engine primitives rather than a bespoke segment test:
+ * `aabbContainsPoint` answers "am I standing in a wall?" (which must block
+ * sight), and the ray query takes the segment vector as its direction, so
+ * `t <= 1` means "crossed before reaching `to`".
  */
 export function hasLineOfSight(from: Vec2, to: Vec2, walls: readonly Wall[]): boolean {
-  const here = { h: 0, w: 0, x: from.x, y: from.y };
   const segment = { x: to.x - from.x, y: to.y - from.y };
   for (const w of walls) {
-    if (aabbVsAabb(here, w))
+    if (aabbContainsPoint(w, from))
       return false;
     const hit = rayVsAabb(from, segment, w);
     if (hit && hit.t <= 1)

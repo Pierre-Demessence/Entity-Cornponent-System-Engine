@@ -176,10 +176,24 @@ operation that inserts a member first removes it from its current pile, so
 directly is allowed for reads only; the README says so.
 
 **Destroy semantics.** Destroying a member must drop it from its pile, and
-destroying a pile must release its members (remove their `InPileDef`). The
-module installs this through `world.lifecycle` `EntityDestroyed` — the lazy
-lifecycle events already ship (356c2e7) — so games never hand-clean. The
-test suite pins both directions.
+destroying a pile must release its members (remove their `InPileDef`), so
+games never hand-clean. The test suite pins both directions.
+
+*Built differently from the first draft.* The draft routed this through
+`world.lifecycle` `EntityDestroyed`, but that bus is buffered until
+`lifecycle.flush()` and neither card example flushes it, so a destroyed card
+would linger in its pile until someone did. `installPiles` instead subscribes
+to the two component stores' `delete` events, which fire synchronously inside
+`destroyEntity`. Removing a member is then *one* code path — the `InPileDef`
+delete handler splices it out — whether it is destroyed, removed with
+`removeFromPile`, or moved (replacing its `InPileDef` fires the same handler).
+
+Store `delete` events also fire during `clearAll()` and `loadJSON()`, which
+wipe stores in registration order. `installPiles` registers `PileDef` before
+`InPileDef`, so wiping the piles first releases every member from the *old*
+piles before the member store is touched, and neither handler ever reaches a
+freshly loaded row. A test loads a save over a world that reuses the same ids
+to pin this.
 
 **Save/load.** `PileDef` holds an `EntityId[]`, which `simpleComponent`
 cannot express (scalar fields only, `src/component-store.ts:382`), so it is a
@@ -318,75 +332,105 @@ function circleContainsPoint(center: Vec2, radius: number, p: Vec2): boolean;
 
 ## Tasks
 
-- [ ] `modules/collision` — `aabbContainsPoint`, `circleContainsPoint`
+- [x] `modules/collision` — `aabbContainsPoint`, `circleContainsPoint`
       (boundary-inclusive, matching `aabb3ContainsPoint`), tests, README.
-- [ ] `modules/render-dom` — `entityAtPoint`, tests (jsdom: nested child hit,
+- [x] `modules/render-dom` — `entityAtPoint`, tests (jsdom: nested child hit,
       miss, a node outside `root`), README section.
-- [ ] `src/modules/pile/` — `pile.ts` (components, `installPiles`,
+- [x] `src/modules/pile/` — `pile.ts` (components, `installPiles`,
       operations), `index.ts` barrel.
-- [ ] `src/modules/pile/pile.test.ts`, proving:
-  - [ ] every operation keeps `PileDef.items` and `InPileDef` in step,
+- [x] `src/modules/pile/pile.test.ts`, proving:
+  - [x] every operation keeps `PileDef.items` and `InPileDef` in step,
         including a move between piles and a re-add to the same pile.
-  - [ ] `moveTop` keeps run order; `moveAll({ reverse: true })` reverses it.
-  - [ ] `shufflePile` with a seeded `RandomFn` is deterministic and keeps the
+  - [x] `moveTop` keeps run order; `moveAll({ reverse: true })` reverses it.
+  - [x] `shufflePile` with a seeded `RandomFn` is deterministic and keeps the
         member set.
-  - [ ] destroying a member removes it from its pile; destroying a pile
+  - [x] destroying a member removes it from its pile; destroying a pile
         releases its members.
-  - [ ] `toJSON` → `loadJSON` round-trips piles and back-references.
-  - [ ] `world.clearAll()` leaves no stale pile state.
-- [ ] `src/modules/pile/README.md` — API, the one-pile invariant, destroy
+  - [x] `toJSON` → `loadJSON` round-trips piles and back-references.
+  - [x] `world.clearAll()` leaves no stale pile state.
+- [x] `src/modules/pile/README.md` — API, the one-pile invariant, destroy
       semantics, save/load, not-included list. Document the `rng` dependency
       (`shufflePile` uses `shuffle`), as the architectural rules require.
-- [ ] `src/modules/drag-drop/` — `drag-drop.ts`, `index.ts`.
-- [ ] `src/modules/drag-drop/drag-drop.test.ts`, proving:
-  - [ ] target priority: the first containing **and** accepting target wins;
+- [x] `src/modules/drag-drop/` — `drag-drop.ts`, `index.ts`.
+- [x] `src/modules/drag-drop/drag-drop.test.ts`, proving:
+  - [x] target priority: the first containing **and** accepting target wins;
         a containing but rejecting target is skipped.
-  - [ ] each `probe` mode (pointer, origin, function).
-  - [ ] `threshold`: below it, `end` returns null and `session.started` is
+  - [x] each `probe` mode (pointer, origin, function).
+  - [x] `threshold`: below it, `end` returns null and `session.started` is
         false.
-  - [ ] `hovered` tracks `move`; `cancel` clears the session.
-  - [ ] `position` is `pointer − grab`.
-- [ ] `src/modules/drag-drop/README.md` — API, the points-in boundary (no
+  - [x] `hovered` tracks `move`; `cancel` clears the session.
+  - [x] `position` is `pointer − grab`.
+- [x] `src/modules/drag-drop/README.md` — API, the points-in boundary (no
       listeners, no rendering), how each consumer's input feeds it,
       not-included list. No cross-module source dependency beyond
       `modules/math` for `Vec2`, if it uses it; document whichever it is.
-- [ ] Migrate **card-battler**:
-  - [ ] Deck, hand and discard become pile entities; `InHandTag` /
+- [x] Migrate **card-battler**:
+  - [x] Deck, hand and discard become pile entities; `InHandTag` /
         `InDeckTag` / `InDiscardTag` are deleted.
-  - [ ] `drawCards` becomes `moveTop` from a deck shuffled at reset — the
+  - [x] `drawCards` becomes `moveTop` from a deck shuffled at reset — the
         `pick([...inDeck])` random draw goes away.
-  - [ ] Reshuffle, discard-hand and discard-card use the pile operations.
-  - [ ] The renderer's zone lookup and counts read `pileOf` / `pileSize`.
-  - [ ] `systems/drag.ts` drives `DragDrop` from `justPressed` /
+  - [x] Reshuffle, discard-hand and discard-card use the pile operations.
+  - [x] The renderer's zone lookup and counts read `pileOf` / `pileSize`.
+  - [x] `systems/drag.ts` drives `DragDrop` from `justPressed` /
         `justReleased`; `hitTestEntityAt` becomes `entityAtPoint`; the
         enemy is the one target, accepting affordable cards. Record the real
         grab offset (the `drag.ts:59-61` note).
-- [ ] Migrate **solitaire**:
-  - [ ] Stock, waste, 4 foundations and 7 tableau columns become pile
+- [x] Migrate **solitaire**:
+  - [x] Stock, waste, 4 foundations and 7 tableau columns become pile
         entities; `GameState` holds their ids. Card data (suit, rank, face)
         stays in the example, keyed by entity.
-  - [ ] Deal, stock ↔ waste, run moves and the double-click send use the pile
+  - [x] Deal, stock ↔ waste, run moves and the double-click send use the pile
         operations; `pileArray` is deleted.
-  - [ ] `DragDrop` replaces `Drag`: targets are foundations then tableau,
+  - [x] `DragDrop` replaces `Drag`: targets are foundations then tableau,
         `probe` returns the card centre, `accepts` wraps `canDropOn…`,
         `contains` uses `aabbContainsPoint` over each pile's drop rect.
-  - [ ] `inSlot` is replaced by `aabbContainsPoint`.
-- [ ] `scripts/manual.ts` — add `pile` and `drag-drop` to a category, each
+  - [x] `inSlot` is replaced by `aabbContainsPoint`.
+- [x] `scripts/manual.ts` — add `pile` and `drag-drop` to a category, each
       exactly once (`scripts/manual.test.ts` enforces this). `drag-drop` fits
       "Input and timing"; `pile` fits "World, saves and services".
-- [ ] `npm run docs:api` and `npm run docs:usage` — regenerate both catalogs.
-- [ ] `docs/roadmap/ecs-module-backlog.md` — delete the
+- [x] `npm run docs:api` and `npm run docs:usage` — regenerate both catalogs.
+- [x] `docs/roadmap/ecs-module-backlog.md` — delete the
       `modules/card-interaction` entry and its status-table row.
-- [ ] `docs/plans/ecs-entity-id-remapping.md` — name `PileDef` / `InPileDef`
+- [x] `docs/plans/ecs-entity-id-remapping.md` — name `PileDef` / `InPileDef`
       among the components a remap must rewrite.
-- [ ] `website/manual/getting-started/examples.md` — add the new modules (and
+- [x] `website/manual/getting-started/examples.md` — add the new modules (and
       `collision` for solitaire) to both examples' "Exercises" lists.
-- [ ] Gate green: lint, typecheck, `npm test`, every example typechecks; both
+- [x] Gate green: lint, typecheck, `npm test`, every example typechecks; both
       card examples played through in a browser with no console errors — draw,
       play, reshuffle and reset in card-battler; deal, run move, foundation
       drop, double-click, stock recycle and an illegal-drop snap-back in
       solitaire.
-- [ ] Move this plan to `docs/plans/done/` in the same commit.
+- [x] Move this plan to `docs/plans/done/` in the same commit.
+
+Also done in this change: `examples/stealth-guard` faked "is this point in a
+wall?" with a zero-size `aabbVsAabb`, which the collision README flagged as
+missing the boundary; it now calls `aabbContainsPoint`, and the README and
+`rayVsAabb` JSDoc point there instead of at the workaround.
+
+## Implementation notes
+
+Where the build refined the sketch above:
+
+- `entityAtPoint(x, y, root?: Element)` — `root` is an `Element` (it needs
+  `contains` and `ownerDocument`), not any `ParentNode`.
+- `DragSession` also exposes `press` (the pointer at the press), which the
+  threshold is measured from. `moveAll` returns the moved entities like
+  `moveTop`, so solitaire can turn the recycled waste face down in one loop.
+- **card-battler** runs its drag in client pixels — the space
+  `entityAtPoint` hit-tests in — and its renderer shifts the dragged card by
+  the root's rect into root-local space. Pointer moves go straight to
+  `state.drag.move` from a `pointermove` listener; the logic tick still only
+  runs on press and release. With a real grab offset, the dragged card's CSS
+  `translate(-50%, -50%)` centring is gone.
+- **solitaire** uses `threshold: 4`, so clicking or double-clicking a card no
+  longer opens a zero-length drag that snapped back with a slide sound.
+  `pointercancel` now cancels the drag instead of resolving a drop.
+- Verified in Chromium: card-battler — play onto the enemy, drop on empty
+  space, three end turns through a discard reshuffle, reset, grab offset held
+  exactly; solitaire (seeded deal) — illegal drop snaps back, two run moves
+  with face-down cards flipping, double-click to a foundation, drag onto a
+  foundation, waste to tableau, stock emptied and recycled. No console errors
+  beyond the dev server's missing `favicon.ico`.
 
 No `package.json` change is needed: `"./modules/*"` already publishes new
 subpaths.

@@ -3,19 +3,21 @@
  *
  * Each card owns a sprite entity (`PositionDef` + `RenderableDef` +
  * `RenderOrderDef`). `syncLayout` rewrites those components from the game
- * state every frame — and, when a stack is being dragged, lifts those cards
- * to the pointer with a large `RenderOrderDef` bump in the same pass, so it
- * stays the single writer of layout. `renderFrame` paints the felt + empty
+ * state every frame — and, when a run is being dragged, lifts those cards
+ * to the drag position with a large `RenderOrderDef` bump in the same pass, so
+ * it stays the single writer of layout. `renderFrame` paints the felt + empty
  * pile slots onto the canvas, then lets the engine's `Canvas2DRenderer` draw
  * the sprites on top, then overlays the win banner.
  */
 
-import type { EcsWorld } from '@pierre/ecs';
+import type { EntityId } from '@pierre/ecs';
+import type { DragSession } from '@pierre/ecs/modules/drag-drop';
 import type { Canvas2DRenderContext } from '@pierre/ecs/modules/render-canvas2d';
 import type { TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
 
-import type { Card, GameState, PileRef } from './game';
+import type { GameState, PileRef } from './game';
 
+import { pileSize } from '@pierre/ecs/modules/pile';
 import { Canvas2DRenderer, RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
@@ -23,95 +25,87 @@ import { CARD_BACK_FRAME, cardFrame } from './cards';
 import {
   CANVAS_H,
   CANVAS_W,
-
   CARD_H,
   CARD_W,
+  cardOf,
   cardPosition,
-
+  cardsIn,
   slotPosition,
 } from './game';
 
 export const CARDS_ATLAS = 'cards';
 export const BACKS_ATLAS = 'backs';
 
-/** Render-order bump applied to the dragged stack so it floats on top. */
+/** Render-order bump applied to the dragged run so it floats on top. */
 export const DRAG_ORDER_BUMP = 100_000;
 
 /** Vertical fan offset between cards in a dragged run. */
 const DRAG_FAN = 24;
 
-/**
- * The cards currently held by the pointer, plus the grab/pointer geometry
- * needed to position them. `syncLayout` lifts these above every pile.
- */
-export interface DragOverride {
-  cards: Card[];
-  grabX: number;
-  grabY: number;
-  pointerX: number;
-  pointerY: number;
+/** What a drag carries: the run of cards (bottom first) and the pile it left. */
+export interface Run {
+  cards: EntityId[];
+  from: PileRef;
 }
 
 const renderer = new Canvas2DRenderer();
 
+const PILES: readonly PileRef[] = [
+  { index: 0, kind: 'stock' },
+  { index: 0, kind: 'waste' },
+  ...[0, 1, 2, 3].map((index): PileRef => ({ index, kind: 'foundation' })),
+  ...[0, 1, 2, 3, 4, 5, 6].map((index): PileRef => ({ index, kind: 'tableau' })),
+];
+
 /** Rewrite every card's sprite components from the current game state. */
-export function syncLayout(world: EcsWorld, state: GameState, drag?: DragOverride | null): void {
-  const positions = world.getStore(PositionDef);
-  const renderables = world.getStore(RenderableDef);
-  const orders = world.getStore(RenderOrderDef);
+export function syncLayout(state: GameState, drag: DragSession<Run> | null): void {
+  const positions = state.world.getStore(PositionDef);
+  const renderables = state.world.getStore(RenderableDef);
+  const orders = state.world.getStore(RenderOrderDef);
   let order = 0;
 
-  const place = (card: Card, pile: PileRef, index: number): void => {
-    const pos = cardPosition(state, pile, index);
-    positions.set(card.id, pos);
-    renderables.set(card.id, {
-      anchor: 'top-left',
-      atlas: card.faceUp ? CARDS_ATLAS : BACKS_ATLAS,
-      dh: CARD_H,
-      dw: CARD_W,
-      frame: card.faceUp ? cardFrame(card.suit, card.rank) : CARD_BACK_FRAME,
-      kind: 'sprite',
-    });
-    orders.set(card.id, { value: order++ });
-  };
-
-  state.stock.forEach((card, i) => place(card, { index: 0, kind: 'stock' }, i));
-  state.waste.forEach((card, i) => place(card, { index: 0, kind: 'waste' }, i));
-  state.foundations.forEach((pile, f) =>
-    pile.forEach((card, i) => place(card, { index: f, kind: 'foundation' }, i)));
-  state.tableau.forEach((pile, t) =>
-    pile.forEach((card, i) => place(card, { index: t, kind: 'tableau' }, i)));
-
-  if (drag) {
-    drag.cards.forEach((card, i) => {
-      positions.set(card.id, {
-        x: drag.pointerX - drag.grabX,
-        y: drag.pointerY - drag.grabY + i * DRAG_FAN,
+  for (const pile of PILES) {
+    cardsIn(state, pile).forEach((id, index) => {
+      const card = cardOf(state, id);
+      positions.set(id, cardPosition(state, pile, index));
+      renderables.set(id, {
+        anchor: 'top-left',
+        atlas: card.faceUp ? CARDS_ATLAS : BACKS_ATLAS,
+        dh: CARD_H,
+        dw: CARD_W,
+        frame: card.faceUp ? cardFrame(card.suit, card.rank) : CARD_BACK_FRAME,
+        kind: 'sprite',
       });
-      orders.set(card.id, { value: DRAG_ORDER_BUMP + i });
+      orders.set(id, { value: order++ });
+    });
+  }
+
+  if (drag?.started) {
+    drag.payload.cards.forEach((id, i) => {
+      positions.set(id, { x: drag.position.x, y: drag.position.y + i * DRAG_FAN });
+      orders.set(id, { value: DRAG_ORDER_BUMP + i });
     });
   }
 }
 
 export function renderFrame(
   ctx2d: CanvasRenderingContext2D,
-  world: EcsWorld,
   atlases: TextureAtlasRegistry,
   state: GameState,
 ): void {
   ctx2d.fillStyle = '#0b3d2e';
   ctx2d.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-  drawSlot(ctx2d, slotPosition({ index: 0, kind: 'stock' }), state.stock.length === 0 ? '↻' : '');
+  drawSlot(ctx2d, slotPosition({ index: 0, kind: 'stock' }), pileSize(state.world, state.stock) === 0 ? '↻' : '');
   drawSlot(ctx2d, slotPosition({ index: 0, kind: 'waste' }), '');
   for (let f = 0; f < 4; f++)
     drawSlot(ctx2d, slotPosition({ index: f, kind: 'foundation' }), 'A');
   for (let t = 0; t < 7; t++) {
-    if (state.tableau[t]!.length === 0)
+    if (pileSize(state.world, state.tableau[t]!) === 0)
       drawSlot(ctx2d, slotPosition({ index: t, kind: 'tableau' }), '');
   }
 
-  const renderCtx: Canvas2DRenderContext = { atlases, ctx2d, world };
+  const renderCtx: Canvas2DRenderContext = { atlases, ctx2d, world: state.world };
   renderer.render(renderCtx);
 
   if (state.won)
