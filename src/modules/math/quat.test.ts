@@ -5,6 +5,7 @@ import {
   quatConjugate,
   quatForward,
   quatFromAxisAngle,
+  quatLookRotation,
   quatMul,
   quatNormalize,
   quatRotate,
@@ -255,5 +256,40 @@ describe('quatForward and quatUp', () => {
 
     const rolled = quatUp(quatFromAxisAngle(Z, HALF_TURN));
     expect(rolled.y).toBeCloseTo(-1, 12);
+  });
+});
+
+describe('quatLookRotation', () => {
+  it('points the local -Z axis along forward', () => {
+    const dir = { x: 2, y: -1, z: 3 };
+    const f = quatForward(quatLookRotation(dir));
+    const n = vec3Length(dir);
+    expect(f.x).toBeCloseTo(dir.x / n, 9);
+    expect(f.y).toBeCloseTo(dir.y / n, 9);
+    expect(f.z).toBeCloseTo(dir.z / n, 9);
+  });
+
+  it('keeps local +Y in the plane of forward and up, on the up side', () => {
+    const q = quatLookRotation({ x: 1, y: 0.5, z: -2 });
+    const up = quatUp(q);
+    expect(up.y).toBeGreaterThan(0);
+    // Local +X stays horizontal: no roll.
+    expect(quatRotate(q, { x: 1, y: 0, z: 0 }).y).toBeCloseTo(0, 9);
+  });
+
+  it('is the identity when looking down -Z, and a half turn about Y when looking down +Z', () => {
+    const id = quatLookRotation({ x: 0, y: 0, z: -5 });
+    expect(Math.abs(id.w)).toBeCloseTo(1, 9);
+    const back = quatForward(quatLookRotation(Z));
+    expect(back.z).toBeCloseTo(1, 9);
+  });
+
+  it('returns a unit rotation for every branch, including degenerate inputs', () => {
+    const inputs = [Y, { x: 0, y: -1, z: 0 }, { x: -1, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, { x: 0.001, y: 1, z: 0 }];
+    for (const dir of inputs)
+      expect(len(quatLookRotation(dir))).toBeCloseTo(1, 9);
+    expect(quatLookRotation({ x: 0, y: 0, z: 0 })).toEqual({ w: 1, x: 0, y: 0, z: 0 });
+    // Straight down: forward is still honoured despite up being parallel.
+    expect(quatForward(quatLookRotation({ x: 0, y: -1, z: 0 })).y).toBeCloseTo(-1, 9);
   });
 });

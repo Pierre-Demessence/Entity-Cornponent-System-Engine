@@ -43,24 +43,25 @@ import { PositionDef } from '@pierre/ecs/modules/transform';
 const world = new EcsWorld();
 world.registerComponent(PositionDef);
 
-const id = world.spawn({ name: 'marker', components: { position: { x: 3, y: 4 } } });
-world.move(id, 5, 6);
+world.spawn({ name: 'marker', components: { position: { x: 3, y: 4 } } });
 
-for (const [entity, position] of world.query(PositionDef))
+for (const [entity, position] of world.query(PositionDef)) {
+  position.x += 1;
   console.log(entity, position.x, position.y);
+}
 ```
 
-That is the whole shape: register a component, spawn an entity, query, write. The
-tick loop, rendering, input and collision are all added around it — none of them
-change this structure.
+That is the whole shape: register a component, spawn an entity, query, write —
+a write through the query's row lands in the store. The tick loop, rendering,
+input and collision are all added around it; none of them change this structure.
 
 ## Where to next
 
 - **Build something** — [Build a moving, drawn scene](../../guides/tutorial/) goes
   from an empty file to a moving, drawn rectangle in seven steps.
-- **Find a capability** — [Module index](../module-index/) groups all 42 modules by
-  the task they serve, rather than by name.
-- **See it working** — [Examples](../../../examples/) runs 28 prototypes in the
+- **Find a capability** — [Module index](../module-index/) groups every module by
+  the task it serves, rather than by name.
+- **See it working** — [Examples](../../../examples/) runs the prototypes in the
   page, each with what it was built to prove.
 - **Understand the loop** — [Ticks, frames and system
   order](../../concepts/ticks-and-order/) explains why simulation and drawing are

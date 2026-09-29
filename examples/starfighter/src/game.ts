@@ -1,17 +1,20 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
 import type { InputState } from '@pierre/ecs/modules/input';
-import type { Quat, Vec3 } from '@pierre/ecs/modules/math';
+import type { Vec3 } from '@pierre/ecs/modules/math';
 import type { RandomFn } from '@pierre/ecs/modules/rng';
 
 import { EcsWorld } from '@pierre/ecs';
-import { QUAT_IDENTITY, vec3ClampLength, vec3RandomUnit } from '@pierre/ecs/modules/math';
+import { Camera3DDef, ChaseRigDef, makeCamera3D, makeChaseRig } from '@pierre/ecs/modules/camera-3d';
+import { degToRad, QUAT_IDENTITY, vec3ClampLength, vec3RandomUnit } from '@pierre/ecs/modules/math';
 import { makeSeededRng } from '@pierre/ecs/modules/rng';
 
 import {
   BulletDef,
   BulletTag,
+  CameraTag,
   Position3DDef,
   RadiusDef,
+  Rotation3DDef,
   ShipTag,
   TargetDef,
   TargetTag,
@@ -54,8 +57,9 @@ export const TARGET_DRIFT_SPEED = 4;
 // Camera (third-person chase)
 export const CAMERA_DISTANCE = 9;
 export const CAMERA_HEIGHT = 2.8;
-export const CAMERA_POS_LERP = 0.14;
-export const CAMERA_ROT_LERP = 0.1;
+/** Easing per second; closes 14% of the position gap and 10% of the turn per frame at 60 Hz. */
+export const CAMERA_POS_SMOOTHING = 9;
+export const CAMERA_ROT_SMOOTHING = 6.3;
 
 export type StarfighterAction
   = | 'fire'
@@ -73,28 +77,35 @@ export interface GameState {
   aimX: number; // reticle X offset, −1 (left) … +1 (right); deadzone applied downstream
   aimY: number; // reticle Y offset, −1 (down) … +1 (up)
   angVel: Vec3; // ship-local angular velocity (x=pitch, y=yaw, z=roll)
+  /** The camera entity: a `Camera3D` lens and a `ChaseRig` behind the ship. */
+  cameraId: EntityId | null;
   dtMs: number;
   events: EventBus<StarfighterEvent>;
   fireTimer: number;
   firing: boolean;
   input: InputState<StarfighterAction>;
-  orientation: Quat;
   playerId: EntityId | null;
   rng: RandomFn;
   score: number;
   spawnTimer: number;
   speed: number; // forward speed along the nose
+  /** Drawing-surface size in pixels; the camera lens follows it (see {@link resizeView}). */
+  viewport: { h: number; w: number };
   world: EcsWorld;
 }
 
 export function makeWorld(): EcsWorld {
   const world = new EcsWorld();
   world.registerComponent(Position3DDef);
+  world.registerComponent(Rotation3DDef);
   world.registerComponent(Velocity3DDef);
   world.registerComponent(RadiusDef);
   world.registerComponent(TargetDef);
   world.registerComponent(BulletDef);
+  world.registerComponent(Camera3DDef);
+  world.registerComponent(ChaseRigDef);
   world.registerTag(ShipTag);
+  world.registerTag(CameraTag);
   world.registerTag(BulletTag);
   world.registerTag(TargetTag);
   return world;
@@ -103,10 +114,41 @@ export function makeWorld(): EcsWorld {
 function spawnShip(state: GameState): EntityId {
   const id = state.world.createEntity();
   state.world.getStore(Position3DDef).set(id, { x: 0, y: 0, z: 0 });
+  state.world.getStore(Rotation3DDef).set(id, { ...QUAT_IDENTITY });
   state.world.getStore(Velocity3DDef).set(id, { vx: 0, vy: 0, vz: 0 });
   state.world.getStore(RadiusDef).set(id, { r: SHIP_RADIUS });
   state.world.getTag(ShipTag).add(id);
   return id;
+}
+
+/** Spawn the chase camera; `makeCameraRigSystem` trails it behind the ship. */
+function spawnCamera(state: GameState): EntityId {
+  const id = state.world.createEntity();
+  state.world.getStore(Camera3DDef).set(id, makeCamera3D({
+    far: 1200,
+    fovY: degToRad(65),
+    near: 0.1,
+    viewportH: state.viewport.h,
+    viewportW: state.viewport.w,
+  }));
+  state.world.getStore(ChaseRigDef).set(id, makeChaseRig({
+    offsetY: CAMERA_HEIGHT,
+    offsetZ: CAMERA_DISTANCE,
+    positionSmoothing: CAMERA_POS_SMOOTHING,
+    rotationSmoothing: CAMERA_ROT_SMOOTHING,
+  }));
+  state.world.getTag(CameraTag).add(id);
+  return id;
+}
+
+/** Record a new drawing-surface size and pass it to the camera lens. */
+export function resizeView(state: GameState, w: number, h: number): void {
+  state.viewport = { h, w };
+  const lens = state.cameraId == null ? undefined : state.world.getStore(Camera3DDef).get(state.cameraId);
+  if (lens) {
+    lens.viewportW = w;
+    lens.viewportH = h;
+  }
 }
 
 export function spawnBullet(state: GameState, pos: Vec3, vel: Vec3): EntityId {
@@ -152,7 +194,6 @@ export function resetGame(state: GameState): void {
   state.world.clearAll();
   state.events.clear();
   state.score = 0;
-  state.orientation = { ...QUAT_IDENTITY };
   state.angVel = { x: 0, y: 0, z: 0 };
   state.speed = 0;
   state.aimX = 0;
@@ -161,6 +202,7 @@ export function resetGame(state: GameState): void {
   state.spawnTimer = 0;
   state.rng = makeSeededRng(0x5EED);
   state.playerId = spawnShip(state);
+  state.cameraId = spawnCamera(state);
   for (let i = 0; i < 6; i++)
     spawnTarget(state);
 }

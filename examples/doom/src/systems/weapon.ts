@@ -3,6 +3,7 @@ import type { Vec3 } from '@pierre/ecs/modules/math';
 
 import type { GameState } from '../game';
 
+import { firstPersonForward } from '@pierre/ecs/modules/camera-3d';
 import { rayVsAabb3 } from '@pierre/ecs/modules/collision-3d';
 
 import { EnemyTag, HealthDef, Position3DDef, ShapeAabb3DDef, StaticBodyTag } from '../components';
@@ -11,10 +12,10 @@ import {
   HITSCAN_DAMAGE,
   HITSCAN_RANGE,
   PLAYER_EYE,
+  playerLook,
   PROJECTILE_COOLDOWN_MS,
   spawnProjectile,
 } from '../game';
-import { forwardVec } from './math';
 
 /**
  * Player weapons, fired while {@link GameState.firing} (LMB) and gated by a
@@ -45,11 +46,12 @@ export const weaponSystem: SchedulableSystem<GameState> = {
     if (ctx.ammo[ctx.weapon] <= 0)
       return; // out of ammo for this weapon
     const ppos = ctx.world.getStore(Position3DDef).get(ctx.playerId);
-    if (!ppos)
+    const look = playerLook(ctx);
+    if (!ppos || !look)
       return;
 
     const eye: Vec3 = { x: ppos.x, y: ppos.y + PLAYER_EYE, z: ppos.z };
-    const dir = forwardVec(ctx.yaw, ctx.pitch);
+    const dir = firstPersonForward(look.yaw, look.pitch);
 
     if (ctx.weapon === 1) {
       spawnProjectile(

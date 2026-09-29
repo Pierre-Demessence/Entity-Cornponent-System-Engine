@@ -1,10 +1,11 @@
-import type { Sample } from './readme-samples';
+import type { Sample } from './doc-samples';
 
 /**
- * Type-checks every runnable module-README example against the engine's real
- * declarations, so a defective example (wrong arity, a member that does not
- * exist, a mistyped `@pierre/ecs` import path) fails `npm test` naming the
- * README and the line within it.
+ * Type-checks every runnable example on a Manual page — module READMEs, core
+ * guides and authored pages — against the engine's real declarations, so a
+ * defective example (wrong arity, a member that does not exist, a mistyped
+ * `@pierre/ecs` import path) fails `npm test` naming the file and the line
+ * within it.
  *
  * Only *runnable* blocks are checked — those importing `@pierre/ecs` (see
  * `isRunnable`). They bring their own real types through those imports, so the
@@ -31,13 +32,13 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-import { isRunnable, moduleSamples, SAMPLE_EXCLUSIONS } from './readme-samples';
+import { isRunnable, manualSamples, moduleSamples, SAMPLE_EXCLUSIONS } from './doc-samples';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 
 /** Forward-slashed so the overlay keys match TypeScript's internal paths. */
 function samplePath(sample: Sample): string {
-  return join(ROOT, '__readme_samples__', `${sample.module}.${sample.index}.ts`)
+  return join(ROOT, '__doc_samples__', `${sample.source}.${sample.index}.ts`)
     .replace(/\\/g, '/');
 }
 
@@ -128,7 +129,7 @@ interface Prepared {
   sample: Sample;
 }
 
-/** A diagnostic promoted to a README location, or `undefined` when ignorable. */
+/** A diagnostic promoted to a Markdown location, or `undefined` when ignorable. */
 function reportable(diag: ts.Diagnostic, prepared: Prepared): string | undefined {
   if (diag.start === undefined || !diag.file)
     return undefined;
@@ -144,13 +145,13 @@ function reportable(diag: ts.Diagnostic, prepared: Prepared): string | undefined
     if (!/Cannot find module '@pierre\/ecs/.test(message))
       return undefined;
   }
-  // Map the diagnostic back to the README: `line` is 0-based in the assembled
+  // Map the diagnostic back to the Markdown: `line` is 0-based in the assembled
   // file, `offset` drops the prepended prelude, and `startLine` is the 1-based
-  // README line of the block's first code line.
+  // document line of the block's first code line.
   const { line } = diag.file.getLineAndCharacterOfPosition(diag.start);
-  const readmeLine = prepared.sample.startLine + (line - prepared.offset);
+  const docLine = prepared.sample.startLine + (line - prepared.offset);
   const message = ts.flattenDiagnosticMessageText(diag.messageText, ' ');
-  return `${prepared.sample.readmeRel}:${readmeLine} — TS${diag.code}: ${message}`;
+  return `${prepared.sample.docRel}:${docLine} — TS${diag.code}: ${message}`;
 }
 
 function checkSamples(samples: Sample[]): Map<string, string[]> {
@@ -183,19 +184,19 @@ function checkSamples(samples: Sample[]): Map<string, string[]> {
           messages.push(message);
       }
     }
-    failures.set(`${item.sample.readmeRel}#${item.sample.index}`, messages);
+    failures.set(`${item.sample.docRel}#${item.sample.index}`, messages);
   }
   return failures;
 }
 
-const allSamples = moduleSamples();
-const excludedKeys = new Set(SAMPLE_EXCLUSIONS.map(e => `${e.module}#${e.index}`));
-const runnable = allSamples.filter(s => isRunnable(s.code) && !excludedKeys.has(`${s.module}#${s.index}`));
+const allSamples = [...moduleSamples(), ...manualSamples()];
+const excludedKeys = new Set(SAMPLE_EXCLUSIONS.map(e => `${e.source}#${e.index}`));
+const runnable = allSamples.filter(s => isRunnable(s.code) && !excludedKeys.has(`${s.source}#${s.index}`));
 const skipped = allSamples.filter(s => !isRunnable(s.code));
 const failures = checkSamples(runnable);
 
-describe('module README samples type-check against the real API', () => {
-  it.each(runnable.map(s => ({ key: `${s.readmeRel}#${s.index}`, sample: s })))(
+describe('manual samples type-check against the real API', () => {
+  it.each(runnable.map(s => ({ key: `${s.docRel}#${s.index}`, sample: s })))(
     '$key compiles',
     ({ key }) => {
       expect(failures.get(key) ?? []).toEqual([]);
@@ -206,7 +207,7 @@ describe('module README samples type-check against the real API', () => {
     // Visibility, not a silent skip: reference/cheat-sheet blocks are API docs,
     // not code, and are covered by the symbol-existence linter follow-up.
     console.info(
-      `README samples: ${runnable.length} runnable examples checked, `
+      `Manual samples: ${runnable.length} runnable examples checked, `
       + `${skipped.length} reference blocks skipped, `
       + `${SAMPLE_EXCLUSIONS.length} runnable examples excluded.`,
     );

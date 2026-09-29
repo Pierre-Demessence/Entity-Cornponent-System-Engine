@@ -15,7 +15,7 @@ are frozen in
 [archived/audits/2026-09-21-example-gap-audit.md](../archived/audits/2026-09-21-example-gap-audit.md).
 Closures outside a pass are frozen in the dated audits beside it — most
 recently
-[2026-09-28-ledger-correction.md](../archived/audits/2026-09-28-ledger-correction.md).
+[2026-09-29-tick-runner-events.md](../archived/audits/2026-09-29-tick-runner-events.md).
 A row that outlives its decision is stale by construction.
 
 ## How this works

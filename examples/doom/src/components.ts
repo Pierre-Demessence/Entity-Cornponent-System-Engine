@@ -60,6 +60,8 @@ export const PickupDef: ComponentDef<Pickup> = simpleComponent<Pickup>(
 );
 
 export const PlayerTag: TagDef = { name: 'player' };
+/** The first-person camera entity (its `Camera3D` lens and `FirstPersonRig`). */
+export const CameraTag: TagDef = { name: 'camera-entity' };
 /** Immovable colliders (floors, walls, ceiling, stairs, ramps). */
 export const StaticBodyTag: TagDef = { name: 'static-body' };
 /** Gravity-driven AABB bodies resolved against statics (the player for now). */

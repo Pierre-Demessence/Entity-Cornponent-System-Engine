@@ -41,10 +41,10 @@ references it.
 
 ## Headline
 
-- 58 public entries (16 core, 42 modules) · 517 symbols (291 value, 226 type)
-- 41 entries referenced by at least one example · 17 with none
-- 165 value symbols referenced by no example (5 of them with no external consumer at all)
-- 149 symbols with no external consumer
+- 60 public entries (16 core, 44 modules) · 581 symbols (337 value, 244 type)
+- 43 entries referenced by at least one example · 17 with none
+- 196 value symbols referenced by no example (6 of them with no external consumer at all)
+- 163 symbols with no external consumer
 
 ## Entries with no example reference
 
@@ -76,8 +76,9 @@ Modules ranked by how many of their value exports no example references —
 the shortlist for the next game in
 [twenty-games-challenge.md](../twenty-games-challenge.md).
 
+- `@pierre/ecs/modules/math` — 37 of 53 value exports unreferenced by any example
 - `@pierre/ecs/modules/easing` — 30 of 31 value exports unreferenced by any example
-- `@pierre/ecs/modules/math` — 26 of 41 value exports unreferenced by any example
+- `@pierre/ecs/modules/camera-3d` — 21 of 33 value exports unreferenced by any example
 - `@pierre/ecs/modules/collision-3d` — 13 of 17 value exports unreferenced by any example
 - `@pierre/ecs/modules/noise` — 11 of 11 value exports unreferenced by any example
 - `@pierre/ecs/modules/animation` — 9 of 12 value exports unreferenced by any example
@@ -95,13 +96,13 @@ the shortlist for the next game in
 - `@pierre/ecs/modules/particles` — 2 of 6 value exports unreferenced by any example
 - `@pierre/ecs/modules/scene-transition` — 2 of 2 value exports unreferenced by any example
 - `@pierre/ecs/modules/spatial` — 2 of 6 value exports unreferenced by any example
-- `@pierre/ecs/modules/transform-3d` — 2 of 4 value exports unreferenced by any example
 - `@pierre/ecs/modules/behavior-tree` — 1 of 5 value exports unreferenced by any example
 - `@pierre/ecs/modules/kinematics-3d` — 1 of 2 value exports unreferenced by any example
 - `@pierre/ecs/modules/pathfinding` — 1 of 1 value exports unreferenced by any example
 - `@pierre/ecs/modules/render-canvas2d` — 1 of 5 value exports unreferenced by any example
 - `@pierre/ecs/modules/rng` — 1 of 4 value exports unreferenced by any example
 - `@pierre/ecs/modules/tick` — 1 of 4 value exports unreferenced by any example
+- `@pierre/ecs/modules/transform-3d` — 1 of 4 value exports unreferenced by any example
 - `@pierre/ecs/modules/turn-based` — 1 of 1 value exports unreferenced by any example
 
 ## Coverage by example
@@ -117,21 +118,21 @@ symbols.
 | asteroids | 17 | 38 | 6 |
 | jetpack | 16 | 34 | 7 |
 | space-invaders | 17 | 33 | 8 |
+| portal | 15 | 29 | 11 |
+| starfighter | 15 | 33 | 7 |
+| doom | 15 | 30 | 7 |
+| platformer-3d | 15 | 27 | 8 |
 | frogger | 15 | 25 | 7 |
 | rpg | 11 | 26 | 5 |
-| starfighter | 13 | 23 | 8 |
 | breakout | 13 | 21 | 6 |
 | flappy | 13 | 20 | 7 |
 | platformer | 13 | 21 | 6 |
 | stealth-guard | 12 | 20 | 7 |
 | boids | 11 | 19 | 7 |
 | river-raid | 13 | 20 | 6 |
-| doom | 13 | 19 | 6 |
-| portal | 12 | 17 | 7 |
 | card-battler | 12 | 16 | 7 |
 | critters | 12 | 16 | 7 |
 | local-pong | 12 | 16 | 5 |
-| platformer-3d | 12 | 16 | 5 |
 | tilemap | 9 | 16 | 2 |
 | solitaire | 9 | 15 | 2 |
 | woodcutter | 11 | 10 | 6 |
@@ -155,10 +156,10 @@ value 0/0 · type 0/3 · examples: — · tests: 1 · other: audio
 
 ### `@pierre/ecs/component-store`
 
-value 2/4 · type 2/15 · examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, jetpack +12 more · tests: 16 · other: animation, attach, audio, camera, collision, collision-3d, column-store.ts, cooldown +15 more
+value 2/4 · type 2/15 · examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, jetpack +12 more · tests: 18 · other: animation, attach, audio, camera, camera-3d, collision, collision-3d, column-store.ts +16 more
 
 - **`ColumnField`** _(interface)_ — examples: — · tests: src/column-store.test.ts · other: column-store.ts
-- **`ComponentDef`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, jetpack +7 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/component-store.test.ts, src/test-utils.test.ts, src/world.test.ts · other: animation, attach, audio, camera, collision, collision-3d, column-store.ts, cooldown +10 more
+- **`ComponentDef`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, jetpack +7 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/component-store.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/test-utils.test.ts, src/world.test.ts · other: animation, attach, audio, camera, camera-3d, collision, collision-3d, column-store.ts +11 more
 - **`ComponentMigration`** _(type)_ — no external consumer
 - **`ComponentStore`** _(class)_ — examples: — · tests: src/column-store.test.ts, src/component-store.test.ts, src/query.test.ts · other: particles, render-dom, world.ts
 - **`ComponentStoreLike`** _(interface)_ — examples: — · tests: src/modules/render-dom/dom-renderer.test.ts · other: column-store.ts, query.ts, render-canvas2d, world.ts
@@ -167,21 +168,21 @@ value 2/4 · type 2/15 · examples: asteroids, boids, breakout, card-battler, do
 - **`RegistryComponentOptions`** _(interface)_ — no external consumer
 - **`RegistryComponentValue`** _(type)_ — no external consumer
 - **`RegistryIdKind`** _(type)_ — no external consumer
-- **`simpleComponent`** _(fn)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, jetpack +8 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts, src/modules/scene-transition/scene-transition.test.ts, src/plugin.test.ts, src/simple-component.test.ts · other: attach, camera, collision, collision-3d, cooldown, kinematics, kinematics-3d, lifetime +4 more
+- **`simpleComponent`** _(fn)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, jetpack +8 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/modules/scene-transition/scene-transition.test.ts, src/plugin.test.ts, src/simple-component.test.ts · other: attach, camera, camera-3d, collision, collision-3d, cooldown, kinematics, kinematics-3d +5 more
 - **`SimpleComponentOptions`** _(interface)_ — no external consumer
 - **`SimpleFieldKind`** _(type)_ — no external consumer
 - **`SimpleSchema`** _(type)_ — examples: — · tests: — · other: timer
 - **`StoreDeleteHandler`** _(type)_ — examples: — · tests: — · other: column-store.ts
 - **`StoreSetHandler`** _(type)_ — examples: — · tests: — · other: column-store.ts
 - **`StoreValidateHandler`** _(type)_ — examples: — · tests: — · other: column-store.ts
-- **`TagDef`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, jetpack +11 more · tests: src/archetype-cache.test.ts, src/modules/camera/camera.test.ts, src/modules/motion-3d/motion-3d.test.ts, src/modules/motion/motion.test.ts, src/modules/turn-based/turn-cycler.test.ts, src/world.test.ts · other: camera, kinematics, kinematics-3d, motion, motion-3d, particles, test-utils.ts, turn-based +1 more
+- **`TagDef`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, jetpack +11 more · tests: src/archetype-cache.test.ts, src/modules/camera-3d/rigs.test.ts, src/modules/camera/camera.test.ts, src/modules/motion-3d/motion-3d.test.ts, src/modules/motion/motion.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/modules/turn-based/turn-cycler.test.ts, src/world.test.ts · other: camera, camera-3d, kinematics, kinematics-3d, motion, motion-3d, particles, test-utils.ts +2 more
 - **`TagStore`** _(class)_ — examples: — · tests: src/component-store.test.ts, src/query.test.ts · other: query.ts, turn-based, world.ts
 
 ### `@pierre/ecs/entity-id`
 
-value 0/0 · type 1/1 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: 12 · other: animation, archetype-index.ts, attach, audio, collision, column-store.ts, component-store.ts, kinematics +16 more
+value 0/0 · type 1/1 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: 13 · other: animation, archetype-index.ts, attach, audio, camera-3d, collision, column-store.ts, component-store.ts +18 more
 
-- **`EntityId`** _(type)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: src/modules/animation/sprite-animation.test.ts, src/modules/animation/sprite-clip.test.ts, src/modules/collision/trigger.test.ts, src/modules/cooldown/cooldown.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts, src/modules/kinematics/kinematics-system.test.ts, src/modules/lifetime/lifetime.test.ts, src/modules/motion-3d/motion-3d.test.ts +4 more · other: animation, archetype-index.ts, attach, audio, collision, column-store.ts, component-store.ts, kinematics +16 more
+- **`EntityId`** _(type)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +15 more · tests: src/modules/animation/sprite-animation.test.ts, src/modules/animation/sprite-clip.test.ts, src/modules/collision/trigger.test.ts, src/modules/cooldown/cooldown.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts, src/modules/kinematics/kinematics-system.test.ts, src/modules/lifetime/lifetime.test.ts, src/modules/motion-3d/motion-3d.test.ts +5 more · other: animation, archetype-index.ts, attach, audio, camera-3d, collision, column-store.ts, component-store.ts +18 more
 
 ### `@pierre/ecs/event-bus`
 
@@ -205,22 +206,22 @@ value 0/0 · type 0/1 · examples: — · tests: — · other: world.ts
 
 ### `@pierre/ecs/query`
 
-value 0/1 · type 0/0 · examples: — · tests: 1 · other: world.ts
+value 0/1 · type 0/0 · examples: portal · tests: 1 · other: world.ts
 
-- **`QueryBuilder`** _(class)_ — examples: — · tests: src/query.test.ts · other: world.ts
+- **`QueryBuilder`** _(class)_ — examples: portal (type only) · tests: src/query.test.ts · other: world.ts
 
 ### `@pierre/ecs/renderer`
 
-value 0/0 · type 1/1 · examples: card-battler · tests: — · other: render-canvas2d, render-dom
+value 0/0 · type 1/1 · examples: card-battler · tests: — · other: render-canvas2d, render-dom, render-scene3d
 
-- **`Renderer`** _(interface)_ — examples: card-battler · tests: — · other: render-canvas2d, render-dom
+- **`Renderer`** _(interface)_ — examples: card-battler · tests: — · other: render-canvas2d, render-dom, render-scene3d
 
 ### `@pierre/ecs/scheduler`
 
-value 1/1 · type 1/3 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +14 more · tests: 2 · other: animation, attach, audio, camera, collision, cooldown, kinematics, kinematics-3d +5 more
+value 1/1 · type 1/3 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +14 more · tests: 2 · other: animation, attach, audio, camera, camera-3d, collision, cooldown, kinematics +6 more
 
 - **`ComponentRef`** _(interface)_ — no external consumer
-- **`SchedulableSystem`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +14 more · tests: src/scheduler.test.ts · other: animation, attach, audio, camera, collision, cooldown, kinematics, kinematics-3d +4 more
+- **`SchedulableSystem`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +14 more · tests: src/scheduler.test.ts · other: animation, attach, audio, camera, camera-3d, collision, cooldown, kinematics +5 more
 - **`Scheduler`** _(class)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +14 more · tests: src/scheduler.test.ts, src/tick-runner.test.ts · other: tick-runner.ts (type only)
 - **`SchedulerOptions`** _(interface)_ — no external consumer
 
@@ -273,9 +274,9 @@ value 0/5 · type 0/0 · examples: — · tests: 1 · other: animation, audio, c
 
 ### `@pierre/ecs/world`
 
-value 1/1 · type 0/0 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +19 more · tests: 19 · other: animation, attach, audio, camera, cooldown, kinematics, kinematics-3d, lifetime +11 more
+value 1/1 · type 0/0 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +19 more · tests: 22 · other: animation, attach, audio, camera, camera-3d, cooldown, kinematics, kinematics-3d +13 more
 
-- **`EcsWorld`** _(class)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +19 more · tests: src/archetype-cache.test.ts, src/modules/animation/sprite-animation.test.ts, src/modules/animation/sprite-clip.test.ts, src/modules/attach/attach.test.ts, src/modules/audio/audio.test.ts, src/modules/camera/camera.test.ts, src/modules/collision/trigger.test.ts, src/modules/cooldown/cooldown.test.ts +11 more · other: animation, attach, audio, camera, cooldown, kinematics, kinematics-3d, lifetime +11 more
+- **`EcsWorld`** _(class)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +19 more · tests: src/archetype-cache.test.ts, src/modules/animation/sprite-animation.test.ts, src/modules/animation/sprite-clip.test.ts, src/modules/attach/attach.test.ts, src/modules/audio/audio.test.ts, src/modules/camera-3d/camera3d.test.ts, src/modules/camera-3d/rigs.test.ts, src/modules/camera/camera.test.ts +14 more · other: animation, attach, audio, camera, camera-3d, cooldown, kinematics, kinematics-3d +13 more
 
 ---
 
@@ -389,6 +390,57 @@ value 5/9 · type 1/4 · examples: rpg, tilemap · tests: 1 · other: —
 - **`viewToWorld`** _(fn)_ — examples: tilemap · tests: src/modules/camera/camera.test.ts · other: —
 - **`worldToView`** _(fn)_ — examples: — · tests: src/modules/camera/camera.test.ts · other: —
 
+### `@pierre/ecs/modules/camera-3d`
+
+value 12/33 · type 2/13 · examples: doom, platformer-3d, portal, starfighter · tests: 4 · other: —
+
+- **`addLookDelta`** _(fn)_ — examples: doom, platformer-3d, portal · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`addOrbitZoom`** _(fn)_ — examples: — · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`Camera3D`** _(interface)_ — no external consumer
+- **`camera3DAspect`** _(fn)_ — examples: — · tests: src/modules/camera-3d/camera3d.test.ts · other: —
+- **`Camera3DDef`** _(const)_ — examples: doom, platformer-3d, portal, starfighter · tests: src/modules/camera-3d/camera3d.test.ts · other: —
+- **`camera3DFrustum`** _(fn)_ — examples: — · tests: src/modules/camera-3d/frustum.test.ts · other: —
+- **`Camera3DOptions`** _(interface)_ — no external consumer
+- **`Camera3DProjection`** _(type)_ — no external consumer
+- **`camera3DProjectionMatrix`** _(fn)_ — examples: — · tests: src/modules/camera-3d/camera3d.test.ts · other: —
+- **`camera3DViewMatrix`** _(fn)_ — examples: — · tests: src/modules/camera-3d/camera3d.test.ts · other: —
+- **`camera3DViewProjection`** _(fn)_ — examples: — · tests: src/modules/camera-3d/camera3d.test.ts · other: —
+- **`CAMERA_RIG_MAX_PITCH`** _(const)_ — examples: — · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`CameraPose`** _(interface)_ — no external consumer
+- **`CameraRigOptions`** _(interface)_ — no external consumer
+- **`CameraRigTickCtx`** _(interface)_ — no external consumer
+- **`chasePose`** _(fn)_ — examples: — · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`ChaseRig`** _(interface)_ — no external consumer
+- **`ChaseRigDef`** _(const)_ — examples: starfighter · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`dampPose`** _(fn)_ — examples: — · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`firstPersonForward`** _(fn)_ — examples: doom, portal · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`FirstPersonRig`** _(interface)_ — examples: doom, portal · tests: — · other: —
+- **`FirstPersonRigDef`** _(const)_ — examples: doom, portal · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`firstPersonRotation`** _(fn)_ — examples: — · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`Frustum`** _(type)_ — no external consumer
+- **`frustumContainsPoint`** _(fn)_ — examples: — · tests: src/modules/camera-3d/frustum.test.ts · other: —
+- **`frustumCorners`** _(fn)_ — examples: — · tests: src/modules/camera-3d/frustum.test.ts · other: —
+- **`frustumFromMatrix`** _(fn)_ — no external consumer
+- **`frustumIntersectsAabb`** _(fn)_ — examples: — · tests: src/modules/camera-3d/frustum.test.ts · other: —
+- **`frustumIntersectsSphere`** _(fn)_ — examples: — · tests: src/modules/camera-3d/frustum.test.ts · other: —
+- **`getCameraPose`** _(fn)_ — examples: doom, platformer-3d, portal, starfighter · tests: src/modules/camera-3d/camera3d.test.ts · other: —
+- **`isPointBehindCamera`** _(fn)_ — examples: — · tests: src/modules/camera-3d/project.test.ts · other: —
+- **`makeCamera3D`** _(fn)_ — examples: doom, platformer-3d, portal, starfighter · tests: src/modules/camera-3d/camera3d.test.ts, src/modules/camera-3d/frustum.test.ts, src/modules/camera-3d/project.test.ts · other: —
+- **`makeCameraRigSystem`** _(fn)_ — examples: doom, platformer-3d, portal, starfighter · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`makeChaseRig`** _(fn)_ — examples: starfighter · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`makeFirstPersonRig`** _(fn)_ — examples: doom, portal · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`makeOrbitRig`** _(fn)_ — examples: platformer-3d · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`orbitPose`** _(fn)_ — examples: — · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`OrbitRig`** _(interface)_ — examples: platformer-3d · tests: — · other: —
+- **`OrbitRigDef`** _(const)_ — examples: platformer-3d · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`PoseSmoothing`** _(interface)_ — no external consumer
+- **`Ray3`** _(interface)_ — no external consumer
+- **`ScreenPoint`** _(interface)_ — no external consumer
+- **`screenPointToRay`** _(fn)_ — examples: — · tests: src/modules/camera-3d/project.test.ts · other: —
+- **`screenToWorld`** _(fn)_ — examples: — · tests: src/modules/camera-3d/frustum.test.ts, src/modules/camera-3d/project.test.ts · other: —
+- **`smoothingBlend`** _(fn)_ — examples: — · tests: src/modules/camera-3d/rigs.test.ts · other: —
+- **`worldToScreen`** _(fn)_ — examples: — · tests: src/modules/camera-3d/frustum.test.ts, src/modules/camera-3d/project.test.ts · other: —
+
 ### `@pierre/ecs/modules/collision`
 
 value 8/10 · type 2/9 · examples: asteroids, breakout, critters, flappy, frogger, jetpack, local-pong, platformer +7 more · tests: 5 · other: kinematics, steering
@@ -415,9 +467,9 @@ value 8/10 · type 2/9 · examples: asteroids, breakout, critters, flappy, frogg
 
 ### `@pierre/ecs/modules/collision-3d`
 
-value 4/17 · type 1/8 · examples: doom, platformer-3d, portal, starfighter · tests: 4 · other: kinematics-3d
+value 4/17 · type 1/8 · examples: doom, platformer-3d, portal, starfighter · tests: 5 · other: camera-3d, kinematics-3d
 
-- **`Aabb3`** _(interface)_ — examples: portal · tests: src/modules/collision-3d/narrowphase3.test.ts, src/modules/collision-3d/obb3.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts · other: kinematics-3d
+- **`Aabb3`** _(interface)_ — examples: portal · tests: src/modules/collision-3d/narrowphase3.test.ts, src/modules/collision-3d/obb3.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts · other: camera-3d, kinematics-3d
 - **`Aabb3Axis`** _(type)_ — no external consumer
 - **`aabb3ContainsPoint`** _(fn)_ — examples: — · tests: src/modules/collision-3d/narrowphase3.test.ts · other: —
 - **`aabb3VsAabb3`** _(fn)_ — examples: doom, platformer-3d · tests: src/modules/collision-3d/narrowphase3.test.ts, src/modules/collision-3d/obb3.test.ts · other: kinematics-3d
@@ -428,8 +480,8 @@ value 4/17 · type 1/8 · examples: doom, platformer-3d, portal, starfighter · 
 - **`Obb3`** _(interface)_ — examples: — · tests: src/modules/collision-3d/obb3.test.ts · other: —
 - **`obb3VsObb3`** _(fn)_ — examples: — · tests: src/modules/collision-3d/obb3.test.ts · other: —
 - **`obb3VsSphere3`** _(fn)_ — examples: — · tests: src/modules/collision-3d/obb3.test.ts · other: —
-- **`Plane3`** _(interface)_ — examples: — · tests: src/modules/collision-3d/narrowphase3.test.ts · other: —
-- **`plane3DistanceToPoint`** _(fn)_ — examples: — · tests: src/modules/collision-3d/narrowphase3.test.ts · other: —
+- **`Plane3`** _(interface)_ — examples: — · tests: src/modules/collision-3d/narrowphase3.test.ts · other: camera-3d
+- **`plane3DistanceToPoint`** _(fn)_ — examples: — · tests: src/modules/camera-3d/frustum.test.ts, src/modules/collision-3d/narrowphase3.test.ts · other: camera-3d
 - **`RayHit3`** _(interface)_ — no external consumer
 - **`rayVsAabb3`** _(fn)_ — examples: doom, portal · tests: src/modules/collision-3d/narrowphase3.test.ts · other: —
 - **`rayVsObb3`** _(fn)_ — examples: — · tests: src/modules/collision-3d/obb3.test.ts · other: —
@@ -590,51 +642,64 @@ value 3/3 · type 0/3 · examples: asteroids, frogger, jetpack, space-invaders, 
 
 ### `@pierre/ecs/modules/math`
 
-value 15/41 · type 3/3 · examples: breakout, critters, doom, frogger, jetpack, local-pong, portal, rhythm +8 more · tests: 7 · other: camera, collision, collision-3d, kinematics-3d, particles, steering, transform-3d, tween
+value 16/53 · type 2/4 · examples: breakout, critters, doom, frogger, jetpack, local-pong, platformer-3d, portal +9 more · tests: 12 · other: camera, camera-3d, collision, collision-3d, kinematics-3d, particles, steering, transform-3d +1 more
 
 - **`approximately`** _(fn)_ — examples: — · tests: src/modules/math/math.test.ts · other: —
-- **`clamp`** _(fn)_ — examples: breakout, doom, frogger, jetpack, local-pong, portal, river-raid, space-invaders +2 more · tests: src/modules/math/math.test.ts · other: camera, collision, collision-3d
+- **`clamp`** _(fn)_ — examples: breakout, frogger, jetpack, local-pong, portal, river-raid, space-invaders, stealth-guard +1 more · tests: src/modules/math/math.test.ts · other: camera, camera-3d, collision, collision-3d
 - **`clamp01`** _(fn)_ — examples: jetpack, rhythm, top-down-shooter · tests: src/modules/math/math.test.ts · other: particles
-- **`degToRad`** _(fn)_ — examples: breakout · tests: src/modules/math/math.test.ts · other: —
+- **`degToRad`** _(fn)_ — examples: breakout, doom, platformer-3d, portal, starfighter · tests: src/modules/math/math.test.ts · other: —
 - **`inverseLerp`** _(fn)_ — examples: jetpack · tests: src/modules/math/math.test.ts · other: —
 - **`lerp`** _(fn)_ — examples: jetpack, top-down-shooter · tests: src/modules/math/math.test.ts · other: camera, particles, tween
 - **`lerpAngle`** _(fn)_ — examples: — · tests: src/modules/math/math.test.ts · other: —
+- **`Mat4`** _(type)_ — examples: — · tests: src/modules/math/mat4.test.ts · other: camera-3d
+- **`mat4Compose`** _(fn)_ — examples: — · tests: src/modules/math/mat4.test.ts · other: camera-3d
+- **`mat4Identity`** _(fn)_ — examples: — · tests: src/modules/math/mat4.test.ts · other: —
+- **`mat4Invert`** _(fn)_ — examples: — · tests: src/modules/math/mat4.test.ts · other: —
+- **`mat4LookAt`** _(fn)_ — examples: — · tests: src/modules/math/mat4.test.ts · other: —
+- **`mat4Multiply`** _(fn)_ — examples: — · tests: src/modules/camera-3d/camera3d.test.ts, src/modules/math/mat4.test.ts · other: camera-3d
+- **`mat4Orthographic`** _(fn)_ — examples: — · tests: src/modules/math/mat4.test.ts · other: camera-3d
+- **`mat4Perspective`** _(fn)_ — examples: — · tests: src/modules/math/mat4.test.ts · other: camera-3d
+- **`mat4TransformDirection`** _(fn)_ — examples: — · tests: src/modules/math/mat4.test.ts · other: —
+- **`mat4TransformPoint`** _(fn)_ — examples: — · tests: src/modules/camera-3d/camera3d.test.ts, src/modules/math/mat4.test.ts · other: —
+- **`mat4TransformVec4`** _(fn)_ — examples: — · tests: src/modules/math/mat4.test.ts · other: —
+- **`mat4Transpose`** _(fn)_ — examples: — · tests: src/modules/math/mat4.test.ts · other: —
 - **`pingPong`** _(fn)_ — examples: — · tests: src/modules/math/math.test.ts · other: —
-- **`Quat`** _(interface)_ — examples: starfighter · tests: src/modules/collision-3d/obb3.test.ts · other: collision-3d, transform-3d
+- **`Quat`** _(interface)_ — examples: — · tests: src/modules/camera-3d/rigs.test.ts, src/modules/collision-3d/obb3.test.ts · other: camera-3d, collision-3d, transform-3d
 - **`QUAT_IDENTITY`** _(const)_ — examples: starfighter · tests: src/modules/math/quat.test.ts · other: —
-- **`quatConjugate`** _(fn)_ — examples: — · tests: src/modules/math/quat.test.ts · other: collision-3d
-- **`quatForward`** _(fn)_ — examples: starfighter · tests: src/modules/math/quat.test.ts · other: —
-- **`quatFromAxisAngle`** _(fn)_ — examples: starfighter · tests: src/modules/collision-3d/obb3.test.ts, src/modules/math/quat.test.ts · other: —
-- **`quatMul`** _(fn)_ — examples: starfighter · tests: src/modules/math/quat.test.ts · other: —
+- **`quatConjugate`** _(fn)_ — examples: — · tests: src/modules/math/quat.test.ts · other: camera-3d, collision-3d
+- **`quatForward`** _(fn)_ — examples: starfighter · tests: src/modules/camera-3d/project.test.ts, src/modules/camera-3d/rigs.test.ts, src/modules/math/quat.test.ts · other: camera-3d
+- **`quatFromAxisAngle`** _(fn)_ — examples: starfighter · tests: src/modules/camera-3d/camera3d.test.ts, src/modules/camera-3d/frustum.test.ts, src/modules/camera-3d/project.test.ts, src/modules/camera-3d/rigs.test.ts, src/modules/collision-3d/obb3.test.ts, src/modules/math/mat4.test.ts, src/modules/math/quat.test.ts · other: camera-3d
+- **`quatLookRotation`** _(fn)_ — examples: — · tests: src/modules/math/quat.test.ts · other: camera-3d
+- **`quatMul`** _(fn)_ — examples: starfighter · tests: src/modules/math/mat4.test.ts, src/modules/math/quat.test.ts · other: camera-3d
 - **`quatNormalize`** _(fn)_ — examples: starfighter · tests: src/modules/math/quat.test.ts · other: —
-- **`quatRotate`** _(fn)_ — examples: — · tests: src/modules/math/quat.test.ts · other: collision-3d
-- **`quatSlerp`** _(fn)_ — examples: — · tests: src/modules/math/quat.test.ts · other: —
+- **`quatRotate`** _(fn)_ — examples: — · tests: src/modules/camera-3d/rigs.test.ts, src/modules/math/mat4.test.ts, src/modules/math/quat.test.ts · other: camera-3d, collision-3d
+- **`quatSlerp`** _(fn)_ — examples: — · tests: src/modules/math/quat.test.ts · other: camera-3d
 - **`quatUp`** _(fn)_ — examples: — · tests: src/modules/math/quat.test.ts · other: —
-- **`radToDeg`** _(fn)_ — examples: — · tests: src/modules/math/math.test.ts · other: —
+- **`radToDeg`** _(fn)_ — examples: doom, platformer-3d, portal, starfighter · tests: src/modules/math/math.test.ts · other: —
 - **`remap`** _(fn)_ — examples: — · tests: src/modules/math/math.test.ts · other: —
 - **`smoothstep`** _(fn)_ — examples: — · tests: src/modules/math/math.test.ts · other: —
 - **`Vec2`** _(interface)_ — examples: critters, stealth-guard, woodcutter · tests: src/modules/steering/steering.test.ts · other: collision, steering
 - **`vec2MoveToward`** _(fn)_ — examples: — · tests: src/modules/math/vec2.test.ts · other: —
 - **`vec2Normalize`** _(fn)_ — examples: — · tests: src/modules/math/vec2.test.ts · other: steering
 - **`vec2ScaleToLength`** _(fn)_ — examples: breakout, spacewar, stealth-guard, top-down-shooter · tests: src/modules/math/vec2.test.ts · other: steering
-- **`Vec3`** _(interface)_ — examples: doom, portal, starfighter · tests: src/modules/collision-3d/narrowphase3.test.ts, src/modules/collision-3d/obb3.test.ts · other: collision-3d, kinematics-3d, transform-3d
-- **`vec3Add`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
+- **`Vec3`** _(interface)_ — examples: doom, portal, starfighter · tests: src/modules/camera-3d/frustum.test.ts, src/modules/camera-3d/project.test.ts, src/modules/camera-3d/rigs.test.ts, src/modules/collision-3d/narrowphase3.test.ts, src/modules/collision-3d/obb3.test.ts, src/modules/math/mat4.test.ts · other: camera-3d, collision-3d, kinematics-3d, transform-3d
+- **`vec3Add`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: camera-3d
 - **`vec3AddScaled`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
 - **`vec3ClampLength`** _(fn)_ — examples: starfighter · tests: src/modules/math/vec3.test.ts · other: —
 - **`vec3Cross`** _(fn)_ — examples: portal · tests: src/modules/math/quat.test.ts, src/modules/math/vec3.test.ts · other: collision-3d
-- **`vec3Distance`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
+- **`vec3Distance`** _(fn)_ — examples: — · tests: src/modules/camera-3d/rigs.test.ts, src/modules/math/vec3.test.ts · other: —
 - **`vec3Dot`** _(fn)_ — examples: — · tests: src/modules/math/quat.test.ts, src/modules/math/vec3.test.ts · other: collision-3d
 - **`vec3Length`** _(fn)_ — examples: — · tests: src/modules/math/quat.test.ts, src/modules/math/vec3.test.ts · other: collision-3d
 - **`vec3LengthSq`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
-- **`vec3Lerp`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
+- **`vec3Lerp`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: camera-3d
 - **`vec3MoveToward`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
 - **`vec3Negate`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
-- **`vec3Normalize`** _(fn)_ — examples: doom, portal · tests: src/modules/math/vec3.test.ts · other: collision-3d
+- **`vec3Normalize`** _(fn)_ — examples: doom, portal · tests: src/modules/math/vec3.test.ts · other: camera-3d, collision-3d
 - **`vec3RandomUnit`** _(fn)_ — examples: starfighter · tests: src/modules/math/vec3.test.ts · other: —
 - **`vec3Reflect`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
 - **`vec3Scale`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
 - **`vec3ScaleToLength`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
-- **`vec3Sub`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: —
+- **`vec3Sub`** _(fn)_ — examples: — · tests: src/modules/math/vec3.test.ts · other: camera-3d
 - **`wrap`** _(fn)_ — examples: — · tests: src/modules/math/math.test.ts · other: —
 
 ### `@pierre/ecs/modules/motion`
@@ -737,6 +802,16 @@ value 2/2 · type 0/3 · examples: card-battler · tests: 2 · other: —
 - **`DomRenderContext`** _(interface)_ — no external consumer
 - **`DomRenderer`** _(class)_ — examples: card-battler · tests: src/modules/render-dom/dom-renderer.test.ts · other: —
 - **`DomRendererOptions`** _(interface)_ — no external consumer
+
+### `@pierre/ecs/modules/render-scene3d`
+
+value 1/1 · type 1/4 · examples: doom, platformer-3d, portal, starfighter · tests: 1 · other: —
+
+- **`Scene3DEntry`** _(type)_ — examples: platformer-3d, portal · tests: src/modules/render-scene3d/render-scene3d.test.ts · other: —
+- **`Scene3DRenderContext`** _(interface)_ — no external consumer
+- **`Scene3DRenderer`** _(class)_ — examples: doom, platformer-3d, portal, starfighter · tests: src/modules/render-scene3d/render-scene3d.test.ts · other: —
+- **`Scene3DRendererOptions`** _(interface)_ — no external consumer
+- **`SceneGraph`** _(interface)_ — examples: — · tests: src/modules/render-scene3d/render-scene3d.test.ts · other: —
 
 ### `@pierre/ecs/modules/rng`
 
@@ -918,12 +993,12 @@ value 4/4 · type 0/4 · examples: asteroids, boids, breakout, card-battler, cri
 
 ### `@pierre/ecs/modules/transform-3d`
 
-value 2/4 · type 1/4 · examples: doom, platformer-3d, portal, starfighter · tests: 2 · other: motion-3d
+value 3/4 · type 2/4 · examples: doom, platformer-3d, portal, starfighter · tests: 4 · other: camera-3d, motion-3d
 
-- **`Position3D`** _(type)_ — examples: — · tests: — · other: motion-3d
-- **`Position3DDef`** _(const)_ — examples: doom, platformer-3d, portal, starfighter · tests: src/modules/motion-3d/motion-3d.test.ts, src/modules/transform-3d/transform-3d.test.ts · other: motion-3d
+- **`Position3D`** _(type)_ — examples: platformer-3d, portal · tests: — · other: motion-3d
+- **`Position3DDef`** _(const)_ — examples: doom, platformer-3d, portal, starfighter · tests: src/modules/camera-3d/camera3d.test.ts, src/modules/camera-3d/rigs.test.ts, src/modules/motion-3d/motion-3d.test.ts, src/modules/transform-3d/transform-3d.test.ts · other: camera-3d, motion-3d
 - **`Rotation3D`** _(type)_ — no external consumer
-- **`Rotation3DDef`** _(const)_ — examples: — · tests: src/modules/transform-3d/transform-3d.test.ts · other: —
+- **`Rotation3DDef`** _(const)_ — examples: doom, platformer-3d, portal, starfighter · tests: src/modules/camera-3d/camera3d.test.ts, src/modules/camera-3d/rigs.test.ts, src/modules/transform-3d/transform-3d.test.ts · other: camera-3d
 - **`Scale3D`** _(interface)_ — no external consumer
 - **`Scale3DDef`** _(const)_ — examples: — · tests: src/modules/transform-3d/transform-3d.test.ts · other: —
 - **`Velocity3D`** _(interface)_ — examples: portal · tests: — · other: —

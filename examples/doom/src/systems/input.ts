@@ -3,12 +3,12 @@ import type { SchedulableSystem } from '@pierre/ecs';
 import type { GameState } from '../game';
 
 import { GroundedDef, Velocity3DDef } from '../components';
-import { AIR_CONTROL, JUMP_IMPULSE, MOVE_SPEED } from '../game';
+import { AIR_CONTROL, JUMP_IMPULSE, MOVE_SPEED, playerLook } from '../game';
 
 /**
  * First-person movement: WASD drives velocity on the XZ plane relative to the
- * look yaw, space jumps (edge-triggered + grounded-gated). Yaw/pitch are owned
- * by the DOM pointer-lock layer and read from `ctx.yaw`.
+ * look yaw, space jumps (edge-triggered + grounded-gated). The yaw is the
+ * camera's `FirstPersonRig`, which the pointer-lock layer turns.
  *
  * Basis at yaw 0: forward = -Z, right = +X. On the ground velocity is *set*
  * (responsive); airborne it's nudged (limited air control) so a jump keeps its
@@ -47,8 +47,9 @@ export const inputSystem: SchedulableSystem<GameState> = {
       localZ /= len;
     }
 
-    const sin = Math.sin(ctx.yaw);
-    const cos = Math.cos(ctx.yaw);
+    const yaw = playerLook(ctx)?.yaw ?? 0;
+    const sin = Math.sin(yaw);
+    const cos = Math.cos(yaw);
     const desiredVx = (localX * cos - localZ * sin) * MOVE_SPEED;
     const desiredVz = (-localX * sin - localZ * cos) * MOVE_SPEED;
     if (grounded.onGround) {

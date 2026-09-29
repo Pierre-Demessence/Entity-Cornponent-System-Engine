@@ -1,32 +1,32 @@
 import type { DoomAction, DoomEvent, GameState } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
+import { addLookDelta, makeCameraRigSystem } from '@pierre/ecs/modules/camera-3d';
 import { createInput, Key, KeyboardProvider, MouseLookProvider } from '@pierre/ecs/modules/input';
-import { clamp } from '@pierre/ecs/modules/math';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
-import { HealthDef, Position3DDef } from './components';
+import { CameraTag, HealthDef, PlayerTag, Position3DDef } from './components';
 import {
   HITSCAN_AMMO_START,
   makeWorld,
-  MAX_PITCH,
   MOUSE_SENSITIVITY,
+  playerLook,
   resetGame,
   RESPAWN_Y,
   respawnPlayer,
   ROCKET_AMMO_START,
+  VIEW_H,
+  VIEW_W,
 } from './game';
 import { makeRenderer } from './render';
 import { aiSystem, elevatorSystem, inputSystem, kinematics3dSystem, pickupSystem, projectileMotionSystem, projectileSystem, weaponSystem } from './systems';
 
 const LOGIC_TICK_MS = 1000 / 60;
-const WIDTH = 800;
-const HEIGHT = 640;
 
 export function start(container: HTMLElement): () => void {
   container.innerHTML = '';
 
-  const renderer = makeRenderer(WIDTH, HEIGHT);
+  const renderer = makeRenderer(VIEW_W, VIEW_H);
   renderer.domElement.style.display = 'block';
   renderer.domElement.style.cursor = 'crosshair';
 
@@ -40,7 +40,7 @@ export function start(container: HTMLElement): () => void {
   const crosshair = document.createElement('div');
   crosshair.textContent = '+';
   crosshair.style.cssText
-    = `position:absolute;left:50%;top:${HEIGHT / 2}px;transform:translate(-50%,-50%);color:#fff;opacity:0.6;font:20px/1 monospace;pointer-events:none;`;
+    = `position:absolute;left:50%;top:${VIEW_H / 2}px;transform:translate(-50%,-50%);color:#fff;opacity:0.6;font:20px/1 monospace;pointer-events:none;`;
   container.append(crosshair);
 
   // HUD: a health bar + the current weapon's ammo count, bottom-centre.
@@ -63,7 +63,7 @@ export function start(container: HTMLElement): () => void {
   const deathOverlay = document.createElement('div');
   deathOverlay.style.cssText
     = 'position:absolute;left:0;top:0;width:100%;height:'
-      + `${HEIGHT}px;display:none;place-items:center;background:rgba(40,8,8,0.55);`
+      + `${VIEW_H}px;display:none;place-items:center;background:rgba(40,8,8,0.55);`
       + 'color:#ffd0d0;font:700 30px system-ui;text-align:center;pointer-events:none;';
   deathOverlay.innerHTML
     = 'You died<br><span style="font-size:15px;font-weight:400;color:#e0a0a0">Press R to restart</span>';
@@ -91,31 +91,31 @@ export function start(container: HTMLElement): () => void {
 
   const state: GameState = {
     ammo: [HITSCAN_AMMO_START, ROCKET_AMMO_START],
+    cameraId: null,
     dead: false,
     dtMs: LOGIC_TICK_MS,
     events,
     fireTimer: 0,
     firing: false,
     input,
-    pitch: 0,
     playerId: null,
     tracer: null,
     weapon: 0,
     world,
-    yaw: 0,
   };
 
   resetGame(state);
 
   // Pointer lock: the LMB press captures the cursor, then the mouse drives
-  // yaw + pitch. Esc (browser-handled) releases it.
+  // the camera rig's yaw + pitch. Esc (browser-handled) releases it.
   const look = new MouseLookProvider({
     sensitivity: MOUSE_SENSITIVITY,
     target: renderer.domElement,
   });
   look.subscribe(({ x, y }) => {
-    state.yaw -= x;
-    state.pitch = clamp(state.pitch - y, -MAX_PITCH, MAX_PITCH);
+    const rig = playerLook(state);
+    if (rig)
+      addLookDelta(rig, x, y);
   });
   const onMouseDown = (e: MouseEvent): void => {
     if (e.button !== 0)
@@ -166,8 +166,11 @@ export function start(container: HTMLElement): () => void {
   });
   tickRunner.start();
 
+  // Posed per frame, not per logic tick, so mouse look shows on the next frame.
+  const cameraRig = makeCameraRigSystem<GameState>({ cameraTag: CameraTag, targetTag: PlayerTag });
   const renderTickSource = new AnimationFrameTickSource();
   const unsubscribeRender = renderTickSource.subscribe(() => {
+    cameraRig.run(state);
     renderer.render(state);
     const ph = state.playerId == null ? null : world.getStore(HealthDef).get(state.playerId);
     const hp = ph ? Math.max(0, ph.hp) : 0;

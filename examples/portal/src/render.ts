@@ -1,7 +1,12 @@
-import type { EntityId, TagDef } from '@pierre/ecs';
+import type { EcsWorld, QueryBuilder } from '@pierre/ecs';
+import type { Scene3DEntry } from '@pierre/ecs/modules/render-scene3d';
 
+import type { Position3D, ShapeAabb3D } from './components';
 import type { GameState, Portal } from './game';
 
+import { Camera3DDef, getCameraPose } from '@pierre/ecs/modules/camera-3d';
+import { radToDeg } from '@pierre/ecs/modules/math';
+import { Scene3DRenderer } from '@pierre/ecs/modules/render-scene3d';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -25,13 +30,14 @@ import {
   StaticBodyTag,
   WallTag,
 } from './components';
-import { CUBE_SIZE, DOOR_D, DOOR_H, DOOR_W, DOOR_X, PLATE_D, PLATE_POS, PLATE_W, PLAYER_EYE, PLAYER_H, PORTAL_H, PORTAL_W } from './game';
+import { CUBE_SIZE, DOOR_D, DOOR_H, DOOR_W, DOOR_X, PLATE_D, PLATE_POS, PLATE_W, PLAYER_H, playerLook, PORTAL_H, PORTAL_W } from './game';
 import { transformPoint } from './systems/portal-math';
 
 export interface Renderer3D {
   domElement: HTMLCanvasElement;
   dispose: () => void;
   render: (state: GameState) => void;
+  /** Resize the drawing buffer. The aspect follows the camera's `Camera3D` viewport — update that too. */
   resize: (w: number, h: number) => void;
 }
 
@@ -166,8 +172,8 @@ function disposeModel(root: THREE.Object3D): void {
 /**
  * three.js adapter, first-person. ECS is the source of truth: every frame we
  * mirror each static + cube body's `Position3D`/`ShapeAabb3D` into a derived
- * `THREE.Mesh`, and place the camera at the player's eye, oriented by
- * `yaw`/`pitch`. The player's own body is not drawn (we're inside it).
+ * `THREE.Mesh`, and copy the camera entity's pose and `Camera3D` lens onto the
+ * three.js camera. The player's own body is not drawn (we're inside it).
  */
 export function makeRenderer(width: number, height: number): Renderer3D {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -179,7 +185,6 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   scene.fog = new THREE.Fog(0x0A0C10, 26, 64);
 
   const camera = new THREE.PerspectiveCamera(75, width / height, 0.05, 200);
-  camera.rotation.order = 'YXZ';
   scene.add(camera); // so the first-person gun viewmodel (a camera child) renders
 
   scene.add(new THREE.AmbientLight(0xFFFFFF, 0.6));
@@ -518,54 +523,37 @@ export function makeRenderer(width: number, height: number): Renderer3D {
   cubeClone.frustumCulled = false;
   scene.add(cubeClone);
 
-  const meshes = new Map<EntityId, THREE.Mesh>();
-  const touched = new Set<EntityId>();
-
-  function ensureMesh(id: EntityId, material: THREE.Material): THREE.Mesh {
-    let mesh = meshes.get(id);
-    if (mesh)
-      return mesh;
-    mesh = new THREE.Mesh(unitBox, material);
-    meshes.set(id, mesh);
-    scene.add(mesh);
-    return mesh;
-  }
-
-  function syncTag(state: GameState, tag: TagDef, material: THREE.Material): void {
-    const posStore = state.world.getStore(Position3DDef);
-    const aabbStore = state.world.getStore(ShapeAabb3DDef);
-    for (const id of state.world.getTag(tag)) {
-      if (touched.has(id))
-        continue; // already drawn by a higher-priority tag this frame
-      const p = posStore.get(id);
-      const a = aabbStore.get(id);
-      if (!p || !a)
-        continue;
-      const mesh = ensureMesh(id, material);
-      mesh.position.set(p.x, p.y, p.z);
-      mesh.scale.set(a.w, a.h, a.d);
-      touched.add(id);
-    }
-  }
-
-  function reapUntouched(): void {
-    for (const [id, mesh] of meshes) {
-      if (touched.has(id))
-        continue;
-      scene.remove(mesh);
-      meshes.delete(id);
-    }
-    touched.clear();
-  }
+  const syncBox = (mesh: THREE.Mesh, [, p, a]: Scene3DEntry<[Position3D, ShapeAabb3D]>): void => {
+    mesh.position.set(p.x, p.y, p.z);
+    mesh.scale.set(a.w, a.h, a.d);
+  };
+  const boxPass = (material: THREE.Material, select: (world: EcsWorld) => QueryBuilder<[Position3D, ShapeAabb3D]>) =>
+    new Scene3DRenderer({ select, sync: syncBox, create: () => new THREE.Mesh(unitBox, material) });
+  const bodies = (world: EcsWorld) => world.query(Position3DDef, ShapeAabb3DDef);
+  const doors = boxPass(doorMat, w => bodies(w).withTag(w.getTag(DoorTag)));
+  const plates = boxPass(plateMat, w => bodies(w).withTag(w.getTag(PlateTag)));
+  const cubes = boxPass(cubeMat, w => bodies(w).withTag(w.getTag(CubeTag)));
+  // The door is also a static body; excluding the specific tags keeps it (and
+  // the plate and cube) to one mesh in its own material.
+  const statics = boxPass(staticMat, w => bodies(w)
+    .withTag(w.getTag(StaticBodyTag))
+    .without(w.getTag(DoorTag), w.getTag(PlateTag), w.getTag(CubeTag)));
+  const passes = [doors, plates, cubes, statics];
 
   function updateCamera(state: GameState): void {
-    if (state.playerId == null)
+    if (state.cameraId == null)
       return;
-    const p = state.world.getStore(Position3DDef).get(state.playerId);
-    if (!p)
+    const lens = state.world.getStore(Camera3DDef).get(state.cameraId);
+    if (!lens)
       return;
-    camera.position.set(p.x, p.y + PLAYER_EYE, p.z);
-    camera.rotation.set(state.pitch, state.yaw, 0);
+    const { position: p, rotation: q } = getCameraPose(state.world, state.cameraId);
+    camera.position.set(p.x, p.y, p.z);
+    camera.quaternion.set(q.x, q.y, q.z, q.w);
+    camera.fov = radToDeg(lens.fovY);
+    camera.aspect = lens.viewportW / lens.viewportH;
+    camera.near = lens.near;
+    camera.far = lens.far;
+    camera.updateProjectionMatrix();
   }
 
   function updatePlayerBody(state: GameState): void {
@@ -575,7 +563,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     if (!p)
       return;
     playerBody.position.set(p.x, p.y, p.z);
-    playerBody.rotation.y = state.yaw;
+    playerBody.rotation.y = playerLook(state)?.yaw ?? 0;
   }
 
   const portalBasis = new THREE.Matrix4();
@@ -663,9 +651,8 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     domElement: renderer.domElement,
     dispose() {
       disposed = true;
-      for (const mesh of meshes.values())
-        scene.remove(mesh);
-      meshes.clear();
+      for (const pass of passes)
+        pass.dispose(scene);
       scene.remove(bluePortal, orangePortal);
       scene.remove(playerBody);
       scene.remove(cubeClone);
@@ -721,21 +708,16 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       renderer.dispose();
     },
     render(state) {
-      // Specific tags first so the door (also a static body) and plate draw with
-      // their own materials; syncTag skips ids already drawn this frame.
       plateMat.color.set(state.platePressed ? 0x49D17A : 0xD15A49);
-      syncTag(state, DoorTag, doorMat);
-      syncTag(state, PlateTag, plateMat);
-      syncTag(state, CubeTag, cubeMat);
-      syncTag(state, StaticBodyTag, staticMat);
-      reapUntouched();
+      for (const pass of passes)
+        pass.render({ graph: scene, world: state.world });
 
       // Swap the door box for the loaded sliding-door model (slides with it).
       if (doorModel && state.doorId != null) {
         const dp = state.world.getStore(Position3DDef).get(state.doorId);
         if (dp)
           doorModel.position.set(dp.x, dp.y, dp.z);
-        const doorMesh = meshes.get(state.doorId);
+        const doorMesh = doors.get(state.doorId);
         if (doorMesh)
           doorMesh.visible = false;
       }
@@ -747,7 +729,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
           crateModel.position.set(cp.x, cp.y, cp.z);
           crateModel.visible = true;
         }
-        const cubeMesh = meshes.get(state.cubeId);
+        const cubeMesh = cubes.get(state.cubeId);
         if (cubeMesh)
           cubeMesh.visible = false;
       }
@@ -759,7 +741,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
         for (const mat of plateMats)
           mat.color.setHex(state.platePressed ? 0x49D17A : 0xFFFFFF);
         for (const id of state.world.getTag(PlateTag)) {
-          const m = meshes.get(id);
+          const m = plates.get(id);
           if (m)
             m.visible = false;
         }
@@ -775,7 +757,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       // Hide the floor slab boxes once the tiled floor is shown.
       if (floorTiles) {
         for (const id of state.world.getTag(FloorTag)) {
-          const m = meshes.get(id);
+          const m = statics.get(id);
           if (m)
             m.visible = false;
         }
@@ -783,7 +765,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       // Hide the perimeter wall boxes once the tiled walls are shown.
       if (wallTiles) {
         for (const id of state.world.getTag(WallTag)) {
-          const m = meshes.get(id);
+          const m = statics.get(id);
           if (m)
             m.visible = false;
         }
@@ -794,7 +776,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
         playerBody.visible = true;
         if (viewGun)
           viewGun.visible = false; // viewmodel never appears inside portal views
-        const cubeVisual: THREE.Object3D | undefined = crateModel ?? (state.cubeId == null ? undefined : meshes.get(state.cubeId));
+        const cubeVisual: THREE.Object3D | undefined = crateModel ?? (state.cubeId == null ? undefined : cubes.get(state.cubeId));
         const cloneVisual: THREE.Object3D = crateCloneModel ?? cubeClone;
         // Fills write LINEAR into the targets (encode once on the canvas), or
         // nested recursion levels compound the sRGB encode and wash to white.
@@ -866,8 +848,6 @@ export function makeRenderer(width: number, height: number): Renderer3D {
     },
     resize(w, h) {
       renderer.setSize(w, h);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
       const r = renderer.getPixelRatio();
       const tw = Math.floor(w * r);
       const th = Math.floor(h * r);

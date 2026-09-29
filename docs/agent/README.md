@@ -60,14 +60,24 @@ reinventing shipped primitives).
   other tools can consume), and `engine-usage.html` (generated and gitignored —
   sortable and filterable, opens straight from disk).
 
-### Module README examples are compiled (don't ship a broken sample)
+### Manual examples are compiled, walkthroughs are run (don't ship a broken sample)
 
-Every `ts` code block in a module README is republished verbatim as a Manual
-page, so a broken example is shipped to readers who copy it.
-`scripts/readme-samples.test.ts` type-checks the **runnable** blocks — those that
+Every `ts` code block in a Manual source — module READMEs, core guides
+(`src/*.md`) and authored pages (`website/manual/**`) — is republished verbatim,
+so a broken example is shipped to readers who copy it.
+`scripts/doc-samples.test.ts` type-checks the **runnable** blocks — those that
 `import` from `@pierre/ecs` — against the real declarations, failing `npm test`
-naming the README and line on a wrong arity, a nonexistent member, or a mistyped
+naming the file and line on a wrong arity, a nonexistent member, or a mistyped
 `@pierre/ecs` import path.
+
+- A page whose blocks are steps of one program is listed in `SINGLE_FILE_PAGES`
+  (`scripts/doc-samples.ts`) and checked as one file, each block on its own
+  Markdown lines.
+- `scripts/manual-walkthroughs.test.ts` also **executes** the Introduction's
+  example and the whole tutorial (DOM and `requestAnimationFrame` stubbed), so a
+  runtime precondition a page skips — `world.move` without `enableSpatial` —
+  fails the test. Any `console.error` fails it too, because tick sources report
+  a throwing system that way instead of rethrowing.
 
 - Only runnable blocks are checked; `.d.ts`-style signature listings and
   cheat-sheets are API reference, not code, and are skipped (the test logs how
@@ -75,12 +85,15 @@ naming the README and line on a wrong arity, a nonexistent member, or a mistyped
   `` `foo()` `` prose mentions are a deferred follow-up.
 - Free identifiers a sample never defines (`ctx`, `GRAVITY`, …) are stubbed as
   `any`; `world` and `scheduler` get their real engine types so member misuse is
-  caught. The scripts write nothing, so there is no artifact to regenerate.
+  caught. There is no artifact to regenerate; the walkthrough test writes its
+  modules to the gitignored `scripts/.walkthroughs/` and deletes them after.
 - If a runnable block genuinely cannot compile in isolation (it dereferences
-  game-specific component stores, say), add a `{ module, index, reason }` entry
-  to `SAMPLE_EXCLUSIONS` in `scripts/readme-samples.ts` — `index` is the block's
-  zero-based ordinal within its README, and the `reason` must name what is
-  missing so the exclusion can later be lifted.
+  game-specific component stores, say), add a `{ source, index, reason }` entry
+  to `SAMPLE_EXCLUSIONS` in `scripts/doc-samples.ts` — `source` is the module
+  name for a README (`collision-3d`) or the path without `.md` otherwise
+  (`website/manual/guides/scenes`), `index` is the block's zero-based ordinal
+  within that file, and the `reason` must name what is missing so the exclusion
+  can later be lifted.
 
 The `.d.ts`-style **signature-listing** blocks that the compile gate skips are
 instead name-checked by `scripts/readme-symbols.test.ts`: every top-level

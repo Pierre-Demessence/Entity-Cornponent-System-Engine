@@ -3,12 +3,12 @@ import type { SchedulableSystem } from '@pierre/ecs';
 import type { GameState } from '../game';
 
 import { GroundedDef, Velocity3DDef } from '../components';
-import { JUMP_IMPULSE, MOVE_SPEED } from '../game';
+import { cameraRig, JUMP_IMPULSE, MOVE_SPEED } from '../game';
 
 /**
  * Camera-relative WASD on the XZ plane, space-to-jump (edge-triggered
- * and grounded-gated). Camera yaw is owned by the DOM layer (mouse
- * drag) and read from `ctx.cameraYaw`.
+ * and grounded-gated). Camera yaw is the camera's `OrbitRig`,
+ * which the DOM layer (mouse look) turns.
  *
  * Basis at yaw=0: forward = -Z world, right = +X world. Rotating by
  * `yaw` around Y gives forward = (-sin, 0, -cos), right = (cos, 0, -sin),
@@ -43,8 +43,9 @@ export const inputSystem: SchedulableSystem<GameState> = {
       localZ /= len;
     }
 
-    const sin = Math.sin(ctx.cameraYaw);
-    const cos = Math.cos(ctx.cameraYaw);
+    const yaw = cameraRig(ctx)?.yaw ?? 0;
+    const sin = Math.sin(yaw);
+    const cos = Math.cos(yaw);
     const worldX = localX * cos - localZ * sin;
     const worldZ = -localX * sin - localZ * cos;
 

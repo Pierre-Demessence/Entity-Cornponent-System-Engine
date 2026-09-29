@@ -1,19 +1,21 @@
 import type { GameState, PortalAction, PortalEvent } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
+import { addLookDelta, makeCameraRigSystem } from '@pierre/ecs/modules/camera-3d';
 import { createInput, Key, KeyboardProvider, MouseLookProvider } from '@pierre/ecs/modules/input';
-import { clamp } from '@pierre/ecs/modules/math';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
-import { Position3DDef } from './components';
+import { CameraTag, PlayerTag, Position3DDef } from './components';
 import {
   makeWorld,
-  MAX_PITCH,
   MOUSE_SENSITIVITY,
+  playerLook,
   resetGame,
   RESPAWN_Y,
   respawnCube,
   respawnPlayer,
+  VIEW_H,
+  VIEW_W,
 } from './game';
 import { makeRenderer } from './render';
 import {
@@ -26,13 +28,11 @@ import {
 } from './systems';
 
 const LOGIC_TICK_MS = 1000 / 60;
-const WIDTH = 800;
-const HEIGHT = 640;
 
 export function start(container: HTMLElement): () => void {
   container.innerHTML = '';
 
-  const renderer = makeRenderer(WIDTH, HEIGHT);
+  const renderer = makeRenderer(VIEW_W, VIEW_H);
   renderer.domElement.style.display = 'block';
   renderer.domElement.style.cursor = 'crosshair';
 
@@ -46,14 +46,14 @@ export function start(container: HTMLElement): () => void {
   const crosshair = document.createElement('div');
   crosshair.textContent = '+';
   crosshair.style.cssText
-    = `position:absolute;left:50%;top:${HEIGHT / 2}px;transform:translate(-50%,-50%);color:#fff;opacity:0.65;font:18px/1 monospace;pointer-events:none;`;
+    = `position:absolute;left:50%;top:${VIEW_H / 2}px;transform:translate(-50%,-50%);color:#fff;opacity:0.65;font:18px/1 monospace;pointer-events:none;`;
   container.append(crosshair);
 
   // Win overlay (shown when the player reaches the exit).
   const winOverlay = document.createElement('div');
   winOverlay.style.cssText
     = 'position:absolute;left:0;top:0;width:100%;height:'
-      + `${HEIGHT}px;display:none;place-items:center;background:rgba(8,12,16,0.55);`
+      + `${VIEW_H}px;display:none;place-items:center;background:rgba(8,12,16,0.55);`
       + 'color:#eaf6ff;font:600 26px system-ui;text-align:center;pointer-events:none;';
   winOverlay.innerHTML
     = 'Level complete<br><span style="font-size:15px;font-weight:400;color:#9fb2c0">Press R to restart</span>';
@@ -79,32 +79,32 @@ export function start(container: HTMLElement): () => void {
   );
 
   const state: GameState = {
+    cameraId: null,
     cubeId: null,
     doorId: null,
     dtMs: LOGIC_TICK_MS,
     events,
     input,
     pendingFire: null,
-    pitch: 0,
     platePressed: false,
     playerId: null,
     portals: { blue: null, orange: null },
     won: false,
     world,
-    yaw: 0,
   };
 
   resetGame(state);
 
   // Pointer lock: LMB captures the cursor as well as firing, then the mouse
-  // drives yaw + pitch. RMB must not capture — it fires an orange portal.
+  // drives the camera rig's yaw + pitch. RMB must not capture — it fires an orange portal.
   const look = new MouseLookProvider({
     sensitivity: MOUSE_SENSITIVITY,
     target: renderer.domElement,
   });
   look.subscribe(({ x, y }) => {
-    state.yaw -= x;
-    state.pitch = clamp(state.pitch - y, -MAX_PITCH, MAX_PITCH);
+    const rig = playerLook(state);
+    if (rig)
+      addLookDelta(rig, x, y);
   });
   const onMouseDown = (e: MouseEvent): void => {
     if (e.button === 0) {
@@ -157,8 +157,11 @@ export function start(container: HTMLElement): () => void {
   });
   tickRunner.start();
 
+  // Posed per frame, not per logic tick, so mouse look shows on the next frame.
+  const cameraRig = makeCameraRigSystem<GameState>({ cameraTag: CameraTag, targetTag: PlayerTag });
   const renderTickSource = new AnimationFrameTickSource();
   const unsubscribeRender = renderTickSource.subscribe(() => {
+    cameraRig.run(state);
     renderer.render(state);
     winOverlay.style.display = state.won ? 'grid' : 'none';
   });

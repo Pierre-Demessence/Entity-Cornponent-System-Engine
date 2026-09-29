@@ -1,11 +1,12 @@
 import type { GameState, Platformer3DEvent, PlatformerAction } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
+import { addLookDelta, makeCameraRigSystem } from '@pierre/ecs/modules/camera-3d';
 import { createInput, Key, KeyboardProvider, MouseLookProvider } from '@pierre/ecs/modules/input';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
-import { Position3DDef } from './components';
-import { CAMERA_MOUSE_SENSITIVITY, makeWorld, resetGame, RESPAWN_Y } from './game';
+import { CameraTag, PlayerTag, Position3DDef } from './components';
+import { CAMERA_MOUSE_SENSITIVITY, cameraRig, makeWorld, resetGame, RESPAWN_Y, VIEW_H, VIEW_W } from './game';
 import { makeRenderer } from './render';
 import {
   inputSystem,
@@ -14,13 +15,11 @@ import {
 } from './systems';
 
 const LOGIC_TICK_MS = 1000 / 60;
-const WIDTH = 800;
-const HEIGHT = 600;
 
 export function start(container: HTMLElement): () => void {
   container.innerHTML = '';
 
-  const renderer = makeRenderer(WIDTH, HEIGHT);
+  const renderer = makeRenderer(VIEW_W, VIEW_H);
   renderer.domElement.style.display = 'block';
   renderer.domElement.style.margin = '0 auto';
 
@@ -63,7 +62,7 @@ export function start(container: HTMLElement): () => void {
   );
 
   const state: GameState = {
-    cameraYaw: 0,
+    cameraId: null,
     dtMs: LOGIC_TICK_MS,
     events,
     input,
@@ -83,7 +82,9 @@ export function start(container: HTMLElement): () => void {
     target: renderer.domElement,
   });
   look.subscribe(({ x }) => {
-    state.cameraYaw -= x;
+    const rig = cameraRig(state);
+    if (rig)
+      addLookDelta(rig, x, 0);
   });
   const onCaptureClick = (): void => {
     look.requestLock();
@@ -121,8 +122,11 @@ export function start(container: HTMLElement): () => void {
   const unsubCollected = events.on('CoinCollected', refreshScore);
   const unsubFell = events.on('PlayerFell', refreshScore);
 
+  // Posed per frame with the frame's own dt, so the smoothing matches the display rate.
+  const cameraRigSystem = makeCameraRigSystem({ cameraTag: CameraTag, targetTag: PlayerTag });
   const renderTickSource = new AnimationFrameTickSource();
-  const unsubRender = renderTickSource.subscribe(() => {
+  const unsubRender = renderTickSource.subscribe(({ deltaMs }) => {
+    cameraRigSystem.run({ dtMs: deltaMs, world: state.world });
     renderer.render(state);
   });
   renderTickSource.start();

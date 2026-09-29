@@ -22,18 +22,33 @@ Calling `destroyEntity` directly is fine only when you are not iterating.
 
 ## "Collision stopped matching after I moved something"
 
-Positions must change through `world.move(id, x, y)`. A direct write to the
-position component updates the store and leaves any spatial index believing the
-old position, so queries keep returning the entity at wherever it used to be.
+Once `world.enableSpatial` indexes a component, that component must change
+through `world.move(id, x, y)`. A direct write updates the store and leaves the
+index believing the old position, so spatial queries keep returning the entity
+wherever it used to be. The index is only as current as the writes it is told
+about.
 
-The same applies to any component a spatial structure is tracking: the index is
-only as current as the writes it is told about.
+A world without `enableSpatial` has no index to go stale: write positions
+directly, and `world.move` is not available.
 
-## "`enableSpatial` threw, or a second call did nothing"
+## "`world.move` threw"
 
-`enableSpatial` may be called **once per world** — it installs the world's
-spatial structure. A second call is not a reconfigure; set it up once, at
-startup, for the position component the engine should index.
+`move` exists to keep a spatial index current, so it throws
+`move() requires enableSpatial() to have been called` on a world that has none.
+Either write the position component directly, or enable the index at startup —
+see the next entry.
+
+## "`enableSpatial` threw"
+
+It throws in two cases:
+
+- **It was already called.** It may be called once per world; a second call is
+  not a reconfigure, even for a different component.
+- **The component is not registered yet.** Register it first.
+
+The world ships no default index, so the call also names its backend —
+`world.enableSpatial(PositionDef, new HashGrid2D())`, with the backend from
+[`modules/spatial`](../../modules/spatial/). Leaving it out is a type error.
 
 ## "Registering a component threw"
 
@@ -44,10 +59,11 @@ refused rather than silently shadowing the first.
 
 ## "Loading a save produced the wrong components"
 
-`loadJSON` restores registration *order*, but it does not create stores. The
-caller registers the same schemas first — in any order, as long as they are all
-there — and only then loads. A missing registration shows up as data that
-silently does not arrive.
+`loadJSON` does not create stores. It restores, by name, into the components and
+tags already registered on the world, so the caller registers the same schemas
+first — in any order, as long as they are all there — and only then loads. A
+payload entry with no registered store is skipped without an error, so a
+missing registration shows up as data that silently does not arrive.
 
 ## "It only works because the systems happen to run in that order"
 

@@ -1,10 +1,15 @@
 import type { EntityId, EventBus } from '@pierre/ecs';
+import type { FirstPersonRig } from '@pierre/ecs/modules/camera-3d';
 import type { InputState } from '@pierre/ecs/modules/input';
 import type { Vec3 } from '@pierre/ecs/modules/math';
 
 import { EcsWorld } from '@pierre/ecs';
+import { Camera3DDef, FirstPersonRigDef, makeCamera3D, makeFirstPersonRig } from '@pierre/ecs/modules/camera-3d';
+import { degToRad } from '@pierre/ecs/modules/math';
+import { Rotation3DDef } from '@pierre/ecs/modules/transform-3d';
 
 import {
+  CameraTag,
   CubeTag,
   DoorTag,
   DynamicBodyTag,
@@ -73,7 +78,10 @@ export const RESPAWN_Y = -12;
 
 // Mouse-look.
 export const MOUSE_SENSITIVITY = 0.0022; // rad per pixel
-export const MAX_PITCH = Math.PI / 2 - 0.04;
+
+// View.
+export const VIEW_W = 800;
+export const VIEW_H = 640;
 
 // Portals (a tall oval; full width/height in world units).
 export const PORTAL_W = 1.1;
@@ -105,28 +113,32 @@ export type PortalEvent
     | { type: 'LevelComplete' };
 
 export interface GameState {
+  /** The camera entity; its `FirstPersonRig` holds the look yaw / pitch. */
+  cameraId: EntityId | null;
   cubeId: EntityId | null;
   doorId: EntityId | null;
   dtMs: number;
   events: EventBus<PortalEvent>;
   input: InputState<PortalAction>;
   pendingFire: PortalColor | null;
-  pitch: number;
   platePressed: boolean;
   playerId: EntityId | null;
   portals: { blue: Portal | null; orange: Portal | null };
   won: boolean;
   world: EcsWorld;
-  yaw: number;
 }
 
 export function makeWorld(): EcsWorld {
   const world = new EcsWorld();
   world.registerComponent(Position3DDef);
+  world.registerComponent(Rotation3DDef);
   world.registerComponent(Velocity3DDef);
   world.registerComponent(ShapeAabb3DDef);
   world.registerComponent(GroundedDef);
+  world.registerComponent(Camera3DDef);
+  world.registerComponent(FirstPersonRigDef);
   world.registerTag(PlayerTag);
+  world.registerTag(CameraTag);
   world.registerTag(CubeTag);
   world.registerTag(StaticBodyTag);
   world.registerTag(DynamicBodyTag);
@@ -148,6 +160,26 @@ function spawnPlayer(state: GameState): EntityId {
   state.world.getTag(PlayerTag).add(id);
   state.world.getTag(DynamicBodyTag).add(id);
   return id;
+}
+
+/** Spawn the first-person camera; `makeCameraRigSystem` poses it at the player's eye. */
+function spawnCamera(state: GameState): EntityId {
+  const id = state.world.createEntity();
+  state.world.getStore(Camera3DDef).set(id, makeCamera3D({
+    far: 200,
+    fovY: degToRad(75),
+    near: 0.05,
+    viewportH: VIEW_H,
+    viewportW: VIEW_W,
+  }));
+  state.world.getStore(FirstPersonRigDef).set(id, makeFirstPersonRig({ eyeHeight: PLAYER_EYE }));
+  state.world.getTag(CameraTag).add(id);
+  return id;
+}
+
+/** The player's look — yaw / pitch on the camera's rig. */
+export function playerLook(state: GameState): FirstPersonRig | undefined {
+  return state.cameraId == null ? undefined : state.world.getStore(FirstPersonRigDef).get(state.cameraId);
 }
 
 function spawnCube(state: GameState): EntityId {
@@ -250,8 +282,6 @@ function buildLevel(state: GameState): void {
 export function resetGame(state: GameState): void {
   state.world.clearAll();
   state.events.clear();
-  state.yaw = 0;
-  state.pitch = 0;
   state.portals.blue = null;
   state.portals.orange = null;
   state.pendingFire = null;
@@ -259,6 +289,7 @@ export function resetGame(state: GameState): void {
   state.won = false;
   state.doorId = null;
   state.playerId = spawnPlayer(state);
+  state.cameraId = spawnCamera(state);
   state.cubeId = spawnCube(state);
   buildLevel(state);
 }

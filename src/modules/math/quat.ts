@@ -1,6 +1,6 @@
 import type { Vec3 } from './vec3';
 
-import { vec3Length } from './vec3';
+import { vec3Cross, vec3Length, vec3Normalize } from './vec3';
 
 /**
  * Rotation primitives for 3-axis attitude — the `Quat` half of this module.
@@ -53,6 +53,48 @@ export function quatFromAxisAngle(axis: Vec3, angle: number): Quat {
     return { w: 1, x: 0, y: 0, z: 0 };
   const s = Math.sin(angle / 2) / mag;
   return { w: Math.cos(angle / 2), x: axis.x * s, y: axis.y * s, z: axis.z * s };
+}
+
+/**
+ * The rotation that points the local `-Z` axis along `forward` and keeps the
+ * local `+Y` axis as close to `up` as that allows — what a camera needs to face
+ * a target (`quatLookRotation(vec3Sub(target, eye))`). The right-handed
+ * counterpart of Unity's `Quaternion.LookRotation`, which aims `+Z` instead.
+ *
+ * Neither input needs to be unit-length. A zero `forward` has no direction and
+ * yields the identity; an `up` parallel to `forward` falls back to world `+Z`,
+ * then `+X`, so the result is always a valid rotation.
+ */
+export function quatLookRotation(forward: Vec3, up: Vec3 = { x: 0, y: 1, z: 0 }): Quat {
+  if (vec3Length(forward) === 0)
+    return { w: 1, x: 0, y: 0, z: 0 };
+  const back = vec3Normalize({ x: -forward.x, y: -forward.y, z: -forward.z });
+  const right = [up, { x: 0, y: 0, z: 1 }, { x: 1, y: 0, z: 0 }]
+    .map(candidate => vec3Cross(candidate, back))
+    .find(axis => vec3Length(axis) > 1e-9)!;
+  const x = vec3Normalize(right);
+  const y = vec3Cross(back, x);
+  return quatFromBasis(x, y, back);
+}
+
+// Rotation matrix with columns x, y, z → quaternion (Shepperd's method: branch
+// on the largest diagonal term so the square root never nears zero).
+function quatFromBasis(x: Vec3, y: Vec3, z: Vec3): Quat {
+  const trace = x.x + y.y + z.z;
+  if (trace > 0) {
+    const s = 0.5 / Math.sqrt(trace + 1);
+    return { w: 0.25 / s, x: (y.z - z.y) * s, y: (z.x - x.z) * s, z: (x.y - y.x) * s };
+  }
+  if (x.x > y.y && x.x > z.z) {
+    const s = 2 * Math.sqrt(1 + x.x - y.y - z.z);
+    return { w: (y.z - z.y) / s, x: 0.25 * s, y: (y.x + x.y) / s, z: (z.x + x.z) / s };
+  }
+  if (y.y > z.z) {
+    const s = 2 * Math.sqrt(1 + y.y - x.x - z.z);
+    return { w: (z.x - x.z) / s, x: (y.x + x.y) / s, y: 0.25 * s, z: (z.y + y.z) / s };
+  }
+  const s = 2 * Math.sqrt(1 + z.z - x.x - y.y);
+  return { w: (x.y - y.x) / s, x: (z.x + x.z) / s, y: (z.y + y.z) / s, z: 0.25 * s };
 }
 
 /**

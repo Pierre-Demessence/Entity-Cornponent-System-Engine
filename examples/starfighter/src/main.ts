@@ -1,13 +1,14 @@
 import type { GameState, StarfighterAction, StarfighterEvent } from './game';
 
 import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
+import { makeCameraRigSystem } from '@pierre/ecs/modules/camera-3d';
 import { createInput, Key, KeyboardProvider } from '@pierre/ecs/modules/input';
-import { QUAT_IDENTITY } from '@pierre/ecs/modules/math';
 import { makeVelocityIntegration3DSystem } from '@pierre/ecs/modules/motion-3d';
 import { makeSeededRng } from '@pierre/ecs/modules/rng';
 import { AnimationFrameTickSource, FixedIntervalTickSource } from '@pierre/ecs/modules/tick';
 
-import { AIM_DEADZONE, makeWorld, resetGame } from './game';
+import { CameraTag, ShipTag } from './components';
+import { AIM_DEADZONE, makeWorld, resetGame, resizeView } from './game';
 import { makeRenderer } from './render';
 import { bulletSystem, shipBoundsSystem, shipSystem, targetSystem, weaponSystem } from './systems';
 
@@ -105,17 +106,18 @@ export function start(container: HTMLElement): () => void {
     aimX: 0,
     aimY: 0,
     angVel: { x: 0, y: 0, z: 0 },
+    cameraId: null,
     dtMs: LOGIC_TICK_MS,
     events,
     fireTimer: 0,
     firing: false,
     input,
-    orientation: { ...QUAT_IDENTITY },
     playerId: null,
     rng: makeSeededRng(0x5EED),
     score: 0,
     spawnTimer: 0,
     speed: 0,
+    viewport: { h, w },
     world,
   };
 
@@ -148,6 +150,7 @@ export function start(container: HTMLElement): () => void {
   const onResize = (): void => {
     ({ h, w } = sizeOf());
     renderer.resize(w, h);
+    resizeView(state, w, h);
     renderer.domElement.style.cssText = CANVAS_STYLE;
     ringRadius = Math.min(w, h) * 0.16;
     layoutRing();
@@ -185,8 +188,11 @@ export function start(container: HTMLElement): () => void {
   };
   const unsubScore = events.on('TargetDestroyed', refreshScore);
 
+  // Posed per frame with the frame's own dt, so the smoothing matches the display rate.
+  const cameraRig = makeCameraRigSystem({ cameraTag: CameraTag, targetTag: ShipTag });
   const renderTickSource = new AnimationFrameTickSource();
-  const unsubRender = renderTickSource.subscribe(() => {
+  const unsubRender = renderTickSource.subscribe(({ deltaMs }) => {
+    cameraRig.run({ dtMs: deltaMs, world: state.world });
     renderer.render(state);
   });
   renderTickSource.start();

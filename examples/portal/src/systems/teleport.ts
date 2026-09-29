@@ -4,9 +4,12 @@ import type { Vec3 } from '@pierre/ecs/modules/math';
 import type { Velocity3D } from '../components';
 import type { GameState, Portal } from '../game';
 
+import { firstPersonForward } from '@pierre/ecs/modules/camera-3d';
+import { clamp } from '@pierre/ecs/modules/math';
+
 import { DynamicBodyTag, PlayerTag, Position3DDef, Velocity3DDef } from '../components';
-import { MAX_PITCH } from '../game';
-import { forwardVec, localCoords, transformPoint, transformVec, withinOpening } from './portal-math';
+import { playerLook } from '../game';
+import { localCoords, transformPoint, transformVec, withinOpening } from './portal-math';
 
 /**
  * Teleport bodies through the linked portal pair, conserving momentum. A body
@@ -72,14 +75,11 @@ function tryTeleport(
   vel.vy = nv.y;
   vel.vz = nv.z;
 
-  if (isPlayer) {
-    const nf = transformVec(forwardVec(ctx.yaw, ctx.pitch), src, dst);
-    ctx.yaw = Math.atan2(-nf.x, -nf.z);
-    ctx.pitch = clamp(Math.asin(clamp(nf.y, -1, 1)), -MAX_PITCH, MAX_PITCH);
+  const look = isPlayer ? playerLook(ctx) : undefined;
+  if (look) {
+    const nf = transformVec(firstPersonForward(look.yaw, look.pitch), src, dst);
+    look.yaw = Math.atan2(-nf.x, -nf.z);
+    look.pitch = clamp(Math.asin(clamp(nf.y, -1, 1)), look.minPitch, look.maxPitch);
   }
   return true;
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
 }
