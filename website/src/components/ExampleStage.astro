@@ -122,7 +122,7 @@ const { id } = Astro.props;
 			if (document.fullscreenElement)
 				void document.exitFullscreen();
 			else
-				void root.requestFullscreen();
+				void viewport.requestFullscreen();
 		});
 
 		new IntersectionObserver((entries) => {
@@ -171,12 +171,6 @@ const { id } = Astro.props;
 		background: var(--sl-color-gray-6);
 		overflow: hidden;
 	}
-	.example-stage:fullscreen {
-		display: flex;
-		flex-direction: column;
-		border: 0;
-		border-radius: 0;
-	}
 	.example-toolbar {
 		display: flex;
 		gap: 1rem;
@@ -214,8 +208,11 @@ const { id } = Astro.props;
 		padding: 0.75rem;
 		overflow: auto;
 	}
-	.example-stage:fullscreen .example-viewport {
-		min-height: 0;
+	/* Fullscreen is the prototype's own area, without the toolbar. */
+	.example-viewport:fullscreen {
+		min-height: 100vh;
+		padding: 0;
+		background: var(--sl-color-gray-6);
 	}
 	.example-viewport:focus-visible {
 		outline: 2px solid var(--sl-color-accent);
