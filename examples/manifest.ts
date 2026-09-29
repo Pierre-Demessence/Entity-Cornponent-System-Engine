@@ -276,6 +276,15 @@ export const EXAMPLES = [
     title: 'Spacewar!',
   },
   {
+    id: 'lunar-lander',
+    challenge: 11,
+    controls: 'Up/W/Space thrust, Left/Right or A/D rotate, Enter/R next level or new run',
+    group: 'challenge',
+    modules: ['animation', 'camera', 'easing', 'input', 'lifetime', 'math', 'motion', 'noise', 'particles', 'render-canvas2d', 'rng', 'save', 'tick', 'transform'],
+    summary: 'Rotate-and-thrust landing on seeded noise terrain with multiplier pads: altitude-driven camera zoom, a thruster flame animation, and a checksum-verified leaderboard.',
+    title: 'Lunar Lander',
+  },
+  {
     id: 'pacman',
     challenge: 12,
     controls: 'Arrows/WASD steer (turns are buffered), F frame stats, R restart after game over',

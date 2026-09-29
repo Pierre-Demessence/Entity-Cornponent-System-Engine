@@ -100,6 +100,7 @@
         "game-of-life",
         "jetpack",
         "local-pong",
+        "lunar-lander",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -201,6 +202,7 @@
               "flappy",
               "frogger",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -463,6 +465,7 @@
               "frogger",
               "game-of-life",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -647,6 +650,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -761,6 +765,7 @@
         "game-of-life",
         "jetpack",
         "local-pong",
+        "lunar-lander",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -825,6 +830,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -932,6 +938,7 @@
         "game-of-life",
         "jetpack",
         "local-pong",
+        "lunar-lander",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -964,6 +971,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -1137,6 +1145,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "lunar-lander",
         "pacman",
         "rpg"
       ],
@@ -1167,9 +1176,11 @@
         },
         {
           "name": "currentFrame",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -1188,9 +1199,11 @@
         },
         {
           "name": "makeSpriteAnimation",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -1209,9 +1222,11 @@
         },
         {
           "name": "makeSpriteAnimationSystem",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -1321,9 +1336,11 @@
         },
         {
           "name": "SpriteAnimationDef",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -1554,7 +1571,7 @@
       "typeTotal": 7,
       "typeUsedByExample": 0,
       "valueTotal": 12,
-      "valueUsedByExample": 5
+      "valueUsedByExample": 9
     },
     {
       "coveredByExample": true,
@@ -2615,6 +2632,7 @@
       "coveredByExample": true,
       "examples": [
         "game-of-life",
+        "lunar-lander",
         "pacman",
         "roguelike",
         "rpg",
@@ -2671,6 +2689,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "lunar-lander",
               "roguelike",
               "rpg"
             ],
@@ -2753,6 +2772,7 @@
           "example": {
             "consumers": [
               "game-of-life",
+              "lunar-lander",
               "pacman",
               "roguelike",
               "rpg",
@@ -2828,6 +2848,7 @@
           "example": {
             "consumers": [
               "game-of-life",
+              "lunar-lander",
               "pacman",
               "roguelike",
               "rpg",
@@ -2854,6 +2875,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "lunar-lander",
               "roguelike",
               "rpg"
             ],
@@ -2899,9 +2921,11 @@
         },
         {
           "name": "worldToView",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -2925,7 +2949,7 @@
       "typeTotal": 4,
       "typeUsedByExample": 1,
       "valueTotal": 9,
-      "valueUsedByExample": 7
+      "valueUsedByExample": 8
     },
     {
       "coveredByExample": true,
@@ -5391,6 +5415,7 @@
       "coveredByExample": true,
       "examples": [
         "game-of-life",
+        "lunar-lander",
         "pacman",
         "rhythm",
         "roguelike"
@@ -5467,9 +5492,11 @@
         },
         {
           "name": "easeInCubic",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -5722,6 +5749,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "lunar-lander",
               "pacman"
             ],
             "typeOnly": false
@@ -5830,9 +5858,11 @@
         },
         {
           "name": "easeOutBack",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -5897,6 +5927,7 @@
           "example": {
             "consumers": [
               "game-of-life",
+              "lunar-lander",
               "rhythm"
             ],
             "typeOnly": false
@@ -5984,9 +6015,11 @@
         },
         {
           "name": "easeOutQuart",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -6106,7 +6139,7 @@
       "typeTotal": 1,
       "typeUsedByExample": 1,
       "valueTotal": 31,
-      "valueUsedByExample": 5
+      "valueUsedByExample": 8
     },
     {
       "coveredByExample": true,
@@ -6475,6 +6508,7 @@
         "game-of-life",
         "jetpack",
         "local-pong",
+        "lunar-lander",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -6535,6 +6569,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "platformer",
               "platformer-3d",
               "portal",
@@ -6756,6 +6791,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "platformer",
               "platformer-3d",
               "portal",
@@ -6794,6 +6830,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -6876,6 +6913,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -7525,6 +7563,7 @@
         "frogger",
         "game-of-life",
         "jetpack",
+        "lunar-lander",
         "pacman",
         "space-invaders",
         "spacewar",
@@ -7568,6 +7607,7 @@
               "frogger",
               "game-of-life",
               "jetpack",
+              "lunar-lander",
               "pacman",
               "space-invaders",
               "spacewar",
@@ -7673,6 +7713,7 @@
               "frogger",
               "game-of-life",
               "jetpack",
+              "lunar-lander",
               "pacman",
               "space-invaders",
               "spacewar",
@@ -7716,6 +7757,7 @@
         "game-of-life",
         "jetpack",
         "local-pong",
+        "lunar-lander",
         "pacman",
         "platformer-3d",
         "portal",
@@ -7748,9 +7790,11 @@
       "symbols": [
         {
           "name": "approximately",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -7777,6 +7821,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "portal",
               "river-raid",
               "space-invaders",
@@ -7810,6 +7855,7 @@
           "example": {
             "consumers": [
               "jetpack",
+              "lunar-lander",
               "rhythm",
               "starfighter",
               "top-down-shooter"
@@ -7891,6 +7937,7 @@
             "consumers": [
               "game-of-life",
               "jetpack",
+              "lunar-lander",
               "pacman",
               "roguelike",
               "top-down-shooter"
@@ -7917,9 +7964,11 @@
         },
         {
           "name": "lerpAngle",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -8525,9 +8574,11 @@
         },
         {
           "name": "remap",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -8546,9 +8597,11 @@
         },
         {
           "name": "smoothstep",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -9142,7 +9195,7 @@
       "typeTotal": 4,
       "typeUsedByExample": 2,
       "valueTotal": 53,
-      "valueUsedByExample": 23
+      "valueUsedByExample": 27
     },
     {
       "coveredByExample": true,
@@ -9155,6 +9208,7 @@
         "frogger",
         "jetpack",
         "local-pong",
+        "lunar-lander",
         "pacman",
         "river-raid",
         "space-invaders",
@@ -9199,6 +9253,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "river-raid",
               "space-invaders",
@@ -9415,6 +9470,7 @@
     {
       "coveredByExample": true,
       "examples": [
+        "lunar-lander",
         "roguelike"
       ],
       "importPath": "@pierre/ecs/modules/noise",
@@ -9423,9 +9479,11 @@
       "symbols": [
         {
           "name": "fbm1D",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -9608,9 +9666,11 @@
         },
         {
           "name": "perlin1D",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -9715,9 +9775,11 @@
         },
         {
           "name": "valueNoise1D",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -9783,7 +9845,7 @@
       "typeTotal": 6,
       "typeUsedByExample": 0,
       "valueTotal": 11,
-      "valueUsedByExample": 2
+      "valueUsedByExample": 5
     },
     {
       "coveredByExample": true,
@@ -9791,6 +9853,7 @@
         "asteroids",
         "frogger",
         "jetpack",
+        "lunar-lander",
         "pacman",
         "space-invaders",
         "spacewar"
@@ -9807,6 +9870,7 @@
               "asteroids",
               "frogger",
               "jetpack",
+              "lunar-lander",
               "pacman",
               "space-invaders",
               "spacewar"
@@ -9894,6 +9958,7 @@
               "asteroids",
               "frogger",
               "jetpack",
+              "lunar-lander",
               "pacman",
               "space-invaders",
               "spacewar"
@@ -9941,6 +10006,7 @@
               "asteroids",
               "frogger",
               "jetpack",
+              "lunar-lander",
               "pacman",
               "space-invaders",
               "spacewar"
@@ -10066,6 +10132,7 @@
               "asteroids",
               "frogger",
               "jetpack",
+              "lunar-lander",
               "pacman",
               "space-invaders",
               "spacewar"
@@ -10626,6 +10693,7 @@
         "game-of-life",
         "jetpack",
         "local-pong",
+        "lunar-lander",
         "pacman",
         "platformer",
         "roguelike",
@@ -10654,6 +10722,7 @@
               "flappy",
               "frogger",
               "jetpack",
+              "lunar-lander",
               "platformer",
               "roguelike",
               "rpg",
@@ -10688,6 +10757,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "roguelike",
@@ -10761,6 +10831,7 @@
               "frogger",
               "game-of-life",
               "jetpack",
+              "lunar-lander",
               "pacman",
               "roguelike",
               "space-invaders",
@@ -10862,6 +10933,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "roguelike",
@@ -10927,6 +10999,7 @@
               "frogger",
               "game-of-life",
               "jetpack",
+              "lunar-lander",
               "pacman",
               "roguelike",
               "rpg",
@@ -11363,6 +11436,7 @@
       "coveredByExample": true,
       "examples": [
         "game-of-life",
+        "lunar-lander",
         "pacman",
         "river-raid",
         "roguelike",
@@ -11383,6 +11457,7 @@
           "example": {
             "consumers": [
               "game-of-life",
+              "lunar-lander",
               "pacman",
               "river-raid",
               "roguelike",
@@ -11526,6 +11601,7 @@
       "coveredByExample": true,
       "examples": [
         "game-of-life",
+        "lunar-lander",
         "pacman",
         "roguelike"
       ],
@@ -11556,9 +11632,11 @@
         },
         {
           "name": "createEnvelope",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -11581,6 +11659,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "lunar-lander",
               "roguelike"
             ],
             "typeOnly": false
@@ -11624,6 +11703,7 @@
           "example": {
             "consumers": [
               "game-of-life",
+              "lunar-lander",
               "pacman",
               "roguelike"
             ],
@@ -11687,10 +11767,12 @@
         },
         {
           "name": "SaveEnvelope",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
-            "typeOnly": false
+            "consumers": [
+              "lunar-lander"
+            ],
+            "typeOnly": true
           },
           "isValue": false,
           "kind": "interface",
@@ -11711,6 +11793,7 @@
           "coveredByExample": false,
           "example": {
             "consumers": [
+              "lunar-lander",
               "roguelike"
             ],
             "typeOnly": true
@@ -11729,9 +11812,11 @@
         },
         {
           "name": "verifyEnvelope",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "lunar-lander"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -11755,9 +11840,9 @@
         "src/modules/save/save-storage.test.ts"
       ],
       "typeTotal": 3,
-      "typeUsedByExample": 0,
+      "typeUsedByExample": 1,
       "valueTotal": 7,
-      "valueUsedByExample": 3
+      "valueUsedByExample": 5
     },
     {
       "coveredByExample": true,
@@ -13055,6 +13140,7 @@
         "game-of-life",
         "jetpack",
         "local-pong",
+        "lunar-lander",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -13090,6 +13176,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -13194,6 +13281,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -13230,6 +13318,7 @@
             "consumers": [
               "card-battler",
               "game-of-life",
+              "lunar-lander",
               "pacman"
             ],
             "typeOnly": false
@@ -14149,6 +14238,7 @@
         "game-of-life",
         "jetpack",
         "local-pong",
+        "lunar-lander",
         "pacman",
         "parallel-kernel",
         "platformer",
@@ -14215,6 +14305,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "parallel-kernel",
               "platformer",
@@ -14344,6 +14435,7 @@
           "example": {
             "consumers": [
               "asteroids",
+              "lunar-lander",
               "pacman",
               "rpg",
               "spacewar"
@@ -14402,6 +14494,7 @@
               "frogger",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "river-raid",
@@ -15098,6 +15191,7 @@
         "game-of-life",
         "jetpack",
         "local-pong",
+        "lunar-lander",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -15167,6 +15261,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -15228,6 +15323,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -15527,6 +15623,7 @@
         "game-of-life",
         "jetpack",
         "local-pong",
+        "lunar-lander",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -15581,6 +15678,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -15900,6 +15998,7 @@
         "game-of-life",
         "jetpack",
         "local-pong",
+        "lunar-lander",
         "pacman",
         "parallel-kernel",
         "platformer",
@@ -15963,6 +16062,7 @@
               "game-of-life",
               "jetpack",
               "local-pong",
+              "lunar-lander",
               "pacman",
               "parallel-kernel",
               "platformer",
@@ -16107,6 +16207,12 @@
       "entries": 28,
       "type": 8,
       "value": 62
+    },
+    {
+      "name": "lunar-lander",
+      "entries": 20,
+      "type": 8,
+      "value": 54
     },
     {
       "name": "roguelike",
@@ -16292,12 +16398,12 @@
   "candidates": [
     {
       "importPath": "@pierre/ecs/modules/math",
-      "missing": 30,
+      "missing": 26,
       "total": 53
     },
     {
       "importPath": "@pierre/ecs/modules/easing",
-      "missing": 26,
+      "missing": 23,
       "total": 31
     },
     {
@@ -16312,13 +16418,8 @@
     },
     {
       "importPath": "@pierre/ecs/modules/noise",
-      "missing": 9,
+      "missing": 6,
       "total": 11
-    },
-    {
-      "importPath": "@pierre/ecs/modules/animation",
-      "missing": 7,
-      "total": 12
     },
     {
       "importPath": "@pierre/ecs/modules/steering",
@@ -16341,19 +16442,14 @@
       "total": 14
     },
     {
-      "importPath": "@pierre/ecs/modules/save",
-      "missing": 4,
-      "total": 7
+      "importPath": "@pierre/ecs/modules/animation",
+      "missing": 3,
+      "total": 12
     },
     {
       "importPath": "@pierre/ecs/modules/collision",
       "missing": 3,
       "total": 12
-    },
-    {
-      "importPath": "@pierre/ecs/modules/camera",
-      "missing": 2,
-      "total": 9
     },
     {
       "importPath": "@pierre/ecs/modules/input",
@@ -16366,9 +16462,19 @@
       "total": 6
     },
     {
+      "importPath": "@pierre/ecs/modules/save",
+      "missing": 2,
+      "total": 7
+    },
+    {
       "importPath": "@pierre/ecs/modules/spatial",
       "missing": 2,
       "total": 7
+    },
+    {
+      "importPath": "@pierre/ecs/modules/camera",
+      "missing": 1,
+      "total": 9
     },
     {
       "importPath": "@pierre/ecs/modules/kinematics-3d",
@@ -16412,6 +16518,6 @@
     "typeSymbols": 255,
     "valueSymbols": 356,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 156
+    "valueWithoutExample": 139
   }
 }
