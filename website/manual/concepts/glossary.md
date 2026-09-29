@@ -10,6 +10,11 @@ to a different one. See [The model](../model/).
 **bucket** — the set of entities sharing one archetype. Queries select buckets
 rather than walking entities.
 
+**change tick** — the stamp a store records when an entity gains or changes a
+component, read from the world's shared clock. A query's `added` / `changed`
+filter compares stamps against its own previous pass, so "changed since I last
+looked" has a definite answer whatever the system order.
+
 **component** — one piece of typed data, stored in a store shared by every entity
 that has it. A component is defined by a `ComponentDef`, which carries its name
 and its serialize/deserialize pair. Tags are the payload-free case.
@@ -17,15 +22,11 @@ and its serialize/deserialize pair. Tags are the payload-free case.
 **core** — the domain-neutral primitives under `src/`, imported from
 `@pierre/ecs/<name>`. Core knows nothing about players, tiles or turns.
 
-**dirty flag** — the per-tick record of which entities a store mutated. `set`,
-`add` and `delete` mark an entity dirty; the set is cleared at the end of the
-tick, so "changed this tick" is a question with a definite answer.
-
 **entity** — an identifier, and nothing else. An entity has no fields and no
 behaviour; what it has is whatever components are stored against its id.
 
 **flush** — the step at the end of a tick that drains everything queued during
-it: events, lifecycle callbacks, destroys and dirty flags. It is why nothing
+it: events, lifecycle callbacks and destroys. It is why nothing
 structural is ever observed half-applied. See [Ticks, frames and system
 order](../ticks-and-order/).
 

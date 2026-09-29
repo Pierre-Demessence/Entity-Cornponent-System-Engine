@@ -7,6 +7,7 @@ import type { SpatialStructure } from '#spatial-structure';
 import type { EntityTemplate } from '#template';
 
 import { ArchetypeIndex } from '#archetype-index';
+import { ChangeClock } from '#change-clock';
 import { ColumnStore } from '#column-store';
 import { ComponentStore, TagStore } from '#component-store';
 import { EventBus } from '#event-bus';
@@ -41,6 +42,12 @@ export class EcsWorld {
 
   private readonly alive = new Set<EntityId>();
   private readonly archetypes = new ArchetypeIndex();
+  /**
+   * Change-detection clock shared by every registered store. Stores stamp
+   * added / changed ticks from it; queries with `added` / `changed` filters
+   * advance it. See {@link QueryBuilder.changed}.
+   */
+  readonly clock = new ChangeClock();
   private commandQueue: StructuralCommand[] = [];
   private componentRegistry: ComponentEntry[] = [];
   private readonly installedPlugins = new Set<string>();
@@ -145,11 +152,6 @@ export class EcsWorld {
     this.lifecycle.clear();
     this.alive.clear();
     this.nextId = 0;
-  }
-
-  clearAllDirty(): void {
-    for (const { store } of this.componentRegistry) store.clearDirty();
-    for (const { store } of this.tagRegistry) store.clearDirty();
   }
 
   createEntity(): EntityId {
@@ -389,7 +391,7 @@ export class EcsWorld {
     this._spatial.move(id, pos, { x, y });
     pos.x = x;
     pos.y = y;
-    store.markDirty(id);
+    store.markChanged(id);
   }
 
   query(): QueryBuilder<[]>;
@@ -469,8 +471,8 @@ export class EcsWorld {
     // set by simpleComponent) get columnar Structure-of-Arrays storage; the
     // rest keep the object-backed Map store. Callers never choose.
     const store: ComponentStoreLike<T> = def.columns
-      ? new ColumnStore<T>(def.columns, { shared: options.shared })
-      : new ComponentStore<T>();
+      ? new ColumnStore<T>(def.columns, { clock: this.clock, shared: options.shared })
+      : new ComponentStore<T>(this.clock);
     this.componentRegistry.push({ def: def as ComponentDef<unknown>, store: store as ComponentStoreLike<unknown> });
     this.storeByName.set(def.name, store as ComponentStoreLike<unknown>);
 
@@ -508,7 +510,7 @@ export class EcsWorld {
   registerTag(def: TagDef): TagStore {
     if (this.tagByName.has(def.name))
       throw new Error(`Tag "${def.name}" already registered`);
-    const store = new TagStore();
+    const store = new TagStore(this.clock);
     this.tagRegistry.push({ def, store });
     this.tagByName.set(def.name, store);
 

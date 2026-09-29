@@ -71,7 +71,7 @@ entities does not degrade lookup over time.
 ## See also
 
 - [The model](../model/) — archetypes and signatures, explained.
-- [`component-store`](../../core/component-store/) — stores, dirty flags and
+- [`component-store`](../../core/component-store/) — stores, change ticks and
   serialization.
 - [Ticks, frames and system order](../ticks-and-order/) — where the flush sits in
   the tick.

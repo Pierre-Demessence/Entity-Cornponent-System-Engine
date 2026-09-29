@@ -74,7 +74,7 @@ export function installPiles(world: EcsWorld): void {
     const index = pile.items.indexOf(item);
     if (index >= 0) {
       pile.items.splice(index, 1);
-      piles.markDirty(old.pile);
+      piles.markChanged(old.pile);
     }
   });
 }
@@ -144,7 +144,7 @@ export function addToPile(world: EcsWorld, pile: EntityId, item: EntityId, index
     ? target.items.length
     : Math.max(0, Math.min(Math.trunc(index), target.items.length));
   target.items.splice(at, 0, item);
-  pileStore(world).markDirty(pile);
+  pileStore(world).markChanged(pile);
 }
 
 /** Take `item` out of its pile. Returns `false` when it was in none. */
@@ -190,5 +190,5 @@ export function moveAll(world: EcsWorld, from: EntityId, to: EntityId, options: 
 /** Shuffle the pile in place (Fisher–Yates). Pass a seeded `rand` for a reproducible deal. */
 export function shufflePile(world: EcsWorld, pile: EntityId, rand?: RandomFn): void {
   shuffle(requirePile(world, pile).items, rand);
-  pileStore(world).markDirty(pile);
+  pileStore(world).markChanged(pile);
 }

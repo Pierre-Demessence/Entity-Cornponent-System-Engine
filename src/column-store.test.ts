@@ -2,6 +2,7 @@ import type { ColumnField, ComponentDef } from '#component-store';
 
 import { describe, expect, it } from 'vitest';
 
+import { ChangeClock } from '#change-clock';
 import { ColumnStore } from '#column-store';
 import { ComponentStore, simpleComponent } from '#component-store';
 
@@ -233,18 +234,65 @@ describe('columnStore', () => {
     });
   });
 
-  describe('dirty tracking', () => {
-    it('marks set, view-write, and delete dirty; clearDirty resets', () => {
+  describe('change ticks', () => {
+    it('stamps insert, replace, view write, getMut and markChanged', () => {
+      const clock = new ChangeClock();
+      const s = new ColumnStore<Vec2>(FIELDS, { clock });
+      expect(s.clock).toBe(clock);
+      s.set(1, { x: 1, y: 1 });
+      expect(s.addedTick(1)).toBe(1);
+      expect(s.changedTick(1)).toBe(1);
+
+      clock.tick = 2;
+      s.set(1, { x: 2, y: 2 });
+      expect(s.addedTick(1)).toBe(1);
+      expect(s.changedTick(1)).toBe(2);
+
+      clock.tick = 3;
+      const view = s.get(1)!;
+      expect(s.changedTick(1)).toBe(2);
+      view.x = 5;
+      expect(s.changedTick(1)).toBe(3);
+
+      clock.tick = 4;
+      expect(s.getMut(1)).toBe(view);
+      expect(s.changedTick(1)).toBe(4);
+
+      clock.tick = 5;
+      s.markChanged(1);
+      s.markChanged(99);
+      expect(s.changedTick(1)).toBe(5);
+      expect(s.changedTick(99)).toBe(0);
+    });
+
+    it('stamps follow the entity across a swap-remove', () => {
       const s = new ColumnStore<Vec2>(FIELDS);
       s.set(1, { x: 1, y: 1 });
-      expect(s.isDirty(1)).toBe(true);
-      s.clearDirty();
-      expect(s.hasChanges()).toBe(false);
-      s.get(1)!.x = 5;
-      expect(s.isDirty(1)).toBe(true);
-      s.clearDirty();
+      s.clock.tick = 8;
+      s.set(2, { x: 2, y: 2 });
       s.delete(1);
-      expect(s.isDirty(1)).toBe(true);
+      expect(s.addedTick(2)).toBe(8);
+      expect(s.changedTick(2)).toBe(8);
+      expect(s.addedTick(1)).toBe(0);
+    });
+
+    it('stamps survive a grow', () => {
+      const s = new ColumnStore<Vec2>(FIELDS);
+      for (let i = 0; i < 40; i++) {
+        s.clock.tick = i + 1;
+        s.set(i, { x: i, y: i });
+      }
+      expect(s.addedTick(0)).toBe(1);
+      expect(s.changedTick(39)).toBe(40);
+    });
+
+    it('a stale view write after delete stamps nothing', () => {
+      const s = new ColumnStore<Vec2>(FIELDS);
+      s.set(1, { x: 1, y: 1 });
+      const view = s.get(1)!;
+      s.delete(1);
+      view.x = 3;
+      expect(s.changedTick(1)).toBe(0);
     });
   });
 

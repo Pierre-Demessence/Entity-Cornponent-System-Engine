@@ -35,11 +35,11 @@ export interface TickRunnerOptions<TCtx> {
   getWorld: () => EcsWorld;
   /**
    * Optional tick-boundary hook. Fires inside the post-tick `finally`,
-   * **before** `events.flush()` / `flushCommands()` / `lifecycle.flush()`
-   * / `clearAllDirty()`. Use this to emit tick-boundary events (e.g.
-   * `TurnCompleted`, `FrameCompleted`) so they drain in the same flush
-   * as events produced by systems during the tick, rather than sitting
-   * queued until the next tick.
+   * **before** `events.flush()` / `flushCommands()` / `lifecycle.flush()`.
+   * Use this to emit tick-boundary events (e.g. `TurnCompleted`,
+   * `FrameCompleted`) so they drain in the same flush as events produced
+   * by systems during the tick, rather than sitting queued until the next
+   * tick.
    */
   onBeforeFlush?: (ctx: TCtx, info: TickInfo) => void;
   /**
@@ -60,8 +60,7 @@ export interface TickRunnerOptions<TCtx> {
  * 4. `getEvents?.(ctx).flush()` — skipped when there is no event bus
  * 5. `world.flushCommands()`
  * 6. `world.lifecycle.flush()`
- * 7. `world.clearAllDirty()`
- * 8. `onTickComplete?.(ctx, info)`
+ * 7. `onTickComplete?.(ctx, info)`
  *
  * A tick is an atomic simulation step: one world from build-to-flush.
  * Consumers that need a world swap (level transition, scene change,
@@ -93,7 +92,6 @@ export class TickRunner<TCtx> {
       const world = getWorld();
       world.flushCommands();
       world.lifecycle.flush();
-      world.clearAllDirty();
     }
     onTickComplete?.(ctx, info);
   }

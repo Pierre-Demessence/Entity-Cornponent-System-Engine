@@ -90,7 +90,7 @@ export function makeVelocityIntegration3DSystem<TCtx extends VelocityIntegration
       // Columnar fast path: when both stores are Structure-of-Arrays, integrate
       // directly over the typed-array columns — no per-entity view allocation.
       // Behaviour matches the object path exactly (boundary, skip-if-still,
-      // onMove); direct column writes mark the entity dirty like the view setter.
+      // onMove); direct column writes record the change like the view setter.
       // Column refs are captured once, so `onMove` must not add new Position3D/
       // Velocity3D entities (that would grow() and reallocate the columns).
       if (posStore instanceof ColumnStore && velStore instanceof ColumnStore) {
@@ -128,7 +128,7 @@ export function makeVelocityIntegration3DSystem<TCtx extends VelocityIntegration
           px[ps] = nextX;
           py[ps] = nextY;
           pz[ps] = nextZ;
-          posStore.markDirty(id);
+          posStore.markChanged(id);
           onMove?.(ctx, id, { x: prevX, y: prevY, z: prevZ }, { x: nextX, y: nextY, z: nextZ });
         }
         return;

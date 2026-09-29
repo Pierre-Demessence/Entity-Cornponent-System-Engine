@@ -1,6 +1,8 @@
 import type { ColumnField, ComponentDef, ComponentStoreLike, NumericColumnKind, StoreDeleteHandler, StoreSetHandler, StoreValidateHandler } from '#component-store';
 import type { EntityId } from '#entity-id';
 
+import { ChangeClock } from '#change-clock';
+
 // Paged sparse set for id -> slot. Pages of Int32Array are allocated on demand
 // (only where live ids fall), so lookup is a GC-leaf typed-array read instead of
 // a millions-entry Map, and memory stays bounded to the id ranges actually used.
@@ -38,6 +40,8 @@ function makeColumn(kind: NumericColumnKind, capacity: number, shared: boolean):
 
 /** Options for {@link ColumnStore}. */
 export interface ColumnStoreOptions {
+  /** Stamp source for change ticks; a world passes its shared clock. Defaults to a private one. */
+  clock?: ChangeClock;
   /**
    * Back each column with a `SharedArrayBuffer` instead of a plain
    * `ArrayBuffer`, so worker threads can read/write the same memory with no
@@ -57,7 +61,7 @@ export interface ColumnStoreOptions {
  * `[0, size)` and dense.
  *
  * Implements the same access surface as {@link ComponentStore} (`get` / `set` /
- * `delete` / iteration / `subscribe` / dirty tracking / `toSerialized`) so
+ * `delete` / iteration / `subscribe` / change ticks / `toSerialized`) so
  * `world`, `QueryBuilder`, the spatial index, and save treat it identically.
  * The compatibility `get(id)` returns a **write-through view**: a small object
  * whose field accessors read and write the underlying columns, so the universal
@@ -68,16 +72,19 @@ export interface ColumnStoreOptions {
  */
 export class ColumnStore<T> implements ComponentStoreLike<T> {
   private capacity = 16;
+  readonly clock: ChangeClock;
   private readonly colKinds: Record<string, NumericColumnKind> = {};
   private readonly columns: Record<string, NumericArray> = {};
   private count = 0;
   private readonly deleteHandlers: StoreDeleteHandler<T>[] = [];
-  private readonly dirty = new Set<EntityId>();
   private readonly fields: string[];
   private readonly pages: (Int32Array | undefined)[] = [];
   private readonly setHandlers: StoreSetHandler<T>[] = [];
   private readonly shared: boolean;
   private readonly slot2id: EntityId[] = [];
+  // Per-slot added / changed ticks, moved with the row on swap-remove. A Record
+  // (like `columns`) so view accessors keep a stable reference across grow().
+  private readonly stamps: { added: Float64Array; changed: Float64Array };
   private readonly validateHandlers: StoreValidateHandler[] = [];
   private readonly viewDescriptors: PropertyDescriptorMap = {};
   // One cached view per live id, paged like the sparse set. Building a view
@@ -87,6 +94,8 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
 
   constructor(specs: readonly ColumnField[], options: ColumnStoreOptions = {}) {
     this.shared = options.shared ?? false;
+    this.clock = options.clock ?? new ChangeClock();
+    this.stamps = { added: new Float64Array(this.capacity), changed: new Float64Array(this.capacity) };
     this.fields = specs.map(s => s.field);
     for (const s of specs) {
       this.colKinds[s.field] = s.kind;
@@ -95,8 +104,8 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
 
     // Capture the backing references (not `this`) so view accessors stay
     // correct across grow() — `columns[f]` is reassigned in place on the same
-    // Record, and `dirty` / `pages` references are stable.
-    const { columns, dirty, pages } = this;
+    // Record, and `stamps` / `pages` / `clock` references are stable.
+    const { clock, columns, pages, stamps } = this;
     for (const f of this.fields) {
       this.viewDescriptors[f] = {
         enumerable: true,
@@ -109,11 +118,21 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
           const slot = page === undefined ? ABSENT : page[this._id & PAGE_MASK];
           if (slot !== ABSENT) {
             columns[f][slot] = v;
-            dirty.add(this._id);
+            stamps.changed[slot] = clock.tick;
           }
         },
       };
     }
+  }
+
+  addedTick(id: EntityId): number {
+    const slot = this.slotFor(id);
+    return slot === ABSENT ? 0 : this.stamps.added[slot];
+  }
+
+  changedTick(id: EntityId): number {
+    const slot = this.slotFor(id);
+    return slot === ABSENT ? 0 : this.stamps.changed[slot];
   }
 
   clear(): void {
@@ -126,10 +145,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     this.pages.length = 0;
     this.viewPages.length = 0;
     this.slot2id.length = 0;
-    this.dirty.clear();
   }
-
-  clearDirty(): void { this.dirty.clear(); }
 
   /** Raw backing array for a field. Valid indices are `[0, size)`; pair with {@link slotOf}. */
   column(field: string): NumericArray { return this.columns[field]; }
@@ -144,6 +160,8 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     const lastSlot = this.count - 1;
     if (slot !== lastSlot) {
       for (const f of this.fields) this.columns[f][slot] = this.columns[f][lastSlot];
+      this.stamps.added[slot] = this.stamps.added[lastSlot];
+      this.stamps.changed[slot] = this.stamps.changed[lastSlot];
       const lastId = this.slot2id[lastSlot];
       this.slot2id[slot] = lastId;
       this.setSparse(lastId, slot);
@@ -154,7 +172,6 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
       views[id & PAGE_MASK] = undefined as T;
     this.slot2id.length = lastSlot;
     this.count = lastSlot;
-    this.dirty.add(id);
 
     if (old !== undefined)
       this.emitDelete(id, old);
@@ -184,6 +201,14 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     return this.slotFor(id) === ABSENT ? undefined : this.viewFor(id);
   }
 
+  getMut(id: EntityId): T | undefined {
+    const slot = this.slotFor(id);
+    if (slot === ABSENT)
+      return undefined;
+    this.stamps.changed[slot] = this.clock.tick;
+    return this.viewFor(id);
+  }
+
   private grow(): void {
     this.capacity *= 2;
     for (const f of this.fields) {
@@ -191,11 +216,14 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
       next.set(this.columns[f]);
       this.columns[f] = next;
     }
+    for (const key of ['added', 'changed'] as const) {
+      const next = new Float64Array(this.capacity);
+      next.set(this.stamps[key]);
+      this.stamps[key] = next;
+    }
   }
 
   has(id: EntityId): boolean { return this.slotFor(id) !== ABSENT; }
-  hasChanges(): boolean { return this.dirty.size > 0; }
-  isDirty(id: EntityId): boolean { return this.dirty.has(id); }
   * keys(): Generator<EntityId> {
     for (let slot = 0; slot < this.count; slot++) yield this.slot2id[slot];
   }
@@ -208,7 +236,12 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     return v as T;
   }
 
-  markDirty(id: EntityId): void { this.dirty.add(id); }
+  /** Record a present entity as changed — call after writing its row through {@link column}. */
+  markChanged(id: EntityId): void {
+    const slot = this.slotFor(id);
+    if (slot !== ABSENT)
+      this.stamps.changed[slot] = this.clock.tick;
+  }
 
   private plainAt(slot: number): T {
     const out: Record<string, number> = {};
@@ -227,6 +260,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
       slot = this.count++;
       this.setSparse(id, slot);
       this.slot2id[slot] = id;
+      this.stamps.added[slot] = this.clock.tick;
     }
     else {
       if (this.deleteHandlers.length > 0)
@@ -235,7 +269,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     }
     const src = value as Record<string, number>;
     for (const f of this.fields) this.columns[f][slot] = src[f];
-    this.dirty.add(id);
+    this.stamps.changed[slot] = this.clock.tick;
     this.emitSet(id, value);
     return this;
   }

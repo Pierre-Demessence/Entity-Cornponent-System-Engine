@@ -194,6 +194,14 @@ export const EXAMPLES = [
     ],
   },
   {
+    id: 'roguelike',
+    controls: 'Arrows/WASD move & attack · Space wait · Q drink potion · K save · L load · R new run',
+    group: 'early',
+    modules: ['asset-loader', 'behavior-tree', 'camera', 'easing', 'grid-based', 'input', 'math', 'noise', 'pathfinding', 'render-canvas2d', 'rng', 'save', 'scene-transition', 'texture-atlas', 'transform', 'turn-based', 'tween'],
+    summary: 'Turn-based dungeon crawl on generated floors: shadowcast field of view and fog, A* chasing and line-of-sight archers from one behaviour tree, a turn cycler over every actor, floors swapped by scene transition, and checksummed, migrated saves.',
+    title: 'Roguelike',
+  },
+  {
     id: 'flappy',
     challenge: 2,
     controls: 'Click / Space / Up to flap, R to restart',

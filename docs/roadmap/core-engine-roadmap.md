@@ -83,16 +83,6 @@ complex systems.
 | **Complexity** | Very long — a storage-engine rewrite. add/remove-component becomes a **structural move** (the entity is copied between tables), where sparse-set is O(1). |
 | **Dependencies** | None outstanding — builds on the shipped columnar store, and sits **above** the shipped archetype *cache* (the lighter middle step: it caches query matches, keeping the gather). Detail + the full cheapest→biggest ladder: [../plans/done/ecs-parallelism-and-soa-storage.md](../plans/done/ecs-parallelism-and-soa-storage.md#the-path-beyond-middle--storage-architecture-logged). |
 
-### 3.7 Change-detection query filters
-
-| | |
-|---|---|
-| **Problem** | Stores track which ids are dirty, but nothing can query that: a system that cares only about what changed must iterate everything and test per entity. The tracking is also semantically uneven — mutating a value returned by an object-store `get(id)` does not mark it, while the columnar write-through view marks on assignment — so a filter built on it today would silently under-report. |
-| **Solution** | An `Added` / `Changed` filter on the query surface, over a settled contract: either every write path marks dirty, or the filter is documented as opt-in tracking with the mutation sites that must call `markDirty` listed. Canon: Bevy `Added` / `Changed`, Unity DOTS `WithChangeFilter`. |
-| **Unlocks** | Change-driven systems — re-derive on edit, sync only what moved, stay idle on a quiet tick — without per-entity polling. |
-| **Complexity** | Small surface over shipped machinery; the cost is the contract, not the code. |
-| **Dependencies** | The shipped dirty tracking (`markDirty` / `isDirty` on both store types) and the shipped query predicate surface. |
-
 ### 3.8 Cached query handles + typed arity beyond four
 
 | | |
@@ -101,7 +91,17 @@ complex systems.
 | **Solution** | A reusable query handle, resolved once and iterated per tick, plus variadic tuple typing so arity is not a cliff. Canon: Bevy system params, Flecs cached queries. |
 | **Unlocks** | Query-heavy systems without per-tick allocation, and queries over five or more components that keep their types. |
 | **Complexity** | Mid — the match cache already exists; the work is a handle that owns it, plus the typing. |
-| **Dependencies** | The shipped archetype cache and query predicate surface, whose shape the handle would freeze. |
+| **Dependencies** | The shipped archetype cache and query predicate surface, whose shape the handle would freeze. A `QueryBuilder` with `added` / `changed` filters already keeps per-instance state (its previous-pass tick); the handle must carry it. |
+
+### 3.9 Change-filter iteration from the changed set
+
+| | |
+|---|---|
+| **Problem** | An `added` / `changed` filter is a per-entity stamp check applied after archetype matching, so a pass costs O(matched entities) even when only a handful changed. |
+| **Solution** | When a change filter is the most selective term, iterate the store's recently-stamped ids instead of the matched set — e.g. a per-store change log trimmed to the oldest live query window. |
+| **Unlocks** | Change-driven systems over large, mostly-idle populations that cost O(changed) per pass. |
+| **Complexity** | Mid — the log's trimming needs to know the oldest outstanding query window. |
+| **Dependencies** | The shipped change ticks and `added` / `changed` filters. Trigger: a profile showing filtered passes dominated by unchanged entities. |
 
 ---
 
@@ -137,11 +137,11 @@ modding/plugin support.
 By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
-1. **Change-detection filters** (3.7) — a small surface over machinery that
-   already ships
-2. **System run conditions** (4.7) — small
-3. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
-4. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
-5. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
+1. **System run conditions** (4.7) — small
+2. **Cached query handles + typed arity** (3.8) — pays off in query-heavy ticks
+3. **Spatial integration generalized** (2.6) — stops the 3D consumers drifting
+4. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
+5. **Change-filter iteration from the changed set** (3.9) — only once a profile
+   asks for it
 6. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
    strategic piece, above the shipped cache

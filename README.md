@@ -25,11 +25,11 @@ Core (`@pierre/ecs`):
   `ComponentDef<T>` from a schema. All-numeric components are stored
   columnar (typed-array Structure-of-Arrays, with a `column()` / `slotOf()`
   fast path); the rest use an object-backed `ComponentStore<T>`. `TagStore`
-  holds data-less tags. Stores carry dirty tracking, mutation hooks, schema
+  holds data-less tags. Stores carry change ticks, mutation hooks, schema
   versioning with migrations, and dev-mode `requires` validation.
 - **`QueryBuilder`** — typed queries with `withComponent`,
-  `withoutComponent`, `withTag`, `without`, `anyOf`, and `optional`, served
-  from an archetype index.
+  `withoutComponent`, `withTag`, `without`, `anyOf`, `optional`, and the
+  `added` / `changed` change filters, served from an archetype index.
 - **`EntityTemplate`** — declarative prefabs with per-spawn overrides.
 - **`EventBus<TEvent>`** — typed queue-and-flush pub/sub with handler
   priorities and `stopPropagation`. The world's `lifecycle` bus reports
@@ -38,7 +38,7 @@ Core (`@pierre/ecs`):
   optional phases, `init` / `dispose` hooks, and a dev-mode check of declared
   `reads` / `writes`.
 - **`TickRunner`** — the per-tick ceremony: run systems, flush events,
-  commands and lifecycle, clear dirty sets.
+  commands and lifecycle.
 - **`SpatialStructure`** — the spatial-index contract;
   `world.enableSpatial(def, structure)` wires one in (e.g. `HashGrid2D`
   from `modules/spatial`).

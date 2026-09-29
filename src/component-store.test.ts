@@ -2,6 +2,7 @@ import type { ComponentDef } from '#component-store';
 
 import { describe, expect, it } from 'vitest';
 
+import { ChangeClock } from '#change-clock';
 import { ComponentStore, TagStore } from '#component-store';
 
 const NumDef: ComponentDef<number> = {
@@ -115,36 +116,71 @@ describe('componentStore', () => {
     });
   });
 
-  describe('dirty tracking', () => {
-    it('marks entities dirty on set', () => {
-      const s = new ComponentStore<number>();
+  describe('change ticks', () => {
+    it('stamps added and changed with the clock tick on insert', () => {
+      const clock = new ChangeClock();
+      clock.tick = 5;
+      const s = new ComponentStore<number>(clock);
       s.set(1, 42);
-      expect(s.isDirty(1)).toBe(true);
-      expect(s.hasChanges()).toBe(true);
+      expect(s.clock).toBe(clock);
+      expect(s.addedTick(1)).toBe(5);
+      expect(s.changedTick(1)).toBe(5);
     });
 
-    it('marks entities dirty on delete', () => {
+    it('replace stamps changed but keeps the added tick', () => {
       const s = new ComponentStore<number>();
       s.set(1, 42);
-      s.clearDirty();
+      s.clock.tick = 9;
+      s.set(1, 43);
+      expect(s.addedTick(1)).toBe(1);
+      expect(s.changedTick(1)).toBe(9);
+    });
+
+    it('getMut stamps changed and returns the stored value; get does not stamp', () => {
+      const s = new ComponentStore<{ hp: number }>();
+      const value = { hp: 3 };
+      s.set(1, value);
+      s.clock.tick = 4;
+      expect(s.get(1)).toBe(value);
+      expect(s.changedTick(1)).toBe(1);
+      expect(s.getMut(1)).toBe(value);
+      expect(s.changedTick(1)).toBe(4);
+    });
+
+    it('getMut on a missing entity returns undefined and stamps nothing', () => {
+      const s = new ComponentStore<number>();
+      expect(s.getMut(1)).toBeUndefined();
+      expect(s.changedTick(1)).toBe(0);
+    });
+
+    it('markChanged stamps a present entity only', () => {
+      const s = new ComponentStore<number>();
+      s.set(1, 42);
+      s.clock.tick = 7;
+      s.markChanged(1);
+      s.markChanged(2);
+      expect(s.changedTick(1)).toBe(7);
+      expect(s.changedTick(2)).toBe(0);
+    });
+
+    it('delete and clear drop the stamps', () => {
+      const s = new ComponentStore<number>();
+      s.set(1, 42);
+      s.set(2, 43);
       s.delete(1);
-      expect(s.isDirty(1)).toBe(true);
+      expect(s.addedTick(1)).toBe(0);
+      expect(s.changedTick(1)).toBe(0);
+      s.clear();
+      expect(s.addedTick(2)).toBe(0);
     });
 
-    it('clearDirty resets all dirty flags', () => {
+    it('re-adding after delete stamps added again', () => {
       const s = new ComponentStore<number>();
       s.set(1, 42);
-      s.clearDirty();
-      expect(s.isDirty(1)).toBe(false);
-      expect(s.hasChanges()).toBe(false);
-    });
-
-    it('markDirty forces dirty flag', () => {
-      const s = new ComponentStore<number>();
+      s.delete(1);
+      s.clock.tick = 3;
       s.set(1, 42);
-      s.clearDirty();
-      s.markDirty(1);
-      expect(s.isDirty(1)).toBe(true);
+      expect(s.addedTick(1)).toBe(3);
     });
   });
 
@@ -190,13 +226,12 @@ describe('componentStore', () => {
   });
 
   describe('clear without delete handler', () => {
-    it('clears all entries and dirty flags', () => {
+    it('clears all entries', () => {
       const s = new ComponentStore<number>();
       s.set(1, 10);
       s.set(2, 20);
       s.clear();
       expect(s.size).toBe(0);
-      expect(s.hasChanges()).toBe(false);
     });
   });
 
@@ -343,37 +378,34 @@ describe('tagStore', () => {
     expect(t.has(1)).toBe(false);
   });
 
-  it('clear removes all entries and dirty flags', () => {
+  it('clear removes all entries and their added stamps', () => {
     const t = new TagStore();
     t.add(1);
     t.add(2);
     t.clear();
     expect(t.size).toBe(0);
-    expect(t.hasChanges()).toBe(false);
+    expect(t.addedTick(1)).toBe(0);
   });
 
-  describe('dirty tracking', () => {
-    it('marks dirty on add', () => {
-      const t = new TagStore();
+  describe('change ticks', () => {
+    it('stamps added on first add only', () => {
+      const clock = new ChangeClock();
+      const t = new TagStore(clock);
+      expect(t.clock).toBe(clock);
       t.add(1);
-      expect(t.isDirty(1)).toBe(true);
-      expect(t.hasChanges()).toBe(true);
+      clock.tick = 6;
+      t.add(1);
+      expect(t.addedTick(1)).toBe(1);
     });
 
-    it('marks dirty on delete', () => {
+    it('delete drops the stamp; re-add stamps again', () => {
       const t = new TagStore();
       t.add(1);
-      t.clearDirty();
       t.delete(1);
-      expect(t.isDirty(1)).toBe(true);
-    });
-
-    it('clearDirty resets flags', () => {
-      const t = new TagStore();
+      expect(t.addedTick(1)).toBe(0);
+      t.clock.tick = 4;
       t.add(1);
-      t.clearDirty();
-      expect(t.isDirty(1)).toBe(false);
-      expect(t.hasChanges()).toBe(false);
+      expect(t.addedTick(1)).toBe(4);
     });
   });
 

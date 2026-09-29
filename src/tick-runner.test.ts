@@ -49,13 +49,9 @@ function makeFixture() {
   const commandsSpy = vi.spyOn(world, 'flushCommands').mockImplementation(() => {
     trace.push('flushCommands');
   });
-  const clearSpy = vi.spyOn(world, 'clearAllDirty').mockImplementation(() => {
-    trace.push('clearAllDirty');
-  });
-
   const events = { flush: flushSpy } as unknown as EventBus<{ type: string }>;
 
-  return { clearSpy, commandsSpy, events, flushSpy, lifecycleSpy, scheduler, source, trace, world };
+  return { commandsSpy, events, flushSpy, lifecycleSpy, scheduler, source, trace, world };
 }
 
 describe('tickRunner', () => {
@@ -76,7 +72,7 @@ describe('tickRunner', () => {
     runner.start();
     f.source.emit();
 
-    expect(f.trace).toEqual(['system', 'events.flush', 'flushCommands', 'lifecycle.flush', 'clearAllDirty']);
+    expect(f.trace).toEqual(['system', 'events.flush', 'flushCommands', 'lifecycle.flush']);
   });
 
   it('skips only the event flush when no event bus is given', () => {
@@ -95,7 +91,7 @@ describe('tickRunner', () => {
     runner.start();
     f.source.emit();
 
-    expect(f.trace).toEqual(['system', 'flushCommands', 'lifecycle.flush', 'clearAllDirty']);
+    expect(f.trace).toEqual(['system', 'flushCommands', 'lifecycle.flush']);
   });
 
   it('passes the correct info to contextFactory and onTickComplete', () => {
@@ -140,7 +136,6 @@ describe('tickRunner', () => {
     expect(f.trace).toContain('events.flush');
     expect(f.trace).toContain('lifecycle.flush');
     expect(f.trace).toContain('flushCommands');
-    expect(f.trace).toContain('clearAllDirty');
   });
 
   it('stops receiving ticks after stop()', () => {
@@ -186,7 +181,6 @@ describe('tickRunner', () => {
       'events.flush',
       'flushCommands',
       'lifecycle.flush',
-      'clearAllDirty',
     ]);
   });
 
@@ -218,7 +212,6 @@ describe('tickRunner', () => {
     const world2 = createTestWorld();
     vi.spyOn(world2.lifecycle, 'flush').mockImplementation(() => f.trace.push('w2.lifecycle'));
     vi.spyOn(world2, 'flushCommands').mockImplementation(() => f.trace.push('w2.destroys'));
-    vi.spyOn(world2, 'clearAllDirty').mockImplementation(() => f.trace.push('w2.clear'));
 
     let current = f.world;
     const runner = new TickRunner<Ctx>({
@@ -236,6 +229,5 @@ describe('tickRunner', () => {
     expect(f.trace).toContain('lifecycle.flush');
     expect(f.trace).toContain('w2.lifecycle');
     expect(f.trace).toContain('w2.destroys');
-    expect(f.trace).toContain('w2.clear');
   });
 });

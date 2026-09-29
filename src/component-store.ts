@@ -1,5 +1,6 @@
 import type { EntityId } from '#entity-id';
 
+import { ChangeClock } from '#change-clock';
 import { asArray, asBoolean, asNumber, asObject, asString } from '#validation';
 
 /** Migrates a serialized value from its stored version to the next. */
@@ -67,29 +68,39 @@ export type StoreValidateHandler = (id: EntityId) => void;
  * those reach for the concrete type.
  */
 export interface ComponentStoreLike<T> extends Iterable<[EntityId, T]> {
+  /** The clock this store stamps added / changed ticks from; shared by every store in a world. */
+  readonly clock: ChangeClock;
   readonly size: number;
   subscribe: {
     (event: 'set', fn: StoreSetHandler<T>): () => void;
     (event: 'delete', fn: StoreDeleteHandler<T>): () => void;
     (event: 'validate', fn: StoreValidateHandler): () => void;
   };
+  /** Clock tick at which the entity gained this component, or `0` when absent. */
+  addedTick: (id: EntityId) => number;
+  /** Clock tick of the entity's last recorded change (insert included), or `0` when absent. */
+  changedTick: (id: EntityId) => number;
   clear: () => void;
-  clearDirty: () => void;
   delete: (id: EntityId) => boolean;
   entries: () => IterableIterator<[EntityId, T]>;
+  /** Read a value. Not recorded as a change — mutate through {@link getMut} for that. */
   get: (id: EntityId) => T | undefined;
+  /** Read a value for in-place mutation, recording the entity as changed. */
+  getMut: (id: EntityId) => T | undefined;
   has: (id: EntityId) => boolean;
-  hasChanges: () => boolean;
-  isDirty: (id: EntityId) => boolean;
   keys: () => IterableIterator<EntityId>;
-  markDirty: (id: EntityId) => void;
+  /** Record a present entity as changed after a write the store cannot see. */
+  markChanged: (id: EntityId) => void;
   set: (id: EntityId, value: T) => this;
   toSerialized: (def: ComponentDef<T>) => unknown;
   validate: (id: EntityId) => void;
 }
 
 /**
- * Map from EntityId to component data, with dirty-tracking and lifecycle hooks.
+ * Map from EntityId to component data, with change ticks and lifecycle hooks.
+ *
+ * `set()` and {@link getMut} record a change; mutating the object returned by
+ * `get()` does not (call {@link markChanged}, or use `getMut`).
  *
  * Lifecycle hooks are exposed via `subscribe(event, fn)` and returns an
  * unsubscribe function. Multiple observers are supported: the spatial index,
@@ -100,27 +111,38 @@ export interface ComponentStoreLike<T> extends Iterable<[EntityId, T]> {
  * existing value) → `set`.
  */
 export class ComponentStore<T> implements ComponentStoreLike<T> {
+  private readonly added = new Map<EntityId, number>();
+  private readonly changed = new Map<EntityId, number>();
+  readonly clock: ChangeClock;
   private readonly deleteHandlers: StoreDeleteHandler<T>[] = [];
-  private readonly dirty = new Set<EntityId>();
   private readonly map = new Map<EntityId, T>();
   private readonly setHandlers: StoreSetHandler<T>[] = [];
   private readonly validateHandlers: StoreValidateHandler[] = [];
+
+  /** @param clock Stamp source; a world passes its shared clock. Defaults to a private one. */
+  constructor(clock: ChangeClock = new ChangeClock()) {
+    this.clock = clock;
+  }
+
+  addedTick(id: EntityId): number { return this.added.get(id) ?? 0; }
+
+  changedTick(id: EntityId): number { return this.changed.get(id) ?? 0; }
 
   clear(): void {
     if (this.deleteHandlers.length > 0) {
       for (const [id, value] of this.map) this.emitDelete(id, value);
     }
     this.map.clear();
-    this.dirty.clear();
+    this.added.clear();
+    this.changed.clear();
   }
-
-  clearDirty(): void { this.dirty.clear(); }
 
   delete(id: EntityId): boolean {
     const old = this.map.get(id);
     const deleted = this.map.delete(id);
     if (deleted) {
-      this.dirty.add(id);
+      this.added.delete(id);
+      this.changed.delete(id);
       if (old !== undefined)
         this.emitDelete(id, old);
     }
@@ -199,13 +221,22 @@ export class ComponentStore<T> implements ComponentStoreLike<T> {
 
   get(id: EntityId): T | undefined { return this.map.get(id); }
 
+  getMut(id: EntityId): T | undefined {
+    const value = this.map.get(id);
+    if (value !== undefined)
+      this.changed.set(id, this.clock.tick);
+    return value;
+  }
+
   has(id: EntityId): boolean { return this.map.has(id); }
-  hasChanges(): boolean { return this.dirty.size > 0; }
-  isDirty(id: EntityId): boolean { return this.dirty.has(id); }
 
   keys(): MapIterator<EntityId> { return this.map.keys(); }
 
-  markDirty(id: EntityId): void { this.dirty.add(id); }
+  markChanged(id: EntityId): void {
+    if (this.map.has(id))
+      this.changed.set(id, this.clock.tick);
+  }
+
   /** Insert or replace a component value. Fires validate → delete (if replacing) → set handlers. */
   set(id: EntityId, value: T): this {
     this.emitValidate(id);
@@ -214,8 +245,11 @@ export class ComponentStore<T> implements ComponentStoreLike<T> {
       if (old !== undefined)
         this.emitDelete(id, old);
     }
+    const tick = this.clock.tick;
+    if (!this.map.has(id))
+      this.added.set(id, tick);
     this.map.set(id, value);
-    this.dirty.add(id);
+    this.changed.set(id, tick);
     this.emitSet(id, value);
     return this;
   }
@@ -270,19 +304,29 @@ export class ComponentStore<T> implements ComponentStoreLike<T> {
   }
 }
 
-/** Boolean-only store — tracks entity presence without associated data. Supports dirty-tracking. */
+/** Boolean-only store — tracks entity presence without associated data, stamping the tick each tag was added. */
 export class TagStore implements Iterable<EntityId> {
+  private readonly added = new Map<EntityId, number>();
   private readonly addHandlers: Array<(id: EntityId) => void> = [];
+  readonly clock: ChangeClock;
   private readonly deleteHandlers: Array<(id: EntityId) => void> = [];
-  private readonly dirty = new Set<EntityId>();
   private readonly set = new Set<EntityId>();
 
+  /** @param clock Stamp source; a world passes its shared clock. Defaults to a private one. */
+  constructor(clock: ChangeClock = new ChangeClock()) {
+    this.clock = clock;
+  }
+
   add(id: EntityId): this {
+    if (!this.set.has(id))
+      this.added.set(id, this.clock.tick);
     this.set.add(id);
-    this.dirty.add(id);
     for (const fn of this.addHandlers) fn(id);
     return this;
   }
+
+  /** Clock tick at which the entity gained this tag, or `0` when absent. */
+  addedTick(id: EntityId): number { return this.added.get(id) ?? 0; }
 
   clear(): void {
     // Emit delete for every tracked entity before clearing — consumers that
@@ -291,15 +335,13 @@ export class TagStore implements Iterable<EntityId> {
       for (const fn of this.deleteHandlers) fn(id);
     }
     this.set.clear();
-    this.dirty.clear();
+    this.added.clear();
   }
-
-  clearDirty(): void { this.dirty.clear(); }
 
   delete(id: EntityId): boolean {
     const ok = this.set.delete(id);
     if (ok) {
-      this.dirty.add(id);
+      this.added.delete(id);
       for (const fn of this.deleteHandlers) fn(id);
     }
     return ok;
@@ -316,10 +358,6 @@ export class TagStore implements Iterable<EntityId> {
   }
 
   has(id: EntityId): boolean { return this.set.has(id); }
-
-  hasChanges(): boolean { return this.dirty.size > 0; }
-
-  isDirty(id: EntityId): boolean { return this.dirty.has(id); }
 
   get size(): number { return this.set.size; }
 

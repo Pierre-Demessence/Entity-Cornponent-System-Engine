@@ -182,19 +182,19 @@ describe('moves keep piles and back-references in step', () => {
     expectConsistent(world);
   });
 
-  it('marks the pile dirty on every change', () => {
+  it('records the pile as changed on every change', () => {
     const { items: [a], world } = setup(1);
     const pile = createPile(world);
-    const store = world.getStore(PileDef);
-    store.clearDirty();
+    const changed = world.query(PileDef).changed(world.getStore(PileDef));
+    const changedIds = (): number[] => changed.run().map(([id]) => id);
+    changedIds();
     addToPile(world, pile, a!);
-    expect(store.isDirty(pile)).toBe(true);
-    store.clearDirty();
+    expect(changedIds()).toEqual([pile]);
     removeFromPile(world, a!);
-    expect(store.isDirty(pile)).toBe(true);
-    store.clearDirty();
+    expect(changedIds()).toEqual([pile]);
     shufflePile(world, pile);
-    expect(store.isDirty(pile)).toBe(true);
+    expect(changedIds()).toEqual([pile]);
+    expect(changedIds()).toEqual([]);
   });
 });
 

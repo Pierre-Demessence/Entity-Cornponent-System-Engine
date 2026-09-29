@@ -31,7 +31,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`ColumnField`** _(interface)_ — One columnar field: its name and typed-array element kind.
 - **`ComponentDef`** _(interface)_ — Schema definition for a component type — handles serialization, optional dependency declarations, and optional schema evolution.
 - **`ComponentMigration`** _(type)_ `(raw: unknown, label: string) => unknown` — Migrates a serialized value from its stored version to the next.
-- **`ComponentStore`** _(class)_ `new <T>(): ComponentStore<T>` — Map from EntityId to component data, with dirty-tracking and lifecycle hooks. Lifecycle hooks are exposed via `subscribe(event, fn)` and ...
+- **`ComponentStore`** _(class)_ `new <T>(clock?: ChangeClock): ComponentStore<T>` — Map from EntityId to component data, with change ticks and lifecycle hooks. `set()` and getMut record a change; mutating the object retur...
 - **`ComponentStoreLike`** _(interface)_ — The storage-agnostic access surface shared by the object-backed ComponentStore and the columnar `ColumnStore`. `world`, `QueryBuilder`, t...
 - **`NumericColumnKind`** _(type)_ `'f32' | 'f64' | 'i8' | 'u8' | 'i16' | 'u16' | 'i32' | 'u32'` — Element type for a columnar (Structure-of-Arrays) numeric field, mapping to a JS typed array. `f32`/`f64` are floating-point; the integer...
 - **`registryComponent`** _(fn)_ `<TValue, TId extends number | string, TValueKey extends string = "def">(name: string, options:…` — Build a ComponentDef for registry-backed references. The generated serializer stores only an id field (default: `{ id }`), and deserializ...
@@ -46,7 +46,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`StoreSetHandler`** _(type)_ `<T>(id: EntityId, value: T) => void` — Handler signatures for `ComponentStore.subscribe`.
 - **`StoreValidateHandler`** _(type)_ `(id: EntityId) => void` — A `subscribe('validate')` handler: an entity whose stored value should be re-checked.
 - **`TagDef`** _(interface)_ — Schema definition for a boolean tag (presence/absence, no associated data).
-- **`TagStore`** _(class)_ `new (): TagStore` — Boolean-only store — tracks entity presence without associated data. Supports dirty-tracking.
+- **`TagStore`** _(class)_ `new (clock?: ChangeClock): TagStore` — Boolean-only store — tracks entity presence without associated data, stamping the tick each tag was added.
 
 ### `@pierre/ecs/entity-id`
 - **`EntityId`** _(type)_ `number` — Unique numeric identifier for an entity within the ECS world.
