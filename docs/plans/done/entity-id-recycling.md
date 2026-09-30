@@ -285,7 +285,7 @@ toggle shows the same effect live: "max index" stays below the entity count.
 ## Out of scope
 
 - **Entity-id remapping on import**: tracked in
-  [ecs-entity-id-remapping.md](../ecs-entity-id-remapping.md). Generations
+  [core roadmap 4.8](../../roadmap/core-engine-roadmap.md#48-entity-id-remapping-on-merge-import). Generations
   don't change that problem. Remapping still rewrites full ids, and the
   allocator's `claim` is the primitive a remap would use.
 - **Template `structuredClone` cost on spawn** and **object-store value

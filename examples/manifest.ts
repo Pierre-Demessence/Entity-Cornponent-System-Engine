@@ -276,6 +276,15 @@ export const EXAMPLES = [
     title: 'Spacewar!',
   },
   {
+    id: 'indy-500',
+    challenge: 10,
+    controls: 'P1: W throttle, S brake/reverse, A/D steer  |  P2: arrows  |  menus: arrows + Enter, Esc back',
+    group: 'challenge',
+    modules: ['collision', 'input', 'math', 'rng', 'steering', 'tick', 'transform'],
+    summary: 'Top-down racing for one or two cars on closed circuits: speed-dependent steering, wall and car collisions, lap timing, race / Crash & Score / Tag modes, and a steering-behaviour AI opponent.',
+    title: 'Indy 500',
+  },
+  {
     id: 'lunar-lander',
     challenge: 11,
     controls: 'Up/W/Space thrust, Left/Right or A/D rotate, Enter/R next level or new run',

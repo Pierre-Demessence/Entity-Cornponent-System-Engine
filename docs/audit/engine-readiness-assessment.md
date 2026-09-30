@@ -255,8 +255,8 @@ prevent.
   consumers needing catch-up layer an accumulator on top.
 - **No batched tilemap renderable** — per-cell entities only (see the
   tilemap V2 backlog entry).
-- **No entity-id remapping on import** (deferred) — relevant the moment
-  worlds are merged or third-party content is loaded.
+- **No entity-id remapping on import** (deferred, core roadmap 4.8) — relevant
+  the moment worlds are merged or third-party content is loaded.
 - **No world streaming or chunking**, and no navmesh. Plugin and mod hooks
   ship — `world.use` takes a `Plugin`, and `world.lifecycle` subscriptions
   plus store `subscribe` hooks are the in-engine extension points.

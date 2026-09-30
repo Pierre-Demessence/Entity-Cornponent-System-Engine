@@ -1,5 +1,11 @@
 # Entity-ID Remapping on Import (A11) — deferred
 
+> **Archived because** it predates generational entity ids: its `loadJSON`
+> option sketch no longer fits (`loadJSON` is a whole-world replace), its
+> reference list missed `AttachDef.parent`, and its deferral rationale cites the
+> Roguelike monorepo. The open work is tracked as
+> [core roadmap 4.8](../roadmap/core-engine-roadmap.md#48-entity-id-remapping-on-merge-import).
+
 Original audit entry: `ecs-engine-audit.md` §A11 — a plan from the
 Roguelike monorepo, not ported into this repo.
 
@@ -51,7 +57,7 @@ reference-carrying component.
 ## Why Deferred
 
 Audit (2026-04-17) validated against the
-[prototype ladder](../archived/prototype-games-roadmap.md):
+[prototype ladder](prototype-games-roadmap.md):
 none of the planned prototypes (Snake, Asteroids, platformer, 3D game,
 networked pong) need cross-world entity merging. Each spawns a fresh world.
 
@@ -77,4 +83,4 @@ Building the full remap infrastructure without a driver risks:
 
 - `docs/plans/done/ecs-engine-audit.md` — original entry (§A11); lives in the
   Roguelike monorepo, not ported here.
-- [docs/archived/prototype-games-roadmap.md](../archived/prototype-games-roadmap.md) — prototype ladder used to validate no current driver exists.
+- [docs/archived/prototype-games-roadmap.md](prototype-games-roadmap.md) — prototype ladder used to validate no current driver exists.

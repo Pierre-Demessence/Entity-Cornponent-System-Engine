@@ -86,6 +86,16 @@ modding/plugin support.
 | **Complexity** | Mid, and **false-positive-bound**: measured on the current corpus, only 2 of 35 bare `` `foo()` `` prose mentions resolve to an export — the rest are member names (`dispose()`, `play()`) or external refs (`move_toward()`). Needs member-aware resolution (owner → type → members) or a conservative allowlist before it is worth the noise. Deferred from [`../plans/done/readme-doc-symbol-linter.md`](../plans/done/readme-doc-symbol-linter.md). |
 | **Dependencies** | The export enumeration in `scripts/engine-surface.ts`; the type checker for member existence on a named owner type. |
 
+### 4.8 Entity-id remapping on merge-import
+
+| | |
+|---|---|
+| **Problem** | A save can only replace a world, never join one. `loadJSON` wipes every store and restores the payload's id allocation, so loading into a fresh world is safe, but adding a save fragment to a populated world (mod or template pack, party import from another slot, late-join snapshot, editor-exported room) collides on ids. Component values that store an `EntityId` — `PileDef.items`, `InPileDef.pile`, `AttachDef.parent` — would also need rewriting. The gap already shapes APIs: `camera-3d` rigs target by tag because a stored id does not survive save/load ([`../plans/done/modules-camera-3d.md`](../plans/done/modules-camera-3d.md)). |
+| **Solution** | A separate import entry point beside `loadJSON` (which stays a whole-world replace): allocate a fresh id per payload entity (or `claim` an explicit mapping), rewrite row keys, rewrite id-valued fields, and return the `old → new` map. Id-valued fields are found either through an `'entity'` field type in `simpleComponent` schemas (today they are declared `'number'`) or through an optional per-def `remapRefs(value, map)` hook for object-store components. A payload reference to an entity the payload does not contain maps to a dead id, not to whatever occupies that index. |
+| **Unlocks** | Mod and template packs, save merging, prefab-as-save-fragment, network late-join — and components that store entity references without breaking persistence. |
+| **Complexity** | Mid — ~100 lines of import plumbing, plus the schema field type or hook on every reference-carrying component and tests for each. |
+| **Dependencies** | The shipped generational ids; `EntityAllocator.claim` is the primitive an explicit mapping uses. Trigger: a mod/template-pack, save-merge or late-join feature is scoped, or a new module wants to store an `EntityId` in a component. |
+
 ---
 
 ## Suggested Implementation Order
@@ -96,5 +106,7 @@ its trigger.
 1. **Change-filter iteration from the changed set** (3.9) — only once a profile
    asks for it
 2. **Spawn-path allocation** (3.10) — only once a profile asks for it
-3. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
+3. **Entity-id remapping on merge-import** (4.8) — only once a merge or
+   stored-reference consumer asks for it
+4. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
    strategic piece, above the shipped cache
