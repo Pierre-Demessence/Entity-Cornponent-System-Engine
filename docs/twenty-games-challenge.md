@@ -33,7 +33,7 @@ unmodified `@pierre/ecs`.
 | 7 | River Raid | 1982 | [link](https://20_games_challenge.gitlab.io/games/river_raid/) | ✅ done (`river-raid`) |
 | 8 | Asteroids | 1979 | [link](https://20_games_challenge.gitlab.io/games/asteroids/) | ✅ done (`asteroids`) |
 | 9 | Spacewar! | 1979 | [link](https://20_games_challenge.gitlab.io/games/spacewar/) | ✅ done (`spacewar`) |
-| 10 | Indy 500 | 1979 | [link](https://20_games_challenge.gitlab.io/games/indy/) | ⬜ |
+| 10 | Indy 500 | 1979 | [link](https://20_games_challenge.gitlab.io/games/indy/) | ✅ done (`indy-500`) |
 | 11 | Lunar Lander | 1979 | [link](https://20_games_challenge.gitlab.io/games/lander/) | ✅ done (`lunar-lander`) |
 | 12 | Pac-Man | 1980 | [link](https://20_games_challenge.gitlab.io/games/pacman/) | ✅ done (`pacman`) |
 | 13 | Tic-Tac-Toe | 1950 | [link](https://20_games_challenge.gitlab.io/games/tic_tac_toe/) | ⬜ |
