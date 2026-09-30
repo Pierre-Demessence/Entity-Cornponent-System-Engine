@@ -101,6 +101,7 @@
         "jetpack",
         "local-pong",
         "lunar-lander",
+        "minecraft",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -203,6 +204,7 @@
               "frogger",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -467,6 +469,7 @@
               "game-of-life",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -653,6 +656,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -769,6 +773,7 @@
         "jetpack",
         "local-pong",
         "lunar-lander",
+        "minecraft",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -935,6 +940,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -1166,6 +1172,7 @@
         "jetpack",
         "local-pong",
         "lunar-lander",
+        "minecraft",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -1199,6 +1206,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -3182,6 +3190,7 @@
       "coveredByExample": true,
       "examples": [
         "doom",
+        "minecraft",
         "platformer-3d",
         "portal",
         "starfighter"
@@ -3196,6 +3205,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "platformer-3d",
               "portal"
             ],
@@ -3282,6 +3292,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "platformer-3d",
               "portal",
               "starfighter"
@@ -3304,9 +3315,11 @@
         },
         {
           "name": "camera3DFrustum",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "minecraft"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -3616,6 +3629,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "portal"
             ],
             "typeOnly": true
@@ -3638,6 +3652,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "portal"
             ],
             "typeOnly": false
@@ -3759,9 +3774,11 @@
         },
         {
           "name": "frustumIntersectsAabb",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "minecraft"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -3805,6 +3822,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "platformer-3d",
               "portal",
               "starfighter"
@@ -3852,6 +3870,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "platformer-3d",
               "portal",
               "starfighter"
@@ -3880,6 +3899,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "platformer-3d",
               "portal",
               "starfighter"
@@ -3929,6 +3949,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "portal"
             ],
             "typeOnly": false
@@ -4094,9 +4115,11 @@
         },
         {
           "name": "screenPointToRay",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "minecraft"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -4158,9 +4181,11 @@
         },
         {
           "name": "worldToScreen",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "minecraft"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -4188,7 +4213,7 @@
       "typeTotal": 13,
       "typeUsedByExample": 2,
       "valueTotal": 33,
-      "valueUsedByExample": 12
+      "valueUsedByExample": 16
     },
     {
       "coveredByExample": true,
@@ -4722,6 +4747,7 @@
       "coveredByExample": true,
       "examples": [
         "doom",
+        "minecraft",
         "platformer-3d",
         "portal",
         "starfighter"
@@ -4738,6 +4764,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "minecraft",
               "portal"
             ],
             "typeOnly": true
@@ -4763,14 +4790,16 @@
         },
         {
           "name": "Aabb3Axis",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
-            "typeOnly": false
+            "consumers": [
+              "minecraft"
+            ],
+            "typeOnly": true
           },
           "isValue": false,
           "kind": "type",
-          "noExternalConsumer": true,
+          "noExternalConsumer": false,
           "other": {
             "consumers": [],
             "typeOnly": false
@@ -4807,6 +4836,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "platformer-3d"
             ],
             "typeOnly": false
@@ -4830,9 +4860,11 @@
         },
         {
           "name": "aabb3VsAabb3Swept",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "minecraft"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -5047,6 +5079,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "portal"
             ],
             "typeOnly": false
@@ -5287,15 +5320,16 @@
         "src/modules/kinematics-3d/kinematics3d-system.test.ts"
       ],
       "typeTotal": 8,
-      "typeUsedByExample": 1,
+      "typeUsedByExample": 2,
       "valueTotal": 17,
-      "valueUsedByExample": 5
+      "valueUsedByExample": 6
     },
     {
       "coveredByExample": true,
       "examples": [
         "asteroids",
         "doom",
+        "minecraft",
         "river-raid",
         "space-invaders",
         "spacewar",
@@ -5332,6 +5366,7 @@
             "consumers": [
               "asteroids",
               "doom",
+              "minecraft",
               "river-raid",
               "space-invaders",
               "spacewar",
@@ -5399,6 +5434,7 @@
             "consumers": [
               "asteroids",
               "doom",
+              "minecraft",
               "river-raid",
               "space-invaders",
               "spacewar",
@@ -5428,6 +5464,7 @@
             "consumers": [
               "asteroids",
               "doom",
+              "minecraft",
               "river-raid",
               "space-invaders",
               "spacewar",
@@ -5457,6 +5494,7 @@
             "consumers": [
               "asteroids",
               "doom",
+              "minecraft",
               "river-raid",
               "space-invaders",
               "spacewar",
@@ -5486,6 +5524,7 @@
             "consumers": [
               "asteroids",
               "doom",
+              "minecraft",
               "river-raid",
               "space-invaders",
               "spacewar",
@@ -6736,6 +6775,7 @@
         "jetpack",
         "local-pong",
         "lunar-lander",
+        "minecraft",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -6797,6 +6837,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "platformer",
               "platformer-3d",
               "portal",
@@ -7019,6 +7060,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "platformer",
               "platformer-3d",
               "portal",
@@ -7058,6 +7100,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -7141,6 +7184,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -7261,6 +7305,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "platformer-3d",
               "portal"
             ],
@@ -7285,7 +7330,8 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
-              "doom"
+              "doom",
+              "minecraft"
             ],
             "typeOnly": true
           },
@@ -7334,6 +7380,7 @@
               "frogger",
               "game-of-life",
               "jetpack",
+              "minecraft",
               "portal",
               "space-invaders",
               "starfighter",
@@ -7407,6 +7454,7 @@
               "frogger",
               "game-of-life",
               "jetpack",
+              "minecraft",
               "portal",
               "space-invaders",
               "starfighter",
@@ -7985,6 +8033,7 @@
         "jetpack",
         "local-pong",
         "lunar-lander",
+        "minecraft",
         "pacman",
         "platformer-3d",
         "portal",
@@ -8112,6 +8161,7 @@
             "consumers": [
               "breakout",
               "doom",
+              "minecraft",
               "platformer-3d",
               "portal",
               "starfighter"
@@ -8779,6 +8829,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "platformer-3d",
               "portal",
               "starfighter"
@@ -8956,6 +9007,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "portal",
               "starfighter"
             ],
@@ -9698,6 +9750,7 @@
       "coveredByExample": true,
       "examples": [
         "lunar-lander",
+        "minecraft",
         "roguelike"
       ],
       "importPath": "@pierre/ecs/modules/noise",
@@ -9751,6 +9804,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "minecraft",
               "roguelike"
             ],
             "typeOnly": false
@@ -9790,9 +9844,11 @@
         },
         {
           "name": "fbm3D",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "minecraft"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -9916,9 +9972,11 @@
         },
         {
           "name": "perlin2D",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "minecraft"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -9981,9 +10039,11 @@
         },
         {
           "name": "simplex3D",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "minecraft"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -10025,9 +10085,11 @@
         },
         {
           "name": "valueNoise2D",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "minecraft"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -10072,7 +10134,7 @@
       "typeTotal": 6,
       "typeUsedByExample": 0,
       "valueTotal": 11,
-      "valueUsedByExample": 5
+      "valueUsedByExample": 9
     },
     {
       "coveredByExample": true,
@@ -11533,6 +11595,7 @@
       "coveredByExample": true,
       "examples": [
         "doom",
+        "minecraft",
         "platformer-3d",
         "portal",
         "starfighter"
@@ -11590,6 +11653,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "platformer-3d",
               "portal",
               "starfighter"
@@ -11664,6 +11728,7 @@
       "examples": [
         "game-of-life",
         "lunar-lander",
+        "minecraft",
         "pacman",
         "river-raid",
         "roguelike",
@@ -11685,6 +11750,7 @@
             "consumers": [
               "game-of-life",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "river-raid",
               "roguelike",
@@ -13371,6 +13437,7 @@
         "jetpack",
         "local-pong",
         "lunar-lander",
+        "minecraft",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -13407,6 +13474,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -13512,6 +13580,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -14783,6 +14852,7 @@
       "coveredByExample": true,
       "examples": [
         "doom",
+        "minecraft",
         "platformer-3d",
         "portal",
         "starfighter"
@@ -14824,6 +14894,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "platformer-3d",
               "portal",
               "starfighter"
@@ -14875,6 +14946,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "platformer-3d",
               "portal",
               "starfighter"
@@ -14966,6 +15038,7 @@
           "example": {
             "consumers": [
               "doom",
+              "minecraft",
               "platformer-3d",
               "portal",
               "starfighter"
@@ -15422,6 +15495,7 @@
         "jetpack",
         "local-pong",
         "lunar-lander",
+        "minecraft",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -15492,6 +15566,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -15554,6 +15629,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -15899,6 +15975,7 @@
         "jetpack",
         "local-pong",
         "lunar-lander",
+        "minecraft",
         "pacman",
         "platformer",
         "platformer-3d",
@@ -15954,6 +16031,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "platformer",
               "platformer-3d",
@@ -16300,6 +16378,7 @@
         "jetpack",
         "local-pong",
         "lunar-lander",
+        "minecraft",
         "pacman",
         "parallel-kernel",
         "platformer",
@@ -16364,6 +16443,7 @@
               "jetpack",
               "local-pong",
               "lunar-lander",
+              "minecraft",
               "pacman",
               "parallel-kernel",
               "platformer",
@@ -16528,6 +16608,12 @@
       "entries": 18,
       "type": 8,
       "value": 54
+    },
+    {
+      "name": "minecraft",
+      "entries": 16,
+      "type": 10,
+      "value": 44
     },
     {
       "name": "game-of-life",
@@ -16711,18 +16797,13 @@
     },
     {
       "importPath": "@pierre/ecs/modules/camera-3d",
-      "missing": 21,
+      "missing": 17,
       "total": 33
     },
     {
       "importPath": "@pierre/ecs/modules/collision-3d",
-      "missing": 12,
+      "missing": 11,
       "total": 17
-    },
-    {
-      "importPath": "@pierre/ecs/modules/noise",
-      "missing": 6,
-      "total": 11
     },
     {
       "importPath": "@pierre/ecs/modules/steering",
@@ -16758,6 +16839,11 @@
       "importPath": "@pierre/ecs/modules/input",
       "missing": 2,
       "total": 10
+    },
+    {
+      "importPath": "@pierre/ecs/modules/noise",
+      "missing": 2,
+      "total": 11
     },
     {
       "importPath": "@pierre/ecs/modules/particles",
@@ -16816,11 +16902,11 @@
     "entriesWithExample": 55,
     "entriesWithoutExample": 7,
     "modules": 46,
-    "noExternalConsumer": 167,
+    "noExternalConsumer": 166,
     "symbols": 621,
     "typeSymbols": 255,
     "valueSymbols": 366,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 146
+    "valueWithoutExample": 137
   }
 }
