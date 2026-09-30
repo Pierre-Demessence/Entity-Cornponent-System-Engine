@@ -98,6 +98,7 @@
         "flappy",
         "frogger",
         "game-of-life",
+        "indy-500",
         "jetpack",
         "local-pong",
         "lunar-lander",
@@ -201,6 +202,7 @@
               "doom",
               "flappy",
               "frogger",
+              "indy-500",
               "local-pong",
               "lunar-lander",
               "pacman",
@@ -465,6 +467,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "local-pong",
               "lunar-lander",
               "pacman",
@@ -650,6 +653,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -766,6 +770,7 @@
         "flappy",
         "frogger",
         "game-of-life",
+        "indy-500",
         "jetpack",
         "local-pong",
         "lunar-lander",
@@ -932,6 +937,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -1163,6 +1169,7 @@
         "flappy",
         "frogger",
         "game-of-life",
+        "indy-500",
         "jetpack",
         "local-pong",
         "lunar-lander",
@@ -1196,6 +1203,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -4198,6 +4206,7 @@
         "critters",
         "flappy",
         "frogger",
+        "indy-500",
         "jetpack",
         "local-pong",
         "pacman",
@@ -4431,6 +4440,7 @@
           "example": {
             "consumers": [
               "asteroids",
+              "indy-500",
               "pacman",
               "spacewar",
               "top-down-shooter"
@@ -4681,6 +4691,7 @@
           "example": {
             "consumers": [
               "critters",
+              "indy-500",
               "stealth-guard",
               "woodcutter"
             ],
@@ -6733,6 +6744,7 @@
         "flappy",
         "frogger",
         "game-of-life",
+        "indy-500",
         "jetpack",
         "local-pong",
         "lunar-lander",
@@ -6794,6 +6806,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -7016,6 +7029,7 @@
               "doom",
               "flappy",
               "frogger",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -7055,6 +7069,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -7138,6 +7153,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -7982,6 +7998,7 @@
         "doom",
         "frogger",
         "game-of-life",
+        "indy-500",
         "jetpack",
         "local-pong",
         "lunar-lander",
@@ -8046,6 +8063,7 @@
               "breakout",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -8851,6 +8869,7 @@
           "example": {
             "consumers": [
               "critters",
+              "indy-500",
               "stealth-guard",
               "woodcutter"
             ],
@@ -11663,6 +11682,7 @@
       "coveredByExample": true,
       "examples": [
         "game-of-life",
+        "indy-500",
         "lunar-lander",
         "pacman",
         "river-raid",
@@ -11684,6 +11704,7 @@
           "example": {
             "consumers": [
               "game-of-life",
+              "indy-500",
               "lunar-lander",
               "pacman",
               "river-raid",
@@ -11742,6 +11763,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "indy-500",
               "pacman",
               "river-raid",
               "roguelike",
@@ -12727,6 +12749,7 @@
         "asteroids",
         "boids",
         "critters",
+        "indy-500",
         "stealth-guard",
         "woodcutter"
       ],
@@ -12831,6 +12854,7 @@
           "example": {
             "consumers": [
               "boids",
+              "indy-500",
               "stealth-guard"
             ],
             "typeOnly": false
@@ -12851,9 +12875,11 @@
         },
         {
           "name": "evade",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "indy-500"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -12917,9 +12943,11 @@
         },
         {
           "name": "obstacleAvoidance",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "indy-500"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -12978,9 +13006,11 @@
         },
         {
           "name": "pursue",
-          "coveredByExample": false,
+          "coveredByExample": true,
           "example": {
-            "consumers": [],
+            "consumers": [
+              "indy-500"
+            ],
             "typeOnly": false
           },
           "isValue": true,
@@ -13002,6 +13032,7 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
+              "indy-500",
               "stealth-guard"
             ],
             "typeOnly": false
@@ -13221,7 +13252,7 @@
       "typeTotal": 8,
       "typeUsedByExample": 3,
       "valueTotal": 14,
-      "valueUsedByExample": 9
+      "valueUsedByExample": 12
     },
     {
       "coveredByExample": true,
@@ -13368,6 +13399,7 @@
         "flappy",
         "frogger",
         "game-of-life",
+        "indy-500",
         "jetpack",
         "local-pong",
         "lunar-lander",
@@ -13404,6 +13436,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -13509,6 +13542,7 @@
               "doom",
               "flappy",
               "frogger",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -13548,6 +13582,7 @@
             "consumers": [
               "card-battler",
               "game-of-life",
+              "indy-500",
               "lunar-lander",
               "pacman"
             ],
@@ -14466,6 +14501,7 @@
         "flappy",
         "frogger",
         "game-of-life",
+        "indy-500",
         "jetpack",
         "local-pong",
         "lunar-lander",
@@ -14502,7 +14538,8 @@
           "coveredByExample": true,
           "example": {
             "consumers": [
-              "game-of-life"
+              "game-of-life",
+              "indy-500"
             ],
             "typeOnly": true
           },
@@ -14533,6 +14570,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -15419,6 +15457,7 @@
         "flappy",
         "frogger",
         "game-of-life",
+        "indy-500",
         "jetpack",
         "local-pong",
         "lunar-lander",
@@ -15489,6 +15528,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -15551,6 +15591,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -15896,6 +15937,7 @@
         "flappy",
         "frogger",
         "game-of-life",
+        "indy-500",
         "jetpack",
         "local-pong",
         "lunar-lander",
@@ -15951,6 +15993,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -16297,6 +16340,7 @@
         "flappy",
         "frogger",
         "game-of-life",
+        "indy-500",
         "jetpack",
         "local-pong",
         "lunar-lander",
@@ -16361,6 +16405,7 @@
               "flappy",
               "frogger",
               "game-of-life",
+              "indy-500",
               "jetpack",
               "local-pong",
               "lunar-lander",
@@ -16626,6 +16671,12 @@
       "value": 22
     },
     {
+      "name": "indy-500",
+      "entries": 13,
+      "type": 9,
+      "value": 20
+    },
+    {
       "name": "stealth-guard",
       "entries": 12,
       "type": 7,
@@ -16725,11 +16776,6 @@
       "total": 11
     },
     {
-      "importPath": "@pierre/ecs/modules/steering",
-      "missing": 5,
-      "total": 14
-    },
-    {
       "importPath": "@pierre/ecs/modules/tmx",
       "missing": 5,
       "total": 6
@@ -16773,6 +16819,11 @@
       "importPath": "@pierre/ecs/modules/spatial",
       "missing": 2,
       "total": 7
+    },
+    {
+      "importPath": "@pierre/ecs/modules/steering",
+      "missing": 2,
+      "total": 14
     },
     {
       "importPath": "@pierre/ecs/modules/camera",
@@ -16821,6 +16872,6 @@
     "typeSymbols": 255,
     "valueSymbols": 366,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 146
+    "valueWithoutExample": 143
   }
 }
