@@ -1,4 +1,4 @@
-import type { SchedulableSystem } from '@pierre/ecs';
+import type { EntityId, SchedulableSystem } from '@pierre/ecs';
 
 import type { GameState, Judgement, Lane } from './game';
 
@@ -66,7 +66,7 @@ export const inputSystem: SchedulableSystem<GameState> = {
     const store = ctx.world.getStore(NoteDef);
     while (ctx.pressQueue.length > 0) {
       const press = ctx.pressQueue.shift()!;
-      let bestId = -1;
+      let bestId: EntityId | undefined;
       let bestAbs = Infinity;
       let bestOffset = 0;
       for (const [id, note] of store.entries()) {
@@ -82,7 +82,7 @@ export const inputSystem: SchedulableSystem<GameState> = {
           bestOffset = offset;
         }
       }
-      if (bestId < 0)
+      if (bestId === undefined)
         continue;
       const hitKind = judge(bestAbs);
       if (!hitKind)

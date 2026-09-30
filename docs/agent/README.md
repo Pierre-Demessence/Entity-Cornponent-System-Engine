@@ -251,6 +251,7 @@ colour once every card is the only child of its wrapper.
 - **Modules are tree-shakeable subpath exports.** Every `src/modules/<name>/` ships as `@pierre/ecs/modules/<name>` via the `exports` map in `package.json`. `sideEffects: false` keeps unused modules out of consumer bundles.
 - **No module imports `@pierre/ecs` itself.** Modules import core primitives by relative path; never round-trip through the package barrel. No module imports another module unless the dependency is documented in that module's README.
 - **Internal imports use `#*` aliases.** `package.json#imports` maps `#*` → `./src/*.ts`. Inside `src/`, prefer `from '#world'` over relative `from './world'`.
+- **`EntityId` is branded.** A plain `number` does not type-check as one. Get ids from the world, `packEntityId`, or `asEntityId` / `isEntityId` when decoding; store-level tests use `eid(index, generation?)` from `#test-utils`. Ids are recycled with a generation bump, so never assume they are dense, ordered by creation, or unique over a session.
 - **No enums.** Use `as const` objects (TypeScript `erasableSyntaxOnly`).
 - **No `private` constructor parameter properties** (same reason).
 - **Tests live alongside source.** `*.test.ts` next to the file under test; no separate `__tests__/` or top-level `test/`.

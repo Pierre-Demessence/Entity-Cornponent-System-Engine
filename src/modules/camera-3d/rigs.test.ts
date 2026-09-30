@@ -1,4 +1,4 @@
-import type { TagDef } from '#index';
+import type { EntityId, TagDef } from '#index';
 import type { Quat, Vec3 } from '#modules/math/index';
 
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -135,8 +135,8 @@ describe('makeCameraRigSystem', () => {
   const CameraTag: TagDef = { name: 'cameraEntity' };
   const TargetTag: TagDef = { name: 'rigTarget' };
   let world: EcsWorld;
-  let cameraId: number;
-  let targetId: number;
+  let cameraId: EntityId;
+  let targetId: EntityId;
 
   beforeEach(() => {
     world = new EcsWorld();

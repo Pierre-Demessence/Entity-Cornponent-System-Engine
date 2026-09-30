@@ -248,6 +248,7 @@
               "src/component-store.test.ts",
               "src/modules/render-scene3d/render-scene3d.test.ts",
               "src/modules/spatial/hash-grid-3d.test.ts",
+              "src/modules/spatial/recycled-ids.test.ts",
               "src/query.test.ts",
               "src/test-utils.test.ts",
               "src/world.test.ts"
@@ -508,7 +509,8 @@
               "src/modules/scene-transition/scene-transition.test.ts",
               "src/plugin.test.ts",
               "src/query.test.ts",
-              "src/simple-component.test.ts"
+              "src/simple-component.test.ts",
+              "src/world.test.ts"
             ],
             "typeOnly": false
           }
@@ -738,6 +740,7 @@
         "src/modules/render-scene3d/render-scene3d.test.ts",
         "src/modules/scene-transition/scene-transition.test.ts",
         "src/modules/spatial/hash-grid-3d.test.ts",
+        "src/modules/spatial/recycled-ids.test.ts",
         "src/modules/turn-based/turn-cycler.test.ts",
         "src/plugin.test.ts",
         "src/query.test.ts",
@@ -779,6 +782,7 @@
         "spacewar",
         "starfighter",
         "stealth-guard",
+        "stress-storage",
         "top-down-shooter",
         "woodcutter"
       ],
@@ -793,6 +797,7 @@
         "collision",
         "column-store.ts",
         "component-store.ts",
+        "entity-allocator.ts",
         "kinematics",
         "kinematics-3d",
         "lifecycle.ts",
@@ -811,9 +816,108 @@
         "test-utils.ts",
         "tilemap",
         "turn-based",
+        "validation.ts",
         "world.ts"
       ],
       "symbols": [
+        {
+          "name": "ENTITY_GENERATION_MAX",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "const",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "entity-allocator.ts"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/entity-allocator.test.ts",
+              "src/entity-id.test.ts",
+              "src/world.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "ENTITY_INDEX_BITS",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "const",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/entity-id.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "ENTITY_INDEX_MAX",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "stress-storage"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "const",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "entity-allocator.ts"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/entity-allocator.test.ts",
+              "src/entity-id.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "entityGeneration",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "entity-allocator.ts"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/entity-allocator.test.ts",
+              "src/entity-id.test.ts",
+              "src/test-utils.test.ts",
+              "src/world.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
         {
           "name": "EntityId",
           "coveredByExample": true,
@@ -844,6 +948,7 @@
               "spacewar",
               "starfighter",
               "stealth-guard",
+              "stress-storage",
               "top-down-shooter",
               "woodcutter"
             ],
@@ -862,6 +967,7 @@
               "collision",
               "column-store.ts",
               "component-store.ts",
+              "entity-allocator.ts",
               "kinematics",
               "kinematics-3d",
               "lifecycle.ts",
@@ -880,14 +986,20 @@
               "test-utils.ts",
               "tilemap",
               "turn-based",
+              "validation.ts",
               "world.ts"
             ],
             "typeOnly": true
           },
           "test": {
             "consumers": [
+              "src/archetype-cache.test.ts",
+              "src/column-store.test.ts",
+              "src/entity-allocator.test.ts",
               "src/modules/animation/sprite-animation.test.ts",
               "src/modules/animation/sprite-clip.test.ts",
+              "src/modules/camera-3d/rigs.test.ts",
+              "src/modules/camera/camera.test.ts",
               "src/modules/collision/trigger.test.ts",
               "src/modules/cooldown/cooldown.test.ts",
               "src/modules/kinematics-3d/kinematics3d-system.test.ts",
@@ -903,11 +1015,124 @@
             ],
             "typeOnly": true
           }
+        },
+        {
+          "name": "entityIndex",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "stress-storage"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "column-store.ts",
+              "entity-allocator.ts"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/entity-allocator.test.ts",
+              "src/entity-id.test.ts",
+              "src/modules/spatial/recycled-ids.test.ts",
+              "src/test-utils.test.ts",
+              "src/world.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "formatEntityId",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "column-store.ts",
+              "world.ts"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/entity-id.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "isEntityId",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "render-dom",
+              "validation.ts"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/entity-id.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "packEntityId",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "entity-allocator.ts",
+              "test-utils.ts"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/column-store.test.ts",
+              "src/entity-allocator.test.ts",
+              "src/entity-id.test.ts",
+              "src/world.test.ts"
+            ],
+            "typeOnly": false
+          }
         }
       ],
       "tests": [
+        "src/archetype-cache.test.ts",
+        "src/column-store.test.ts",
+        "src/entity-allocator.test.ts",
+        "src/entity-id.test.ts",
         "src/modules/animation/sprite-animation.test.ts",
         "src/modules/animation/sprite-clip.test.ts",
+        "src/modules/camera-3d/rigs.test.ts",
+        "src/modules/camera/camera.test.ts",
         "src/modules/collision/trigger.test.ts",
         "src/modules/cooldown/cooldown.test.ts",
         "src/modules/kinematics-3d/kinematics3d-system.test.ts",
@@ -918,13 +1143,15 @@
         "src/modules/pile/pile.test.ts",
         "src/modules/render-scene3d/render-scene3d.test.ts",
         "src/modules/spatial/grid-sync.test.ts",
+        "src/modules/spatial/recycled-ids.test.ts",
         "src/spatial-structure.test.ts",
+        "src/test-utils.test.ts",
         "src/world.test.ts"
       ],
       "typeTotal": 1,
       "typeUsedByExample": 1,
-      "valueTotal": 0,
-      "valueUsedByExample": 0
+      "valueTotal": 8,
+      "valueUsedByExample": 3
     },
     {
       "coveredByExample": true,
@@ -12116,7 +12343,8 @@
           "test": {
             "consumers": [
               "src/modules/spatial/grid-sync.test.ts",
-              "src/modules/spatial/hash-grid-2d.test.ts"
+              "src/modules/spatial/hash-grid-2d.test.ts",
+              "src/modules/spatial/recycled-ids.test.ts"
             ],
             "typeOnly": false
           }
@@ -12139,7 +12367,8 @@
           },
           "test": {
             "consumers": [
-              "src/modules/spatial/hash-grid-3d.test.ts"
+              "src/modules/spatial/hash-grid-3d.test.ts",
+              "src/modules/spatial/recycled-ids.test.ts"
             ],
             "typeOnly": false
           }
@@ -12195,7 +12424,8 @@
         "src/modules/spatial/grid-sync.test.ts",
         "src/modules/spatial/hash-grid-2d.test.ts",
         "src/modules/spatial/hash-grid-3d.test.ts",
-        "src/modules/spatial/projections.test.ts"
+        "src/modules/spatial/projections.test.ts",
+        "src/modules/spatial/recycled-ids.test.ts"
       ],
       "typeTotal": 4,
       "typeUsedByExample": 0,
@@ -15416,6 +15646,7 @@
           },
           "test": {
             "consumers": [
+              "src/modules/spatial/recycled-ids.test.ts",
               "src/spatial-structure.test.ts",
               "src/world.test.ts"
             ],
@@ -15424,6 +15655,7 @@
         }
       ],
       "tests": [
+        "src/modules/spatial/recycled-ids.test.ts",
         "src/spatial-structure.test.ts",
         "src/world.test.ts"
       ],
@@ -15536,6 +15768,38 @@
           }
         },
         {
+          "name": "eid",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/archetype-index.test.ts",
+              "src/column-store.test.ts",
+              "src/component-store.test.ts",
+              "src/modules/attach/attach.test.ts",
+              "src/modules/render-scene3d/render-scene3d.test.ts",
+              "src/modules/spatial/continuous-hash-grid-2d.test.ts",
+              "src/modules/spatial/hash-grid-2d.test.ts",
+              "src/modules/spatial/hash-grid-3d.test.ts",
+              "src/query.test.ts",
+              "src/spatial-structure.test.ts",
+              "src/test-utils.test.ts",
+              "src/world.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "entity",
           "coveredByExample": false,
           "example": {
@@ -15599,14 +15863,25 @@
         }
       ],
       "tests": [
+        "src/archetype-index.test.ts",
+        "src/column-store.test.ts",
+        "src/component-store.test.ts",
+        "src/modules/attach/attach.test.ts",
+        "src/modules/render-scene3d/render-scene3d.test.ts",
+        "src/modules/spatial/continuous-hash-grid-2d.test.ts",
+        "src/modules/spatial/hash-grid-2d.test.ts",
+        "src/modules/spatial/hash-grid-3d.test.ts",
         "src/modules/tilemap/spawn.test.ts",
         "src/modules/turn-based/turn-cycler.test.ts",
+        "src/query.test.ts",
+        "src/spatial-structure.test.ts",
         "src/test-utils.test.ts",
-        "src/tick-runner.test.ts"
+        "src/tick-runner.test.ts",
+        "src/world.test.ts"
       ],
       "typeTotal": 0,
       "typeUsedByExample": 0,
-      "valueTotal": 4,
+      "valueTotal": 5,
       "valueUsedByExample": 0
     },
     {
@@ -15832,6 +16107,7 @@
         "animation",
         "audio",
         "component-store.ts",
+        "entity-allocator.ts",
         "pile",
         "render-canvas2d",
         "render-dom",
@@ -15852,6 +16128,7 @@
             "consumers": [
               "animation",
               "component-store.ts",
+              "entity-allocator.ts",
               "pile",
               "render-canvas2d"
             ],
@@ -15892,6 +16169,30 @@
           }
         },
         {
+          "name": "asEntityId",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [
+              "component-store.ts",
+              "pile"
+            ],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/validation.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "asNumber",
           "coveredByExample": false,
           "example": {
@@ -15906,9 +16207,8 @@
               "animation",
               "audio",
               "component-store.ts",
-              "pile",
-              "render-canvas2d",
-              "world.ts"
+              "entity-allocator.ts",
+              "render-canvas2d"
             ],
             "typeOnly": false
           },
@@ -15934,6 +16234,7 @@
               "animation",
               "audio",
               "component-store.ts",
+              "entity-allocator.ts",
               "pile",
               "render-canvas2d",
               "render-dom",
@@ -15981,7 +16282,7 @@
       ],
       "typeTotal": 0,
       "typeUsedByExample": 0,
-      "valueTotal": 5,
+      "valueTotal": 6,
       "valueUsedByExample": 0
     },
     {
@@ -16140,6 +16441,7 @@
               "src/modules/render-scene3d/render-scene3d.test.ts",
               "src/modules/scene-transition/scene-transition.test.ts",
               "src/modules/spatial/hash-grid-3d.test.ts",
+              "src/modules/spatial/recycled-ids.test.ts",
               "src/plugin.test.ts",
               "src/query.test.ts",
               "src/world.test.ts"
@@ -16191,6 +16493,7 @@
         "src/modules/render-scene3d/render-scene3d.test.ts",
         "src/modules/scene-transition/scene-transition.test.ts",
         "src/modules/spatial/hash-grid-3d.test.ts",
+        "src/modules/spatial/recycled-ids.test.ts",
         "src/plugin.test.ts",
         "src/query.test.ts",
         "src/world.test.ts"
@@ -16302,7 +16605,7 @@
       "name": "card-battler",
       "entries": 13,
       "type": 7,
-      "value": 25
+      "value": 26
     },
     {
       "name": "breakout",
@@ -16378,9 +16681,9 @@
     },
     {
       "name": "stress-storage",
-      "entries": 2,
-      "type": 0,
-      "value": 3
+      "entries": 3,
+      "type": 1,
+      "value": 5
     },
     {
       "name": "parallel-kernel",
@@ -16514,10 +16817,10 @@
     "entriesWithoutExample": 7,
     "modules": 46,
     "noExternalConsumer": 167,
-    "symbols": 611,
+    "symbols": 621,
     "typeSymbols": 255,
-    "valueSymbols": 356,
+    "valueSymbols": 366,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 139
+    "valueWithoutExample": 146
   }
 }

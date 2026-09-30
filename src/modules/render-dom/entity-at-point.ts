@@ -1,5 +1,7 @@
 import type { EntityId } from '#entity-id';
 
+import { isEntityId } from '#entity-id';
+
 import { ENTITY_ID_ATTR } from './dom-renderer';
 
 /**
@@ -22,5 +24,5 @@ export function entityAtPoint(x: number, y: number, root?: Element): EntityId | 
   if (!holder || (root && !root.contains(holder)))
     return null;
   const id = Number(holder.getAttribute(ENTITY_ID_ATTR));
-  return Number.isInteger(id) && id >= 0 ? id : null;
+  return isEntityId(id) ? id : null;
 }

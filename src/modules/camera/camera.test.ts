@@ -1,4 +1,4 @@
-import type { TagDef } from '#index';
+import type { EntityId, TagDef } from '#index';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -145,14 +145,14 @@ describe('makeFollowCameraSystem', () => {
     ctx = setup();
   });
 
-  function addTarget(x: number, y: number): number {
+  function addTarget(x: number, y: number): EntityId {
     const id = ctx.world.createEntity();
     ctx.world.getStore(PositionDef).set(id, { x, y });
     ctx.world.getTag(FollowTargetTag).add(id);
     return id;
   }
 
-  function addCamera(opts: Parameters<typeof makeCamera>[0]): number {
+  function addCamera(opts: Parameters<typeof makeCamera>[0]): EntityId {
     const id = ctx.world.createEntity();
     ctx.world.getStore(CameraDef).set(id, makeCamera(opts));
     ctx.world.getTag(CameraTag).add(id);

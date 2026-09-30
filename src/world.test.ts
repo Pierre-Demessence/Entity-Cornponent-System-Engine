@@ -5,6 +5,9 @@ import type { EntityTemplate } from '#template';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { simpleComponent } from '#component-store';
+import { ENTITY_GENERATION_MAX, entityGeneration, entityIndex, packEntityId } from '#entity-id';
+import { eid } from '#test-utils';
 import { EcsWorld } from '#world';
 
 interface Pos { x: number; y: number }
@@ -58,6 +61,8 @@ const HealthDef: ComponentDef<Health> = {
     return { hp: r.hp };
   },
 };
+
+const VelDef = simpleComponent<{ dx: number; dy: number }>('vel', { dx: 'number', dy: 'number' });
 
 const FlagTag: TagDef = { name: 'flag' };
 const MarkTag: TagDef = { name: 'mark' };
@@ -175,7 +180,7 @@ describe('ecsWorld', () => {
 
     it('isAlive is false for a never-created id', () => {
       const w = new EcsWorld();
-      expect(w.isAlive(42)).toBe(false);
+      expect(w.isAlive(eid(42))).toBe(false);
     });
 
     it('entityCount reflects create and destroy', () => {
@@ -213,7 +218,7 @@ describe('ecsWorld', () => {
       w.createEntity();
       w.clearAll();
       expect(w.entityCount()).toBe(0);
-      expect(w.isAlive(0)).toBe(false);
+      expect(w.isAlive(eid(0))).toBe(false);
     });
 
     it('liveEntities iterates the live set', () => {
@@ -294,6 +299,133 @@ describe('ecsWorld', () => {
     });
   });
 
+  describe('id recycling', () => {
+    it('reuses a destroyed entity\'s index with a bumped generation', () => {
+      const w = new EcsWorld();
+      const a = w.createEntity();
+      w.destroyEntity(a);
+      const b = w.createEntity();
+      expect(entityIndex(b)).toBe(entityIndex(a));
+      expect(entityGeneration(b)).toBe(1);
+      expect(w.isAlive(a)).toBe(false);
+      expect(w.isAlive(b)).toBe(true);
+    });
+
+    it('destroying a stale id leaves the index\'s new occupant untouched', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const tag = w.registerTag(FlagTag);
+      const stale = w.createEntity();
+      w.destroyEntity(stale);
+      const current = w.createEntity();
+      pos.set(current, { x: 1, y: 2 });
+      tag.add(current);
+      const destroyed = vi.fn();
+      w.lifecycle.on('EntityDestroyed', destroyed);
+
+      w.destroyEntity(stale);
+      w.queueDestroy(stale);
+      w.flushCommands();
+      w.lifecycle.flush();
+
+      expect(w.isAlive(current)).toBe(true);
+      expect(pos.get(current)).toEqual({ x: 1, y: 2 });
+      expect(tag.has(current)).toBe(true);
+      expect(destroyed).not.toHaveBeenCalled();
+    });
+
+    it('queued adds against a stale id are dropped', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const tag = w.registerTag(FlagTag);
+      const stale = w.createEntity();
+      w.destroyEntity(stale);
+      const current = w.createEntity();
+
+      w.queueAdd(PosDef, stale, { x: 9, y: 9 });
+      w.queueAddTag(FlagTag, stale);
+      w.flushCommands();
+
+      expect(pos.has(current)).toBe(false);
+      expect(pos.has(stale)).toBe(false);
+      expect(tag.has(current)).toBe(false);
+    });
+
+    it('destroyEntity only deletes from the stores the entity holds', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const health = w.registerComponent(HealthDef);
+      const mark = w.registerTag(MarkTag);
+      const id = w.createEntity();
+      pos.set(id, { x: 0, y: 0 });
+      const healthDelete = vi.spyOn(health, 'delete');
+      const markDelete = vi.spyOn(mark, 'delete');
+
+      w.destroyEntity(id);
+
+      expect(pos.has(id)).toBe(false);
+      expect(healthDelete).not.toHaveBeenCalled();
+      expect(markDelete).not.toHaveBeenCalled();
+    });
+
+    it('queueSpawn reserves its id so createEntity cannot hand it out', () => {
+      const w = new EcsWorld();
+      const freed = w.createEntity();
+      w.destroyEntity(freed);
+      const queued = w.queueSpawn();
+      const direct = w.createEntity();
+      expect(direct).not.toBe(queued);
+      expect(w.isAlive(queued)).toBe(false);
+      w.flushCommands();
+      expect(w.isAlive(queued)).toBe(true);
+    });
+
+    it('keeps the id space bounded under spawn/destroy churn', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      for (let i = 0; i < 200; i++)
+        w.destroyEntity(w.spawn({ name: 'bullet', components: { pos: { x: i, y: 0 } } }));
+      expect(entityIndex(w.createEntity())).toBe(0);
+    });
+
+    it('queries and added filters see the new occupant as a new entity', () => {
+      const w = new EcsWorld();
+      const pos = w.registerComponent(PosDef);
+      const q = w.query(PosDef).added(pos);
+      const stale = w.spawn({ name: 'a', components: { pos: { x: 1, y: 1 } } });
+      expect(q.run().map(([id]) => id)).toEqual([stale]);
+
+      w.destroyEntity(stale);
+      const current = w.spawn({ name: 'b', components: { pos: { x: 2, y: 2 } } });
+
+      expect(q.run()).toEqual([[current, { x: 2, y: 2 }]]);
+      expect(w.query(PosDef).run()).toEqual([[current, { x: 2, y: 2 }]]);
+    });
+
+    it('a columnar component on a reused index belongs to the new occupant only', () => {
+      const w = new EcsWorld();
+      const vel = w.registerComponent(VelDef);
+      const stale = w.spawn({ name: 'a', components: { vel: { dx: 1, dy: 1 } } });
+      w.destroyEntity(stale);
+      const current = w.createEntity();
+
+      expect(vel.has(current)).toBe(false);
+      expect(vel.get(stale)).toBeUndefined();
+      w.queueAdd(VelDef, stale, { dx: 9, dy: 9 });
+      w.flushCommands();
+      expect(vel.size).toBe(0);
+    });
+
+    it('retires an index after its last generation instead of wrapping', () => {
+      const w = new EcsWorld();
+      for (let i = 0; i <= ENTITY_GENERATION_MAX; i++)
+        w.destroyEntity(w.createEntity());
+      const next = w.createEntity();
+      expect(entityIndex(next)).toBe(1);
+      expect(entityGeneration(next)).toBe(0);
+    });
+  });
+
   describe('deferred structural changes', () => {
     it('queueAdd and queueRemove apply at flushCommands', () => {
       const w = new EcsWorld();
@@ -343,7 +475,7 @@ describe('ecsWorld', () => {
 
     it('queueAdd throws immediately for an unregistered component', () => {
       const w = new EcsWorld();
-      expect(() => w.queueAdd(PosDef, 0, { x: 0, y: 0 })).toThrow(/not registered/);
+      expect(() => w.queueAdd(PosDef, eid(0), { x: 0, y: 0 })).toThrow(/not registered/);
     });
 
     it('applies commands in insertion order (spawn → add → destroy)', () => {
@@ -397,7 +529,7 @@ describe('ecsWorld', () => {
       const w = new EcsWorld();
       const pos = w.registerComponent(PosDef);
       w.createEntity();
-      const seed = 0;
+      const seed = eid(0);
       pos.set(seed, { x: 1, y: 1 });
 
       for (const [, p] of w.query(PosDef)) {
@@ -631,7 +763,7 @@ describe('ecsWorld', () => {
     it('move() throws if the component has no index', () => {
       const w = new EcsWorld();
       w.registerComponent(PosDef);
-      expect(() => w.move(PosDef, 0, { x: 1, y: 1 })).toThrow(/enableSpatial\(\) for component "pos"/);
+      expect(() => w.move(PosDef, eid(0), { x: 1, y: 1 })).toThrow(/enableSpatial\(\) for component "pos"/);
     });
   });
 
@@ -813,19 +945,47 @@ describe('ecsWorld', () => {
       expect(() => dst.transferEntity(id, src, ['missing'])).toThrow(/not registered/);
     });
 
-    it('bumps nextId so later createEntity() avoids collisions', () => {
+    it('keeps the transferred id so later createEntity() never returns it', () => {
       const src = new EcsWorld();
       src.registerComponent(PosDef);
-      // Burn ids up to 5 in the source.
-      for (let i = 0; i < 6; i++) src.createEntity();
-      const id = 3;
+      const ids = Array.from({ length: 6 }, () => src.createEntity());
+      const id = ids[3]!;
 
       const dst = new EcsWorld();
       dst.registerComponent(PosDef);
       dst.transferEntity(id, src);
 
-      expect(dst.createEntity()).toBeGreaterThan(id);
-      expect(dst.createEntity()).toBeGreaterThan(id);
+      const created = Array.from({ length: 5 }, () => dst.createEntity());
+      expect(created).not.toContain(id);
+      expect(dst.isAlive(id)).toBe(true);
+    });
+
+    it('preserves a recycled id\'s generation on the destination', () => {
+      const src = new EcsWorld();
+      src.registerComponent(PosDef);
+      src.destroyEntity(src.createEntity());
+      const id = src.spawn({ name: 't', components: { pos: { x: 1, y: 1 } } });
+
+      const dst = new EcsWorld();
+      dst.registerComponent(PosDef);
+      dst.transferEntity(id, src);
+
+      expect(dst.isAlive(id)).toBe(true);
+      expect(dst.getStore(PosDef).get(id)).toEqual({ x: 1, y: 1 });
+    });
+
+    it('throws when the destination holds a different entity at that index', () => {
+      const src = new EcsWorld();
+      src.registerComponent(PosDef);
+      src.destroyEntity(src.createEntity());
+      const id = src.createEntity();
+
+      const dst = new EcsWorld();
+      dst.registerComponent(PosDef);
+      dst.createEntity();
+
+      expect(() => dst.transferEntity(id, src)).toThrow(/in use/);
+      expect(dst.isAlive(packEntityId(0, 0))).toBe(true);
     });
   });
 
@@ -950,7 +1110,7 @@ describe('ecsWorld', () => {
   });
 
   describe('serialization round-trip', () => {
-    it('toJSON/loadJSON restores components, tags, and nextId', () => {
+    it('toJSON/loadJSON restores components, tags, and id allocation', () => {
       const w1 = new EcsWorld();
       const pos1 = w1.registerComponent(PosDef);
       const health1 = w1.registerComponent(HealthDef);
@@ -974,6 +1134,49 @@ describe('ecsWorld', () => {
       expect(health2.get(a)).toEqual({ hp: 7 });
       expect(tag2.has(a)).toBe(true);
       expect(w2.createEntity()).toBe(2);
+    });
+
+    function roundTrip(w: EcsWorld): EcsWorld {
+      const restored = new EcsWorld();
+      restored.registerComponent(PosDef);
+      restored.registerTag(FlagTag);
+      restored.loadJSON(JSON.parse(JSON.stringify(w.toJSON())));
+      return restored;
+    }
+
+    it('a componentless entity survives save/load', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      w.registerTag(FlagTag);
+      const bare = w.createEntity();
+      expect(roundTrip(w).isAlive(bare)).toBe(true);
+    });
+
+    it('an id stale before saving stays stale after loading', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      w.registerTag(FlagTag);
+      const stale = w.createEntity();
+      w.destroyEntity(stale);
+      const current = w.createEntity();
+
+      const restored = roundTrip(w);
+      expect(restored.isAlive(stale)).toBe(false);
+      expect(restored.isAlive(current)).toBe(true);
+      expect(restored.createEntity()).not.toBe(stale);
+    });
+
+    it('rejects a payload in the pre-recycling nextId format', () => {
+      const w = new EcsWorld();
+      expect(() => w.loadJSON({ nextId: 3 })).toThrow(/nextId/);
+    });
+
+    it('rejects a component row for an entity that is not live', () => {
+      const w = new EcsWorld();
+      w.registerComponent(PosDef);
+      w.registerTag(FlagTag);
+      const payload = { ...w.toJSON(), pos: [[0, { x: 1, y: 1 }]] };
+      expect(() => w.loadJSON(payload)).toThrow(/pos: row for entity 0v0/);
     });
   });
 
@@ -999,7 +1202,7 @@ describe('ecsWorld', () => {
   });
 
   describe('clearAll', () => {
-    it('empties every component and tag store, resets nextId', () => {
+    it('empties every component and tag store, resets id allocation', () => {
       const w = new EcsWorld();
       const pos = w.registerComponent(PosDef);
       const tag = w.registerTag(FlagTag);
@@ -1211,7 +1414,7 @@ describe('ecsWorld', () => {
       const id = w.createEntity();
       w.destroyEntity(id);
       w.destroyEntity(id);
-      w.destroyEntity(999);
+      w.destroyEntity(eid(999));
       w.lifecycle.flush();
       expect(events).toEqual([id]);
     });
@@ -1272,17 +1475,17 @@ describe('ecsWorld', () => {
     it('emits TagRemoved when tags are deleted individually', () => {
       const w = new EcsWorld();
       const store = w.registerTag(FlagTag);
-      store.add(1);
-      store.add(2);
-      store.add(3);
+      store.add(eid(1));
+      store.add(eid(2));
+      store.add(eid(3));
       w.lifecycle.clear(); // drop the TagAdded events from the adds above
 
       const events: { id: number; tag?: string; type: string }[] = [];
       w.lifecycle.on('TagRemoved', e => events.push(e));
 
-      store.delete(1);
-      store.delete(2);
-      store.delete(3);
+      store.delete(eid(1));
+      store.delete(eid(2));
+      store.delete(eid(3));
       w.lifecycle.flush();
 
       expect(events.filter(e => e.tag === 'flag')).toHaveLength(3);
@@ -1295,7 +1498,7 @@ describe('ecsWorld', () => {
       const events: { type: string }[] = [];
       w.lifecycle.on('TagRemoved', e => events.push(e));
 
-      store.delete(999); // not present
+      store.delete(eid(999)); // not present
       w.lifecycle.flush();
 
       expect(events).toHaveLength(0);

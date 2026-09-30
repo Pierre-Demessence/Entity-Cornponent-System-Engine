@@ -51,7 +51,15 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 - **`TagStore`** _(class)_ `new (clock?: ChangeClock): TagStore` — Boolean-only store — tracks entity presence without associated data, stamping the tick each tag was added.
 
 ### `@pierre/ecs/entity-id`
-- **`EntityId`** _(type)_ `number` — Unique numeric identifier for an entity within the ECS world.
+- **`ENTITY_GENERATION_MAX`** _(const)_ — Largest generation; a slot that reaches it is never reused.
+- **`ENTITY_INDEX_BITS`** _(const)_ — Bits of an EntityId holding the slot index.
+- **`ENTITY_INDEX_MAX`** _(const)_ — Largest slot index, bounding how many entities can be alive at once.
+- **`entityGeneration`** _(fn)_ `(id: EntityId): number` — Generation of `id`: how many times its slot was reused before it.
+- **`EntityId`** _(type)_ `number & { readonly [entityIdBrand]: true; }` — Handle to an entity within the ECS world: a slot index packed with a generation counter. Destroyed entities' slots are reused with a bump...
+- **`entityIndex`** _(fn)_ `(id: EntityId): number` — Slot index of `id`.
+- **`formatEntityId`** _(fn)_ `(id: EntityId): string` — Readable form of `id` for logs and debugging, e.g. `5v1` (index 5, generation 1).
+- **`isEntityId`** _(fn)_ `(value: unknown): value is EntityId` — Whether `value` is a well-formed EntityId (not whether any world holds it).
+- **`packEntityId`** _(fn)_ `(index: number, generation: number): EntityId` — Build an EntityId from its parts. Throws `RangeError` when either is out of range.
 
 ### `@pierre/ecs/event-bus`
 - **`EventBus`** _(class)_ `new <TEvent extends { type: string; }, TMap extends { [E in TEvent as E["type"]]: E; } = { [E in TEvent as E["type"]]:…` — Queue-based event bus with priority-ordered handlers. Events are buffered via `emit()` and dispatched in batch by `flush()`. Handlers emi...
@@ -85,6 +93,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 
 ### `@pierre/ecs/test-utils`
 - **`createTestWorld`** _(fn)_ `(): TestWorld` — Create a fresh `TestWorld`. Equivalent to `new TestWorld()` but reads better in tests.
+- **`eid`** _(fn)_ `(index: number, generation?: number): EntityId` — An EntityId from its parts, for tests that drive stores directly without a world. Store-level tests need fixed ids; world-level tests sho...
 - **`entity`** _(fn)_ `<W extends EcsWorld>(world: W): GenericEntityBuilder<W>` — Shorthand for `new GenericEntityBuilder(world)`.
 - **`GenericEntityBuilder`** _(class)_ `new <W extends EcsWorld = EcsWorld>(world: W, id?: EntityId): GenericEntityBuilder<W>` — Fluent builder for assembling entities in tests against an arbitrary `EcsWorld`. Domain-neutral — callers pass the `ComponentDef` / `TagD...
 - **`TestWorld`** _(class)_ `new (): TestWorld` — Convenience subclass of `EcsWorld` intended for unit tests. Provides no extra behaviour — it exists so test code can `new TestWorld()` wi...
@@ -101,6 +110,7 @@ subpath-only). A `— —` marks an export whose JSDoc summary is missing.
 ### `@pierre/ecs/validation`
 - **`asArray`** _(fn)_ `(value: unknown, label: string): unknown[]` — Narrow `value` to an array or throw with a descriptive `label`-prefixed message.
 - **`asBoolean`** _(fn)_ `(value: unknown, label: string): boolean` — Narrow `value` to a boolean or throw with a descriptive `label`-prefixed message.
+- **`asEntityId`** _(fn)_ `(value: unknown, label: string): EntityId` — Narrow `value` to a well-formed EntityId or throw with a descriptive `label`-prefixed message.
 - **`asNumber`** _(fn)_ `(value: unknown, label: string): number` — Narrow `value` to a finite number or throw with a descriptive `label`-prefixed message.
 - **`asObject`** _(fn)_ `(value: unknown, label: string): JsonObject` — Narrow `value` to a plain object or throw with a descriptive `label`-prefixed message.
 - **`asString`** _(fn)_ `(value: unknown, label: string): string` — Narrow `value` to a string or throw with a descriptive `label`-prefixed message.

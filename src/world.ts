@@ -10,9 +10,11 @@ import { ArchetypeIndex } from '#archetype-index';
 import { ChangeClock } from '#change-clock';
 import { ColumnStore } from '#column-store';
 import { ComponentStore, TagStore } from '#component-store';
+import { EntityAllocator } from '#entity-allocator';
+import { formatEntityId } from '#entity-id';
 import { EventBus } from '#event-bus';
 import { Query } from '#query';
-import { asNumber, asObject } from '#validation';
+import { asObject } from '#validation';
 
 interface ComponentEntry { def: ComponentDef<unknown>; store: ComponentStoreLike<unknown> }
 interface TagEntry { def: TagDef; store: TagStore }
@@ -49,7 +51,6 @@ type StructuralCommand
  * No imports from game-specific code.
  */
 export class EcsWorld {
-  private readonly alive = new Set<EntityId>();
   private readonly archetypes = new ArchetypeIndex();
   /**
    * Change-detection clock shared by every registered store. Stores stamp
@@ -59,6 +60,7 @@ export class EcsWorld {
   readonly clock = new ChangeClock();
   private commandQueue: StructuralCommand[] = [];
   private componentRegistry: ComponentEntry[] = [];
+  private entities = new EntityAllocator();
   private readonly installedPlugins = new Set<string>();
   /**
    * Engine-internal lifecycle bus. Emits `EntityCreated`, `EntityDestroyed`,
@@ -71,21 +73,11 @@ export class EcsWorld {
    * the changes made after it subscribed.
    */
   readonly lifecycle = new EventBus<LifecycleEvent>();
-  private nextId = 0;
   private readonly spatialBindings = new Map<string, SpatialBinding[]>();
   private spawning = false;
   private storeByName = new Map<string, ComponentStoreLike<unknown>>();
   private tagByName = new Map<string, TagStore>();
   private tagRegistry: TagEntry[] = [];
-
-  /**
-   * Expose `nextId` for subclasses that need to copy it across world instances.
-   * Setting it does not register entities as alive — use `transferEntity` to
-   * move entities (and their liveness) between worlds.
-   */
-  protected get _nextId(): number { return this.nextId; }
-
-  protected set _nextId(value: number) { this.nextId = value; }
 
   /** Apply a template's components and tags to an already-allocated entity id. */
   private _populateEntity(id: EntityId, template: EntityTemplate, overrides?: Record<string, unknown>): void {
@@ -135,11 +127,17 @@ export class EcsWorld {
     }
   }
 
+  private assertLoadedAlive(id: EntityId, storeName: string): void {
+    if (!this.entities.isAlive(id))
+      throw new Error(`EcsWorld.${storeName}: row for entity ${formatEntityId(id)}, which is not live in EcsWorld.entities`);
+  }
+
   /**
    * Reset the world to an empty state — clears every registered component
    * store, tag store, the command queue, and the spatial index (if enabled),
-   * then rewinds `nextId` to 0. Component and tag *registrations* are
-   * preserved; only their contents are wiped.
+   * then resets id allocation so the next entity is index 0, generation 0.
+   * Component and tag *registrations* are preserved; only their contents are
+   * wiped. Ids held from before the reset may match entities created after it.
    *
    * Intended for "restart the game" / "respawn" paths in prototypes that
    * tear down and rebuild mid-session. Silent by design — does **not**
@@ -161,27 +159,33 @@ export class EcsWorld {
       for (const { structure } of bindings) structure.clear();
     }
     this.lifecycle.clear();
-    this.alive.clear();
-    this.nextId = 0;
+    this.entities.clear();
   }
 
+  /**
+   * Create an empty live entity. Its id may reuse a destroyed entity's index,
+   * with a newer generation, so ids held for destroyed entities stay dead.
+   */
   createEntity(): EntityId {
-    const id = this.nextId++;
-    this.alive.add(id);
+    const id = this.entities.allocate();
+    this.entities.activate(id);
     if (this.lifecycle.hasListeners('EntityCreated'))
       this.lifecycle.emit({ id, type: 'EntityCreated' });
     return id;
   }
 
   /**
-   * Remove every component and tag from `id` and mark it dead. Idempotent:
-   * `EntityDestroyed` is emitted only when `id` was alive.
+   * Remove every component and tag from `id` and mark it dead, freeing its
+   * index for reuse. A no-op unless `id` is alive, so destroying twice, or
+   * through a stale id whose index was reused, never touches another entity.
    */
   destroyEntity(id: EntityId): void {
-    for (const { store } of this.componentRegistry) store.delete(id);
-    for (const { store } of this.tagRegistry) store.delete(id);
+    if (!this.entities.isAlive(id))
+      return;
+    this.archetypes.forEachStoreOf(id, store => (store as ComponentStoreLike<unknown> | TagStore).delete(id));
     this.archetypes.removeEntity(id);
-    if (this.alive.delete(id) && this.lifecycle.hasListeners('EntityDestroyed'))
+    this.entities.release(id);
+    if (this.lifecycle.hasListeners('EntityDestroyed'))
       this.lifecycle.emit({ id, type: 'EntityDestroyed' });
   }
 
@@ -260,7 +264,7 @@ export class EcsWorld {
 
   /** Number of live entities (created and not yet destroyed). */
   entityCount(): number {
-    return this.alive.size;
+    return this.entities.size;
   }
 
   /**
@@ -288,13 +292,13 @@ export class EcsWorld {
           case 'add':
             // Skip a mutation targeting an id already destroyed this batch (or
             // otherwise dead): it must not resurrect the entity's archetype bits.
-            if (this.alive.has(cmd.id)) {
+            if (this.entities.isAlive(cmd.id)) {
               cmd.store.set(cmd.id, cmd.value);
               touched.add(cmd.id);
             }
             break;
           case 'addTag':
-            if (this.alive.has(cmd.id))
+            if (this.entities.isAlive(cmd.id))
               cmd.store.add(cmd.id);
             break;
           case 'destroy':
@@ -304,15 +308,15 @@ export class EcsWorld {
             }
             break;
           case 'remove':
-            if (this.alive.has(cmd.id))
+            if (this.entities.isAlive(cmd.id))
               cmd.store.delete(cmd.id);
             break;
           case 'removeTag':
-            if (this.alive.has(cmd.id))
+            if (this.entities.isAlive(cmd.id))
               cmd.store.delete(cmd.id);
             break;
           case 'spawn':
-            this.alive.add(cmd.id);
+            this.entities.activate(cmd.id);
             if (this.lifecycle.hasListeners('EntityCreated'))
               this.lifecycle.emit({ id: cmd.id, type: 'EntityCreated' });
             if (cmd.template)
@@ -327,7 +331,7 @@ export class EcsWorld {
     }
     if (import.meta.env.DEV) {
       for (const id of touched) {
-        if (this.alive.has(id))
+        if (this.entities.isAlive(id))
           this._validateEntity(id);
       }
     }
@@ -374,24 +378,30 @@ export class EcsWorld {
 
   /** Whether `id` refers to a live entity — created and not yet destroyed. */
   isAlive(id: EntityId): boolean {
-    return this.alive.has(id);
+    return this.entities.isAlive(id);
   }
 
   /** Iterate the live entity ids. Order is unspecified. */
   liveEntities(): IterableIterator<EntityId> {
-    return this.alive.values();
+    return this.entities.live();
   }
 
-  /** In-place load — clears existing stores and repopulates from the serialized payload. */
+  /**
+   * In-place load — clears existing stores and repopulates from the serialized
+   * payload, restoring id allocation so saved ids, live or stale, keep their
+   * meaning. Throws when a component or tag row names an entity that is not
+   * live in the saved allocation.
+   */
   loadJSON(data: unknown): void {
     const source = asObject(data, 'EcsWorld save payload');
-    this.nextId = asNumber(source.nextId, 'EcsWorld.nextId');
+    if (source.entities === undefined && 'nextId' in source)
+      throw new Error('EcsWorld save payload: has `nextId` but no `entities` — saves from before id recycling cannot be loaded.');
+    this.entities = EntityAllocator.fromSerialized(source.entities, 'EcsWorld.entities');
 
     // Reset the archetype index up front: `store.clear()` below emits `delete`
     // while the row still exists (has() is true), so its bit would otherwise
     // survive as a phantom. The `store.set` calls that follow rebuild it.
     this.archetypes.clear();
-    this.alive.clear();
     this.commandQueue = [];
 
     for (const { def, store } of this.componentRegistry) {
@@ -401,8 +411,8 @@ export class EcsWorld {
         continue;
       const loaded = ComponentStore.fromSerialized(raw, `EcsWorld.${def.name}`, def);
       for (const [id, value] of loaded) {
+        this.assertLoadedAlive(id, def.name);
         store.set(id, value);
-        this.alive.add(id);
       }
     }
     for (const { def, store } of this.tagRegistry) {
@@ -412,8 +422,8 @@ export class EcsWorld {
         continue;
       const loaded = TagStore.fromSerialized(raw, `EcsWorld.${def.name}`);
       for (const id of loaded) {
+        this.assertLoadedAlive(id, def.name);
         store.add(id);
-        this.alive.add(id);
       }
     }
   }
@@ -504,7 +514,7 @@ export class EcsWorld {
    * An error mid-flush aborts the remaining commands in that flush batch.
    */
   queueSpawn(template?: EntityTemplate, overrides?: Record<string, unknown>): EntityId {
-    const id = this.nextId++;
+    const id = this.entities.allocate();
     this.commandQueue.push({ id, kind: 'spawn', overrides, template });
     return id;
   }
@@ -545,7 +555,7 @@ export class EcsWorld {
         for (const reqName of def.requires!) {
           const reqStore = this.storeByName.get(reqName);
           if (reqStore && !reqStore.has(id)) {
-            console.warn(`[ECS] Setting "${def.name}" on entity ${id}, but required component "${reqName}" is missing.`);
+            console.warn(`[ECS] Setting "${def.name}" on entity ${formatEntityId(id)}, but required component "${reqName}" is missing.`);
           }
         }
       });
@@ -618,7 +628,7 @@ export class EcsWorld {
   }
 
   toJSON(): Record<string, unknown> {
-    const result: Record<string, unknown> = { nextId: this.nextId };
+    const result: Record<string, unknown> = { entities: this.entities.toSerialized() };
     for (const { def, store } of this.componentRegistry) {
       result[def.name] = store.toSerialized(def);
     }
@@ -637,8 +647,9 @@ export class EcsWorld {
    *   `structuredClone`-d on copy so the two worlds never share references.
    * - **Tags are not transferred** — tags are application-semantic (which
    *   tags follow the entity depends on the game). Callers own tag handling.
-   * - `nextId` is bumped to `max(this.nextId, from.nextId, id + 1)` so later
-   *   `createEntity()` calls on this world won't collide with the source.
+   * - `id` becomes live here with the same index and generation. Throws when
+   *   this world's entity at that index is a different one, when the index is
+   *   retired, or when it is free at a newer generation than `id`'s.
    * - If `componentNames` is given, only those components are transferred.
    *   Names must be registered on this world; unknown names throw.
    * - Values already present on this world for `id` are overwritten.
@@ -648,8 +659,6 @@ export class EcsWorld {
     from: EcsWorld,
     componentNames?: readonly string[],
   ): void {
-    this.nextId = Math.max(this.nextId, from.nextId, id + 1);
-
     const toCopy = componentNames
       ? componentNames.map((name) => {
           const store = this.storeByName.get(name);
@@ -658,6 +667,7 @@ export class EcsWorld {
           return { name, store };
         })
       : this.componentRegistry.map(({ def, store }) => ({ name: def.name, store }));
+    this.entities.claim(id);
 
     for (const { name, store } of toCopy) {
       const fromStore = from.storeByName.get(name);
@@ -668,7 +678,6 @@ export class EcsWorld {
         continue;
       store.set(id, structuredClone(value));
     }
-    this.alive.add(id);
   }
 
   /**

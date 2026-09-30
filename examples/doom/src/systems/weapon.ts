@@ -1,4 +1,4 @@
-import type { SchedulableSystem } from '@pierre/ecs';
+import type { EntityId, SchedulableSystem } from '@pierre/ecs';
 import type { Vec3 } from '@pierre/ecs/modules/math';
 
 import type { GameState } from '../game';
@@ -94,7 +94,7 @@ function fireHitscan(ctx: GameState, eye: Vec3, dir: Vec3): void {
 
   // Nearest enemy in front of that wall.
   let bestT = blockT;
-  let bestEnemy: number | null = null;
+  let bestEnemy: EntityId | null = null;
   for (const id of ctx.world.getTag(EnemyTag)) {
     const p = posStore.get(id);
     const b = aabbStore.get(id);

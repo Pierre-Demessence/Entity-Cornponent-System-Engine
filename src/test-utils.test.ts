@@ -2,7 +2,8 @@ import type { ComponentDef } from '#component-store';
 
 import { describe, expect, it } from 'vitest';
 
-import { createTestWorld, entity, GenericEntityBuilder } from '#test-utils';
+import { entityGeneration, entityIndex } from '#entity-id';
+import { createTestWorld, eid, entity, GenericEntityBuilder } from '#test-utils';
 
 interface Pos { x: number; y: number }
 const PosDef: ComponentDef<Pos> = {
@@ -12,6 +13,14 @@ const PosDef: ComponentDef<Pos> = {
 };
 
 describe('test-utils', () => {
+  describe('eid', () => {
+    it('packs an index and generation into an entity id', () => {
+      expect(eid(3)).toBe(3);
+      expect(entityIndex(eid(3, 2))).toBe(3);
+      expect(entityGeneration(eid(3, 2))).toBe(2);
+    });
+  });
+
   describe('createTestWorld', () => {
     it('returns an empty world', () => {
       const w = createTestWorld();

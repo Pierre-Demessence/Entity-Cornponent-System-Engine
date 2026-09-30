@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { eid } from '#test-utils';
 import { EcsWorld } from '#world';
 
 import { PositionDef, RotationDef, VelocityDef } from '../transform';
@@ -100,7 +101,7 @@ describe('makeAttachSystem', () => {
   it('does nothing when parent is missing', () => {
     const child = world.createEntity();
     world.getStore(PositionDef).set(child, { x: 5, y: 5 });
-    world.getStore(AttachDef).set(child, { parent: 999, snapPosition: true });
+    world.getStore(AttachDef).set(child, { parent: eid(999), snapPosition: true });
 
     expect(() => system.run({ dtMs: 16, world })).not.toThrow();
     const childPos = world.getStore(PositionDef).get(child)!;

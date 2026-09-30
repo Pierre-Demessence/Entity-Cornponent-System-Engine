@@ -12,9 +12,8 @@ core work is described by `src/` and dated by `git log`; where a plan exists it
 sits under `plans/done/`, and core work performed before the engine split out is
 in the Roguelike monorepo's `docs/plans/done/`.
 
-**One entanglement to note.** 3.2's id recycling reintroduces the ABA problem —
-recycling ids without a generation counter. Every other entry's dependencies
-have shipped. The order at the bottom reflects value, not a dependency graph.
+Every entry's dependencies have shipped. The order at the bottom reflects
+value, not a dependency graph.
 
 - Module-level work (camera, audio, render-dom, pathfinding, …) —
   [ecs-module-backlog.md](ecs-module-backlog.md)
@@ -40,29 +39,6 @@ large or re-shaped during a tick.
 Optimizations that matter once a game has 100+ entities on large maps with
 complex systems.
 
-### 3.2 Entity Pooling
-
-| | |
-|---|---|
-| **Problem** | Entities are created/destroyed freely. Each destruction iterates all stores. Frequent spawn/despawn (projectiles, particles, summons) causes GC pressure. |
-| **Solution** | Entity pool: destroyed entities are recycled (ID reused after a generation counter bump). Stores don't delete on recycle — they mark as inactive. Queries skip inactive entries. |
-| **Unlocks** | Particle effects, projectile physics, summon spells without GC spikes |
-| **Complexity** | Mid — ~150 lines. Generation counter + pool. |
-| **Dependencies** | None outstanding — the query DSL (to filter inactive) and the spatial index both shipped. Confirm the spatial index copes with recycled IDs when this lands, and settle the generation counter as part of this work. |
-
-> **Generational handles are the load-bearing, breaking part.** Entity ids are
-> monotonic and **never reused** today (`createEntity` = `nextId++`), which is
-> *safe* (a stale ref to a destroyed entity resolves to `undefined`) but grows
-> the id space unbounded over churn-heavy sessions. Reusing ids without a
-> generation reintroduces the **ABA problem** (a recycled id silently resolves
-> to a different entity). The fix — packing `EntityId` into `{ index, generation }`
-> — turns `EntityId` from a bare `number` into a handle, rippling through core,
-> **every module, every consumer, and the save format**. That makes this a
-> large, breaking, strategic change worth its own plan, justified only for a
-> millions-of-entities-with-churn target (VS-like, Factorio). The paged sparse
-> set already bounds the id→slot cost regardless, so nothing forces this yet.
-> Full framing: [../plans/done/ecs-parallelism-and-soa-storage.md](../plans/done/ecs-parallelism-and-soa-storage.md#generational-entity-ids--logged-separate-strategic).
-
 ### 3.5 Archetype Tables — gather-free multi-component iteration
 
 | | |
@@ -82,6 +58,16 @@ complex systems.
 | **Unlocks** | Change-driven systems over large, mostly-idle populations that cost O(changed) per pass. |
 | **Complexity** | Mid — the log's trimming needs to know the oldest outstanding query window. |
 | **Dependencies** | The shipped change ticks and `added` / `changed` filters. Trigger: a profile showing filtered passes dominated by unchanged entities. |
+
+### 3.10 Spawn-path allocation
+
+| | |
+|---|---|
+| **Problem** | Id recycling bounds the id space and the column store's pages, but each spawn still allocates: `spawn` `structuredClone`s (or spreads) every template component, and object-store (non-numeric) components are fresh heap objects per entity. |
+| **Solution** | Measure first. Candidates: skip the clone for all-numeric components (the column store copies fields anyway), and reuse value objects for object-store components on respawn. |
+| **Unlocks** | Allocation-free spawn/despawn churn for projectile- and particle-heavy games. |
+| **Complexity** | Low–mid, depending on what a profile shows. |
+| **Dependencies** | The shipped id recycling. Trigger: a profile showing spawn-path GC in a churn-heavy consumer. |
 
 ---
 
@@ -107,8 +93,8 @@ modding/plugin support.
 By value per unit of effort. Nothing here is scheduled; each entry still needs
 its trigger.
 
-1. **Entity Pooling** (3.2) — kills spawn/despawn GC pressure
-2. **Change-filter iteration from the changed set** (3.9) — only once a profile
+1. **Change-filter iteration from the changed set** (3.9) — only once a profile
    asks for it
+2. **Spawn-path allocation** (3.10) — only once a profile asks for it
 3. **Archetype Tables** (3.5) — the storage-engine endgame; the biggest, most
    strategic piece, above the shipped cache

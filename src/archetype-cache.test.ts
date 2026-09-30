@@ -1,4 +1,5 @@
 import type { ComponentDef, TagDef } from '#component-store';
+import type { EntityId } from '#entity-id';
 
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
@@ -29,7 +30,7 @@ function queryIds(w: EcsWorld, defs: ComponentDef<unknown>[], required: TagDef[]
   return q.run().map(r => r[0]).sort((a, b) => a - b);
 }
 
-function bruteForce(w: EcsWorld, defs: ComponentDef<unknown>[], required: TagDef[], excluded: TagDef[], ids: number[]): number[] {
+function bruteForce(w: EcsWorld, defs: ComponentDef<unknown>[], required: TagDef[], excluded: TagDef[], ids: EntityId[]): EntityId[] {
   return ids.filter((id) => {
     for (const def of defs) {
       if (!w.getStore(def).has(id))
@@ -57,7 +58,7 @@ describe('archetype cache (world integration)', () => {
     };
 
     const w = makeWorld();
-    const ids: number[] = [];
+    const ids: EntityId[] = [];
     for (let i = 0; i < 400; i++) {
       const id = w.createEntity();
       ids.push(id);
@@ -225,7 +226,7 @@ describe('reusable query handle', () => {
     w.registerComponent(B);
     w.registerComponent(C);
     const q = w.query(A, B, C, A, B, C);
-    expectTypeOf(q.first()).toEqualTypeOf<[number, { a: number }, { b: number }, { c: number }, { a: number }, { b: number }, { c: number }] | undefined>();
-    expectTypeOf(w.query().first()).toEqualTypeOf<[number] | undefined>();
+    expectTypeOf(q.first()).toEqualTypeOf<[EntityId, { a: number }, { b: number }, { c: number }, { a: number }, { b: number }, { c: number }] | undefined>();
+    expectTypeOf(w.query().first()).toEqualTypeOf<[EntityId] | undefined>();
   });
 });

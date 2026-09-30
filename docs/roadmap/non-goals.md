@@ -92,7 +92,26 @@ dictating the host, and no major engine sandboxes plugin code (Bevy, Unity, and
 Godot all run it trusted). A game that loads untrusted content isolates it at
 its own boundary. Revisit only if the engine targets an untrusted-mod platform.
 
+### Null-entity sentinel (`Entity.Null` / `PLACEHOLDER`) — declined
+
+Bevy's `Entity::PLACEHOLDER`, Unity's `Entity.Null`, and EnTT's `entt::null`
+exist because their languages lack a cheap optional. In TypeScript,
+`EntityId | undefined` is the idiom — the engine's own APIs (`pileTop`,
+`pileOf`, `query().first()`) already return it — and a sentinel would be a
+second, weaker spelling of "no entity" that type-checks as a real id.
+
 ## Superseded
+
+### Entity pooling via inactive rows — superseded
+
+Core roadmap 3.2 once sketched pooling as "stores don't delete on recycle — they
+mark rows inactive, and queries skip inactive entries". Generational id
+recycling solved the problem instead: destroyed ids are reused behind a
+generation check, which bounds the id space and the column store's sparse
+pages, while the column store's swap-remove delete was already
+allocation-free. Inactive rows would have added a liveness check to every
+query pass for no remaining gain. See
+[`../plans/done/entity-id-recycling.md`](../plans/done/entity-id-recycling.md).
 
 ### `modules/motion` — boundary inset / per-entity size — superseded
 

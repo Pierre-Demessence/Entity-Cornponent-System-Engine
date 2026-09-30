@@ -1,7 +1,7 @@
 import type { ComponentDef, ComponentStoreLike, EcsWorld, EntityId } from '#index';
 import type { RandomFn } from '../rng';
 
-import { asArray, asNumber, asObject } from '#validation';
+import { asArray, asEntityId, asObject } from '#validation';
 
 import { shuffle } from '../rng';
 
@@ -28,7 +28,7 @@ export const PileDef: ComponentDef<Pile> = {
   deserialize: (raw, label) => {
     const obj = asObject(raw, label);
     const items = asArray(obj.items, `${label}.items`);
-    return { items: items.map((id, i) => asNumber(id, `${label}.items[${i}]`)) };
+    return { items: items.map((id, i) => asEntityId(id, `${label}.items[${i}]`)) };
   },
 };
 
@@ -38,7 +38,7 @@ export const InPileDef: ComponentDef<InPile> = {
   serialize: value => ({ pile: value.pile }),
   deserialize: (raw, label) => {
     const obj = asObject(raw, label);
-    return { pile: asNumber(obj.pile, `${label}.pile`) };
+    return { pile: asEntityId(obj.pile, `${label}.pile`) };
   },
 };
 

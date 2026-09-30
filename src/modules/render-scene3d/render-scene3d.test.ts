@@ -6,6 +6,7 @@ import type { SceneGraph } from './scene-graph';
 import { describe, expect, it, vi } from 'vitest';
 
 import { simpleComponent } from '#index';
+import { eid } from '#test-utils';
 import { EcsWorld } from '#world';
 
 import { Scene3DRenderer } from './render-scene3d';
@@ -218,7 +219,7 @@ describe('@pierre/ecs/modules/render-scene3d', () => {
   it('accepts any iterable of entries, not only a query', () => {
     const world = makeWorld();
     const graph = new FakeGraph();
-    const entries: Array<Scene3DEntry<[number]>> = [[10, 1], [11, 2]];
+    const entries: Array<Scene3DEntry<[number]>> = [[eid(10), 1], [eid(11), 2]];
     const renderer = new Scene3DRenderer<FakeObject, [number]>({
       create: ([id, scale]) => ({ id, position: { x: 0, y: 0, z: 0 }, scale }),
       select: () => entries,

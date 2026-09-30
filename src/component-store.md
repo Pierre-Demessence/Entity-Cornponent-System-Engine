@@ -13,6 +13,15 @@
   get/set/delete/has/entries/keys/iterator + serialization helpers.
 - **`TagStore`** — typed wrapper over `Set<EntityId>` with
   add/delete/has/iterator + serialization helpers.
+- **`ColumnStore<T>`** — Structure-of-Arrays storage for all-numeric
+  components, chosen automatically by `registerComponent`. It locates rows by
+  the id's index and checks the full id, so a stale id (same index, older
+  generation) misses on every read, and writing one while the index holds a
+  newer entity throws.
+
+Every store keys rows by the full `EntityId`, generation included, so an id
+kept after its entity was destroyed never reads or writes the entity that
+reused its index. Ids decoded from saves go through `asEntityId`.
 
 ## `simpleComponent<T>` — declarative factory for flat primitive schemas
 

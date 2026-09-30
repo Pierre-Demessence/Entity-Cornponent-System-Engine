@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { asArray, asBoolean, asNumber, asObject, asString } from '#validation';
+import { asArray, asBoolean, asEntityId, asNumber, asObject, asString } from '#validation';
 
 describe('validation', () => {
   describe('asObject', () => {
@@ -38,6 +38,16 @@ describe('validation', () => {
       expect(() => asArray({}, 'val')).toThrow(TypeError);
       expect(() => asArray('str', 'val')).toThrow('val must be an array.');
       expect(() => asArray(null, 'val')).toThrow(TypeError);
+    });
+  });
+
+  describe('asEntityId', () => {
+    it('returns a well-formed entity id', () => {
+      expect(asEntityId(4194305, 'id')).toBe(4194305);
+    });
+
+    it.each([-1, 1.5, 2 ** 30, '3'])('throws for %s', (value) => {
+      expect(() => asEntityId(value, 'id')).toThrow('id must be an entity id');
     });
   });
 

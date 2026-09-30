@@ -1,4 +1,6 @@
-import { EcsWorld } from '@pierre/ecs';
+import type { EntityId } from '@pierre/ecs';
+
+import { EcsWorld, ENTITY_INDEX_MAX, entityIndex } from '@pierre/ecs';
 import { PositionDef, VelocityDef } from '@pierre/ecs/modules/transform';
 
 /**
@@ -19,6 +21,10 @@ import { PositionDef, VelocityDef } from '@pierre/ecs/modules/transform';
  * baseline drops below the frame budget while the engine's columns stay flat —
  * that gap, plus the GC sawtooth on the object side, is the win the columnar
  * storage delivers.
+ *
+ * "Churn" (engine only) destroys and respawns 1% of entities per tick: the
+ * cost lands in "sim", and "max index" stays below the count because destroyed
+ * entities' indices are recycled.
  */
 
 const W = 800;
@@ -26,6 +32,9 @@ const H = 600;
 const SPEED = 60; // px/s
 const DT_MS = 1000 / 60;
 const HISTORY = W; // one sample per pixel column
+const CHURN_FRACTION = 0.01;
+// The slider stops at the engine's live-entity limit, rounded to its step.
+const MAX_COUNT = Math.floor((ENTITY_INDEX_MAX + 1) / 1000) * 1000;
 
 const BG = rgba(11, 15, 20);
 const DOT_ECS = rgba(127, 212, 255);
@@ -35,6 +44,8 @@ interface Backend {
   readonly dotColor: number;
   readonly label: string;
   draw: (pixels: Uint32Array) => void;
+  /** Highest entity index in use, for backends backed by the engine. */
+  maxIndex?: () => number;
   step: (dtMs: number) => void;
 }
 
@@ -54,18 +65,23 @@ function wrap(v: number, max: number): number {
     return v - max;
   return v;
 }
-function makeEngineBackend(n: number): Backend {
+function makeEngineBackend(n: number, churn: boolean): Backend {
   const world = new EcsWorld();
   world.registerComponent(PositionDef);
   world.registerComponent(VelocityDef);
-  for (let i = 0; i < n; i++) {
+  const spawn = (): EntityId => {
     const id = world.createEntity();
     const a = Math.random() * Math.PI * 2;
     world.getStore(PositionDef).set(id, { x: Math.random() * W, y: Math.random() * H });
     world.getStore(VelocityDef).set(id, { vx: Math.cos(a) * SPEED, vy: Math.sin(a) * SPEED });
-  }
-  // Spawned pos-then-vel in id order with no deletes, so both columnar stores
-  // are dense and aligned: slot i is entity i in each. Read the columns directly.
+    return id;
+  };
+  const ids = Array.from({ length: n }, spawn);
+  let maxIndex = n - 1;
+  // Every entity holds pos and vel, set in that order, so both columnar stores
+  // are dense and aligned: slot i is the same entity in each. Churn keeps them
+  // aligned — a destroy swap-removes the same slot from both stores, and a
+  // respawn appends to both. Read the columns directly.
   const pos = world.getColumnStore(PositionDef);
   const vel = world.getColumnStore(VelocityDef);
   const px = pos.column('x');
@@ -74,7 +90,8 @@ function makeEngineBackend(n: number): Backend {
   const vy = vel.column('vy');
   return {
     dotColor: DOT_SOA,
-    label: 'Engine columnar (SoA)',
+    label: churn ? 'Engine columnar (SoA) + churn' : 'Engine columnar (SoA)',
+    maxIndex: () => maxIndex,
     draw(pixels) {
       for (let i = 0; i < n; i++) {
         const x = px[i] | 0;
@@ -84,6 +101,15 @@ function makeEngineBackend(n: number): Backend {
       }
     },
     step(dtMs) {
+      if (churn) {
+        const k = Math.max(1, Math.floor(n * CHURN_FRACTION));
+        for (let j = 0; j < k; j++) {
+          const r = Math.floor(Math.random() * n);
+          world.destroyEntity(ids[r]);
+          ids[r] = spawn();
+          maxIndex = Math.max(maxIndex, entityIndex(ids[r]));
+        }
+      }
       const dt = dtMs / 1000;
       for (let i = 0; i < n; i++) {
         px[i] = wrap(px[i] + vx[i] * dt, W);
@@ -217,7 +243,7 @@ export function start(container: HTMLElement): () => void {
   const slider = document.createElement('input');
   slider.type = 'range';
   slider.min = '1000';
-  slider.max = '10000000';
+  slider.max = String(MAX_COUNT);
   slider.step = '1000';
   slider.value = '20000';
   slider.style.width = '260px';
@@ -241,7 +267,13 @@ export function start(container: HTMLElement): () => void {
   }
   storageLabel.append('Storage:', storageSel);
 
-  controls.append(countLabel, storageLabel);
+  const churnLabel = document.createElement('label');
+  churnLabel.style.cssText = 'font:13px system-ui;display:flex;gap:6px;align-items:center';
+  const churnBox = document.createElement('input');
+  churnBox.type = 'checkbox';
+  churnLabel.append(churnBox, 'Churn 1%/tick (engine)');
+
+  controls.append(countLabel, storageLabel, churnLabel);
 
   const stage = document.createElement('div');
   stage.style.cssText = 'position:relative;width:100%';
@@ -275,6 +307,7 @@ export function start(container: HTMLElement): () => void {
   const renderV = panelRow('render');
   const peakV = panelRow('peak');
   const entV = panelRow('entities');
+  const maxIndexV = panelRow('max index');
   const vsyncV = panelRow('vsync');
   stage.append(canvas, panel);
 
@@ -294,7 +327,7 @@ export function start(container: HTMLElement): () => void {
   const pixels = new Uint32Array(img.data.buffer);
 
   let count = Number(slider.value);
-  let backend: Backend = makeEngineBackend(count); // replaced immediately in rebuild()
+  let backend: Backend = makeEngineBackend(count, false); // replaced immediately in rebuild()
   let frameHistory: number[] = [];
   let simMsAvg = 0;
   let renderMsAvg = 0;
@@ -312,7 +345,7 @@ export function start(container: HTMLElement): () => void {
       ? makeMapBackend(count)
       : storageSel.value === 'bare'
         ? makeBareBackend(count)
-        : makeEngineBackend(count);
+        : makeEngineBackend(count, churnBox.checked);
     frameHistory = [];
     simMsAvg = 0;
     renderMsAvg = 0;
@@ -329,6 +362,7 @@ export function start(container: HTMLElement): () => void {
   });
   slider.addEventListener('change', rebuild);
   storageSel.addEventListener('change', rebuild);
+  churnBox.addEventListener('change', rebuild);
   countText.textContent = fmtCount(count);
   rebuild();
 
@@ -378,6 +412,7 @@ export function start(container: HTMLElement): () => void {
     renderV.textContent = `${renderMsAvg.toFixed(2)} ms`;
     peakV.textContent = `${framePeak.toFixed(1)} ms`;
     entV.textContent = fmtCount(count);
+    maxIndexV.textContent = backend.maxIndex ? fmtCount(backend.maxIndex()) : '—';
     vsyncV.textContent = `${budget.toFixed(1)} ms`;
 
     rafId = window.requestAnimationFrame(loop);

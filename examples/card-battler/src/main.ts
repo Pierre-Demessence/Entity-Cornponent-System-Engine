@@ -1,6 +1,6 @@
 import type { Action, CardEvent, GameState } from './game';
 
-import { EventBus, Scheduler, TickRunner } from '@pierre/ecs';
+import { EventBus, packEntityId, Scheduler, TickRunner } from '@pierre/ecs';
 import { createInput, Pointer, PointerProvider } from '@pierre/ecs/modules/input';
 import { AnimationFrameTickSource, ManualTickSource } from '@pierre/ecs/modules/tick';
 
@@ -26,19 +26,20 @@ export function start(container: HTMLElement): () => void {
     [pointer],
   );
 
+  const unset = packEntityId(0, 0);
   const state: GameState = {
     drag: makeCardDrag(() => state),
     dtMs: 0,
     elapsedMs: 0,
     endTurnPending: false,
-    enemyId: 0,
+    enemyId: unset,
     energy: 0,
     energyMax: 0,
     events,
     input,
     phase: 'player',
-    piles: { deck: 0, discard: 0, hand: 0 }, // replaced by resetGame
-    playerId: 0, // replaced by resetGame
+    piles: { deck: unset, discard: unset, hand: unset }, // replaced by resetGame
+    playerId: unset, // replaced by resetGame
     pointer: pointer.state,
     world,
   };

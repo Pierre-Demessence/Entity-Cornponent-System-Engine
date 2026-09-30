@@ -41,9 +41,9 @@ references it.
 
 ## Headline
 
-- 62 public entries (16 core, 46 modules) · 611 symbols (356 value, 255 type)
+- 62 public entries (16 core, 46 modules) · 621 symbols (366 value, 255 type)
 - 55 entries referenced by at least one example · 7 with none
-- 139 value symbols referenced by no example (5 of them with no external consumer at all)
+- 146 value symbols referenced by no example (5 of them with no external consumer at all)
 - 167 symbols with no external consumer
 
 ## Entries with no example reference
@@ -56,9 +56,9 @@ only by another module.
 - `@pierre/ecs/input-source` — tests: 4 · other: input
 - `@pierre/ecs/lifecycle` — tests: — · other: world.ts
 - `@pierre/ecs/query` — tests: 1 · other: world.ts
-- `@pierre/ecs/spatial-structure` — tests: 2 · other: spatial, world.ts
-- `@pierre/ecs/test-utils` — tests: 4 · other: —
-- `@pierre/ecs/validation` — tests: 1 · other: animation, audio, component-store.ts, pile, render-canvas2d, render-dom, world.ts
+- `@pierre/ecs/spatial-structure` — tests: 3 · other: spatial, world.ts
+- `@pierre/ecs/test-utils` — tests: 15 · other: —
+- `@pierre/ecs/validation` — tests: 1 · other: animation, audio, component-store.ts, entity-allocator.ts, pile, render-canvas2d, render-dom, world.ts
 
 ## Next-example candidates
 
@@ -113,7 +113,7 @@ symbols.
 | river-raid | 16 | 30 | 9 |
 | rpg | 15 | 32 | 6 |
 | platformer-3d | 16 | 28 | 8 |
-| card-battler | 13 | 25 | 7 |
+| card-battler | 13 | 26 | 7 |
 | breakout | 13 | 23 | 7 |
 | solitaire | 13 | 26 | 4 |
 | flappy | 13 | 22 | 7 |
@@ -126,7 +126,7 @@ symbols.
 | snake | 11 | 13 | 4 |
 | woodcutter | 11 | 11 | 6 |
 | rhythm | 10 | 10 | 4 |
-| stress-storage | 2 | 3 | 0 |
+| stress-storage | 3 | 5 | 1 |
 | parallel-kernel | 2 | 2 | 0 |
 | worker-offload | 1 | 2 | 0 |
 
@@ -144,11 +144,11 @@ value 0/0 · type 0/3 · examples: — · tests: 1 · other: audio
 
 ### `@pierre/ecs/component-store`
 
-value 2/4 · type 2/17 · examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, game-of-life +16 more · tests: 19 · other: animation, attach, audio, camera, camera-3d, collision, collision-3d, column-store.ts +17 more
+value 2/4 · type 2/17 · examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, game-of-life +16 more · tests: 20 · other: animation, attach, audio, camera, camera-3d, collision, collision-3d, column-store.ts +17 more
 
 - **`AnyComponentDef`** _(type)_ — examples: — · tests: — · other: world.ts
 - **`ColumnField`** _(interface)_ — examples: — · tests: src/column-store.test.ts · other: column-store.ts
-- **`ComponentDef`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, local-pong +8 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/component-store.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/modules/spatial/hash-grid-3d.test.ts, src/query.test.ts, src/test-utils.test.ts, src/world.test.ts · other: animation, attach, audio, camera, camera-3d, collision, collision-3d, column-store.ts +12 more
+- **`ComponentDef`** _(interface)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, local-pong +8 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/component-store.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/modules/spatial/hash-grid-3d.test.ts, src/modules/spatial/recycled-ids.test.ts, src/query.test.ts, src/test-utils.test.ts +1 more · other: animation, attach, audio, camera, camera-3d, collision, collision-3d, column-store.ts +12 more
 - **`ComponentMigration`** _(type)_ — no external consumer
 - **`ComponentStore`** _(class)_ — examples: — · tests: src/column-store.test.ts, src/component-store.test.ts, src/query.test.ts · other: particles, render-dom, world.ts
 - **`ComponentStoreLike`** _(interface)_ — examples: — · tests: src/modules/render-dom/dom-renderer.test.ts, src/query.test.ts · other: column-store.ts, pile, query.ts, render-canvas2d, world.ts
@@ -158,7 +158,7 @@ value 2/4 · type 2/17 · examples: asteroids, boids, breakout, card-battler, do
 - **`RegistryComponentOptions`** _(interface)_ — no external consumer
 - **`RegistryComponentValue`** _(type)_ — no external consumer
 - **`RegistryIdKind`** _(type)_ — no external consumer
-- **`simpleComponent`** _(fn)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, game-of-life +11 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/modules/scene-transition/scene-transition.test.ts, src/plugin.test.ts, src/query.test.ts, src/simple-component.test.ts · other: attach, camera, camera-3d, collision, collision-3d, cooldown, kinematics, kinematics-3d +5 more
+- **`simpleComponent`** _(fn)_ — examples: asteroids, boids, breakout, card-battler, doom, flappy, frogger, game-of-life +11 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/modules/scene-transition/scene-transition.test.ts, src/plugin.test.ts, src/query.test.ts, src/simple-component.test.ts +1 more · other: attach, camera, camera-3d, collision, collision-3d, cooldown, kinematics, kinematics-3d +5 more
 - **`SimpleComponentOptions`** _(interface)_ — no external consumer
 - **`SimpleFieldKind`** _(type)_ — no external consumer
 - **`SimpleSchema`** _(type)_ — examples: — · tests: — · other: timer
@@ -170,9 +170,17 @@ value 2/4 · type 2/17 · examples: asteroids, boids, breakout, card-battler, do
 
 ### `@pierre/ecs/entity-id`
 
-value 0/0 · type 1/1 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +19 more · tests: 14 · other: animation, archetype-index.ts, attach, audio, camera-3d, collision, column-store.ts, component-store.ts +19 more
+value 3/8 · type 1/1 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +20 more · tests: 22 · other: animation, archetype-index.ts, attach, audio, camera-3d, collision, column-store.ts, component-store.ts +21 more
 
-- **`EntityId`** _(type)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +19 more · tests: src/modules/animation/sprite-animation.test.ts, src/modules/animation/sprite-clip.test.ts, src/modules/collision/trigger.test.ts, src/modules/cooldown/cooldown.test.ts, src/modules/kinematics-3d/kinematics3d-system.test.ts, src/modules/kinematics/kinematics-system.test.ts, src/modules/lifetime/lifetime.test.ts, src/modules/motion-3d/motion-3d.test.ts +6 more · other: animation, archetype-index.ts, attach, audio, camera-3d, collision, column-store.ts, component-store.ts +19 more
+- **`ENTITY_GENERATION_MAX`** _(const)_ — examples: — · tests: src/entity-allocator.test.ts, src/entity-id.test.ts, src/world.test.ts · other: entity-allocator.ts
+- **`ENTITY_INDEX_BITS`** _(const)_ — examples: — · tests: src/entity-id.test.ts · other: —
+- **`ENTITY_INDEX_MAX`** _(const)_ — examples: stress-storage · tests: src/entity-allocator.test.ts, src/entity-id.test.ts · other: entity-allocator.ts
+- **`entityGeneration`** _(fn)_ — examples: — · tests: src/entity-allocator.test.ts, src/entity-id.test.ts, src/test-utils.test.ts, src/world.test.ts · other: entity-allocator.ts
+- **`EntityId`** _(type)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +20 more · tests: src/archetype-cache.test.ts, src/column-store.test.ts, src/entity-allocator.test.ts, src/modules/animation/sprite-animation.test.ts, src/modules/animation/sprite-clip.test.ts, src/modules/camera-3d/rigs.test.ts, src/modules/camera/camera.test.ts, src/modules/collision/trigger.test.ts +11 more · other: animation, archetype-index.ts, attach, audio, camera-3d, collision, column-store.ts, component-store.ts +21 more
+- **`entityIndex`** _(fn)_ — examples: stress-storage · tests: src/entity-allocator.test.ts, src/entity-id.test.ts, src/modules/spatial/recycled-ids.test.ts, src/test-utils.test.ts, src/world.test.ts · other: column-store.ts, entity-allocator.ts
+- **`formatEntityId`** _(fn)_ — examples: — · tests: src/entity-id.test.ts · other: column-store.ts, world.ts
+- **`isEntityId`** _(fn)_ — examples: — · tests: src/entity-id.test.ts · other: render-dom, validation.ts
+- **`packEntityId`** _(fn)_ — examples: card-battler · tests: src/column-store.test.ts, src/entity-allocator.test.ts, src/entity-id.test.ts, src/world.test.ts · other: entity-allocator.ts, test-utils.ts
 
 ### `@pierre/ecs/event-bus`
 
@@ -217,9 +225,9 @@ value 1/1 · type 1/3 · examples: asteroids, boids, breakout, card-battler, cri
 
 ### `@pierre/ecs/spatial-structure`
 
-value 0/0 · type 0/1 · examples: — · tests: 2 · other: spatial, world.ts
+value 0/0 · type 0/1 · examples: — · tests: 3 · other: spatial, world.ts
 
-- **`SpatialStructure`** _(interface)_ — examples: — · tests: src/spatial-structure.test.ts, src/world.test.ts · other: spatial, world.ts
+- **`SpatialStructure`** _(interface)_ — examples: — · tests: src/modules/spatial/recycled-ids.test.ts, src/spatial-structure.test.ts, src/world.test.ts · other: spatial, world.ts
 
 ### `@pierre/ecs/template`
 
@@ -230,9 +238,10 @@ value 1/1 · type 1/1 · examples: game-of-life, roguelike · tests: 2 · other:
 
 ### `@pierre/ecs/test-utils`
 
-value 0/4 · type 0/0 · examples: — · tests: 4 · other: —
+value 0/5 · type 0/0 · examples: — · tests: 15 · other: —
 
 - **`createTestWorld`** _(fn)_ — examples: — · tests: src/modules/tilemap/spawn.test.ts, src/modules/turn-based/turn-cycler.test.ts, src/test-utils.test.ts, src/tick-runner.test.ts · other: —
+- **`eid`** _(fn)_ — examples: — · tests: src/archetype-index.test.ts, src/column-store.test.ts, src/component-store.test.ts, src/modules/attach/attach.test.ts, src/modules/render-scene3d/render-scene3d.test.ts, src/modules/spatial/continuous-hash-grid-2d.test.ts, src/modules/spatial/hash-grid-2d.test.ts, src/modules/spatial/hash-grid-3d.test.ts +4 more · other: —
 - **`entity`** _(fn)_ — examples: — · tests: src/test-utils.test.ts · other: —
 - **`GenericEntityBuilder`** _(class)_ — examples: — · tests: src/modules/turn-based/turn-cycler.test.ts, src/test-utils.test.ts · other: —
 - **`TestWorld`** _(class)_ — no external consumer
@@ -254,19 +263,20 @@ value 0/0 · type 2/2 · examples: rhythm · tests: 5 · other: stats, tick, tic
 
 ### `@pierre/ecs/validation`
 
-value 0/5 · type 0/0 · examples: — · tests: 1 · other: animation, audio, component-store.ts, pile, render-canvas2d, render-dom, world.ts
+value 0/6 · type 0/0 · examples: — · tests: 1 · other: animation, audio, component-store.ts, entity-allocator.ts, pile, render-canvas2d, render-dom, world.ts
 
-- **`asArray`** _(fn)_ — examples: — · tests: src/validation.test.ts · other: animation, component-store.ts, pile, render-canvas2d
+- **`asArray`** _(fn)_ — examples: — · tests: src/validation.test.ts · other: animation, component-store.ts, entity-allocator.ts, pile, render-canvas2d
 - **`asBoolean`** _(fn)_ — examples: — · tests: src/validation.test.ts · other: animation, audio, component-store.ts, render-canvas2d, render-dom
-- **`asNumber`** _(fn)_ — examples: — · tests: src/validation.test.ts · other: animation, audio, component-store.ts, pile, render-canvas2d, world.ts
-- **`asObject`** _(fn)_ — examples: — · tests: src/validation.test.ts · other: animation, audio, component-store.ts, pile, render-canvas2d, render-dom, world.ts
+- **`asEntityId`** _(fn)_ — examples: — · tests: src/validation.test.ts · other: component-store.ts, pile
+- **`asNumber`** _(fn)_ — examples: — · tests: src/validation.test.ts · other: animation, audio, component-store.ts, entity-allocator.ts, render-canvas2d
+- **`asObject`** _(fn)_ — examples: — · tests: src/validation.test.ts · other: animation, audio, component-store.ts, entity-allocator.ts, pile, render-canvas2d, render-dom, world.ts
 - **`asString`** _(fn)_ — examples: — · tests: src/validation.test.ts · other: animation, audio, component-store.ts, render-canvas2d, render-dom
 
 ### `@pierre/ecs/world`
 
-value 1/1 · type 0/1 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +23 more · tests: 26 · other: animation, attach, audio, camera, camera-3d, cooldown, kinematics, kinematics-3d +14 more
+value 1/1 · type 0/1 · examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +23 more · tests: 27 · other: animation, attach, audio, camera, camera-3d, cooldown, kinematics, kinematics-3d +14 more
 
-- **`EcsWorld`** _(class)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +23 more · tests: src/archetype-cache.test.ts, src/modules/animation/sprite-animation.test.ts, src/modules/animation/sprite-clip.test.ts, src/modules/attach/attach.test.ts, src/modules/audio/audio.test.ts, src/modules/camera-3d/camera3d.test.ts, src/modules/camera-3d/rigs.test.ts, src/modules/camera/camera.test.ts +18 more · other: animation, attach, audio, camera, camera-3d, cooldown, kinematics, kinematics-3d +14 more
+- **`EcsWorld`** _(class)_ — examples: asteroids, boids, breakout, card-battler, critters, doom, flappy, frogger +23 more · tests: src/archetype-cache.test.ts, src/modules/animation/sprite-animation.test.ts, src/modules/animation/sprite-clip.test.ts, src/modules/attach/attach.test.ts, src/modules/audio/audio.test.ts, src/modules/camera-3d/camera3d.test.ts, src/modules/camera-3d/rigs.test.ts, src/modules/camera/camera.test.ts +19 more · other: animation, attach, audio, camera, camera-3d, cooldown, kinematics, kinematics-3d +14 more
 - **`SpatialOptions`** _(interface)_ — no external consumer
 
 ---
@@ -874,7 +884,7 @@ value 2/2 · type 0/1 · examples: pacman, roguelike · tests: 1 · other: —
 
 ### `@pierre/ecs/modules/spatial`
 
-value 5/7 · type 0/4 · examples: asteroids, boids, game-of-life, pacman, platformer, platformer-3d, snake, spacewar +1 more · tests: 5 · other: —
+value 5/7 · type 0/4 · examples: asteroids, boids, game-of-life, pacman, platformer, platformer-3d, snake, spacewar +1 more · tests: 6 · other: —
 
 - **`CellKey`** _(interface)_ — no external consumer
 - **`cellOfPoint`** _(fn)_ — examples: — · tests: src/modules/spatial/projections.test.ts · other: —
@@ -883,8 +893,8 @@ value 5/7 · type 0/4 · examples: asteroids, boids, game-of-life, pacman, platf
 - **`ContinuousHashGrid2D`** _(class)_ — examples: asteroids, boids, platformer, spacewar, top-down-shooter · tests: src/modules/spatial/continuous-hash-grid-2d.test.ts · other: —
 - **`GridSyncOnMove`** _(type)_ — no external consumer
 - **`GridSyncOnMoveOptions`** _(interface)_ — no external consumer
-- **`HashGrid2D`** _(class)_ — examples: game-of-life, pacman, snake · tests: src/modules/spatial/grid-sync.test.ts, src/modules/spatial/hash-grid-2d.test.ts · other: —
-- **`HashGrid3D`** _(class)_ — examples: platformer-3d · tests: src/modules/spatial/hash-grid-3d.test.ts · other: —
+- **`HashGrid2D`** _(class)_ — examples: game-of-life, pacman, snake · tests: src/modules/spatial/grid-sync.test.ts, src/modules/spatial/hash-grid-2d.test.ts, src/modules/spatial/recycled-ids.test.ts · other: —
+- **`HashGrid3D`** _(class)_ — examples: platformer-3d · tests: src/modules/spatial/hash-grid-3d.test.ts, src/modules/spatial/recycled-ids.test.ts · other: —
 - **`HashGrid3DOptions`** _(interface)_ — no external consumer
 - **`makeGridSyncOnMove`** _(fn)_ — examples: asteroids, boids, spacewar, top-down-shooter · tests: src/modules/spatial/grid-sync.test.ts · other: —
 

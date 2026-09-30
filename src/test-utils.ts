@@ -1,6 +1,7 @@
 import type { ComponentDef, TagDef } from '#component-store';
 import type { EntityId } from '#entity-id';
 
+import { packEntityId } from '#entity-id';
 import { EcsWorld } from '#world';
 
 /**
@@ -66,4 +67,13 @@ export class GenericEntityBuilder<W extends EcsWorld = EcsWorld> {
 /** Shorthand for `new GenericEntityBuilder(world)`. */
 export function entity<W extends EcsWorld>(world: W): GenericEntityBuilder<W> {
   return new GenericEntityBuilder(world);
+}
+
+/**
+ * An {@link EntityId} from its parts, for tests that drive stores directly
+ * without a world. Store-level tests need fixed ids; world-level tests should
+ * prefer `world.createEntity()`.
+ */
+export function eid(index: number, generation = 0): EntityId {
+  return packEntityId(index, generation);
 }

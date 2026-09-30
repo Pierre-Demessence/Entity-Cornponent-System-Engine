@@ -1,3 +1,7 @@
+import type { EntityId } from '#entity-id';
+
+import { isEntityId } from '#entity-id';
+
 type JsonObject = Record<string, unknown>;
 
 /** Narrow `value` to a plain object or throw with a descriptive `label`-prefixed message. */
@@ -13,6 +17,15 @@ export function asObject(value: unknown, label: string): JsonObject {
 export function asArray(value: unknown, label: string): unknown[] {
   if (!Array.isArray(value)) {
     throw new TypeError(`${label} must be an array.`);
+  }
+
+  return value;
+}
+
+/** Narrow `value` to a well-formed {@link EntityId} or throw with a descriptive `label`-prefixed message. */
+export function asEntityId(value: unknown, label: string): EntityId {
+  if (!isEntityId(value)) {
+    throw new TypeError(`${label} must be an entity id.`);
   }
 
   return value;

@@ -11,7 +11,8 @@ not in this package.
 
 ## Responsibilities
 
-- Allocate monotonically increasing `EntityId` values.
+- Allocate `EntityId` values, recycling destroyed entities' ids behind a
+  generation counter (see [Entity ids](#entity-ids)).
 - Register `ComponentDef<T>` and `TagDef` schemas and hold the backing
   `ComponentStore<T>` / `TagStore` instances.
 - Expose a typed `query(...)` DSL that selects matching entities by archetype
@@ -30,8 +31,8 @@ not in this package.
 
 | Method | Description |
 |--------|-------------|
-| `createEntity()` | Allocate a new `EntityId`. |
-| `destroyEntity(id)` | Immediately remove `id` from every registered store and tag. **Not safe** to call while iterating a store — use `queueDestroy` instead. |
+| `createEntity()` | Create an empty entity and return its `EntityId`, possibly reusing a destroyed entity's index with a newer generation. |
+| `destroyEntity(id)` | Immediately remove `id` from every store and tag it holds and free its index. A no-op unless `id` is alive, so a stale id never touches the entity now using its index. **Not safe** to call while iterating a store — use `queueDestroy` instead. |
 | `queueDestroy(id)` | Enqueue `id` for destruction on the next `flushCommands()` call. Deduped per flush; safe to call during iteration. |
 | `queueSpawn(template?, overrides?)` | Reserve an id now and enqueue its creation (+ optional template population) for the next `flushCommands()`. Returns the id so it can be referenced by other queued commands in the same loop. |
 | `queueAdd(def, id, value)` | Enqueue a component add for the next `flushCommands()`. Throws now if `def` is unregistered. |
@@ -55,11 +56,11 @@ not in this package.
 | `spawnBatch(entries)` | Spawn many entities at once. Validates all at the end instead of per call. |
 | `use(...plugins)` | Install one or more `Plugin`s, calling each one's `build(world)` exactly once. Plugin names must be unique per world. Returns `this`. |
 | `hasPlugin(name)` | Whether a plugin with `name` has been installed. |
-| `transferEntity(id, from, componentNames?)` | Copy an entity's components from another world, preserving its id. Tags are not transferred (application-semantic). Optionally filter to a subset of components. |
+| `transferEntity(id, from, componentNames?)` | Copy an entity's components from another world, preserving its id (index and generation). Throws when this world's entity at that index is a different one, when the index is retired, or when it is free at a newer generation. Tags are not transferred (application-semantic). Optionally filter to a subset of components. |
 | `clock` | The `ChangeClock` every registered store stamps added / changed ticks from; advanced by queries with `added` / `changed` filters. |
-| `clearAll()` | Empty every component/tag store, the destroy queue, every spatial index, and the lifecycle event queue; reset `nextId = 0`. Registrations are preserved. Silent by design — no `EntityDestroyed` storm. Useful for full world resets (level restart, new game). |
-| `toJSON()` | Serialize the registry to `{ nextId, [storeName]: serialized }`. |
-| `loadJSON(data)` | In-place load — clears every registered store, then repopulates each from the payload entry of the same name. |
+| `clearAll()` | Empty every component/tag store, the destroy queue, every spatial index, and the lifecycle event queue; reset id allocation so the next entity is `0`. Registrations are preserved. Silent by design — no `EntityDestroyed` storm. Useful for full world resets (level restart, new game). |
+| `toJSON()` | Serialize the registry to `{ entities, [storeName]: serialized }`, where `entities` is the id-allocation state. |
+| `loadJSON(data)` | In-place load — restores id allocation from `entities`, clears every registered store, then repopulates each from the payload entry of the same name. Throws on a row whose entity is not live in `entities`, and on payloads without `entities`. |
 | `lifecycle` | `EventBus<LifecycleEvent>` — emits `EntityCreated`, `EntityDestroyed`, `ComponentAdded`, `ComponentRemoved`, `TagAdded`, `TagRemoved`. Queue-based; call `lifecycle.flush()` to dispatch (typically once per tick). An event is only built while its type has a subscriber, so a handler sees only changes made after it subscribed, and an unobserved world allocates nothing per mutation. `destroyEntity` on an id that is already dead emits nothing. Subscribers are **not** preserved across world swaps. |
 
 ## Using the engine
@@ -80,6 +81,36 @@ const id = world.spawn({ name: 'marker', components: { pos: { x: 3, y: 4 } } });
 world.move(PosDef, id, { x: 5, y: 6 });
 grid.getAt(5, 6); // Set { id }
 ```
+
+## Entity ids
+
+An `EntityId` is a number packing a 22-bit **index** (the entity's slot) and an
+8-bit **generation** (how many times that slot was reused before). A fresh
+world hands out `0, 1, 2, …`. Destroying an entity frees its index; the next
+`createEntity` / `spawn` / `queueSpawn` reuses the most recently freed index
+with the generation bumped. Ids stay below `2^30`, so they are always small
+integers to the JavaScript engine.
+
+- **Stale ids stay dead.** An id held after its entity is destroyed never
+  matches the index's next occupant: `isAlive` is `false`, stores miss it,
+  `destroyEntity` / `queueDestroy` / `queueAdd` / `move` through it do nothing.
+- **Limits.** At most `ENTITY_INDEX_MAX + 1` (4,194,304) entities are alive
+  at once. An index is retired after its 256th use rather than wrapping around,
+  so the world allows about 10⁹ spawns between resets; beyond that,
+  `createEntity` throws.
+- **Branded type.** A plain `number` is not an `EntityId`. Ids come from the
+  world (`createEntity`, `spawn`, queries, lifecycle events), from
+  `packEntityId(index, generation)`, or, when decoding untrusted data, from
+  `asEntityId(value, label)` / `isEntityId(value)`. An `EntityId` still reads as
+  a number anywhere (arithmetic, keys, template strings).
+- **Reading ids.** `entityIndex(id)` / `entityGeneration(id)` split an id;
+  `formatEntityId(id)` prints it as `5v1` for logs.
+- **Save/load.** `toJSON` writes the allocation state, generations of free
+  indices included, so ids saved in component values keep their meaning after
+  `loadJSON`: live ids resolve, stale ones stay stale, and component-less
+  entities survive the round-trip.
+- **`clearAll` resets allocation.** Ids held across a reset may match entities
+  created after it.
 
 ## Extending for a specific consumer
 
@@ -106,9 +137,9 @@ The engine is designed to be subclassed. A consumer subclass typically:
 - `loadJSON` restores by name into the components and tags registered on the
   world, so register the same schemas (in any order) before calling it. Payload
   keys with no registered store are ignored, not an error.
-- Liveness (`isAlive` / `entityCount` / `liveEntities`) is derived from
-  persisted membership on `loadJSON`: a component-less entity carries no
-  serialized data, so it is not alive after a save/load round-trip.
+- Liveness (`isAlive` / `entityCount` / `liveEntities`) is restored from the
+  payload's `entities` state on `loadJSON`, so a component-less entity stays
+  alive across a save/load round-trip.
 - Inside an `EntityDestroyed` lifecycle handler the entity is already gone —
   `isAlive(id)` is `false` and its stores no longer hold it.
 - **Do not mutate a store's structure (add/remove a component or tag, destroy or

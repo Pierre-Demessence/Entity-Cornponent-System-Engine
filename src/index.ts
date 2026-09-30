@@ -1,5 +1,3 @@
-export type { EntityId } from '#entity-id';
-
 export { type AudioHandle, type AudioPlayOptions, type AudioProvider } from '#audio-provider';
 export { ChangeClock } from '#change-clock';
 export { ColumnStore, type ColumnStoreOptions } from '#column-store';
@@ -26,6 +24,17 @@ export {
   type TagDef,
   TagStore,
 } from '#component-store';
+export {
+  ENTITY_GENERATION_MAX,
+  ENTITY_INDEX_BITS,
+  ENTITY_INDEX_MAX,
+  entityGeneration,
+  type EntityId,
+  entityIndex,
+  formatEntityId,
+  isEntityId,
+  packEntityId,
+} from '#entity-id';
 export { EventBus, type EventContext } from '#event-bus';
 export { type InputProvider, type InputRawEvent } from '#input-source';
 export { type LifecycleEvent } from '#lifecycle';
@@ -40,6 +49,7 @@ export { type TickInfo, type TickSource } from '#tick-source';
 export {
   asArray,
   asBoolean,
+  asEntityId,
   asNumber,
   asObject,
   asString,

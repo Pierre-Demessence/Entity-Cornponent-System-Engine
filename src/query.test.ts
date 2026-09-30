@@ -5,23 +5,24 @@ import { describe, expect, it } from 'vitest';
 import { ChangeClock } from '#change-clock';
 import { ComponentStore, simpleComponent, TagStore } from '#component-store';
 import { Query } from '#query';
+import { eid } from '#test-utils';
 import { EcsWorld } from '#world';
 
 function numStore(entries: Array<[number, number]>): ComponentStore<number> {
   const s = new ComponentStore<number>();
-  for (const [id, val] of entries) s.set(id, val);
+  for (const [id, val] of entries) s.set(eid(id), val);
   return s;
 }
 
 function strStore(entries: Array<[number, string]>): ComponentStore<string> {
   const s = new ComponentStore<string>();
-  for (const [id, val] of entries) s.set(id, val);
+  for (const [id, val] of entries) s.set(eid(id), val);
   return s;
 }
 
 function tagStore(ids: number[]): TagStore {
   const t = new TagStore();
-  for (const id of ids) t.add(id);
+  for (const id of ids) t.add(eid(id));
   return t;
 }
 
@@ -231,15 +232,15 @@ describe.each(Object.keys(rigs))('change filters (%s)', (path) => {
 
   it('a new query sees every entity as added and changed on its first pass', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
-    r.hp.set(2, { v: 2 });
+    r.hp.set(eid(1), { v: 1 });
+    r.hp.set(eid(2), { v: 2 });
     expect(ids(r.query().changed(r.hp))).toEqual([1, 2]);
     expect(ids(r.query().added(r.hp))).toEqual([1, 2]);
   });
 
   it('a second pass with no writes sees nothing', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
+    r.hp.set(eid(1), { v: 1 });
     const q = r.query().changed(r.hp);
     expect(ids(q)).toEqual([1]);
     expect(ids(q)).toEqual([]);
@@ -247,47 +248,47 @@ describe.each(Object.keys(rigs))('change filters (%s)', (path) => {
 
   it('reports replace, getMut and markChanged once each', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
-    r.hp.set(2, { v: 2 });
-    r.hp.set(3, { v: 3 });
+    r.hp.set(eid(1), { v: 1 });
+    r.hp.set(eid(2), { v: 2 });
+    r.hp.set(eid(3), { v: 3 });
     const q = r.query().changed(r.hp);
     q.run();
-    r.hp.set(1, { v: 10 });
-    r.hp.getMut(2)!.v = 20;
-    r.hp.markChanged(3);
+    r.hp.set(eid(1), { v: 10 });
+    r.hp.getMut(eid(2))!.v = 20;
+    r.hp.markChanged(eid(3));
     expect(ids(q)).toEqual([1, 2, 3]);
     expect(ids(q)).toEqual([]);
   });
 
   it('get() alone is not a change', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
+    r.hp.set(eid(1), { v: 1 });
     const q = r.query().changed(r.hp);
     q.run();
-    r.hp.get(1);
+    r.hp.get(eid(1));
     expect(ids(q)).toEqual([]);
   });
 
   it('added() ignores a replace but changed() reports it', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
+    r.hp.set(eid(1), { v: 1 });
     const added = r.query().added(r.hp);
     const changed = r.query().changed(r.hp);
     added.run();
     changed.run();
-    r.hp.set(1, { v: 2 });
-    r.hp.set(2, { v: 2 });
+    r.hp.set(eid(1), { v: 2 });
+    r.hp.set(eid(2), { v: 2 });
     expect(ids(added)).toEqual([2]);
     expect(ids(changed)).toEqual([1, 2]);
   });
 
   it('two queries over one store keep independent windows', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
+    r.hp.set(eid(1), { v: 1 });
     const a = r.query().changed(r.hp);
     const b = r.query().changed(r.hp);
     a.run();
-    r.hp.set(1, { v: 2 });
+    r.hp.set(eid(1), { v: 2 });
     expect(ids(a)).toEqual([1]);
     expect(ids(b)).toEqual([1]);
     expect(ids(a)).toEqual([]);
@@ -297,39 +298,39 @@ describe.each(Object.keys(rigs))('change filters (%s)', (path) => {
     const r = rig();
     const q = r.query().changed(r.hp);
     q.run();
-    r.hp.set(1, { v: 1 });
+    r.hp.set(eid(1), { v: 1 });
     r.query().changed(r.hp).run();
-    r.hp.set(2, { v: 2 });
+    r.hp.set(eid(2), { v: 2 });
     expect(ids(q)).toEqual([1, 2]);
   });
 
   it('a write during its own pass is reported on the next pass', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
-    r.hp.set(2, { v: 2 });
+    r.hp.set(eid(1), { v: 1 });
+    r.hp.set(eid(2), { v: 2 });
     const q = r.query().changed(r.hp);
-    for (const [id] of q) r.hp.getMut(id === 1 ? 2 : 1)!.v += 1;
+    for (const [id] of q) r.hp.getMut(eid(id === 1 ? 2 : 1))!.v += 1;
     expect(ids(q)).toEqual([1, 2]);
   });
 
   it('delete is not a change; re-adding is reported as added', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
-    r.hp.set(2, { v: 2 });
+    r.hp.set(eid(1), { v: 1 });
+    r.hp.set(eid(2), { v: 2 });
     const changed = r.query().changed(r.hp);
     const added = r.query().added(r.hp);
     changed.run();
     added.run();
-    r.hp.delete(1);
+    r.hp.delete(eid(1));
     expect(ids(changed)).toEqual([]);
-    r.hp.set(1, { v: 1 });
+    r.hp.set(eid(1), { v: 1 });
     expect(ids(added)).toEqual([1]);
   });
 
   it('first() and count() consume the window', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
-    r.hp.set(2, { v: 2 });
+    r.hp.set(eid(1), { v: 1 });
+    r.hp.set(eid(2), { v: 2 });
     const q = r.query().changed(r.hp);
     expect(q.count()).toBe(2);
     expect(q.first()).toBeUndefined();
@@ -337,41 +338,41 @@ describe.each(Object.keys(rigs))('change filters (%s)', (path) => {
 
   it('the filtered store is implicitly required', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
-    r.tag.add(2);
+    r.hp.set(eid(1), { v: 1 });
+    r.tag.add(eid(2));
     expect(ids(r.bare().changed(r.hp))).toEqual([1]);
   });
 
   it('added() accepts a tag store', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
-    r.hp.set(2, { v: 2 });
+    r.hp.set(eid(1), { v: 1 });
+    r.hp.set(eid(2), { v: 2 });
     const q = r.query().added(r.tag);
     expect(ids(q)).toEqual([]);
-    r.tag.add(2);
+    r.tag.add(eid(2));
     expect(ids(q)).toEqual([2]);
-    r.tag.add(2);
+    r.tag.add(eid(2));
     expect(ids(q)).toEqual([]);
   });
 
   it('filters AND together', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
-    r.hp.set(2, { v: 2 });
-    r.tag.add(1);
-    r.tag.add(2);
+    r.hp.set(eid(1), { v: 1 });
+    r.hp.set(eid(2), { v: 2 });
+    r.tag.add(eid(1));
+    r.tag.add(eid(2));
     const q = r.query().changed(r.hp).added(r.tag);
     q.run();
-    r.hp.set(1, { v: 5 });
-    r.tag.delete(2);
-    r.tag.add(2);
-    r.hp.set(2, { v: 6 });
+    r.hp.set(eid(1), { v: 5 });
+    r.tag.delete(eid(2));
+    r.tag.add(eid(2));
+    r.hp.set(eid(2), { v: 6 });
     expect(ids(q)).toEqual([2]);
   });
 
   it('a query without change filters does not advance the clock', () => {
     const r = rig();
-    r.hp.set(1, { v: 1 });
+    r.hp.set(eid(1), { v: 1 });
     const before = r.clock.tick;
     r.query().run();
     expect(r.clock.tick).toBe(before);
@@ -380,8 +381,8 @@ describe.each(Object.keys(rigs))('change filters (%s)', (path) => {
   it('throws when filtered stores hold different clocks', () => {
     const r = rig();
     const foreign = new ComponentStore<Hp>();
-    foreign.set(1, { v: 1 });
-    r.hp.set(1, { v: 1 });
+    foreign.set(eid(1), { v: 1 });
+    r.hp.set(eid(1), { v: 1 });
     expect(() => r.query().changed(r.hp).changed(foreign).run()).toThrow(/clock/);
   });
 });
@@ -390,10 +391,10 @@ describe('change filters on a columnar store', () => {
   it('reports a view field write', () => {
     const w = new EcsWorld();
     const pos = w.registerComponent(PosDef);
-    pos.set(1, { x: 0, y: 0 });
+    pos.set(eid(1), { x: 0, y: 0 });
     const q = w.query(PosDef).changed(pos);
     q.run();
-    pos.get(1)!.x = 4;
+    pos.get(eid(1))!.x = 4;
     expect(ids(q)).toEqual([1]);
   });
 });

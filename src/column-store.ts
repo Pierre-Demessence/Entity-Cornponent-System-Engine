@@ -2,12 +2,13 @@ import type { ColumnField, ComponentDef, ComponentStoreLike, NumericColumnKind, 
 import type { EntityId } from '#entity-id';
 
 import { ChangeClock } from '#change-clock';
+import { entityIndex, formatEntityId } from '#entity-id';
 
-// Paged sparse set for id -> slot. Pages of Int32Array are allocated on demand
-// (only where live ids fall), so lookup is a GC-leaf typed-array read instead of
-// a millions-entry Map, and memory stays bounded to the id ranges actually used.
+// Paged sparse set for entity index -> slot. Pages of Int32Array are allocated
+// on demand (only where live indices fall), so lookup is a GC-leaf typed-array
+// read instead of a millions-entry Map. Recycled indices keep the pages dense.
 const PAGE_BITS = 12;
-const PAGE_SIZE = 1 << PAGE_BITS; // 4096 ids per page
+const PAGE_SIZE = 1 << PAGE_BITS; // 4096 indices per page
 const PAGE_MASK = PAGE_SIZE - 1;
 const ABSENT = -1;
 
@@ -105,17 +106,21 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     // Capture the backing references (not `this`) so view accessors stay
     // correct across grow() — `columns[f]` is reassigned in place on the same
     // Record, and `stamps` / `pages` / `clock` references are stable.
-    const { clock, columns, pages, stamps } = this;
+    const { clock, columns, pages, slot2id, stamps } = this;
+    const slotOfView = (id: EntityId): number => {
+      const index = entityIndex(id);
+      const page = pages[index >>> PAGE_BITS];
+      const slot = page === undefined ? ABSENT : page[index & PAGE_MASK];
+      return slot !== ABSENT && slot2id[slot] === id ? slot : ABSENT;
+    };
     for (const f of this.fields) {
       this.viewDescriptors[f] = {
         enumerable: true,
         get(this: { _id: EntityId }): number {
-          const page = pages[this._id >>> PAGE_BITS];
-          return columns[f][page === undefined ? ABSENT : page[this._id & PAGE_MASK]];
+          return columns[f][slotOfView(this._id)];
         },
         set(this: { _id: EntityId }, v: number): void {
-          const page = pages[this._id >>> PAGE_BITS];
-          const slot = page === undefined ? ABSENT : page[this._id & PAGE_MASK];
+          const slot = slotOfView(this._id);
           if (slot !== ABSENT) {
             columns[f][slot] = v;
             stamps.changed[slot] = clock.tick;
@@ -167,9 +172,10 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
       this.setSparse(lastId, slot);
     }
     this.setSparse(id, ABSENT);
-    const views = this.viewPages[id >>> PAGE_BITS];
+    const index = entityIndex(id);
+    const views = this.viewPages[index >>> PAGE_BITS];
     if (views !== undefined)
-      views[id & PAGE_MASK] = undefined as T;
+      views[index & PAGE_MASK] = undefined as T;
     this.slot2id.length = lastSlot;
     this.count = lastSlot;
 
@@ -224,6 +230,14 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   }
 
   has(id: EntityId): boolean { return this.slotFor(id) !== ABSENT; }
+  /** The stored entity sharing `id`'s index, whatever its generation, or `undefined`. */
+  private holderOf(id: EntityId): EntityId | undefined {
+    const index = entityIndex(id);
+    const page = this.pages[index >>> PAGE_BITS];
+    const slot = page === undefined ? ABSENT : page[index & PAGE_MASK];
+    return slot === ABSENT ? undefined : this.slot2id[slot];
+  }
+
   * keys(): Generator<EntityId> {
     for (let slot = 0; slot < this.count; slot++) yield this.slot2id[slot];
   }
@@ -255,6 +269,9 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     const existing = this.slotFor(id);
     let slot: number;
     if (existing === ABSENT) {
+      const holder = this.holderOf(id);
+      if (holder !== undefined)
+        throw new Error(`ColumnStore.set: entity ${formatEntityId(id)} shares index ${entityIndex(id)} with stored entity ${formatEntityId(holder)}; a stale id cannot be written.`);
       if (this.count === this.capacity)
         this.grow();
       slot = this.count++;
@@ -274,23 +291,30 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     return this;
   }
 
-  /** Sparse-set write: allocate the id's page on demand, then record its slot. */
+  /** Sparse-set write: allocate the id's index page on demand, then record its slot. */
   private setSparse(id: EntityId, slot: number): void {
-    const p = id >>> PAGE_BITS;
+    const index = entityIndex(id);
+    const p = index >>> PAGE_BITS;
     let page = this.pages[p];
     if (page === undefined) {
       page = new Int32Array(PAGE_SIZE).fill(ABSENT);
       this.pages[p] = page;
     }
-    page[id & PAGE_MASK] = slot;
+    page[index & PAGE_MASK] = slot;
   }
 
   get size(): number { return this.count; }
 
-  /** Sparse-set lookup: dense slot for an entity id, or {@link ABSENT}. */
+  /**
+   * Sparse-set lookup: dense slot for an entity id, or {@link ABSENT}. The
+   * sparse set is keyed by index, so the slot's full id must match too — a
+   * stale id whose index now holds a newer generation misses.
+   */
   private slotFor(id: EntityId): number {
-    const page = this.pages[id >>> PAGE_BITS];
-    return page === undefined ? ABSENT : page[id & PAGE_MASK];
+    const index = entityIndex(id);
+    const page = this.pages[index >>> PAGE_BITS];
+    const slot = page === undefined ? ABSENT : page[index & PAGE_MASK];
+    return slot !== ABSENT && this.slot2id[slot] === id ? slot : ABSENT;
   }
 
   /** Dense slot index for an entity, or `undefined`. Pair with {@link column} for fast loops. */
@@ -346,16 +370,17 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
 
   /** The cached view for a live id, built on first access. */
   private viewFor(id: EntityId): T {
-    const p = id >>> PAGE_BITS;
+    const index = entityIndex(id);
+    const p = index >>> PAGE_BITS;
     let views = this.viewPages[p];
     if (views === undefined) {
       views = [];
       this.viewPages[p] = views;
     }
-    let view = views[id & PAGE_MASK];
-    if (view === undefined) {
+    let view = views[index & PAGE_MASK];
+    if (view === undefined || (view as { _id: EntityId })._id !== id) {
       view = this.makeView(id);
-      views[id & PAGE_MASK] = view;
+      views[index & PAGE_MASK] = view;
     }
     return view;
   }

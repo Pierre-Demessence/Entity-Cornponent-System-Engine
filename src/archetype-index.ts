@@ -22,6 +22,9 @@ export class ArchetypeIndex {
   private readonly matchCache = new Map<string, { buckets: Set<EntityId>[]; version: number }>();
   private nextBit = 1n;
   private readonly signatures = new Map<EntityId, bigint>();
+  /** Registered stores by bit position: `stores[i]` owns bit `storeBits[i]` (`1n << i`). */
+  private readonly storeBits: bigint[] = [];
+  private readonly stores: object[] = [];
   private structuralVersion = 0;
 
   /** Set `bit` on `id`'s signature. Idempotent, so a value replace never moves buckets. */
@@ -61,6 +64,21 @@ export class ArchetypeIndex {
   }
 
   /**
+   * Call `fn` with each store `id` currently holds, in registration order. The
+   * signature is read up front, so `fn` may remove rows (and bits) as it goes.
+   */
+  forEachStoreOf(id: EntityId, fn: (store: object) => void): void {
+    let remaining = this.signatures.get(id) ?? 0n;
+    for (let i = 0; remaining !== 0n; i++) {
+      const bit = this.storeBits[i]!;
+      if ((remaining & bit) !== 0n) {
+        remaining &= ~bit;
+        fn(this.stores[i]!);
+      }
+    }
+  }
+
+  /**
    * Yield every entity whose signature is a superset of `required`, disjoint
    * from `excluded`, and intersects **every** mask in `anyOf` (each mask being
    * one OR-group — the entity must hold at least one member of each group).
@@ -97,6 +115,8 @@ export class ArchetypeIndex {
       bit = this.nextBit;
       this.nextBit <<= 1n;
       this.bits.set(store, bit);
+      this.stores.push(store);
+      this.storeBits.push(bit);
     }
     return bit;
   }

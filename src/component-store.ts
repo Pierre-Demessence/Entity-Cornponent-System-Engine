@@ -1,7 +1,7 @@
 import type { EntityId } from '#entity-id';
 
 import { ChangeClock } from '#change-clock';
-import { asArray, asBoolean, asNumber, asObject, asString } from '#validation';
+import { asArray, asBoolean, asEntityId, asNumber, asObject, asString } from '#validation';
 
 /** Migrates a serialized value from its stored version to the next. */
 export type ComponentMigration = (raw: unknown, label: string) => unknown;
@@ -215,7 +215,7 @@ export class ComponentStore<T> implements ComponentStoreLike<T> {
       if (tuple.length !== 2) {
         throw new Error(`${label}.entries[${index}] must contain an id and value.`);
       }
-      const id = asNumber(tuple[0], `${label}.entries[${index}].id`);
+      const id = asEntityId(tuple[0], `${label}.entries[${index}].id`);
       let value = tuple[1];
       for (let v = savedVersion; v < targetVersion; v++) {
         const step = def.migrations?.[v];
@@ -365,7 +365,7 @@ export class TagStore implements Iterable<EntityId> {
     const store = new TagStore();
     const entries = asArray(raw, label);
     entries.forEach((entry, index) => {
-      store.add(asNumber(entry, `${label}[${index}]`));
+      store.add(asEntityId(entry, `${label}[${index}]`));
     });
     return store;
   }
