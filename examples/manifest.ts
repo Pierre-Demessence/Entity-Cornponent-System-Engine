@@ -325,6 +325,15 @@ export const EXAMPLES = [
     ],
   },
   {
+    id: 'minecraft',
+    challenge: 26,
+    controls: 'Click to capture · WASD move · Shift sprint · Space jump · LMB break · RMB place · 1–5 block · R new world',
+    group: 'challenge',
+    modules: ['camera-3d', 'collision-3d', 'cooldown', 'input', 'kinematics-3d', 'noise', 'render-scene3d', 'rng', 'tick', 'transform-3d', 'math'],
+    summary: 'Seeded voxel sandbox — noise-carved terrain, caves and trees in chunk entities remeshed on edit, frustum-culled chunks, swept voxel collision, and ray-picked block breaking and placing.',
+    title: 'Minecraft',
+  },
+  {
     id: 'portal',
     challenge: 27,
     controls: 'Click to capture · WASD move · Space jump · E grab/drop · LMB/RMB portals · R restart',
