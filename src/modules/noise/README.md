@@ -102,7 +102,7 @@ family.
   noise indistinguishable in shape from `perlin1D`.
 
 The first two are tracked in the
-[module backlog](../../../docs/roadmap/ecs-module-backlog.md); 1D simplex is
+[backlog](../../../docs/backlog.md); 1D simplex is
 excluded permanently rather than deferred.
 
 ## Usage

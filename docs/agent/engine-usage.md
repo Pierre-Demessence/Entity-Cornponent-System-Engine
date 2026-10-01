@@ -64,7 +64,7 @@ only by another module.
 
 Modules ranked by how many of their value exports no example references —
 the shortlist for the next game in
-[twenty-games-challenge.md](../twenty-games-challenge.md).
+[roadmap.md](../roadmap.md).
 
 - `@pierre/ecs/modules/math` — 26 of 53 value exports unreferenced by any example
 - `@pierre/ecs/modules/easing` — 23 of 31 value exports unreferenced by any example

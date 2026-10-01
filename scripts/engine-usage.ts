@@ -694,7 +694,7 @@ export function renderUsageMarkdown(report: UsageReport): string {
     '',
     'Modules ranked by how many of their value exports no example references —',
     'the shortlist for the next game in',
-    '[twenty-games-challenge.md](../twenty-games-challenge.md).',
+    '[roadmap.md](../roadmap.md).',
     '',
   );
 

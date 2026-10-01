@@ -41,8 +41,8 @@ function defaultSize(): number {
  * via {@link handleJobs}.
  *
  * This is task parallelism (offload a whole job), distinct from data
- * parallelism over shared memory — see
- * docs/plans/ecs-parallelism-and-soa-storage.md (step A).
+ * parallelism over shared memory — see docs/decisions.md, "Task parallelism
+ * and data parallelism are separate tools".
  */
 export class WorkerPool<TIn, TOut> {
   private readonly busy = new Map<WorkerLike, { id: number; job: PoolJob }>();

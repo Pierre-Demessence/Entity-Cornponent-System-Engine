@@ -1,7 +1,7 @@
 # Starfighter — Postmortem
 
 One-page shape-validation writeup. Engine gaps are recorded as symptoms in
-the [engine gap ledger](../../docs/roadmap/engine-gap-ledger.md); this doc is
+the backlog's [untriaged engine gaps](../../docs/backlog.md#untriaged-engine-gaps); this doc is
 the narrative of what building the example taught us. It does **not** decide
 which gaps become modules — that is the triager's job.
 

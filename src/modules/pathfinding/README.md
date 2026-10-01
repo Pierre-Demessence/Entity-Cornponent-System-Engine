@@ -74,5 +74,5 @@ cost: (_fx, _fy, tx, ty) => tileAt(tx, ty).isSwamp ? 10 : 2,
 
 Jump Point Search, flow fields, path smoothing, bidirectional search,
 D\* Lite (incremental re-plan). All tracked in
-[docs/roadmap/ecs-module-backlog.md](../../../../../docs/roadmap/ecs-module-backlog.md)
+[docs/backlog.md](../../../docs/backlog.md)
 as V2 triggers.

@@ -69,7 +69,7 @@ Plain velocity integration only, mirroring the 2D module: no acceleration or
 forces (a rigid-body concern), no rotation integration, no gravity/collision.
 Free-flight attitude control (rate-steered orientation + throttle) and
 non-box (spherical) world bounds are deferred — see the `motion-3d` V2 entry in
-[the module backlog](../../../docs/roadmap/ecs-module-backlog.md); they are
+[the backlog](../../../docs/backlog.md); they are
 game-specific shapes, not general motion primitives.
 
 A game that uses `modules/kinematics-3d` should not also run this integrator

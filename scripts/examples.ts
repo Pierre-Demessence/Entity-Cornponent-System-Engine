@@ -60,7 +60,7 @@ function renderExamplePage(entry: ExampleEntry, order: number): ExamplePage {
     parts.push(`:::caution[Cross-origin isolation]\n${entry.isolation}\n:::`);
   parts.push(entry.summary);
   if (entry.challenge !== undefined)
-    parts.push(`Built for rung ${entry.challenge} of the [20 Games Challenge](${REPO_TREE}/docs/twenty-games-challenge.md).`);
+    parts.push(`Built for rung ${entry.challenge} of the [20 Games Challenge](https://20_games_challenge.gitlab.io/games/).`);
   parts.push(`**Controls:** ${entry.controls}`);
   parts.push(`**Source:** [\`examples/${entry.id}\`](${REPO_TREE}/examples/${entry.id})`);
   parts.push(`**Exercises:** ${entry.modules.map(moduleLink).join(', ')}.`);

@@ -55,8 +55,8 @@ export interface ColumnStoreOptions {
 
 /**
  * Structure-of-Arrays store for all-numeric components — the columnar half of
- * the hybrid storage model (see docs/plans/ecs-parallelism-and-soa-storage.md,
- * target "Middle"). Each declared field is a contiguous typed-array "column"
+ * the hybrid storage model (see docs/decisions.md, "Hybrid component
+ * storage"). Each declared field is a contiguous typed-array "column"
  * (element type per {@link ColumnField.kind}) indexed by a dense slot; a paged
  * sparse set maps ids to slots. Deletion is swap-remove, so live slots stay
  * `[0, size)` and dense.

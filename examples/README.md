@@ -9,13 +9,12 @@ bug and the example is on hold until the bug is fixed.
 
 Each subfolder of this directory is one runnable example. Open the folder
 to read its code; what each one proves (the engine assumption it breaks)
-is tracked by rung in the
-[20 Games Challenge ladder](../docs/twenty-games-challenge.md), which
-follows the [20 Games Challenge](https://20_games_challenge.gitlab.io/)
-game list in order.
+is in its `examples/manifest.ts` entry; the games still to build are in the
+[roadmap](../docs/roadmap.md), which follows the
+[20 Games Challenge](https://20_games_challenge.gitlab.io/) game list in order.
 
 Engine gaps surfaced while building these examples are recorded centrally
-in the [engine gap ledger](../docs/roadmap/engine-gap-ledger.md).
+in the backlog's [untriaged engine gaps](../docs/backlog.md#untriaged-engine-gaps).
 
 ## The catalogue and the mount contract
 
@@ -67,7 +66,7 @@ non-negotiable:
 
 5. **Log engine gaps.** After each example, record anything `@pierre/ecs`
    lacked (or an existing surface that had to be extended) in the
-   [engine gap ledger](../docs/roadmap/engine-gap-ledger.md) — symptom
+   backlog's [untriaged engine gaps](../docs/backlog.md#untriaged-engine-gaps) — symptom
    only. A separate triage pass decides which gaps become modules.
 
 ## Layout (once examples start landing)
@@ -119,6 +118,7 @@ npm run build -w @pierre/ecs-example-<name>
 
 ## Related documents
 
-- [`../docs/README.md`](../docs/README.md) — engine primitives index.
+- [`../docs/roadmap.md`](../docs/roadmap.md) — the games built next.
+- [`../docs/backlog.md`](../docs/backlog.md) — open engine work and untriaged gaps.
 - [`../docs/extending-the-engine.md`](../docs/extending-the-engine.md) —
   Rule-of-Three promotion policy and failure modes to avoid.

@@ -125,7 +125,7 @@ Shipped: `HashGrid2D` and `HashGrid3D` (above), and `ContinuousHashGrid2D` (a
 continuous-space 2D grid taking a `cellSize`).
 
 Tracked as a deferred gap (`modules/spatial` — `QuadTree` / `BVH` backends)
-in the [module backlog](../../../docs/roadmap/ecs-module-backlog.md):
+in the [backlog](../../../docs/backlog.md):
 `QuadTree`, and `BVH` / `SweepAndPrune` for AABB sets — for consumers a uniform
 grid cannot serve (very uneven entity density, or static AABB sets).
 

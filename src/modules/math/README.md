@@ -169,8 +169,7 @@ seek/steer delta, or a reflected ball velocity.
 Deliberate exclusions.
 
 - **3D ray/AABB tests** — `rayAabb` and the centre-based AABB overlap are
-  `modules/collision-3d`'s primitives, per the 3D group table in the
-  [module backlog](../../../docs/roadmap/ecs-module-backlog.md). This module
+  `modules/collision-3d`'s primitives. This module
   stays a value-primitive module.
 - **`forwardVec(yaw, pitch)` / a yaw-pitch rig.** It bakes in a convention —
   YXZ Euler order, `-Z` forward — and belongs with the camera rigs in

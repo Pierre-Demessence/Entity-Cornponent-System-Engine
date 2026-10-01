@@ -150,8 +150,8 @@ capability proven enough to promote?*
 The capability is standard / well-established — the engine *ought* to have
 it. Add the new primitive, or extend the existing module, under the
 sliding-scale rule (unanimous canon needs no consumer; solid canon plus this
-one consumer is enough). Record it in the
-[gap ledger](roadmap/engine-gap-ledger.md) as resolved. (Standard
+one consumer is enough). Record the promotion in the commit and, when a
+backlog entry or gap row covered it, delete that entry. (Standard
 `.tsx`/CSV/flip-flag TMX → extend `modules/tmx`; a bespoke dialect → keep
 it local, see Option 2.)
 
@@ -161,13 +161,54 @@ The capability is non-standard, opinionated, or over-fitted to this one
 example — a bespoke dialogue tree, a game-specific tween, a one-off map
 format. **Do not touch the engine — not even an existing module.**
 Implement it locally in the example and append the raw gap to the
-[gap ledger](roadmap/engine-gap-ledger.md) — symptom only, no module
-decision. A separate triage pass groups the accumulated gaps and decides
-which ones become engine modules (and where), applying the sliding-scale
-rule above. Keeping the *where-does-it-go* decision out of the
+backlog's [untriaged engine gaps](backlog.md#untriaged-engine-gaps) —
+symptom only, no module decision. A separate triage pass groups the
+accumulated gaps and decides which ones become engine modules (and where),
+applying the sliding-scale rule above. Keeping the *where-does-it-go* decision out of the
 example-builder's hands is deliberate: it prevents one game's shape from
 biasing the abstraction, and it stops one blocked consumer from baking a
 bespoke format into the engine.
+
+### Recording a gap (the example builder)
+
+- If a row for the same symptom exists, add your example to its
+  **Consumers** — you are saying "I hit the same wall", not making a module
+  call. Otherwise add a row.
+- Every claim carries a source pointer: the engine `file:line` that shows
+  the capability is absent or the wrong shape, **and**, per named consumer,
+  that example's `file:line`. An "X could adopt Y" claim joins two facts —
+  the engine's shape and each consumer's actual usage — so a pointer on one
+  side proves nothing about the other. "An example hand-rolls X" is not
+  evidence that the engine lacks X until the engine source is opened.
+- Distinguish **absent** (the engine lacks it) from **present but unadopted**
+  (an adoption follow-up, never a new module) and **present but the wrong
+  shape or module-private** (a build).
+
+### Triaging gaps (a separate pass)
+
+Read the open rows, group related ones, and apply the sliding-scale rule. For
+each gap or group: promote it into a module entry in the backlog, record a
+refusal in [decisions.md](decisions.md), or ship the fix — then **delete the
+row**. A row lives in the inbox only while it is undecided.
+
+### Backlog entries: gates and versions
+
+Every module entry in [backlog.md](backlog.md) carries a status (the table in
+[The Core Rule](#the-core-rule)) and a **gate** — what stands between it and a
+build:
+
+- **Shape gate** — the API is not pinned; a named trigger would prove it.
+  Only Deferred and Speculative entries have one.
+- **Scheduling gate** — the shape is proven; what is missing is a build slot,
+  a dependency module, or a consumer to exercise it. Every Ready entry has
+  one, and may sit on it indefinitely at no cost.
+
+When a module ships with part of its imagined scope deliberately left out,
+the shipped slice is **V1** and a **V2** entry carries the rest (then V3, …).
+A V2 whose only reason to exist is that V1 was built from one consumer's call
+sites is unfinished work — the *slice-V1* failure mode below — and is
+**Ready**. A single missing operation is not a version: it is a
+`<module> — <operation>` entry under "Existing-module gaps".
 
 ## Layering Principles
 
@@ -256,8 +297,8 @@ a primitive. Red flags:
 - Consumer using engine types in ways the engine didn't intend.
 
 **Triage**: leave the hack in the consumer as tagged tech debt
-(`// HACK: engine gap — see gap ledger`) and log it in the
-[gap ledger](roadmap/engine-gap-ledger.md). Do not paper over it in the
+(`// HACK: engine gap — see backlog`) and log it in the backlog's
+[untriaged engine gaps](backlog.md#untriaged-engine-gaps). Do not paper over it in the
 engine by adding one-off support. Promote when the shape is proven — a
 second consumer hitting the same wall, *or* canon that already pins the
 shape (see [The Core Rule](#the-core-rule)). If an existing module is what
@@ -370,7 +411,7 @@ When you identify a primitive worth promoting:
    - Not sure? Default to **modules** over core. Easier to promote
      module → core later than to split core → modules.
 4. **Write a tight plan** in `docs/plans/<feature>.md` if the extraction
-   is non-trivial. Name the evidence that justifies it — the consumers
+   is a large task. Name the evidence that justifies it — the consumers
    and/or the canon reference.
 5. **Ship the primitive + migrate its consumer(s) in the same commit**
    when feasible. Keeps the "why this shape" visible in one diff.
@@ -428,7 +469,7 @@ Two other legitimate drivers:
   M1 spatial split, M2 tick infrastructure, and the A1–A10 improvements.
   No prototype needed; the consumer surfaced real quality issues.
 - **Public-release readiness.** Items like dev-inspector, plugin
-  architecture, keybinding registry live on the core-engine roadmap
+  architecture, keybinding registry live in the backlog
   because the engine needs them to be usable by others, even if current
   consumers work fine without them.
 
@@ -468,4 +509,5 @@ is imported as `@pierre/ecs/modules/lifetime`.
 
 ## Related
 
-- [docs/README.md](README.md) — engine primitives index.
+- [backlog.md](backlog.md) — open work, including the untriaged engine gaps.
+- [decisions.md](decisions.md) — what the engine declines to build, and why.

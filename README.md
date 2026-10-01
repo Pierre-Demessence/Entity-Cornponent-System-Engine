@@ -119,7 +119,7 @@ for (const [entity, pos] of world.query(PosDef)) {
 }
 ```
 
-Longer walkthrough and full API in [`docs/`](./docs/).
+Longer walkthrough and full API in the [Manual](https://pierre-demessence.github.io/Entity-Cornponent-System-Engine/manual/).
 
 ## Documentation
 

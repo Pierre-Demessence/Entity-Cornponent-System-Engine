@@ -81,7 +81,7 @@ box, so `rayVsObb3` reports `axis` as one of the **box's own axes**, not a world
 axis. `obb3VsObb3` is a 15-axis separating-axis test, with the degenerate
 parallel cross products skipped. There is no `ShapeObb3Def` — a shape def has to
 pair with an orientation component, and the engine has none yet (that is
-[`modules/transform-3d`](../../../docs/roadmap/ecs-module-backlog.md)'s job).
+[`modules/transform-3d`](../transform-3d/README.md)'s job).
 
 ### Swept boxes
 

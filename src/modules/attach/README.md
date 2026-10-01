@@ -3,7 +3,7 @@
 One-way attachment: an entity follows another entity's position, rotation,
 and velocity each tick. This is a lightweight slice of entity parenting; a
 full transform hierarchy with N-level propagation is a deliberate non-goal
-(`docs/roadmap/non-goals.md`).
+(`docs/decisions.md`).
 
 The relation is read in one direction only: the child reads the parent. There
 is no child list, no reparenting API, and moving a child never moves its

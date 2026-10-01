@@ -182,7 +182,7 @@ anchor for rect/circle. Extrinsic overlays: `RotationDef`,
 `ScaleDef`, `OpacityDef`, `RenderOrderDef`, per-entity
 `blendMode`.
 
-Not in the module yet (see `docs/roadmap/ecs-module-backlog.md` for status):
+Not in the module yet (see `docs/backlog.md` for status):
 
 - Tilemap kind — a batched tilemap renderable; planned.
 - Canvas filters (`ctx.filter`) — deferred; request-driven.

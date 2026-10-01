@@ -7,27 +7,12 @@ import { describe, expect, it } from 'vitest';
 const root = resolve(fileURLToPath(import.meta.url), '../..');
 const docsDir = join(root, 'docs');
 
-/**
- * `docs/archived/**` is deliberately exempt from the link check. Those files
- * are frozen records: they reference files by the names those files had while
- * the document was alive, and rewriting them defeats the archive. This is the
- * same call recorded in `docs/plans/done/roadmap-consolidation.md`, which keeps
- * the exemption intentional rather than accidental.
- */
-function isArchived(path: string): boolean {
-  return path === join(docsDir, 'archived')
-    || path.startsWith(`${join(docsDir, 'archived')}\\`)
-    || path.startsWith(`${join(docsDir, 'archived')}/`);
-}
-
 function walkMarkdown(dir: string): string[] {
   const found: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (!isArchived(full)) {
-        found.push(...walkMarkdown(full));
-      }
+      found.push(...walkMarkdown(full));
     }
     else if (entry.name.endsWith('.md')) {
       found.push(full);
@@ -56,41 +41,22 @@ function relativeMarkdownLinks(text: string): string[] {
   return found;
 }
 
-interface StatusDoc {
-  readonly file: string;
-  /** Every other h3/h4 heading must end with one of these statuses. */
-  readonly statuses: readonly string[];
-  /** Headings that are document structure, not entries. */
-  readonly structural: readonly string[];
-}
-
-const statusDocs: readonly StatusDoc[] = [
-  {
-    file: join(docsDir, 'roadmap', 'ecs-module-backlog.md'),
-    statuses: ['ready', 'deferred', 'speculative'],
-    structural: [
-      'Status: shape, not demand',
-      'Gate: shape or scheduling',
-      'Entry shape',
-      'Version suffixes (V1 / V2 / …)',
-      'Engine extension rule-book',
-    ],
-  },
-  {
-    file: join(docsDir, 'roadmap', 'non-goals.md'),
-    statuses: ['declined', 'superseded'],
-    structural: [],
-  },
-];
-
-function headings(text: string): string[] {
-  return text
-    .split('\n')
-    .filter(line => /^#{3,4} /.test(line))
-    .map(line => line.replace(/^#{3,4} /, '').trim());
-}
+const backlogFile = join(docsDir, 'backlog.md');
+const roadmapFile = join(docsDir, 'roadmap.md');
 
 const read = (file: string): string => readFileSync(file, 'utf8');
+const lines = (text: string): string[] => text.split(/\r?\n/);
+
+/** The lines of one `## ` section of a Markdown document, heading excluded. */
+function sectionLines(text: string, heading: string): string[] {
+  const all = lines(text);
+  const start = all.indexOf(`## ${heading}`);
+  if (start === -1) {
+    throw new Error(`no "## ${heading}" section`);
+  }
+  const end = all.findIndex((line, i) => i > start && line.startsWith('## '));
+  return all.slice(start + 1, end === -1 ? undefined : end);
+}
 
 describe('docs links', () => {
   it('every relative .md link in a live doc resolves', () => {
@@ -107,38 +73,30 @@ describe('docs links', () => {
 });
 
 describe('status docs describe open work only', () => {
-  it('the module backlog records no shipped entry', () => {
-    const shipped = headings(read(statusDocs[0].file)).filter(heading =>
-      /shipped|✅/.test(heading),
+  it('no status doc uses a checkmark to record shipped work', () => {
+    const offending = [backlogFile, roadmapFile].flatMap(file =>
+      lines(read(file))
+        .filter(line => line.includes('✅'))
+        .map(line => `${relative(root, file)}: "${line.trim()}"`),
     );
-    expect(shipped).toEqual([]);
-  });
-
-  it('no roadmap doc uses a checkmark to record shipped work', () => {
-    const roadmapDir = join(docsDir, 'roadmap');
-    const offending = readdirSync(roadmapDir)
-      .filter(name => name.endsWith('.md'))
-      .flatMap(name =>
-        headings(read(join(roadmapDir, name)))
-          .filter(heading => heading.includes('✅'))
-          .map(heading => `docs/roadmap/${name}: "${heading}"`),
-      );
     expect(offending).toEqual([]);
   });
 
-  it('every status-doc entry carries a status from that document vocabulary', () => {
-    const offending: string[] = [];
-    for (const doc of statusDocs) {
-      const allowed = new RegExp(`—\\s*(?:${doc.statuses.join('|')})\\s*$`);
-      for (const heading of headings(read(doc.file))) {
-        if (doc.structural.includes(heading)) {
-          continue;
-        }
-        if (!allowed.test(heading)) {
-          offending.push(`${relative(root, doc.file)}: "${heading}"`);
-        }
+  it('every module backlog entry carries a status', () => {
+    // An entry is a top-level bullet plus its wrapped lines; nested bullets are notes.
+    const entries: string[] = [];
+    for (const line of sectionLines(read(backlogFile), 'Modules')) {
+      if (line.startsWith('- ')) {
+        entries.push(line);
+      }
+      else if (/^ {2}[^\s-]/.test(line) && entries.length > 0) {
+        entries[entries.length - 1] += ` ${line.trim()}`;
       }
     }
+    expect(entries.length).toBeGreaterThan(0);
+    const offending = entries.filter(entry =>
+      !/ — \*\*(?:Ready|Deferred|Speculative)\*\*/.test(entry),
+    );
     expect(offending).toEqual([]);
   });
 });
