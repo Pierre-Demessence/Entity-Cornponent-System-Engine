@@ -44,8 +44,7 @@ once a profile or consumer asks for them; 3.5 is the storage endgame.
 - **3.10 Spawn-path allocation** — `spawn` `structuredClone`s every template
   component and object-store components are fresh objects per entity.
   Candidates: skip the clone for all-numeric components, reuse value objects on
-  respawn. Measure first; trigger: a profile showing spawn-path GC (see the
-  game-of-life churn gap below).
+  respawn. Measure first; trigger: a profile showing spawn-path GC.
 
 ### Tier 4 — Extensibility & developer experience
 
@@ -269,6 +268,10 @@ once a profile or consumer asks for them; 3.5 is the storage endgame.
   and conflict detection are settled canon (Godot `InputMap`, Unity Input
   System); the modifier-chord model is not, and no example remaps. Gate: a
   remapping consumer plus a chord model.
+- **`modules/render-canvas2d` — stroke width in the cull bound** — **Ready**:
+  a stroked `rect` / `circle` whose line straddles the view edge is culled by up
+  to half its `lineWidth` (times scale), because `isCulled` bounds the fill
+  geometry only. Pad the bound by that amount.
 - **`modules/spatial` — `QuadTree` / `BVH` backends** — **Deferred**: solid
   canon, but `HashGrid2D` serves every consumer. Gate: one consumer a uniform
   grid cannot serve. An `Octree` waits for a 3D consumer.
@@ -340,7 +343,6 @@ deletes it. Rules: [extending-the-engine.md](extending-the-engine.md#how-gaps-re
 | One-shot audio still requires registering `AudioSourceDef`, or the first tick throws. | pacman | `audio/audio-system.ts` reads the store unconditionally. pacman `game.ts` (`makeWorld`) | Kept local. |
 | After `clearAll()`, ids restart at 0, so a stale id names a new entity and `isAlive` answers `true`. | pacman | By design: `world.ts` `clearAll()` resets the allocator, documented in `src/world.md`. pacman `game.ts` (`startLevel`) | Kept local. |
 | A `Timer` that starts already finished is built by ticking a fresh one for its full duration. | frogger, pacman | ABSENT: `timer/timer.ts` `makeTimer` starts full. frogger `game.ts:332`, pacman `game.ts` (`spentTimer`) | Kept local. |
-| Structural churn is expensive: each spawn moves the entity one archetype bucket per component and clones every template component. | game-of-life | `archetype-index.ts:73` `moveEntity`; `world.ts:96` `_populateEntity`. game-of-life `systems.ts` (`rulesSystem`) | Kept local (cells become ghosts in place). Bevy and Flecs batch a spawn into one move. See core 3.10. |
 | `enableSpatial` indexes every `PositionDef` holder, so HUD text and ghosts share the cells' index. | game-of-life | `world.ts:185`; no filter option. game-of-life `defs.ts:101` (`cellAt`) | Kept local. |
 | Registering a list of component defs in a loop needs a cast. | roguelike, game-of-life | `world.ts:465` `registerComponent<T>`. roguelike `defs.ts:85`, game-of-life `defs.ts:43` | Kept local. |
 | Sweeping and picking against a dense voxel grid loops over cells by hand. | minecraft | ABSENT: `collision-3d/narrowphase3.ts` has box, ray and plane tests, no grid traversal. minecraft `voxels.ts` (`sweepBox`, `raycastVoxels`) | |

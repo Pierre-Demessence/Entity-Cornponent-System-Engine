@@ -196,6 +196,20 @@ describe('archetypeIndex', () => {
       expect(ids(index, a)).toEqual([]);
     });
 
+    it('removing an entity whose bits were already removed leaves nothing pending', () => {
+      const index = new ArchetypeIndex();
+      const a = index.registerStore({});
+      index.addBit(eid(1), a);
+      void index.version;
+      index.removeBit(eid(1), a);
+      index.removeEntity(eid(1));
+
+      // `placed` is private; peeking is the only way to observe the leak (no read has committed it).
+      const { placed } = index as unknown as { placed: Map<number, bigint> };
+      expect(placed.size).toBe(0);
+      expect(ids(index, a)).toEqual([]);
+    });
+
     it('selectBuckets reflects changes made after an earlier selection cached', () => {
       const index = new ArchetypeIndex();
       const a = index.registerStore({});

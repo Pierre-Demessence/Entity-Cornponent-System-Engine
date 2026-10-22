@@ -39,6 +39,20 @@ is proven only in `examples/parallel-kernel` (backlog: `modules/parallel`).
 - **Rejected:** message-passing workers for the per-tick ECS loop — the copy
   cost dominates.
 
+### Archetype bucket placement is committed lazily, not through a spawn API
+
+`ArchetypeIndex` updates an entity's signature on every component or tag change
+but moves it between buckets only at the next read of bucket state (`version`,
+`selectBuckets`, `matching`). `createEntity` plus N `set`s, `spawn`, command
+flushes, `loadJSON` and `destroyEntity` then cost one move each, and no bucket
+(or `structuralVersion` bump that makes every query re-select) is created for a
+signature the entity only passed through. Flecs defers table moves the same way.
+
+- **Rejected:** a bundle API (`world.spawnWith(...)`, a builder, Bevy-style
+  bundles) — it only fixes callers migrated to it, while the lazy commit fixes
+  every existing call pattern with no public change. A bundle API can still be
+  added for ergonomics; the move cost no longer needs it.
+
 ### 3D is a set of sibling modules, not a `z` on the 2D stack
 
 3D ships as parallel modules (`transform-3d`, `motion-3d`, `collision-3d`,

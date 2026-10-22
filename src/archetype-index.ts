@@ -161,11 +161,11 @@ export class ArchetypeIndex {
 
   /** Forget an entity entirely (its store rows are gone). */
   removeEntity(id: EntityId): void {
-    const current = this.signatures.get(id);
-    if (current === undefined)
+    // Every bit may already be gone (signature absent) while a placement is still pending.
+    const from = this.placed.get(id) ?? this.signatures.get(id);
+    if (from === undefined)
       return;
     this.assertNotIterating();
-    const from = this.placed.get(id) ?? current;
     this.signatures.delete(id);
     this.placed.delete(id);
     if (from !== 0n)
