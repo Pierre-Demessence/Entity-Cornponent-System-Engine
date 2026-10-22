@@ -161,6 +161,70 @@ describe('archetype cache (world integration)', () => {
     expect(queryIds(target, [VelDef], [HiddenTag], [])).toEqual([]);
   });
 
+  it('a query sees an entity built from several components and a tag on its next pass', () => {
+    const w = makeWorld();
+    const q = w.query(PosDef, VelDef);
+    expect(q.count()).toBe(0);
+    const id = w.createEntity();
+    w.getStore(PosDef).set(id, { x: 1, y: 2 });
+    w.getStore(VelDef).set(id, { dx: 3, dy: 4 });
+    w.getTag(FrozenTag).add(id);
+    expect(q.run().map(r => r[0])).toEqual([id]);
+    expect(queryIds(w, [PosDef, VelDef], [FrozenTag], [])).toEqual([id]);
+  });
+
+  it('a query rebuilt mid-batch still sees every change', () => {
+    const w = makeWorld();
+    const a = w.createEntity();
+    const b = w.createEntity();
+    w.getStore(PosDef).set(a, { x: 0, y: 0 });
+    w.getStore(PosDef).set(b, { x: 0, y: 0 });
+    const q = w.query(PosDef, VelDef);
+    expect(q.count()).toBe(0);
+
+    w.getStore(VelDef).set(a, { dx: 0, dy: 0 });
+    expect(q.run().map(r => r[0])).toEqual([a]);
+    w.getStore(VelDef).set(b, { dx: 0, dy: 0 });
+    w.getStore(VelDef).delete(a);
+    w.getTag(HiddenTag).add(b);
+    expect(q.run().map(r => r[0])).toEqual([b]);
+    expect(queryIds(w, [PosDef, VelDef], [], [HiddenTag])).toEqual([]);
+  });
+
+  it('destroying a fully built entity leaves a same-archetype survivor queryable', () => {
+    const w = makeWorld();
+    const ids = [w.createEntity(), w.createEntity()];
+    for (const id of ids) {
+      w.getStore(PosDef).set(id, { x: 0, y: 0 });
+      w.getStore(VelDef).set(id, { dx: 0, dy: 0 });
+      w.getTag(FrozenTag).add(id);
+    }
+    const q = w.query(PosDef, VelDef).withTag(w.getTag(FrozenTag));
+    expect(q.count()).toBe(2);
+    w.destroyEntity(ids[0]!);
+    expect(q.run().map(r => r[0])).toEqual([ids[1]]);
+  });
+
+  it('spawning into an existing archetype does not re-select buckets', () => {
+    const w = makeWorld();
+    const first = w.createEntity();
+    w.getStore(PosDef).set(first, { x: 0, y: 0 });
+    w.getStore(VelDef).set(first, { dx: 0, dy: 0 });
+    const q = w.query(PosDef, VelDef);
+    expect(q.count()).toBe(1);
+    const select = vi.spyOn(ArchetypeIndex.prototype, 'selectBuckets');
+    try {
+      const second = w.createEntity();
+      w.getStore(PosDef).set(second, { x: 1, y: 1 });
+      w.getStore(VelDef).set(second, { dx: 1, dy: 1 });
+      expect(q.count()).toBe(2);
+      expect(select).not.toHaveBeenCalled();
+    }
+    finally {
+      select.mockRestore();
+    }
+  });
+
   it('tag removal re-includes an entity excluded by that tag', () => {
     const w = makeWorld();
     const id = w.createEntity();

@@ -40,6 +40,11 @@ pass reuses that resolution. It re-resolves only when:
   combination no entity held before, or the last entity left one, or the world
   was cleared).
 
+An entity's archetype is settled when a query next reads it, not on every
+component or tag change: giving an entity several components, or destroying one
+that holds several, moves it once, and the combinations it passed through on the
+way are never archetypes.
+
 Entities joining or leaving an archetype that already exists cost nothing to
 pick up: the query iterates the live buckets. Build queries outside the
 per-tick body — in a system's `init`, or once at setup — and iterate them in
