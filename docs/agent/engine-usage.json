@@ -11224,6 +11224,7 @@
               "src/modules/animation/sprite-animation.test.ts",
               "src/modules/animation/sprite-clip.test.ts",
               "src/modules/particles/particles.test.ts",
+              "src/modules/render-canvas2d/render-canvas2d.test.ts",
               "src/modules/tilemap/spawn.test.ts"
             ],
             "typeOnly": true

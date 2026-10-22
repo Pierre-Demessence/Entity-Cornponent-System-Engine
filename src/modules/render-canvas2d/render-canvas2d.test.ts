@@ -993,6 +993,11 @@ describe('canvas2DRenderer camera view + cull', () => {
     world.getStore(RenderableDef).set(id, { fill: '#fff', h, kind: 'rect', w });
   }
 
+  function ensureRegistered(def: { name: string }): void {
+    if (!world.getStoreByName(def.name))
+      world.registerComponent(def as never);
+  }
+
   it('applies the view transform to draw coords (translate + zoom)', () => {
     addRect(100, 50);
     const rec = makeRecorder();
@@ -1026,13 +1031,16 @@ describe('canvas2DRenderer camera view + cull', () => {
     expect(drawCalls(rec.calls)).toHaveLength(1);
   });
 
-  it('never culls text or sprite renderables (no reliable bounds)', () => {
+  it('never culls text or polygon renderables (no reliable bounds)', () => {
     const t = world.createEntity();
     world.getStore(PositionDef).set(t, { x: 9000, y: 9000 });
     world.getStore(RenderableDef).set(t, { fill: '#fff', font: '10px sans', kind: 'text', text: 'hi' });
+    const p = world.createEntity();
+    world.getStore(PositionDef).set(p, { x: -9000, y: 9000 });
+    world.getStore(RenderableDef).set(p, { closed: true, fill: '#fff', kind: 'polygon', points: [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 0, y: 5 }] });
     const rec = makeRecorder();
     renderer.render({ ctx2d: rec.ctx2d, view: { x: 0, y: 0 }, world });
-    expect(drawCalls(rec.calls)).toHaveLength(1);
+    expect(drawCalls(rec.calls)).toHaveLength(2);
   });
 
   it('culls under zoom using the zoomed view rect', () => {
@@ -1084,11 +1092,11 @@ describe('canvas2DRenderer camera view + cull', () => {
       world.getStore(PositionDef).set(id, pos);
       world.getStore(RenderableDef).set(id, renderable);
       if (transform.angle !== undefined) {
-        world.registerComponent(RotationDef);
+        ensureRegistered(RotationDef);
         world.getStore(RotationDef).set(id, { angle: transform.angle });
       }
       if (transform.scale !== undefined) {
-        world.registerComponent(ScaleDef);
+        ensureRegistered(ScaleDef);
         world.getStore(ScaleDef).set(id, transform.scale);
       }
     }
@@ -1122,6 +1130,105 @@ describe('canvas2DRenderer camera view + cull', () => {
       addTransformed({ fill: '#fff', h: 10, kind: 'rect', w: 10 }, { x: 5000, y: 5000 }, { angle: 1 });
       addTransformed({ fill: '#fff', kind: 'circle', radius: 6 }, { x: -5000, y: 20 }, { scale: { x: 3, y: 3 } });
       expect(drawnCount()).toBe(0);
+    });
+  });
+
+  describe.each([
+    { label: 'unordered', ordered: false },
+    { label: 'RenderOrderDef', ordered: true },
+  ])('sprite culling ($label path)', ({ ordered }) => {
+    const image = {} as CanvasImageSource;
+    const atlases: SpriteFrameSource = {
+      getFrame: (atlas, frame) =>
+        atlas === 'space' && frame === 'ship'
+          ? { image, sh: 96, sw: 96, sx: 0, sy: 0 }
+          : undefined,
+    };
+
+    function addSprite(
+      x: number,
+      y: number,
+      sprite: { anchor?: 'center' | 'top-left'; dh?: number; dw?: number } = {},
+      transform: { angle?: number; scale?: { x: number; y: number } } = {},
+    ): void {
+      const id = world.createEntity();
+      world.getStore(PositionDef).set(id, { x, y });
+      world.getStore(RenderableDef).set(id, { atlas: 'space', frame: 'ship', kind: 'sprite', ...sprite });
+      if (ordered) {
+        ensureRegistered(RenderOrderDef);
+        world.getStore(RenderOrderDef).set(id, { value: 1 });
+      }
+      if (transform.angle !== undefined) {
+        ensureRegistered(RotationDef);
+        world.getStore(RotationDef).set(id, { angle: transform.angle });
+      }
+      if (transform.scale !== undefined) {
+        ensureRegistered(ScaleDef);
+        world.getStore(ScaleDef).set(id, transform.scale);
+      }
+    }
+
+    function drawnCount(view: { x: number; y: number; zoom?: number } | undefined = { x: 0, y: 0 }): number {
+      const rec = makeRecorder();
+      renderer.render({ atlases, ctx2d: rec.ctx2d, view, world });
+      return drawCalls(rec.calls).length;
+    }
+
+    it('culls a centre-anchored sprite fully outside the view', () => {
+      addSprite(-100, 100, { dh: 40, dw: 40 }); // x ∈ [−120, −80]
+      expect(drawnCount()).toBe(0);
+    });
+
+    it('culls a top-left-anchored sprite by its own AABB', () => {
+      addSprite(-50, 100, { anchor: 'top-left', dh: 40, dw: 40 }); // x ∈ [−50, −10]
+      addSprite(-30, 100, { anchor: 'top-left', dh: 40, dw: 40 }); // x ∈ [−30, 10] → reaches in
+      addSprite(-30, 200, { dh: 40, dw: 40 }); // centred: x ∈ [−50, −10] → culled
+      expect(drawnCount()).toBe(1);
+    });
+
+    it('draws a sprite overlapping the view edge', () => {
+      addSprite(-15, 100, { dh: 40, dw: 40 }); // x ∈ [−35, 5]
+      addSprite(815, 100, { dh: 40, dw: 40 }); // x ∈ [795, 835], view maxX = 800
+      expect(drawnCount()).toBe(2);
+    });
+
+    it('draws a rotated sprite whose unrotated AABB is off-screen but whose rotated extent reaches in', () => {
+      // Unrotated x ∈ [−35, −25]; rotated 90° the 100-long side spans x ∈ [−80, 20].
+      addSprite(-30, 100, { dh: 100, dw: 10 }, { angle: Math.PI / 2 });
+      expect(drawnCount()).toBe(1);
+    });
+
+    it('draws a scaled sprite whose unscaled AABB is off-screen', () => {
+      // Unscaled x ∈ [−25, −15]; scaled 6× around the centre → [−50, 10].
+      addSprite(-20, 100, { dh: 10, dw: 10 }, { scale: { x: 6, y: 6 } });
+      expect(drawnCount()).toBe(1);
+    });
+
+    it('still culls a rotated or scaled sprite far outside the view', () => {
+      addSprite(-5000, 100, { dh: 40, dw: 40 }, { angle: 1 });
+      addSprite(5000, 100, { dh: 40, dw: 40 }, { scale: { x: 3, y: 3 } });
+      expect(drawnCount()).toBe(0);
+    });
+
+    it('uses the atlas frame size when dw and dh are omitted', () => {
+      addSprite(-60, 100); // 96×96 centred: x ∈ [−108, −12] → culled
+      addSprite(-40, 200); // x ∈ [−88, 8] → reaches in
+      expect(drawnCount()).toBe(1);
+    });
+
+    it('culls under zoom using the zoomed view rect', () => {
+      // zoom 2: the view sees x ∈ [0, 400].
+      addSprite(450, 100, { dh: 20, dw: 20 });
+      addSprite(100, 100, { dh: 20, dw: 20 });
+      expect(drawnCount({ x: 0, y: 0, zoom: 2 })).toBe(1);
+    });
+
+    it('draws every sprite when view is absent', () => {
+      addSprite(-5000, 100, { dh: 40, dw: 40 });
+      addSprite(5000, 100, { dh: 40, dw: 40 });
+      const rec = makeRecorder();
+      renderer.render({ atlases, ctx2d: rec.ctx2d, world });
+      expect(drawCalls(rec.calls)).toHaveLength(2);
     });
   });
 

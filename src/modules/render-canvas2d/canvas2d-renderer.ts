@@ -142,7 +142,7 @@ function drawPass(
         continue;
       const rot = rotStore?.get(id)?.angle ?? 0;
       const scale = scaleStore?.get(id) ?? null;
-      if (viewRect && isCulled(pos.x, pos.y, renderable, rot, scale, viewRect))
+      if (viewRect && isCulled(pos.x, pos.y, renderable, rot, scale, viewRect, atlases))
         continue;
       drawEntity(ctx2d, id, pos.x, pos.y, renderable, rot, scale, opacityStore, atlases);
     }
@@ -163,7 +163,7 @@ function drawPass(
     }
     const rot = rotStore?.get(id)?.angle ?? 0;
     const scale = scaleStore?.get(id) ?? null;
-    if (viewRect && isCulled(pos.x, pos.y, renderable, rot, scale, viewRect)) {
+    if (viewRect && isCulled(pos.x, pos.y, renderable, rot, scale, viewRect, atlases)) {
       seq++;
       continue;
     }
@@ -197,14 +197,16 @@ function applyView(ctx2d: CanvasRenderingContext2D, view: RenderView): ViewRect 
 }
 
 /**
- * Whether the renderable lies fully outside `rect`. `rect` and `circle` are
- * bounded around the entity position; with a rotation or scale applied, the
- * bound is the circle around the position that reaches the far corner of the
- * scaled shape at any angle, so a shape is never culled while any part of it
- * can be visible. `text`, `sprite`, and `polygon` have no cheap reliable
- * bounds here, so they are never culled (returns `false`).
+ * Whether the renderable lies fully outside `rect`. `rect`, `circle` and
+ * `sprite` are bounded around the entity position (a sprite by `dw`/`dh`, or
+ * its atlas frame size when either is omitted). With a rotation or scale
+ * applied, the bound is the circle around the position that reaches the far
+ * corner of the scaled shape at any angle, so a shape is never culled while
+ * any part of it can be visible. `text` and `polygon` have no cheap reliable
+ * bounds here, so they are never culled (returns `false`), as is a sprite
+ * whose frame cannot be resolved (nothing is drawn for it anyway).
  */
-function isCulled(x: number, y: number, r: Renderable, rot: number, scale: Scale | null, rect: ViewRect): boolean {
+function isCulled(x: number, y: number, r: Renderable, rot: number, scale: Scale | null, rect: ViewRect, atlases: SpriteFrameSource | null): boolean {
   // The shape's box relative to its position, before rotation and scale.
   let fromX: number;
   let fromY: number;
@@ -223,6 +225,23 @@ function isCulled(x: number, y: number, r: Renderable, rot: number, scale: Scale
     fromY = fromX;
     toX = fromX + r.radius * 2;
     toY = toX;
+  }
+  else if (r.kind === 'sprite') {
+    let dw = r.dw;
+    let dh = r.dh;
+    if (dw === undefined || dh === undefined) {
+      // Same frame fallback as drawShape; an unresolved frame draws nothing.
+      const frame = atlases?.getFrame(r.atlas, r.frame);
+      if (!frame)
+        return false;
+      dw ??= frame.sw;
+      dh ??= frame.sh;
+    }
+    const centered = (r.anchor ?? 'center') === 'center';
+    fromX = centered ? -dw / 2 : 0;
+    fromY = centered ? -dh / 2 : 0;
+    toX = fromX + dw;
+    toY = fromY + dh;
   }
   else {
     return false;
