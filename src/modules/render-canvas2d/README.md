@@ -159,7 +159,10 @@ renderer.render({ ctx2d, world, view: { x: camX, y: camY, zoom: 2 } });
   importing the camera module. Drive it from a `Camera` with
   `cameraToView(cam)` (see [`modules/camera`](../camera/README.md)), or from any
   bespoke pan/zoom state.
-- **Cull bounds.** Only `rect` and `circle` have a cheap reliable world AABB;
+- **Cull bounds.** `rect` and `circle` are culled by their world AABB. An entity
+  with a `RotationDef` or `ScaleDef` is culled by a conservative bound instead
+  (the circle around its position that contains the shape at any angle), so a
+  rotated or scaled shape is never culled while part of it can be visible.
   `text`, `sprite`, and `polygon` are **never culled** (drawn regardless of the
   view rect).
 - **No `view` → no transform, no cull** — fully back-compatible with callers that

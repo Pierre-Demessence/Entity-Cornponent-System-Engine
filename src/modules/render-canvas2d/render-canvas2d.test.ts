@@ -1,4 +1,5 @@
 import type { SpriteFrameSource } from './canvas2d-renderer';
+import type { Renderable } from './renderable';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -1071,6 +1072,57 @@ describe('canvas2DRenderer camera view + cull', () => {
     const rec = makeRecorder();
     renderer.render({ ctx2d: rec.ctx2d, view: { x: 0, y: 0 }, world });
     expect(drawCalls(rec.calls)).toHaveLength(2);
+  });
+
+  describe('rotated and scaled shapes', () => {
+    function addTransformed(
+      renderable: Renderable,
+      pos: { x: number; y: number },
+      transform: { angle?: number; scale?: { x: number; y: number } },
+    ): void {
+      const id = world.createEntity();
+      world.getStore(PositionDef).set(id, pos);
+      world.getStore(RenderableDef).set(id, renderable);
+      if (transform.angle !== undefined) {
+        world.registerComponent(RotationDef);
+        world.getStore(RotationDef).set(id, { angle: transform.angle });
+      }
+      if (transform.scale !== undefined) {
+        world.registerComponent(ScaleDef);
+        world.getStore(ScaleDef).set(id, transform.scale);
+      }
+    }
+
+    function drawnCount(): number {
+      const rec = makeRecorder();
+      renderer.render({ ctx2d: rec.ctx2d, view: { x: 0, y: 0 }, world });
+      return drawCalls(rec.calls).length;
+    }
+
+    it('draws a rotated rect whose unrotated AABB is off-screen but whose rotated extent reaches in', () => {
+      // Unrotated x ∈ [−20, −10] is left of the view; rotated by −90° the
+      // 100-long side swings from the corner pivot to x ∈ [−20, 80].
+      addTransformed({ fill: '#fff', h: 100, kind: 'rect', w: 10 }, { x: -20, y: 50 }, { angle: -Math.PI / 2 });
+      expect(drawnCount()).toBe(1);
+    });
+
+    it('draws a scaled rect whose unscaled AABB is off-screen', () => {
+      // Unscaled x ∈ [−20, −10]; scaled 3× from the corner pivot → [−20, 10].
+      addTransformed({ fill: '#fff', h: 10, kind: 'rect', w: 10 }, { x: -20, y: 20 }, { scale: { x: 3, y: 3 } });
+      expect(drawnCount()).toBe(1);
+    });
+
+    it('draws a scaled circle whose unscaled AABB is off-screen', () => {
+      // Radius 6 at x=−10 ends at −4 (culled); scaled 3× it ends at +8.
+      addTransformed({ fill: '#fff', kind: 'circle', radius: 6 }, { x: -10, y: 20 }, { scale: { x: 3, y: 3 } });
+      expect(drawnCount()).toBe(1);
+    });
+
+    it('still culls a rotated or scaled shape that is far outside the view', () => {
+      addTransformed({ fill: '#fff', h: 10, kind: 'rect', w: 10 }, { x: 5000, y: 5000 }, { angle: 1 });
+      addTransformed({ fill: '#fff', kind: 'circle', radius: 6 }, { x: -5000, y: 20 }, { scale: { x: 3, y: 3 } });
+      expect(drawnCount()).toBe(0);
+    });
   });
 
   it('draws normally (no transform, no cull) when view is absent', () => {

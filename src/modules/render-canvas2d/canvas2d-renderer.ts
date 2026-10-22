@@ -54,12 +54,16 @@ export interface Canvas2DRenderContext {
   world: EcsWorld;
 }
 
+interface Scale { x: number; y: number }
+
 interface ViewRect { maxX: number; maxY: number; minX: number; minY: number }
 
 interface DrawEntry {
   id: EntityId;
   order: number;
   renderable: Renderable;
+  rot: number;
+  scale: Scale | null;
   seq: number;
   x: number;
   y: number;
@@ -120,7 +124,7 @@ function drawPass(
   renderableStore: ComponentStoreLike<Renderable>,
   posStore: ComponentStoreLike<{ x: number; y: number }>,
   rotStore: ComponentStoreLike<{ angle: number }> | null,
-  scaleStore: ComponentStoreLike<{ x: number; y: number }> | null,
+  scaleStore: ComponentStoreLike<Scale> | null,
   opacityStore: ComponentStoreLike<{ value: number }> | null,
   orderStore: ComponentStoreLike<{ value: number }> | null,
   screenStore: ComponentStoreLike<ScreenSpace> | null,
@@ -136,9 +140,11 @@ function drawPass(
         continue;
       if (screenStore !== null && (screenStore.has(id) !== screenSpace))
         continue;
-      if (viewRect && isCulled(pos.x, pos.y, renderable, viewRect))
+      const rot = rotStore?.get(id)?.angle ?? 0;
+      const scale = scaleStore?.get(id) ?? null;
+      if (viewRect && isCulled(pos.x, pos.y, renderable, rot, scale, viewRect))
         continue;
-      drawEntity(ctx2d, id, pos.x, pos.y, renderable, rotStore, scaleStore, opacityStore, atlases);
+      drawEntity(ctx2d, id, pos.x, pos.y, renderable, rot, scale, opacityStore, atlases);
     }
     return;
   }
@@ -155,7 +161,9 @@ function drawPass(
       seq++;
       continue;
     }
-    if (viewRect && isCulled(pos.x, pos.y, renderable, viewRect)) {
+    const rot = rotStore?.get(id)?.angle ?? 0;
+    const scale = scaleStore?.get(id) ?? null;
+    if (viewRect && isCulled(pos.x, pos.y, renderable, rot, scale, viewRect)) {
       seq++;
       continue;
     }
@@ -163,6 +171,8 @@ function drawPass(
       id,
       order: orderStore.get(id)?.value ?? 0,
       renderable,
+      rot,
+      scale,
       seq: seq++,
       x: pos.x,
       y: pos.y,
@@ -170,7 +180,7 @@ function drawPass(
   }
   entries.sort((a, b) => (a.order - b.order) || (a.seq - b.seq));
   for (const e of entries)
-    drawEntity(ctx2d, e.id, e.x, e.y, e.renderable, rotStore, scaleStore, opacityStore, atlases);
+    drawEntity(ctx2d, e.id, e.x, e.y, e.renderable, e.rot, e.scale, opacityStore, atlases);
 }
 
 /** Apply the camera transform to `ctx2d` and return the visible world rect. */
@@ -187,39 +197,45 @@ function applyView(ctx2d: CanvasRenderingContext2D, view: RenderView): ViewRect 
 }
 
 /**
- * Whether the renderable's world AABB lies fully outside `rect`. `text`,
- * `sprite`, and `polygon` have no cheap reliable bounds here, so they are
- * never culled (returns `false`).
+ * Whether the renderable lies fully outside `rect`. `rect` and `circle` are
+ * bounded around the entity position; with a rotation or scale applied, the
+ * bound is the circle around the position that reaches the far corner of the
+ * scaled shape at any angle, so a shape is never culled while any part of it
+ * can be visible. `text`, `sprite`, and `polygon` have no cheap reliable
+ * bounds here, so they are never culled (returns `false`).
  */
-function isCulled(x: number, y: number, r: Renderable, rect: ViewRect): boolean {
-  let minX: number;
-  let minY: number;
-  let maxX: number;
-  let maxY: number;
+function isCulled(x: number, y: number, r: Renderable, rot: number, scale: Scale | null, rect: ViewRect): boolean {
+  // The shape's box relative to its position, before rotation and scale.
+  let fromX: number;
+  let fromY: number;
+  let toX: number;
+  let toY: number;
   if (r.kind === 'rect') {
-    if ((r.anchor ?? 'top-left') === 'center') {
-      minX = x - r.w / 2;
-      minY = y - r.h / 2;
-    }
-    else {
-      minX = x;
-      minY = y;
-    }
-    maxX = minX + r.w;
-    maxY = minY + r.h;
+    const centered = (r.anchor ?? 'top-left') === 'center';
+    fromX = centered ? -r.w / 2 : 0;
+    fromY = centered ? -r.h / 2 : 0;
+    toX = fromX + r.w;
+    toY = fromY + r.h;
   }
   else if (r.kind === 'circle') {
-    const cx = (r.anchor ?? 'center') === 'top-left' ? x + r.radius : x;
-    const cy = (r.anchor ?? 'center') === 'top-left' ? y + r.radius : y;
-    minX = cx - r.radius;
-    minY = cy - r.radius;
-    maxX = cx + r.radius;
-    maxY = cy + r.radius;
+    const topLeft = (r.anchor ?? 'center') === 'top-left';
+    fromX = topLeft ? 0 : -r.radius;
+    fromY = fromX;
+    toX = fromX + r.radius * 2;
+    toY = toX;
   }
   else {
     return false;
   }
-  return maxX < rect.minX || minX > rect.maxX || maxY < rect.minY || minY > rect.maxY;
+
+  if (rot === 0 && scale === null)
+    return x + toX < rect.minX || x + fromX > rect.maxX || y + toY < rect.minY || y + fromY > rect.maxY;
+
+  const reach = Math.hypot(
+    Math.max(Math.abs(fromX), Math.abs(toX)) * Math.abs(scale?.x ?? 1),
+    Math.max(Math.abs(fromY), Math.abs(toY)) * Math.abs(scale?.y ?? 1),
+  );
+  return x + reach < rect.minX || x - reach > rect.maxX || y + reach < rect.minY || y - reach > rect.maxY;
 }
 
 function tryGetStore<T>(
@@ -235,16 +251,14 @@ function drawEntity(
   x: number,
   y: number,
   r: Renderable,
-  rotStore: ComponentStoreLike<{ angle: number }> | null,
-  scaleStore: ComponentStoreLike<{ x: number; y: number }> | null,
+  rot: number,
+  scale: Scale | null,
   opacityStore: ComponentStoreLike<{ value: number }> | null,
   atlases: SpriteFrameSource | null,
 ): void {
   if (r.kind !== 'sprite' && r.fill === undefined && r.stroke === undefined)
     return;
 
-  const rot = rotStore?.get(id)?.angle ?? 0;
-  const scale = scaleStore?.get(id) ?? null;
   const opacity = opacityStore?.get(id)?.value ?? 1;
 
   const sh = shapeOffset(r);
