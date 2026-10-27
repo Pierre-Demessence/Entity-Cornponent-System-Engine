@@ -164,7 +164,7 @@ export const bombSystem: SchedulableSystem<GameState> = {
       // Prefer the front-most alien in a random column so bombs clear the fleet.
       const alienDef = ctx.world.getStore(AlienDef);
       const posStore = ctx.world.getStore(PositionDef);
-      const col = ctx.world.getStore(AlienDef).get(aliens[Math.floor(Math.random() * aliens.length)])!.col;
+      const col = ctx.world.getStore(AlienDef).get(aliens[Math.floor(Math.random() * aliens.length)]!)!.col;
       let shooter: EntityId | null = null;
       let lowestY = -Infinity;
       for (const id of aliens) {
@@ -176,7 +176,7 @@ export const bombSystem: SchedulableSystem<GameState> = {
           shooter = id;
         }
       }
-      shooter ??= aliens[Math.floor(Math.random() * aliens.length)];
+      shooter ??= aliens[Math.floor(Math.random() * aliens.length)]!;
       const box = boxOf(ctx, shooter)!;
       spawnBomb(ctx, box.x + box.w / 2 - 2, box.y + box.h);
     });

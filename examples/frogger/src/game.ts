@@ -170,7 +170,7 @@ function spawnFrog(state: GameState): EntityId {
 
 function obstacleFill(lane: LaneSpec, isCroc: boolean): string {
   if (lane.type === 'car')
-    return CAR_COLORS[(lane.row - 7) % CAR_COLORS.length];
+    return CAR_COLORS[(lane.row - 7) % CAR_COLORS.length]!;
   if (isCroc)
     return '#2f7d4d';
   if (lane.type === 'turtle')
@@ -310,18 +310,18 @@ export function handleGoalLanding(state: GameState): void {
   const cx = frogCenter(state).x;
   let idx = -1;
   for (let i = 0; i < state.pads.length; i++) {
-    if (Math.abs(cx - state.pads[i].cx) <= PAD_W / 2) {
+    if (Math.abs(cx - state.pads[i]!.cx) <= PAD_W / 2) {
       idx = i;
       break;
     }
   }
-  if (idx === -1 || state.pads[idx].filled) {
+  if (idx === -1 || state.pads[idx]!.filled) {
     killFrog(state, 'miss');
     return;
   }
-  state.pads[idx].filled = true;
+  state.pads[idx]!.filled = true;
   state.score += SCORE_PAD;
-  burst(state, state.pads[idx].cx, GOAL_ROW * TILE + TILE / 2, 14, ['#7CFC9B', '#ffd23f', '#eaf6ff']);
+  burst(state, state.pads[idx]!.cx, GOAL_ROW * TILE + TILE / 2, 14, ['#7CFC9B', '#ffd23f', '#eaf6ff']);
   if (state.pads.every(pad => pad.filled))
     levelComplete(state);
   else

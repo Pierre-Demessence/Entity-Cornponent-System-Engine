@@ -56,7 +56,7 @@ describe('manual generator', () => {
 
   it('never links into the internal docs tree', () => {
     const internal = [...allMarkdown.matchAll(/\]\(([^)]*docs\/[^)]*)\)/g)]
-      .map(match => match[1])
+      .map(match => match[1]!)
       .filter(target => !/^https?:/.test(target));
     expect(internal).toEqual([]);
   });
@@ -155,11 +155,11 @@ describe('authored Manual pages', () => {
       const rendered = renderAuthoredPages(dir);
 
       expect(rendered.map(page => page.outPath)).toEqual(['manual/getting-started/demo.md']);
-      expect(rendered[0].markdown).toContain('title: "Demo page"');
-      expect(rendered[0].markdown).toContain('description: "Body text."');
+      expect(rendered[0]!.markdown).toContain('title: "Demo page"');
+      expect(rendered[0]!.markdown).toContain('description: "Body text."');
       // Starlight renders the frontmatter title, so the heading must not stay.
-      expect(rendered[0].markdown).not.toContain('# Demo page');
-      expect(rendered[0].markdown).not.toContain('sidebar:');
+      expect(rendered[0]!.markdown).not.toContain('# Demo page');
+      expect(rendered[0]!.markdown).not.toContain('sidebar:');
     }
     finally {
       rmSync(dir, { force: true, recursive: true });
@@ -254,7 +254,7 @@ describe('manual routes', () => {
     for (const page of pages) {
       const from = routeOf(page.outPath);
       for (const match of withoutFences(page.markdown).matchAll(/\]\(([^)\s]+)\)/g)) {
-        const target = match[1].split('#')[0];
+        const target = match[1]!.split('#')[0];
         if (!target || /^(?:[a-z][a-z0-9+.-]*:|\/|#)/i.test(target))
           continue;
         const resolved = resolveRoute(from, target);

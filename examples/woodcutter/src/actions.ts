@@ -46,7 +46,7 @@ export function buildActions(from: Vec2): GoapAction[] {
     { name: 'GetAxe', cost: 1, effects: { hasAxe: true }, preconditions: { hasAxe: false } },
   ];
   for (let i = 0; i < TREES.length; i++) {
-    const dist = Math.hypot(TREES[i].x - from.x, TREES[i].y - from.y);
+    const dist = Math.hypot(TREES[i]!.x - from.x, TREES[i]!.y - from.y);
     actions.push({
       name: `GoToTree${i}`,
       cost: 1 + dist / 120,
@@ -86,7 +86,7 @@ export function buildFacts(state: GameState, w: Worker): WorldState {
   if (Math.hypot(STORE.x - pos.x, STORE.y - pos.y) <= REACH_DIST)
     facts.atStore = true;
   for (let i = 0; i < TREES.length; i++) {
-    if (Math.hypot(TREES[i].x - pos.x, TREES[i].y - pos.y) <= REACH_DIST)
+    if (Math.hypot(TREES[i]!.x - pos.x, TREES[i]!.y - pos.y) <= REACH_DIST)
       facts[`atTree${i}`] = true;
     const occ = state.treeOccupant[i];
     if (occ === null || occ === w.id)
@@ -170,7 +170,7 @@ export const RUNTIME: Record<string, (ctx: GameState) => ExecStatus> = {
 };
 
 for (let i = 0; i < TREES.length; i++) {
-  const tree = TREES[i];
+  const tree = TREES[i]!;
   RUNTIME[`GoToTree${i}`] = ctx => moveTo(ctx, tree, WORKER_SPEED);
   RUNTIME[`ChopTree${i}`] = ctx => chop(ctx, i);
 }

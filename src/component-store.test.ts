@@ -339,7 +339,7 @@ describe('componentStore', () => {
     it('throws when a migration step is missing', () => {
       const Partial: ComponentDef<Fighter> = {
         ...FighterV2Def,
-        migrations: { 1: FighterV2Def.migrations![1] }, // missing 0->1
+        migrations: { 1: FighterV2Def.migrations![1]! }, // missing 0->1
       };
       const legacy = [[1, { health: 7 }]];
       expect(() => ComponentStore.fromSerialized(legacy, 'F', Partial))

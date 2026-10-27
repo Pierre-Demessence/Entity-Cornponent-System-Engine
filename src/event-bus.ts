@@ -106,7 +106,7 @@ export class EventBus<TEvent extends { type: string }, TMap extends { [E in TEve
     if (entries) {
       // Higher priority = runs first — insert in descending order
       let i = 0;
-      while (i < entries.length && entries[i].priority >= priority) i++;
+      while (i < entries.length && entries[i]!.priority >= priority) i++;
       entries.splice(i, 0, entry);
     }
     else {

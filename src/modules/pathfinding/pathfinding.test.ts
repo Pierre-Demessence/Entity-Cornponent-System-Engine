@@ -12,11 +12,11 @@ import { findPath } from './pathfinding';
 function gridTraversable(ascii: string): (x: number, y: number) => boolean {
   const rows = ascii.trim().split('\n').map(r => r.trim());
   const h = rows.length;
-  const w = rows[0].length;
+  const w = rows[0]!.length;
   return (x, y) => {
     if (x < 0 || y < 0 || x >= w || y >= h)
       return false;
-    return rows[y][x] === '.';
+    return rows[y]![x] === '.';
   };
 }
 
@@ -146,7 +146,7 @@ describe('findPath', () => {
       if (i === 0)
         return n.x !== 0 && n.y !== 0;
       const prev = path![i - 1];
-      return n.x !== prev.x && n.y !== prev.y;
+      return n.x !== prev!.x && n.y !== prev!.y;
     });
     expect(diagonals).toHaveLength(0);
   });

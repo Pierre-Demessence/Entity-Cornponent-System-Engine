@@ -194,7 +194,7 @@ function listCoreGuides(): Guide[] {
       return [{
         name,
         group: 'core' as const,
-        importLine: CORE_GUIDES[name],
+        importLine: CORE_GUIDES[name]!,
         markdown: readFileSync(sourcePath, 'utf8'),
         sourcePath,
       }];
@@ -291,12 +291,12 @@ function resolveLink(target: string, fromDir: string, ctx: LinkContext): string 
   const rel = relative(ROOT, absolute).split(sep).join('/');
 
   const core = /^src\/([^/]+)\.md$/.exec(rel);
-  if (core && ctx.coreNames.has(core[1]))
-    return routeTo(ctx.group, 'core', core[1]);
+  if (core && ctx.coreNames.has(core[1]!))
+    return routeTo(ctx.group, 'core', core[1]!);
 
   const mod = /^src\/modules\/([^/]+)\/README\.md$/.exec(rel);
-  if (mod && ctx.moduleNames.has(mod[1]))
-    return routeTo(ctx.group, 'modules', mod[1]);
+  if (mod && ctx.moduleNames.has(mod[1]!))
+    return routeTo(ctx.group, 'modules', mod[1]!);
 
   if (rel.startsWith('..'))
     return target;
@@ -337,7 +337,7 @@ function rewriteLinks(markdown: string, sourcePath: string, ctx: LinkContext): s
 function bodyOf(markdown: string): string {
   const lines = markdown.split('\n');
   const first = lines.findIndex(line => line.trim() !== '');
-  if (first !== -1 && lines[first].startsWith('#'))
+  if (first !== -1 && lines[first]!.startsWith('#'))
     lines.splice(first, 1);
   return lines.join('\n').trim();
 }
@@ -436,7 +436,7 @@ export function renderAuthoredPages(
     const titleAt = titleLineIndex(lines);
     const title = titleAt === -1
       ? basename(rel, '.md')
-      : lines[titleAt].replace(/^#[ \t]+/, '').trim();
+      : lines[titleAt]!.replace(/^#[ \t]+/, '').trim();
     const description = summaryOf(source) || `Manual page ${title}.`;
     // Only the title line is dropped: removing the first line instead would let
     // a page whose prose opens before its heading render the title twice.

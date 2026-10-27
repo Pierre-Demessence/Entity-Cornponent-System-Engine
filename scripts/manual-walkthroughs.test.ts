@@ -34,7 +34,7 @@ async function importWalkthrough(name: string, code: string): Promise<void> {
 function runnableCode(docRel: string): string {
   const samples = pageSamples(docRel).filter(s => isRunnable(s.code));
   expect(samples, `${docRel} has a runnable example`).toHaveLength(1);
-  return samples[0].code;
+  return samples[0]!.code;
 }
 
 /** A 2D context that records every method call and accepts every property write. */

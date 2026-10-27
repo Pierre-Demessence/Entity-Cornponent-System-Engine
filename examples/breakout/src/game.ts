@@ -146,7 +146,7 @@ function spawnBricks(state: GameState): void {
       const x = PLAY_LEFT + BRICK_GAP + col * (BRICK_W + BRICK_GAP);
       const id = state.world.createEntity();
       state.world.getStore(PositionDef).set(id, { x, y });
-      state.world.getStore(BrickDef).set(id, { points: ROW_POINTS[row], row });
+      state.world.getStore(BrickDef).set(id, { points: ROW_POINTS[row]!, row });
       state.world.getStore(RenderableDef).set(id, {
         anchor: 'top-left',
         fill: ROW_COLORS[row],

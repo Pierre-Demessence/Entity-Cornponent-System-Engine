@@ -370,7 +370,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
         return;
       gltf.scene.updateMatrixWorld(true);
       let geo: THREE.BufferGeometry | null = null;
-      let mat: THREE.Material | null = null;
+      let mat: THREE.Material | null | undefined = null;
       gltf.scene.traverse((obj) => {
         const mesh = obj as THREE.Mesh;
         if (!mesh.isMesh || geo)
@@ -408,7 +408,7 @@ export function makeRenderer(width: number, height: number): Renderer3D {
         return;
       gltf.scene.updateMatrixWorld(true);
       let geo: THREE.BufferGeometry | null = null;
-      let mat: THREE.Material | null = null;
+      let mat: THREE.Material | null | undefined = null;
       gltf.scene.traverse((obj) => {
         const mesh = obj as THREE.Mesh;
         if (!mesh.isMesh || geo)
@@ -780,8 +780,8 @@ export function makeRenderer(width: number, height: number): Renderer3D {
         const cloneVisual: THREE.Object3D = crateCloneModel ?? cubeClone;
         // Fills write LINEAR into the targets (encode once on the canvas), or
         // nested recursion levels compound the sRGB encode and wash to white.
-        blueMat.uniforms.uEncode.value = 0;
-        orangeMat.uniforms.uEncode.value = 0;
+        blueMat.uniforms.uEncode!.value = 0;
+        orangeMat.uniforms.uEncode!.value = 0;
 
         // --- Blue's chain (views out of orange), deepest level first. Each
         // level's camera is one more portal-hop back; clip stays at orange. ---
@@ -790,10 +790,10 @@ export function makeRenderer(width: number, height: number): Renderer3D {
         camM2.multiplyMatrices(viewXform, camM1);
         orangePortal.visible = false; // destination sits at the virtual camera
         bluePortal.visible = true;
-        blueMat.uniforms.uTextured.value = 0; // deepest: flat (end of the hall)
+        blueMat.uniforms.uTextured!.value = 0; // deepest: flat (end of the hall)
         renderToTarget(rtBlue2, camM2, orange);
-        blueMat.uniforms.uTextured.value = 1; // near: shows the deeper level
-        blueMat.uniforms.uTex.value = rtBlue2.texture;
+        blueMat.uniforms.uTextured!.value = 1; // near: shows the deeper level
+        blueMat.uniforms.uTex!.value = rtBlue2.texture;
         const cloneInBlue = placeCubeClone(state, blue, orange, cloneVisual);
         cloneVisual.visible = cloneInBlue;
         if (cloneInBlue && cubeVisual)
@@ -808,10 +808,10 @@ export function makeRenderer(width: number, height: number): Renderer3D {
         camM2.multiplyMatrices(viewXform, camM1);
         bluePortal.visible = false;
         orangePortal.visible = true;
-        orangeMat.uniforms.uTextured.value = 0;
+        orangeMat.uniforms.uTextured!.value = 0;
         renderToTarget(rtOrange2, camM2, blue);
-        orangeMat.uniforms.uTextured.value = 1;
-        orangeMat.uniforms.uTex.value = rtOrange2.texture;
+        orangeMat.uniforms.uTextured!.value = 1;
+        orangeMat.uniforms.uTex!.value = rtOrange2.texture;
         const cloneInOrange = placeCubeClone(state, orange, blue, cloneVisual);
         cloneVisual.visible = cloneInOrange;
         if (cloneInOrange && cubeVisual)
@@ -824,18 +824,18 @@ export function makeRenderer(width: number, height: number): Renderer3D {
         cloneVisual.visible = false;
         bluePortal.visible = true;
         orangePortal.visible = true;
-        blueMat.uniforms.uEncode.value = 1;
-        blueMat.uniforms.uTextured.value = 1;
-        blueMat.uniforms.uTex.value = rtBlue.texture;
-        orangeMat.uniforms.uEncode.value = 1;
-        orangeMat.uniforms.uTextured.value = 1;
-        orangeMat.uniforms.uTex.value = rtOrange.texture;
+        blueMat.uniforms.uEncode!.value = 1;
+        blueMat.uniforms.uTextured!.value = 1;
+        blueMat.uniforms.uTex!.value = rtBlue.texture;
+        orangeMat.uniforms.uEncode!.value = 1;
+        orangeMat.uniforms.uTextured!.value = 1;
+        orangeMat.uniforms.uTex!.value = rtOrange.texture;
       }
       else {
-        blueMat.uniforms.uEncode.value = 1;
-        orangeMat.uniforms.uEncode.value = 1;
-        blueMat.uniforms.uTextured.value = 0;
-        orangeMat.uniforms.uTextured.value = 0;
+        blueMat.uniforms.uEncode!.value = 1;
+        orangeMat.uniforms.uEncode!.value = 1;
+        blueMat.uniforms.uTextured!.value = 0;
+        orangeMat.uniforms.uTextured!.value = 0;
       }
 
       // First-person main pass: hide our own body so we're not inside it.

@@ -56,7 +56,7 @@ describe('tickSpawner', () => {
   it('uses a fresh interval each cycle (ramp / jitter)', () => {
     const intervals = [100, 50, 30];
     let i = 0;
-    const s = makeSpawner(() => intervals[Math.min(i++, intervals.length - 1)]);
+    const s = makeSpawner(() => intervals[Math.min(i++, intervals.length - 1)]!);
     // first 100 seeded on the first tick; dt 181 crosses the 50 then 30 ramp steps.
     let emits = 0;
     tickSpawner(s, 181, () => emits++);

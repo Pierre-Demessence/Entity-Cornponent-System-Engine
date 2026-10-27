@@ -104,7 +104,7 @@ describe('columnStore', () => {
     s.set(eid(1), { x: 1, y: 1 });
     const view = s.get(eid(1))!;
     expect(s.get(eid(1))).toBe(view);
-    expect([...s][0][1]).toBe(view);
+    expect([...s][0]![1]).toBe(view);
     s.set(eid(1), { x: 5, y: 5 });
     expect(s.get(eid(1))).toBe(view);
     expect(view.x).toBe(5);
@@ -191,7 +191,7 @@ describe('columnStore', () => {
     s.set(eid(10), { x: 1, y: 1 });
     s.set(eid(20), { x: 2, y: 2 });
     const xs = s.column('x');
-    xs[s.slotOf(eid(20))!] += 100;
+    xs[s.slotOf(eid(20))!]! += 100;
     expect(s.get(eid(20))!.x).toBe(102);
   });
 

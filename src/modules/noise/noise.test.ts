@@ -136,7 +136,7 @@ describe('coherent-noise contracts (all samplers)', () => {
   });
 
   it.each(SAMPLERS_2D)('%s is pure — repeat calls agree', (_name, fn) => {
-    for (const [x, y] of [[0.3, 4.1], [1.7, 0.9], [12.25, -3.5], [-4.5, 2.5]])
+    for (const [x, y] of [[0.3, 4.1], [1.7, 0.9], [12.25, -3.5], [-4.5, 2.5]] as const)
       expect(fn(x, y, 9)).toBe(fn(x, y, 9));
   });
 
@@ -160,7 +160,7 @@ describe('coherent-noise contracts (all samplers)', () => {
   });
 
   it.each(SAMPLERS_2D)('%s is continuous — a tiny step moves the value a little', (_name, fn) => {
-    for (const [x, y] of [[0.5, 2.25], [3.25, 0.75], [8.75, 4.5]]) {
+    for (const [x, y] of [[0.5, 2.25], [3.25, 0.75], [8.75, 4.5]] as const) {
       const delta = Math.abs(fn(x + 1e-3, y + 1e-3, 5) - fn(x, y, 5));
       expect(delta).toBeLessThan(0.05);
     }
@@ -183,7 +183,7 @@ describe('coherent-noise contracts (all samplers)', () => {
   });
 
   it.each(SAMPLERS_3D)('%s is pure — repeat calls agree', (_name, fn) => {
-    for (const [x, y, z] of [[0.3, 4.1, 2.5], [1.7, 0.9, 3.3], [12.25, -3.5, 0.75], [-4.5, 2.5, 6.5]])
+    for (const [x, y, z] of [[0.3, 4.1, 2.5], [1.7, 0.9, 3.3], [12.25, -3.5, 0.75], [-4.5, 2.5, 6.5]] as const)
       expect(fn(x, y, z, 9)).toBe(fn(x, y, z, 9));
   });
 
@@ -196,7 +196,7 @@ describe('coherent-noise contracts (all samplers)', () => {
   });
 
   it.each(SAMPLERS_3D)('%s is continuous — a tiny step moves the value a little', (_name, fn) => {
-    for (const [x, y, z] of [[0.5, 2.25, 1.75], [3.25, 0.75, 8.5], [8.75, 4.5, 0.25]]) {
+    for (const [x, y, z] of [[0.5, 2.25, 1.75], [3.25, 0.75, 8.5], [8.75, 4.5, 0.25]] as const) {
       const delta = Math.abs(fn(x + 1e-3, y + 1e-3, z + 1e-3, 5) - fn(x, y, z, 5));
       expect(delta).toBeLessThan(0.05);
     }

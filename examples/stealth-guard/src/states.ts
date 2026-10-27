@@ -48,7 +48,7 @@ export const GUARD_STATES: FsmStates<GameState, GuardStateKey> = {
       const g = ctx.activeGuard!;
       if (g.canSeePlayer)
         return 'suspicious';
-      const target = g.waypoints[g.waypointIndex];
+      const target = g.waypoints[g.waypointIndex]!;
       g.moveTarget = target;
       g.moveSpeed = PATROL_SPEED;
       g.settle = true;
@@ -66,7 +66,7 @@ export const GUARD_STATES: FsmStates<GameState, GuardStateKey> = {
       let best = 0;
       let bestD = Infinity;
       for (let i = 0; i < g.waypoints.length; i++) {
-        const d = dist(here, g.waypoints[i]);
+        const d = dist(here, g.waypoints[i]!);
         if (d < bestD) {
           bestD = d;
           best = i;
@@ -78,7 +78,7 @@ export const GUARD_STATES: FsmStates<GameState, GuardStateKey> = {
       const g = ctx.activeGuard!;
       if (g.canSeePlayer)
         return 'suspicious';
-      const target = g.waypoints[g.waypointIndex];
+      const target = g.waypoints[g.waypointIndex]!;
       g.moveTarget = target;
       g.moveSpeed = RETURN_SPEED;
       g.settle = true;

@@ -163,8 +163,8 @@ describe('reference exclusions', () => {
       true,
     );
     const [imported, used] = identifiersIn(source, 'X');
-    expect(isImported(imported)).toBe(true);
-    expect(isImported(used)).toBe(false);
+    expect(isImported(imported!)).toBe(true);
+    expect(isImported(used!)).toBe(false);
   });
 
   it('counts self-consumption, with a module\'s own tests as the exception', () => {
@@ -190,12 +190,12 @@ describe('reference exclusions', () => {
       if (!source)
         throw new Error('snippet missing from program');
       const [declared, called] = identifiersIn(source, 'foo');
-      const symbol = program.getTypeChecker().getSymbolAtLocation(declared);
+      const symbol = program.getTypeChecker().getSymbolAtLocation(declared!);
       if (!symbol)
         throw new Error('no symbol for foo');
       const names = declarationNameNodes(symbol);
-      expect(names.has(declared)).toBe(true);
-      expect(names.has(called)).toBe(false);
+      expect(names.has(declared!)).toBe(true);
+      expect(names.has(called!)).toBe(false);
     }
     finally {
       rmSync(dir, { force: true, recursive: true });

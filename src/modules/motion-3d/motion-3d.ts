@@ -104,17 +104,17 @@ export function makeVelocityIntegration3DSystem<TCtx extends VelocityIntegration
           const vs = velStore.slotOf(id);
           if (vs === undefined)
             continue;
-          const dx = vx[vs] * dt;
-          const dy = vy[vs] * dt;
-          const dz = vz[vs] * dt;
+          const dx = vx[vs]! * dt;
+          const dy = vy[vs]! * dt;
+          const dz = vz[vs]! * dt;
           if (dx === 0 && dy === 0 && dz === 0)
             continue;
           const ps = posStore.slotOf(id);
           if (ps === undefined)
             continue;
-          const prevX = px[ps];
-          const prevY = py[ps];
-          const prevZ = pz[ps];
+          const prevX = px[ps]!;
+          const prevY = py[ps]!;
+          const prevZ = pz[ps]!;
           let nextX = prevX + dx;
           let nextY = prevY + dy;
           let nextZ = prevZ + dz;

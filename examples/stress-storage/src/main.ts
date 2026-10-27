@@ -54,7 +54,7 @@ function rgba(r: number, g: number, b: number): number {
 }
 function median(xs: number[]): number {
   const s = [...xs].sort((a, b) => a - b);
-  return s[s.length >> 1];
+  return s[s.length >> 1]!;
 }
 // Single-step toroidal wrap. Valid because movement per tick << playfield size;
 // compare-and-subtract is ~2-3x cheaper than the double-modulo `((v%m)+m)%m`.
@@ -94,8 +94,8 @@ function makeEngineBackend(n: number, churn: boolean): Backend {
     maxIndex: () => maxIndex,
     draw(pixels) {
       for (let i = 0; i < n; i++) {
-        const x = px[i] | 0;
-        const y = py[i] | 0;
+        const x = px[i]! | 0;
+        const y = py[i]! | 0;
         if (x >= 0 && x < W && y >= 0 && y < H)
           pixels[y * W + x] = DOT_SOA;
       }
@@ -105,15 +105,15 @@ function makeEngineBackend(n: number, churn: boolean): Backend {
         const k = Math.max(1, Math.floor(n * CHURN_FRACTION));
         for (let j = 0; j < k; j++) {
           const r = Math.floor(Math.random() * n);
-          world.destroyEntity(ids[r]);
+          world.destroyEntity(ids[r]!);
           ids[r] = spawn();
           maxIndex = Math.max(maxIndex, entityIndex(ids[r]));
         }
       }
       const dt = dtMs / 1000;
       for (let i = 0; i < n; i++) {
-        px[i] = wrap(px[i] + vx[i] * dt, W);
-        py[i] = wrap(py[i] + vy[i] * dt, H);
+        px[i] = wrap(px[i]! + vx[i]! * dt, W);
+        py[i] = wrap(py[i]! + vy[i]! * dt, H);
       }
     },
   };
@@ -136,8 +136,8 @@ function makeBareBackend(n: number): Backend {
     label: 'Bare typed arrays (floor)',
     draw(pixels) {
       for (let i = 0; i < n; i++) {
-        const x = xs[i] | 0;
-        const y = ys[i] | 0;
+        const x = xs[i]! | 0;
+        const y = ys[i]! | 0;
         if (x >= 0 && x < W && y >= 0 && y < H)
           pixels[y * W + x] = DOT_SOA;
       }
@@ -145,8 +145,8 @@ function makeBareBackend(n: number): Backend {
     step(dtMs) {
       const dt = dtMs / 1000;
       for (let i = 0; i < n; i++) {
-        xs[i] = wrap(xs[i] + vxs[i] * dt, W);
-        ys[i] = wrap(ys[i] + vys[i] * dt, H);
+        xs[i] = wrap(xs[i]! + vxs[i]! * dt, W);
+        ys[i] = wrap(ys[i]! + vys[i]! * dt, H);
       }
     },
   };
@@ -168,7 +168,7 @@ function makeMapBackend(n: number): Backend {
     label: 'Naive objects (Map-style)',
     draw(pixels) {
       for (let i = 0; i < n; i++) {
-        const p = pos[i];
+        const p = pos[i]!;
         const x = p.x | 0;
         const y = p.y | 0;
         if (x >= 0 && x < W && y >= 0 && y < H)
@@ -178,8 +178,8 @@ function makeMapBackend(n: number): Backend {
     step(dtMs) {
       const dt = dtMs / 1000;
       for (let i = 0; i < n; i++) {
-        const p = pos[i];
-        const v = vel[i];
+        const p = pos[i]!;
+        const v = vel[i]!;
         p.x = wrap(p.x + v.vx * dt, W);
         p.y = wrap(p.y + v.vy * dt, H);
       }
@@ -221,7 +221,7 @@ function drawGraph(
   const start = Math.max(0, history.length - gw);
   for (let i = start; i < history.length; i++) {
     const x = i - start;
-    const y = yOf(history[i]);
+    const y = yOf(history[i]!);
     if (i === start) {
       gctx.moveTo(x, y);
     }

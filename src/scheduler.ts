@@ -271,7 +271,7 @@ export class Scheduler<TCtx> {
     const idx = this.entries.findIndex(s => s.name === name);
     if (idx === -1)
       return this;
-    const [removed] = this.entries.splice(idx, 1);
+    const removed = this.entries.splice(idx, 1)[0]!;
     if (this.initialized.has(name)) {
       this.initialized.delete(name);
       if (removed.dispose)

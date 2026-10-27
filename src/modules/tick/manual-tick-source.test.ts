@@ -30,7 +30,7 @@ describe('manualTickSource', () => {
 
     expect(a).toHaveBeenCalledTimes(1);
     expect(b).toHaveBeenCalledTimes(1);
-    expect(a.mock.calls[0][0]).toEqual(b.mock.calls[0][0]);
+    expect(a.mock.calls[0]![0]).toEqual(b.mock.calls[0]![0]);
   });
 
   it('unsubscribes cleanly', () => {

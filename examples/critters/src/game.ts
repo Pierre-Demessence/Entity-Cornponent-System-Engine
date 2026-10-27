@@ -126,5 +126,5 @@ export function resetGame(state: GameState): void {
 
   state.critters = [];
   for (let i = 0; i < CRITTER_COUNT; i++)
-    state.critters.push(spawnCritter(state, HOMES[i % HOMES.length]));
+    state.critters.push(spawnCritter(state, HOMES[i % HOMES.length]!));
 }

@@ -97,10 +97,10 @@ export function findPath(options: FindPathOptions): PathNode[] | null {
   while (open.length > 0) {
     let bestIdx = 0;
     for (let i = 1; i < open.length; i++) {
-      if (open[i].f < open[bestIdx].f)
+      if (open[i]!.f < open[bestIdx]!.f)
         bestIdx = i;
     }
-    const current = open[bestIdx];
+    const current = open[bestIdx]!;
     open[bestIdx] = open.at(-1)!;
     open.pop();
 

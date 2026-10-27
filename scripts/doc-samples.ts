@@ -103,7 +103,7 @@ export function extractSamples(markdown: string): { startLine: number; code: str
   const blocks: { startLine: number; code: string }[] = [];
   let open: { startLine: number; body: string[] } | undefined;
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i]!;
     if (open) {
       if (CLOSE_FENCE.test(line)) {
         blocks.push({ code: open.body.join('\n'), startLine: open.startLine });

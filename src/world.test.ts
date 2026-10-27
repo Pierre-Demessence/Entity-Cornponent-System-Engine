@@ -853,7 +853,7 @@ describe('ecsWorld', () => {
         { overrides: { pos: { x: 99, y: 1 } }, template: t1 },
       ]);
 
-      expect(pos.get(a)).toEqual({ x: 99, y: 1 });
+      expect(pos.get(a!)).toEqual({ x: 99, y: 1 });
     });
 
     it('attaches tags from each entry', () => {
@@ -864,8 +864,8 @@ describe('ecsWorld', () => {
 
       const [a, b] = w.spawnBatch([{ template: t1 }, { template: t2 }]);
 
-      expect(tag.has(a)).toBe(true);
-      expect(tag.has(b)).toBe(false);
+      expect(tag.has(a!)).toBe(true);
+      expect(tag.has(b!)).toBe(false);
     });
 
     it('returns an empty array for an empty batch', () => {
@@ -1004,7 +1004,7 @@ describe('ecsWorld', () => {
 
       const results = w.query(PosDef, HealthDef).run();
       expect(results).toHaveLength(1);
-      expect(results[0][0]).toBe(a);
+      expect(results[0]![0]).toBe(a);
     });
 
     it('throws on unregistered component', () => {

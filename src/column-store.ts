@@ -110,19 +110,19 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     const slotOfView = (id: EntityId): number => {
       const index = entityIndex(id);
       const page = pages[index >>> PAGE_BITS];
-      const slot = page === undefined ? ABSENT : page[index & PAGE_MASK];
+      const slot = page === undefined ? ABSENT : page[index & PAGE_MASK]!;
       return slot !== ABSENT && slot2id[slot] === id ? slot : ABSENT;
     };
     for (const f of this.fields) {
       this.viewDescriptors[f] = {
         enumerable: true,
         get(this: { _id: EntityId }): number {
-          return columns[f][slotOfView(this._id)];
+          return columns[f]![slotOfView(this._id)]!;
         },
         set(this: { _id: EntityId }, v: number): void {
           const slot = slotOfView(this._id);
           if (slot !== ABSENT) {
-            columns[f][slot] = v;
+            columns[f]![slot] = v;
             stamps.changed[slot] = clock.tick;
           }
         },
@@ -132,18 +132,18 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
 
   addedTick(id: EntityId): number {
     const slot = this.slotFor(id);
-    return slot === ABSENT ? 0 : this.stamps.added[slot];
+    return slot === ABSENT ? 0 : this.stamps.added[slot]!;
   }
 
   changedTick(id: EntityId): number {
     const slot = this.slotFor(id);
-    return slot === ABSENT ? 0 : this.stamps.changed[slot];
+    return slot === ABSENT ? 0 : this.stamps.changed[slot]!;
   }
 
   clear(): void {
     if (this.deleteHandlers.length > 0) {
       for (let slot = 0; slot < this.count; slot++) {
-        this.emitDelete(this.slot2id[slot], this.plainAt(slot));
+        this.emitDelete(this.slot2id[slot]!, this.plainAt(slot));
       }
     }
     this.count = 0;
@@ -153,7 +153,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   }
 
   /** Raw backing array for a field. Valid indices are `[0, size)`; pair with {@link slotOf}. */
-  column(field: string): NumericArray { return this.columns[field]; }
+  column(field: string): NumericArray { return this.columns[field]!; }
 
   delete(id: EntityId): boolean {
     const slot = this.slotFor(id);
@@ -164,10 +164,13 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
 
     const lastSlot = this.count - 1;
     if (slot !== lastSlot) {
-      for (const f of this.fields) this.columns[f][slot] = this.columns[f][lastSlot];
-      this.stamps.added[slot] = this.stamps.added[lastSlot];
-      this.stamps.changed[slot] = this.stamps.changed[lastSlot];
-      const lastId = this.slot2id[lastSlot];
+      for (const f of this.fields) {
+        const col = this.columns[f]!;
+        col[slot] = col[lastSlot]!;
+      }
+      this.stamps.added[slot] = this.stamps.added[lastSlot]!;
+      this.stamps.changed[slot] = this.stamps.changed[lastSlot]!;
+      const lastId = this.slot2id[lastSlot]!;
       this.slot2id[slot] = lastId;
       this.setSparse(lastId, slot);
     }
@@ -198,7 +201,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
 
   * entries(): Generator<[EntityId, T]> {
     for (let slot = 0; slot < this.count; slot++) {
-      const id = this.slot2id[slot];
+      const id = this.slot2id[slot]!;
       yield [id, this.viewFor(id)];
     }
   }
@@ -218,8 +221,8 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   private grow(): void {
     this.capacity *= 2;
     for (const f of this.fields) {
-      const next = makeColumn(this.colKinds[f], this.capacity, this.shared);
-      next.set(this.columns[f]);
+      const next = makeColumn(this.colKinds[f]!, this.capacity, this.shared);
+      next.set(this.columns[f]!);
       this.columns[f] = next;
     }
     for (const key of ['added', 'changed'] as const) {
@@ -234,12 +237,12 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   private holderOf(id: EntityId): EntityId | undefined {
     const index = entityIndex(id);
     const page = this.pages[index >>> PAGE_BITS];
-    const slot = page === undefined ? ABSENT : page[index & PAGE_MASK];
+    const slot = page === undefined ? ABSENT : page[index & PAGE_MASK]!;
     return slot === ABSENT ? undefined : this.slot2id[slot];
   }
 
   * keys(): Generator<EntityId> {
-    for (let slot = 0; slot < this.count; slot++) yield this.slot2id[slot];
+    for (let slot = 0; slot < this.count; slot++) yield this.slot2id[slot]!;
   }
 
   /** Write-through view bound to the entity id (not its slot), so it survives slot moves caused by other deletes (swap-remove). */
@@ -259,7 +262,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
 
   private plainAt(slot: number): T {
     const out: Record<string, number> = {};
-    for (const f of this.fields) out[f] = this.columns[f][slot];
+    for (const f of this.fields) out[f] = this.columns[f]![slot]!;
     return out as T;
   }
 
@@ -285,7 +288,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
       slot = existing;
     }
     const src = value as Record<string, number>;
-    for (const f of this.fields) this.columns[f][slot] = src[f];
+    for (const f of this.fields) this.columns[f]![slot] = src[f]!;
     this.stamps.changed[slot] = this.clock.tick;
     this.emitSet(id, value);
     return this;
@@ -313,7 +316,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   private slotFor(id: EntityId): number {
     const index = entityIndex(id);
     const page = this.pages[index >>> PAGE_BITS];
-    const slot = page === undefined ? ABSENT : page[index & PAGE_MASK];
+    const slot = page === undefined ? ABSENT : page[index & PAGE_MASK]!;
     return slot !== ABSENT && this.slot2id[slot] === id ? slot : ABSENT;
   }
 
@@ -355,7 +358,7 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
   toSerialized(def: ComponentDef<T>): unknown {
     const entries: [EntityId, unknown][] = [];
     for (let slot = 0; slot < this.count; slot++) {
-      entries.push([this.slot2id[slot], def.serialize(this.plainAt(slot))]);
+      entries.push([this.slot2id[slot]!, def.serialize(this.plainAt(slot))]);
     }
     const v = def.version ?? 0;
     if (v === 0)

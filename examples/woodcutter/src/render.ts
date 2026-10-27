@@ -64,7 +64,7 @@ function drawWorker(ctx: CanvasRenderingContext2D, state: GameState, w: Worker):
     ctx.fillRect(p.x - 4, p.y - WORKER_RADIUS - 6, 8, 5); // carried log
   }
 
-  const step = w.plan && w.planIndex < w.plan.length ? w.plan[w.planIndex].name : '…';
+  const step = w.plan && w.planIndex < w.plan.length ? w.plan[w.planIndex]!.name : '…';
   ctx.textAlign = 'center';
   ctx.font = 'bold 12px system-ui';
   ctx.fillStyle = '#ffe9c4';

@@ -233,7 +233,7 @@ export function classifyConsumer(file: string): Consumer | undefined {
 /** Modules are named by directory; core files by filename — both unique. */
 function sourceLabel(rel: string): string {
   const module = /^src\/modules\/([^/]+)\//.exec(rel);
-  return module ? module[1] : basename(rel);
+  return module ? module[1]! : basename(rel);
 }
 
 function enclosing(node: ts.Node, matches: (n: ts.Node) => boolean): boolean {

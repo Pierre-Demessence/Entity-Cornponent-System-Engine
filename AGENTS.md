@@ -152,6 +152,12 @@ them without a plan and a peer review.
   ordered by creation, or unique over a session.
 - **No enums and no `private` constructor parameter properties** (TypeScript
   `erasableSyntaxOnly`). Use `as const` objects.
+- **`noUncheckedIndexedAccess` is on** for `src/`, `scripts/`, every example
+  and the site, so games that type-check the engine's sources can keep it on
+  too. Narrow with a local when the code already checks; use `!` only where
+  the index is in range by construction (dense `slot < count` loops, hot
+  typed-array paths), never as a substitute for handling a key that can be
+  missing.
 - **Tests live alongside source.** `*.test.ts` next to the file under
   test, not in a separate tree.
 

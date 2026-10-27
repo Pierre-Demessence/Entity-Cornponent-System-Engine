@@ -33,7 +33,7 @@ export function buildTilemapAtlas(opts: BuildTilemapAtlasOptions): TextureAtlasR
         continue;
       const key = String(gid);
       if (frames[key] === undefined)
-        frames[key] = gidToFrame(gid, opts.map.tilesets[0]);
+        frames[key] = gidToFrame(gid, opts.map.tilesets[0]!);
     }
   }
   return new TextureAtlasRegistry().add(opts.name, opts.image, frames);

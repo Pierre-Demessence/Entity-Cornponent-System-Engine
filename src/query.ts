@@ -326,7 +326,7 @@ export class Query<T extends unknown[]> {
   private* scan(since: number | undefined): Generator<[EntityId, ...T]> {
     const sources: FilterStore[] = [...this.stores, ...this.requiredComponents, ...this.requiredTags];
     if (sources.length > 0) {
-      let smallest = sources[0];
+      let smallest = sources[0]!;
       for (const source of sources) {
         if (source.size < smallest.size)
           smallest = source;
@@ -340,7 +340,7 @@ export class Query<T extends unknown[]> {
 
     if (this.anyOfGroups.length === 0)
       return;
-    let group = this.anyOfGroups[0];
+    let group = this.anyOfGroups[0]!;
     let groupSize = group.reduce((sum, m) => sum + m.size, 0);
     for (const candidate of this.anyOfGroups) {
       const size = candidate.reduce((sum, m) => sum + m.size, 0);

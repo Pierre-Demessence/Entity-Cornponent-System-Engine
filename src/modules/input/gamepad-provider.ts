@@ -148,7 +148,7 @@ export class GamepadProvider implements InputProvider {
       const value = pad.axes[i];
       if (value === undefined)
         continue;
-      const [neg, pos] = AXIS_CODES[i];
+      const [neg, pos] = AXIS_CODES[i]!;
       if (value <= -this.deadzone)
         active.add(neg);
       else if (value >= this.deadzone)
@@ -160,7 +160,7 @@ export class GamepadProvider implements InputProvider {
     for (let i = 0; i < BUTTON_CODES.length; i++) {
       const btn = pad.buttons[i];
       if (btn && (btn.pressed || btn.value >= this.buttonThreshold))
-        active.add(BUTTON_CODES[i]);
+        active.add(BUTTON_CODES[i]!);
     }
   }
 

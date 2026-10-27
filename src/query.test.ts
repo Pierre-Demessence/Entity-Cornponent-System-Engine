@@ -228,7 +228,7 @@ function ids(q: Iterable<[number, ...unknown[]]>): number[] {
 }
 
 describe.each(Object.keys(rigs))('change filters (%s)', (path) => {
-  const rig = rigs[path];
+  const rig = rigs[path]!;
 
   it('a new query sees every entity as added and changed on its first pass', () => {
     const r = rig();

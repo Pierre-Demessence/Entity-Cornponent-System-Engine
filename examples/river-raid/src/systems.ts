@@ -50,7 +50,7 @@ function boxAt(pos: { x: number; y: number }, size: { h: number; w: number }): A
 
 function segmentAt(state: GameState, worldY: number) {
   for (let i = state.segments.length - 1; i >= 0; i--) {
-    if (state.segments[i].y <= worldY)
+    if (state.segments[i]!.y <= worldY)
       return state.segments[i];
   }
   return state.segments[0];
@@ -220,7 +220,7 @@ function cleanupOffscreen(ctx: GameState): void {
   }
 
   // Also clean up old segments
-  while (ctx.segments.length > 0 && ctx.segments[0].y < ctx.scrollOffset - 200) {
+  while (ctx.segments.length > 0 && ctx.segments[0]!.y < ctx.scrollOffset - 200) {
     ctx.segments.shift();
   }
 

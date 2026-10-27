@@ -42,7 +42,7 @@ function stripComments(text: string): string {
 /** Every static import/re-export specifier in a file, in source order. */
 function importSpecifiers(text: string): string[] {
   const found: string[] = [];
-  for (const match of text.matchAll(/\b(?:from|import)\s+'([^']+)'/g)) found.push(match[1]);
+  for (const match of text.matchAll(/\b(?:from|import)\s+'([^']+)'/g)) found.push(match[1]!);
   return found;
 }
 
@@ -128,7 +128,7 @@ function siblingImportOffenders(
   for (const { rel, specifiers } of files) {
     if (isCorePath(rel) || rel.endsWith('.test.ts'))
       continue;
-    const owner = rel.split('/')[1];
+    const owner = rel.split('/')[1]!;
     for (const specifier of specifiers) {
       const other = siblingTarget(owner, specifier);
       if (other === undefined)

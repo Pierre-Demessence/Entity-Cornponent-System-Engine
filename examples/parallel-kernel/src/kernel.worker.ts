@@ -60,13 +60,13 @@ ctx.onmessage = (e): void => {
   const K = ax.length;
   const pull = step * msg.dt;
   for (let s = start; s < end; s++) {
-    const x = px[s];
-    const y = py[s];
+    const x = px[s]!;
+    const y = py[s]!;
     let fx = 0;
     let fy = 0;
     for (let k = 0; k < K; k++) {
-      const dx = ax[k] - x;
-      const dy = ay[k] - y;
+      const dx = ax[k]! - x;
+      const dy = ay[k]! - y;
       const inv = 1 / Math.sqrt(dx * dx + dy * dy + 100);
       fx += dx * inv;
       fy += dy * inv;

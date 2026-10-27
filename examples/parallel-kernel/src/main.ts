@@ -34,7 +34,7 @@ function rgba(r: number, g: number, b: number): number {
 
 function median(xs: number[]): number {
   const s = [...xs].sort((a, b) => a - b);
-  return s[s.length >> 1];
+  return s[s.length >> 1]!;
 }
 
 function wrap(v: number, max: number): number {
@@ -81,13 +81,13 @@ function stepSingle(sim: Sim, dt: number): void {
   const { attractorCount: K, ax, ay, count, px, py } = sim;
   const pull = STEP * dt;
   for (let s = 0; s < count; s++) {
-    const x = px[s];
-    const y = py[s];
+    const x = px[s]!;
+    const y = py[s]!;
     let fx = 0;
     let fy = 0;
     for (let k = 0; k < K; k++) {
-      const dx = ax[k] - x;
-      const dy = ay[k] - y;
+      const dx = ax[k]! - x;
+      const dy = ay[k]! - y;
       const inv = 1 / Math.sqrt(dx * dx + dy * dy + 100);
       fx += dx * inv;
       fy += dy * inv;
@@ -134,7 +134,7 @@ function drawGraph(gctx: CanvasRenderingContext2D, history: number[], refreshMs:
   const start = Math.max(0, history.length - gw);
   for (let i = start; i < history.length; i++) {
     const x = i - start;
-    const y = yOf(history[i]);
+    const y = yOf(history[i]!);
     if (i === start)
       gctx.moveTo(x, y);
     else
@@ -255,7 +255,7 @@ export function start(container: HTMLElement): () => void {
         }
       };
       w.addEventListener('message', onReady);
-      w.postMessage({ ax: s.ax, ay: s.ay, end: rs[i][1], h: H, pxBuf: s.pxBuf, pyBuf: s.pyBuf, start: rs[i][0], step: STEP, type: 'init', w: W });
+      w.postMessage({ ax: s.ax, ay: s.ay, end: rs[i]![1], h: H, pxBuf: s.pxBuf, pyBuf: s.pyBuf, start: rs[i]![0], step: STEP, type: 'init', w: W });
     })));
     workersReady = true;
   };
@@ -338,8 +338,8 @@ export function start(container: HTMLElement): () => void {
     pixels.fill(BG);
     const { count: n, px, py } = sim;
     for (let s = 0; s < n; s++) {
-      const x = px[s] | 0;
-      const y = py[s] | 0;
+      const x = px[s]! | 0;
+      const y = py[s]! | 0;
       if (x >= 0 && x < W && y >= 0 && y < H)
         pixels[y * W + x] = DOT;
     }

@@ -38,8 +38,8 @@ function runWorker(ctx: GameState, w: Worker): void {
   if (!w.plan || w.plan.length === 0)
     return;
 
-  const step = w.plan[w.planIndex];
-  const status = RUNTIME[step.name](ctx);
+  const step = w.plan[w.planIndex]!;
+  const status = RUNTIME[step.name]!(ctx);
   if (status === 'success') {
     w.planIndex++;
   }

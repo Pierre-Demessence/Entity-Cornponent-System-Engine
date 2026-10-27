@@ -106,15 +106,15 @@ export function makeVelocityIntegrationSystem<TCtx extends VelocityIntegrationTi
           const vs = velStore.slotOf(id);
           if (vs === undefined)
             continue;
-          const dx = vx[vs] * dt;
-          const dy = vy[vs] * dt;
+          const dx = vx[vs]! * dt;
+          const dy = vy[vs]! * dt;
           if (dx === 0 && dy === 0)
             continue;
           const ps = posStore.slotOf(id);
           if (ps === undefined)
             continue;
-          const prevX = px[ps];
-          const prevY = py[ps];
+          const prevX = px[ps]!;
+          const prevY = py[ps]!;
           let nextX = prevX + dx;
           let nextY = prevY + dy;
           if (boundary) {

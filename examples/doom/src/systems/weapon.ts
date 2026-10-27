@@ -48,7 +48,7 @@ export const weaponSystem: SchedulableSystem<GameState> = {
     const cooldown = ctx.world.getStore(CooldownDef).get(ctx.playerId);
     if (!cooldown || !ready(cooldown))
       return;
-    if (ctx.ammo[ctx.weapon] <= 0)
+    if (ctx.ammo[ctx.weapon]! <= 0)
       return; // out of ammo for this weapon
     const ppos = ctx.world.getStore(Position3DDef).get(ctx.playerId);
     const look = playerLook(ctx);
@@ -65,13 +65,13 @@ export const weaponSystem: SchedulableSystem<GameState> = {
         dir,
       );
       trigger(cooldown, PROJECTILE_COOLDOWN_MS);
-      ctx.ammo[1] -= 1;
+      ctx.ammo[1]! -= 1;
       return;
     }
 
     fireHitscan(ctx, eye, dir);
     trigger(cooldown, HITSCAN_COOLDOWN_MS);
-    ctx.ammo[0] -= 1;
+    ctx.ammo[0]! -= 1;
   },
 };
 

@@ -79,10 +79,10 @@ export function plan(
     // Pop the lowest-f node (linear scan — planning spaces are tiny).
     let bestIdx = 0;
     for (let i = 1; i < open.length; i++) {
-      if (open[i].f < open[bestIdx].f)
+      if (open[i]!.f < open[bestIdx]!.f)
         bestIdx = i;
     }
-    const current = open.splice(bestIdx, 1)[0];
+    const current = open.splice(bestIdx, 1)[0]!;
 
     if (satisfied(current.state, goal))
       return reconstruct(current);

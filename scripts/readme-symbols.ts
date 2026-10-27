@@ -77,7 +77,7 @@ export function declaredSymbols(): DeclaredSymbol[] {
       const match = DECLARATION.exec(line);
       if (match) {
         out.push({
-          name: match[2],
+          name: match[2]!,
           kind: match[1] as DeclaredSymbol['kind'],
           line: sample.startLine + offset,
           module: sample.source,

@@ -340,7 +340,7 @@ export function pathFollowing(
   if (pts.length === 0)
     return { x: 0, y: 0 };
   if (pts.length === 1)
-    return seek(pos, pts[0], vel, maxSpeed);
+    return seek(pos, pts[0]!, vel, maxSpeed);
 
   const heading = vec2Normalize(vel);
   const futureX = pos.x + heading.x * predictDistance;
@@ -350,8 +350,8 @@ export function pathFollowing(
   let bestDist = Infinity;
   let target: Vec2 | undefined;
   for (let i = 0; i < pts.length - 1; i++) {
-    const a = pts[i];
-    const b = pts[i + 1];
+    const a = pts[i]!;
+    const b = pts[i + 1]!;
     const { point } = closestPointOnSegment(future, a, b);
     const d = Math.hypot(future.x - point.x, future.y - point.y);
     if (d < bestDist) {

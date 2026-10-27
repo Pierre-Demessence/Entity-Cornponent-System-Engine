@@ -97,7 +97,7 @@ function probeUnknownNames(samples: Sample[], options: ts.CompilerOptions): Map<
           ? SHORTHAND_PROPERTY.exec(message)
           : (diag.code === 2304 || diag.code === 2552) ? CANNOT_FIND_NAME.exec(message) : null;
         if (match)
-          names.add(match[1]);
+          names.add(match[1]!);
       }
     }
     unknowns.set(path, names);

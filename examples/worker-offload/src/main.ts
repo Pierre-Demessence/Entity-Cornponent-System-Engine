@@ -25,7 +25,7 @@ const HISTORY = W;
 
 function median(xs: number[]): number {
   const s = [...xs].sort((a, b) => a - b);
-  return s[s.length >> 1];
+  return s[s.length >> 1]!;
 }
 
 function drawGraph(gctx: CanvasRenderingContext2D, history: number[], refreshMs: number): void {
@@ -58,7 +58,7 @@ function drawGraph(gctx: CanvasRenderingContext2D, history: number[], refreshMs:
   const start = Math.max(0, history.length - gw);
   for (let i = start; i < history.length; i++) {
     const x = i - start;
-    const y = yOf(history[i]);
+    const y = yOf(history[i]!);
     if (i === start)
       gctx.moveTo(x, y);
     else
@@ -209,15 +209,15 @@ export function start(container: HTMLElement): () => void {
 
     const dt = frameDelta / 1000;
     for (let i = 0; i < DOT_COUNT; i++) {
-      let x = xs[i] + vxs[i] * dt;
-      let y = ys[i] + vys[i] * dt;
+      let x = xs[i]! + vxs[i]! * dt;
+      let y = ys[i]! + vys[i]! * dt;
       if (x < 0 || x > W) {
-        vxs[i] = -vxs[i];
-        x = xs[i];
+        vxs[i] = -vxs[i]!;
+        x = xs[i]!;
       }
       if (y < 0 || y > H) {
-        vys[i] = -vys[i];
-        y = ys[i];
+        vys[i] = -vys[i]!;
+        y = ys[i]!;
       }
       xs[i] = x;
       ys[i] = y;
@@ -227,7 +227,7 @@ export function start(container: HTMLElement): () => void {
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#7fd4ff';
     for (let i = 0; i < DOT_COUNT; i++)
-      ctx.fillRect(xs[i] - 2, ys[i] - 2, 4, 4);
+      ctx.fillRect(xs[i]! - 2, ys[i]! - 2, 4, 4);
 
     drawGraph(gctx, history, refreshMs || (1000 / 60));
 

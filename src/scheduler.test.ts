@@ -295,9 +295,9 @@ describe('scheduler', () => {
       s.add({ name: 'read', reads: [pos], run: () => {} });
       s.build();
       expect(warn).toHaveBeenCalledOnce();
-      expect(warn.mock.calls[0][0]).toContain('"read"');
-      expect(warn.mock.calls[0][0]).toContain('"Position"');
-      expect(warn.mock.calls[0][0]).toContain('"write"');
+      expect(warn.mock.calls[0]![0]).toContain('"read"');
+      expect(warn.mock.calls[0]![0]).toContain('"Position"');
+      expect(warn.mock.calls[0]![0]).toContain('"write"');
       warn.mockRestore();
     });
 

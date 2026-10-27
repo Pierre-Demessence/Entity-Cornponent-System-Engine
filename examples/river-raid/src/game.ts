@@ -229,9 +229,9 @@ export function spawnEnemy(state: GameState, worldY: number, kind: 'boat' | 'hel
   };
   const pointsMap: Record<string, number> = { boat: 30, helicopter: 60, jet: 100 };
   const speedMap: Record<string, number> = { boat: 60, helicopter: 80, jet: 140 };
-  const size = sizes[kind];
+  const size = sizes[kind]!;
   const dir: -1 | 1 = state.rng() < 0.5 ? -1 : 1;
-  const speed = speedMap[kind] + randRange(state, -20, 20);
+  const speed = speedMap[kind]! + randRange(state, -20, 20);
 
   let x: number;
   if (kind === 'jet') {
@@ -255,7 +255,7 @@ export function spawnEnemy(state: GameState, worldY: number, kind: 'boat' | 'hel
   w.getStore(EnemyDef).set(id, {
     dir,
     kind,
-    points: pointsMap[kind],
+    points: pointsMap[kind]!,
     speed,
   });
   w.getTag(EnemyTag).add(id);

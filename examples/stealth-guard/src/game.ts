@@ -102,7 +102,7 @@ function spawnMover(state: GameState, x: number, y: number): EntityId {
 }
 
 function makeGuard(state: GameState, waypoints: Vec2[]): GuardBrain {
-  const start = waypoints[0];
+  const start = waypoints[0]!;
   const id = spawnMover(state, start.x, start.y);
   return {
     id,

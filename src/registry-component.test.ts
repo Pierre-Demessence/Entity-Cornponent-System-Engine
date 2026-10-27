@@ -19,7 +19,7 @@ describe('registryComponent', () => {
       selectId: card => card.id,
     });
 
-    const value = { def: cards.strike };
+    const value = { def: cards.strike! };
     const serialized = def.serialize(value);
 
     expect(serialized).toEqual({ id: 'strike' });
@@ -54,7 +54,7 @@ describe('registryComponent', () => {
       selectId: enemy => enemy.key,
     });
 
-    const value = { archetype: enemies[2] };
+    const value = { archetype: enemies[2]! };
     const serialized = def.serialize(value);
 
     expect(serialized).toEqual({ defId: 2 });

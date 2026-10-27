@@ -168,7 +168,7 @@ export function spawnFleet(state: GameState): void {
         w: ALIEN_W,
       });
       state.world.getStore(RenderOrderDef).set(id, { value: 20 });
-      state.world.getStore(AlienDef).set(id, { col, points: ROW_POINTS[row], row });
+      state.world.getStore(AlienDef).set(id, { col, points: ROW_POINTS[row]!, row });
       state.world.getTag(AlienTag).add(id);
     }
   }

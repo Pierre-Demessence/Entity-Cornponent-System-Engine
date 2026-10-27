@@ -61,8 +61,8 @@ function castLight(
 
     for (let dx = -j; dx <= 0; dx++) {
       const dy = -j;
-      const mx = cx + dx * MULT[0][octant] + dy * MULT[1][octant];
-      const my = cy + dx * MULT[2][octant] + dy * MULT[3][octant];
+      const mx = cx + dx * MULT[0]![octant]! + dy * MULT[1]![octant]!;
+      const my = cy + dx * MULT[2]![octant]! + dy * MULT[3]![octant]!;
 
       const leftSlope = (dx - 0.5) / (dy + 0.5);
       const rightSlope = (dx + 0.5) / (dy - 0.5);

@@ -486,7 +486,7 @@ function toColumnFields(schema: Record<string, SimpleFieldKind>, keys: readonly 
     const kind = schema[k];
     if (kind === 'number')
       out.push({ field: k, kind: 'f64' });
-    else if (NUMERIC_KINDS.has(kind))
+    else if (kind !== undefined && NUMERIC_KINDS.has(kind))
       out.push({ field: k, kind: kind as NumericColumnKind });
     else
       return undefined;

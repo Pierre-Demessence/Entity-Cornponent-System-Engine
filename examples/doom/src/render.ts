@@ -159,14 +159,15 @@ export function makeRenderer(width: number, height: number): Renderer3D {
       tracerLine.visible = false;
       return;
     }
-    const arr = tracerGeo.attributes.position.array as Float32Array;
+    const position = tracerGeo.attributes.position!;
+    const arr = position.array as Float32Array;
     arr[0] = t.from.x;
     arr[1] = t.from.y;
     arr[2] = t.from.z;
     arr[3] = t.to.x;
     arr[4] = t.to.y;
     arr[5] = t.to.z;
-    tracerGeo.attributes.position.needsUpdate = true;
+    position.needsUpdate = true;
     tracerLine.visible = true;
   }
 

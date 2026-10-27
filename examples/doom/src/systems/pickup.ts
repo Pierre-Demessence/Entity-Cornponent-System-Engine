@@ -42,10 +42,10 @@ export const pickupSystem: SchedulableSystem<GameState> = {
           ph.hp = Math.min(ph.max, ph.hp + pk.amount);
       }
       else if (pk.kind === 1) {
-        ctx.ammo[0] += pk.amount;
+        ctx.ammo[0]! += pk.amount;
       }
       else {
-        ctx.ammo[1] += pk.amount;
+        ctx.ammo[1]! += pk.amount;
       }
       ctx.world.queueDestroy(id);
     }

@@ -33,7 +33,7 @@ function liveDocs(): string[] {
 function relativeMarkdownLinks(text: string): string[] {
   const found: string[] = [];
   for (const match of text.matchAll(/\]\(([^)\s]+\.md)(?:#[^)]*)?\)/g)) {
-    const target = match[1];
+    const target = match[1]!;
     if (!/^[a-z][a-z0-9+.-]*:/i.test(target)) {
       found.push(target);
     }
