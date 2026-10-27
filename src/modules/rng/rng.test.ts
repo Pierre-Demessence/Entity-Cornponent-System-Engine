@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { makeSeededRng, pick, randomInt, shuffle } from './rng';
+import { makeSeededRng, pick, randomFloat, randomInt, shuffle } from './rng';
 
 describe('makeSeededRng', () => {
   it('is deterministic for a given seed', () => {
@@ -24,6 +24,57 @@ describe('makeSeededRng', () => {
       expect(v).toBeGreaterThanOrEqual(0);
       expect(v).toBeLessThan(1);
     }
+  });
+
+  it('resumes the exact sequence from a state saved mid-sequence', () => {
+    const rand = makeSeededRng(42);
+    for (let i = 0; i < 5; i++)
+      rand();
+    const saved = rand.state;
+    const expected = Array.from({ length: 8 }, () => rand());
+
+    const restored = makeSeededRng(0);
+    restored.state = saved;
+    expect(Array.from({ length: 8 }, () => restored())).toEqual(expected);
+  });
+
+  it('exposes state as a JSON-safe unsigned 32-bit integer', () => {
+    const rand = makeSeededRng(0xFFFFFFFF);
+    for (let i = 0; i < 100; i++) {
+      rand();
+      expect(Number.isInteger(rand.state)).toBe(true);
+      expect(rand.state).toBeGreaterThanOrEqual(0);
+      expect(rand.state).toBeLessThanOrEqual(0xFFFFFFFF);
+    }
+    const saved = JSON.parse(JSON.stringify({ state: rand.state })) as { state: number };
+    const next = rand();
+    rand.state = saved.state;
+    expect(rand()).toBe(next);
+  });
+
+  it('starts with state equal to the seed', () => {
+    expect(makeSeededRng(1234).state).toBe(1234);
+  });
+});
+
+describe('randomFloat', () => {
+  it('stays within [min, max)', () => {
+    const rand = makeSeededRng(11);
+    for (let i = 0; i < 1000; i++) {
+      const v = randomFloat(-2.5, 4, rand);
+      expect(v).toBeGreaterThanOrEqual(-2.5);
+      expect(v).toBeLessThan(4);
+    }
+  });
+
+  it('maps the unit rng linearly onto the range', () => {
+    expect(randomFloat(10, 20, () => 0)).toBe(10);
+    expect(randomFloat(10, 20, () => 0.5)).toBe(15);
+  });
+
+  it('returns min for an empty or inverted range', () => {
+    expect(randomFloat(3, 3)).toBe(3);
+    expect(randomFloat(5, 1)).toBe(5);
   });
 });
 

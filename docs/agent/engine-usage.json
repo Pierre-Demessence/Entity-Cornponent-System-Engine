@@ -11826,6 +11826,27 @@
           }
         },
         {
+          "name": "randomFloat",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/rng/rng.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "RandomFn",
           "coveredByExample": true,
           "example": {
@@ -11878,6 +11899,25 @@
           }
         },
         {
+          "name": "SeededRng",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "shuffle",
           "coveredByExample": true,
           "example": {
@@ -11908,9 +11948,9 @@
         "src/modules/pile/pile.test.ts",
         "src/modules/rng/rng.test.ts"
       ],
-      "typeTotal": 1,
+      "typeTotal": 2,
       "typeUsedByExample": 1,
-      "valueTotal": 4,
+      "valueTotal": 5,
       "valueUsedByExample": 4
     },
     {
@@ -16923,6 +16963,11 @@
       "total": 2
     },
     {
+      "importPath": "@pierre/ecs/modules/rng",
+      "missing": 1,
+      "total": 5
+    },
+    {
       "importPath": "@pierre/ecs/modules/stats",
       "missing": 1,
       "total": 3
@@ -16954,11 +16999,11 @@
     "entriesWithExample": 55,
     "entriesWithoutExample": 7,
     "modules": 46,
-    "noExternalConsumer": 166,
-    "symbols": 621,
-    "typeSymbols": 255,
-    "valueSymbols": 366,
+    "noExternalConsumer": 167,
+    "symbols": 623,
+    "typeSymbols": 256,
+    "valueSymbols": 367,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 134
+    "valueWithoutExample": 135
   }
 }

@@ -41,10 +41,10 @@ references it.
 
 ## Headline
 
-- 62 public entries (16 core, 46 modules) · 621 symbols (366 value, 255 type)
+- 62 public entries (16 core, 46 modules) · 623 symbols (367 value, 256 type)
 - 55 entries referenced by at least one example · 7 with none
-- 134 value symbols referenced by no example (5 of them with no external consumer at all)
-- 166 symbols with no external consumer
+- 135 value symbols referenced by no example (5 of them with no external consumer at all)
+- 167 symbols with no external consumer
 
 ## Entries with no example reference
 
@@ -83,6 +83,7 @@ the shortlist for the next game in
 - `@pierre/ecs/modules/steering` — 2 of 14 value exports unreferenced by any example
 - `@pierre/ecs/modules/camera` — 1 of 9 value exports unreferenced by any example
 - `@pierre/ecs/modules/kinematics-3d` — 1 of 2 value exports unreferenced by any example
+- `@pierre/ecs/modules/rng` — 1 of 5 value exports unreferenced by any example
 - `@pierre/ecs/modules/stats` — 1 of 3 value exports unreferenced by any example
 - `@pierre/ecs/modules/tick` — 1 of 4 value exports unreferenced by any example
 - `@pierre/ecs/modules/timer` — 1 of 7 value exports unreferenced by any example
@@ -853,12 +854,14 @@ value 1/1 · type 1/4 · examples: doom, minecraft, platformer-3d, portal, starf
 
 ### `@pierre/ecs/modules/rng`
 
-value 4/4 · type 1/1 · examples: game-of-life, indy-500, lunar-lander, minecraft, pacman, river-raid, roguelike, snake +2 more · tests: 3 · other: particles, pile
+value 4/5 · type 1/2 · examples: game-of-life, indy-500, lunar-lander, minecraft, pacman, river-raid, roguelike, snake +2 more · tests: 3 · other: particles, pile
 
 - **`makeSeededRng`** _(fn)_ — examples: game-of-life, indy-500, lunar-lander, minecraft, pacman, river-raid, roguelike, starfighter · tests: src/modules/particles/particles.test.ts, src/modules/pile/pile.test.ts, src/modules/rng/rng.test.ts · other: —
 - **`pick`** _(fn)_ — examples: pacman, river-raid, roguelike, snake, solitaire · tests: src/modules/rng/rng.test.ts · other: particles
+- **`randomFloat`** _(fn)_ — examples: — · tests: src/modules/rng/rng.test.ts · other: —
 - **`RandomFn`** _(type)_ — examples: indy-500, pacman, river-raid, roguelike, starfighter · tests: — · other: particles, pile
 - **`randomInt`** _(fn)_ — examples: game-of-life, roguelike · tests: src/modules/rng/rng.test.ts · other: —
+- **`SeededRng`** _(interface)_ — no external consumer
 - **`shuffle`** _(fn)_ — examples: roguelike · tests: src/modules/rng/rng.test.ts · other: pile
 
 ### `@pierre/ecs/modules/save`
