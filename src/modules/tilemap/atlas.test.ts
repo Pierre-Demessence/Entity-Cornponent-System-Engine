@@ -104,4 +104,11 @@ describe('buildTilemapAtlas', () => {
     // GID 5 → local 4 → col 0, row 1 → { x: 0, y: 16, w: 16, h: 16 }
     expect(atlas.getFrame('a', '5')).toMatchObject({ sh: 16, sw: 16, sx: 0, sy: 16 });
   });
+
+  it('throws a clear error naming the atlas when the map has no tileset', () => {
+    const map = makeMap([makeLayer([1])], []);
+    const image = document.createElement('canvas');
+
+    expect(() => buildTilemapAtlas({ name: 'dungeon', image, map })).toThrow(/"dungeon".*no tileset/);
+  });
 });

@@ -26,14 +26,6 @@ once a profile or consumer asks for them; 3.5 is the storage endgame.
 
 ### Tier 2 — Robustness & correctness
 
-- **2.16 `ColumnStore` fails silently on a missing field** — three paths turn
-  a missing value into a wrong number instead of an error: `column(field)`
-  returns `undefined` for an unknown field name; a view's getter returns
-  `undefined` after its entity is deleted (it reads slot `ABSENT`); `set()`
-  with a value lacking a field writes `undefined`, stored as NaN or 0. Throw
-  on the first and last; decide whether a stale view reads `undefined` (as the
-  object store would) or throws, and type it to match.
-
 ### Tier 3 — Performance & large scale
 
 - **3.5 Archetype tables** — gather-free multi-component iteration: group
@@ -280,10 +272,6 @@ once a profile or consumer asks for them; 3.5 is the storage endgame.
   a stroked `rect` / `circle` whose line straddles the view edge is culled by up
   to half its `lineWidth` (times scale), because `isCulled` bounds the fill
   geometry only. Pad the bound by that amount.
-- **`modules/tilemap` — atlas with no tileset** — **Ready**: a fix, not a
-  shape. `buildTilemapAtlas` passes `map.tilesets[0]` to `gidToFrame` without
-  checking it exists, so a map with no tileset fails with an unrelated
-  `TypeError`. Throw a clear error naming the map instead.
 - **`modules/spatial` — `QuadTree` / `BVH` backends** — **Deferred**: solid
   canon, but `HashGrid2D` serves every consumer. Gate: one consumer a uniform
   grid cannot serve. An `Octree` waits for a 3D consumer.

@@ -117,7 +117,10 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
       this.viewDescriptors[f] = {
         enumerable: true,
         get(this: { _id: EntityId }): number {
-          return columns[f]![slotOfView(this._id)]!;
+          const slot = slotOfView(this._id);
+          if (slot === ABSENT)
+            throw new Error(`ColumnStore: field "${f}" read through a view of entity ${formatEntityId(this._id)}, which was deleted.`);
+          return columns[f]![slot]!;
         },
         set(this: { _id: EntityId }, v: number): void {
           const slot = slotOfView(this._id);
@@ -152,8 +155,12 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     this.slot2id.length = 0;
   }
 
-  /** Raw backing array for a field. Valid indices are `[0, size)`; pair with {@link slotOf}. */
-  column(field: string): NumericArray { return this.columns[field]!; }
+  /** Raw backing array for a field; throws for a field the store does not declare. Valid indices are `[0, size)`; pair with {@link slotOf}. */
+  column(field: string): NumericArray {
+    if (!Object.hasOwn(this.columns, field))
+      throw new Error(`ColumnStore.column: unknown field "${field}"; declared fields: ${this.fields.join(', ')}.`);
+    return this.columns[field]!;
+  }
 
   delete(id: EntityId): boolean {
     const slot = this.slotFor(id);
@@ -266,8 +273,13 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
     return out as T;
   }
 
-  /** Insert or replace a component value. Fires validate → delete (if replacing) → set handlers. */
+  /** Insert or replace a component value; throws if `value` lacks a declared field. Fires validate → delete (if replacing) → set handlers. */
   set(id: EntityId, value: T): this {
+    const src = value as Record<string, number | undefined>;
+    for (const f of this.fields) {
+      if (src[f] === undefined)
+        throw new Error(`ColumnStore.set: value for entity ${formatEntityId(id)} is missing field "${f}".`);
+    }
     this.emitValidate(id);
     const existing = this.slotFor(id);
     let slot: number;
@@ -287,7 +299,6 @@ export class ColumnStore<T> implements ComponentStoreLike<T> {
         this.emitDelete(id, this.plainAt(existing));
       slot = existing;
     }
-    const src = value as Record<string, number>;
     for (const f of this.fields) this.columns[f]![slot] = src[f]!;
     this.stamps.changed[slot] = this.clock.tick;
     this.emitSet(id, value);

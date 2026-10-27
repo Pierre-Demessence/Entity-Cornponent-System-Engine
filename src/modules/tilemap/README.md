@@ -12,7 +12,7 @@ registry), `modules/render-canvas2d` (sprite renderables), and
 Collects every unique GID across all visible tile layers, resolves each
 to its source rectangle via `gidToFrame`, and registers the frames in a
 new `TextureAtlasRegistry`. Returns the registry ready for
-`Canvas2DRenderContext.atlases`.
+`Canvas2DRenderContext.atlases`. Throws when the map has no tileset.
 
 ```ts
 const atlas = buildTilemapAtlas({ map, image, name: 'dungeon' });

@@ -22,6 +22,31 @@ describe('columnStore', () => {
     expect(s.size).toBe(1);
   });
 
+  it('column throws for an unknown field instead of returning undefined', () => {
+    const s = new ColumnStore<Vec2>(FIELDS);
+    expect(s.column('x')).toBeInstanceOf(Float32Array);
+    expect(() => s.column('z')).toThrow(/unknown field "z"/);
+    expect(() => s.column('toString')).toThrow(/unknown field "toString"/);
+  });
+
+  it('set throws when the value lacks a declared field, leaving the store untouched', () => {
+    const s = new ColumnStore<Vec2>(FIELDS);
+    expect(() => s.set(eid(1), { x: 1 } as Vec2)).toThrow(/missing field "y"/);
+    expect(s.has(eid(1))).toBe(false);
+    expect(s.size).toBe(0);
+    s.set(eid(1), { x: 1, y: 2 });
+    expect(() => s.set(eid(1), { y: 9 } as Vec2)).toThrow(/missing field "x"/);
+    expect(s.get(eid(1))).toMatchObject({ x: 1, y: 2 });
+  });
+
+  it('reading a field through a view whose entity was deleted throws', () => {
+    const s = new ColumnStore<Vec2>(FIELDS);
+    s.set(eid(1), { x: 1, y: 2 });
+    const view = s.get(eid(1))!;
+    s.delete(eid(1));
+    expect(() => view.y).toThrow(/entity .* was deleted/);
+  });
+
   it('get returns undefined for missing entities', () => {
     const s = new ColumnStore<Vec2>(FIELDS);
     expect(s.get(eid(9))).toBeUndefined();
@@ -115,7 +140,7 @@ describe('columnStore', () => {
     s.set(eid(1), { x: 1, y: 1 });
     const first = s.get(eid(1))!;
     s.delete(eid(1));
-    expect(first.x).toBeUndefined();
+    expect(() => first.x).toThrow(/deleted/);
     s.set(eid(1), { x: 2, y: 2 });
     const second = s.get(eid(1))!;
     expect(second).not.toBe(first);
@@ -253,10 +278,11 @@ describe('columnStore', () => {
       const old = s.get(stale)!;
       s.delete(stale);
       s.set(current, { x: 2, y: 2 });
-      expect(old.x).toBeUndefined();
+      expect(() => old.x).toThrow(/deleted/);
       old.x = 50;
       expect(s.get(current)).toMatchObject({ x: 2, y: 2 });
-      expect(s.get(current)).not.toBe(old);
+      // Compared by identity: `toBe` would inspect the stale view's fields and throw.
+      expect(s.get(current) === old).toBe(false);
     });
 
     it('works for shared-memory stores', () => {

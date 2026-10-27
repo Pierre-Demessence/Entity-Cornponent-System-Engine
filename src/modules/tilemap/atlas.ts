@@ -24,8 +24,12 @@ export interface BuildTilemapAtlasOptions {
  * result before passing it to the renderer.
  *
  * The atlas is built **synchronously** — the image must already be loaded.
+ * Throws when the map has no tileset.
  */
 export function buildTilemapAtlas(opts: BuildTilemapAtlasOptions): TextureAtlasRegistry {
+  const tileset = opts.map.tilesets[0];
+  if (tileset === undefined)
+    throw new Error(`buildTilemapAtlas: cannot build atlas "${opts.name}": the map has no tileset.`);
   const frames: Record<string, { h: number; w: number; x: number; y: number }> = {};
   for (const layer of opts.map.layers) {
     for (const gid of layer.gids) {
@@ -33,7 +37,7 @@ export function buildTilemapAtlas(opts: BuildTilemapAtlasOptions): TextureAtlasR
         continue;
       const key = String(gid);
       if (frames[key] === undefined)
-        frames[key] = gidToFrame(gid, opts.map.tilesets[0]!);
+        frames[key] = gidToFrame(gid, tileset);
     }
   }
   return new TextureAtlasRegistry().add(opts.name, opts.image, frames);

@@ -17,7 +17,10 @@
   components, chosen automatically by `registerComponent`. It locates rows by
   the id's index and checks the full id, so a stale id (same index, older
   generation) misses on every read, and writing one while the index holds a
-  newer entity throws.
+  newer entity throws. `set` also throws when the value lacks a declared
+  field, `column(field)` throws for an undeclared field, and reading a field
+  through a `get(id)` view whose entity was deleted throws; writing through
+  such a view does nothing.
 
 Every store keys rows by the full `EntityId`, generation included, so an id
 kept after its entity was destroyed never reads or writes the entity that
