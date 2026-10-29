@@ -30,13 +30,18 @@ plan lives in the [backlog](backlog.md#modules) (see the
 - **Utility AI** (utility system / "infinite axis") � 🟨 — every possible
   action scores itself 0–1 from the situation; pick the highest. "How
   much do I *want* to eat vs flee right now?" The Sims uses this. Good
-  when priorities are fuzzy rather than strict. The likely next AI pick.
+  when priorities are fuzzy rather than strict.
 - **GOAP (Goal-Oriented Action Planning)** ✅ 🟨 — actions have
   preconditions/effects; a planner (A\*) finds a *sequence* to reach a
   goal. Emergent multi-step plans nobody hand-authored (F.E.A.R.).
   → `@pierre/ecs/modules/goap`.
 - **HTN (Hierarchical Task Network) planning** 🟥 — like GOAP but plans by
   breaking big tasks into subtasks. Some AAA (Guerrilla/Horizon).
+- **Game-tree search (minimax / alpha-beta, MCTS)** 🔜 🟨 — the computer
+  player of a board game looks several moves ahead, assuming the opponent
+  plays their best reply. The standard opponent for Connect Four, Checkers and
+  chess; Monte Carlo tree search plays out random games instead when a
+  position is hard to score. → backlog `modules/game-search`.
 - **Rule-based / decision tree / scripted `if`-trees** 🟩 — hand-written
   logic. Everywhere; not really an "engine feature," just code.
 - **Blackboard** ✅ (as the per-agent `ctx`) 🟩 — shared scratchpad the AI
@@ -130,9 +135,11 @@ a blackboard via the per-agent context.
 
 The obvious remaining gaps, roughly in bang-for-buck order:
 
-1. **Utility AI** — fuzzy score-based action selection; small and very
-   reusable, complements FSM/BT/GOAP. The likely next AI pick.
-2. **HTN planning** — authored task decomposition, when GOAP's emergent
+1. **Game-tree search** — minimax with alpha-beta pruning and MCTS over
+   plain game states; marked Ready, with BoardGames' board games waiting on it.
+2. **Utility AI** — fuzzy score-based action selection; small and very
+   reusable, complements FSM/BT/GOAP.
+3. **HTN planning** — authored task decomposition, when GOAP's emergent
    search isn't the right fit.
-3. **Navigation beyond grid A\*** — a NavMesh or flow fields (continuous
+4. **Navigation beyond grid A\*** — a NavMesh or flow fields (continuous
    space / many-agent).

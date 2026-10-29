@@ -116,6 +116,27 @@ code (Bevy, Unity and Godot all run it trusted). A game that loads untrusted
 content isolates it at its own boundary. Revisit only if the engine targets an
 untrusted-mod platform.
 
+### Discrete game logic is plain data first, components second
+
+A module that models discrete game state (a pile of cards, a turn order) ships
+its core as JSON-safe values plus functions over them; the ECS component and
+any world-aware helpers are a thin wrapper over that core. `modules/timer` is
+the model: `Timer` is a plain struct that `modules/cooldown` and
+`modules/lifetime` wrap as components.
+
+- **Why:** turn-based consumers keep their whole game state outside the world
+  (BoardGames). Undo is an array of earlier states, a save is
+  `JSON.stringify(state)`, rules are tested without a world, and a computer
+  opponent's look-ahead search copies thousands of states per move — cheap for
+  plain data, impractical for a world snapshot.
+- **Plain helpers mutate in place,** like `shuffle` and `tickTimer`. A consumer
+  with immutable rules copies the state once per move and edits the copy, so
+  helpers that returned new arrays would add a copy per call.
+- **Not covered:** real-time per-entity behaviour (`motion`, `kinematics`,
+  `lifetime`), whose state belongs on the entities it moves.
+- **Rejected:** world-only logic modules, which force world serialization into
+  undo and saves; immutable helpers that return fresh values.
+
 ## Engine scope
 
 ### Scoring / lives / game-over scaffold — declined

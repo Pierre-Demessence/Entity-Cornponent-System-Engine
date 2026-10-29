@@ -212,7 +212,7 @@ sites is unfinished work — the *slice-V1* failure mode below — and is
 
 ## Layering Principles
 
-The engine is split into three layers — Core / Modules / App — and four
+The engine is split into three layers — Core / Modules / App — and five
 principles govern how they relate. The triage table below applies these
 operationally; this section spells the principles out so future
 contributors know *why* the table is shaped that way.
@@ -235,6 +235,18 @@ unused modules. Modules ship as `@pierre/ecs/modules/<name>` subpath
 exports — tree-shakeable, no giant "ECS framework" object. If your
 prototype doesn't import `modules/audio`, the audio code is not in your
 bundle.
+
+### Plain data first for discrete logic
+
+A module that models discrete game state — a pile, a turn order, a board —
+ships its core as JSON-safe values and functions that change them in place, with
+no world in their signatures. The component def and the world-aware helpers
+come second, as a wrapper that delegates to that core. A consumer that keeps
+its state outside the world (undo histories, `JSON.stringify` saves, look-ahead
+search over copied states) uses the core alone; one that keeps it on entities
+uses the wrapper. `modules/timer` and its wrappers `modules/cooldown` and
+`modules/lifetime` are the reference. Real-time per-entity behaviour stays
+component-first. The reasoning is in [decisions.md](decisions.md#discrete-game-logic-is-plain-data-first-components-second).
 
 ### Composition, not inheritance
 
