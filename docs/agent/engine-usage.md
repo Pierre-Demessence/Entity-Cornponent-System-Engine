@@ -41,10 +41,10 @@ references it.
 
 ## Headline
 
-- 63 public entries (16 core, 47 modules) · 640 symbols (380 value, 260 type)
+- 63 public entries (16 core, 47 modules) · 643 symbols (381 value, 262 type)
 - 55 entries referenced by at least one example · 8 with none
-- 148 value symbols referenced by no example (5 of them with no external consumer at all)
-- 171 symbols with no external consumer
+- 149 value symbols referenced by no example (5 of them with no external consumer at all)
+- 173 symbols with no external consumer
 
 ## Entries with no example reference
 
@@ -55,7 +55,7 @@ only by another module.
 - `@pierre/ecs/audio-provider` — tests: 1 · other: audio
 - `@pierre/ecs/input-source` — tests: 4 · other: input
 - `@pierre/ecs/lifecycle` — tests: — · other: world.ts
-- `@pierre/ecs/modules/game-search` — tests: 1 · other: —
+- `@pierre/ecs/modules/game-search` — tests: 2 · other: —
 - `@pierre/ecs/query` — tests: 1 · other: world.ts
 - `@pierre/ecs/spatial-structure` — tests: 3 · other: spatial, world.ts
 - `@pierre/ecs/test-utils` — tests: 15 · other: —
@@ -77,7 +77,7 @@ the shortlist for the next game in
 - `@pierre/ecs/modules/asset-loader` — 4 of 8 value exports unreferenced by any example
 - `@pierre/ecs/modules/animation` — 3 of 12 value exports unreferenced by any example
 - `@pierre/ecs/modules/collision` — 3 of 12 value exports unreferenced by any example
-- `@pierre/ecs/modules/game-search` — 2 of 2 value exports unreferenced by any example
+- `@pierre/ecs/modules/game-search` — 3 of 3 value exports unreferenced by any example
 - `@pierre/ecs/modules/input` — 2 of 10 value exports unreferenced by any example
 - `@pierre/ecs/modules/noise` — 2 of 11 value exports unreferenced by any example
 - `@pierre/ecs/modules/particles` — 2 of 6 value exports unreferenced by any example
@@ -576,11 +576,14 @@ value 2/2 · type 2/3 · examples: pacman, stealth-guard · tests: 1 · other: �
 
 ### `@pierre/ecs/modules/game-search`
 
-value 0/2 · type 0/3 · examples: — · tests: 1 · other: —
+value 0/3 · type 0/5 · examples: — · tests: 2 · other: —
 
 - **`AlphaBetaOptions`** _(interface)_ — no external consumer
 - **`AlphaBetaResult`** _(interface)_ — no external consumer
 - **`alphaBetaSearch`** _(fn)_ — examples: — · tests: src/modules/game-search/alpha-beta.test.ts · other: —
+- **`MctsOptions`** _(interface)_ — no external consumer
+- **`MctsResult`** _(interface)_ — no external consumer
+- **`mctsSearch`** _(fn)_ — examples: — · tests: src/modules/game-search/mcts.test.ts · other: —
 - **`SearchGame`** _(interface)_ — no external consumer
 - **`WIN_SCORE`** _(const)_ — examples: — · tests: src/modules/game-search/alpha-beta.test.ts · other: —
 
@@ -870,13 +873,13 @@ value 1/1 · type 1/4 · examples: doom, minecraft, platformer-3d, portal, starf
 
 ### `@pierre/ecs/modules/rng`
 
-value 4/5 · type 1/2 · examples: game-of-life, indy-500, lunar-lander, minecraft, pacman, river-raid, roguelike, snake +2 more · tests: 4 · other: game-search, particles, pile
+value 4/5 · type 1/2 · examples: game-of-life, indy-500, lunar-lander, minecraft, pacman, river-raid, roguelike, snake +2 more · tests: 5 · other: game-search, particles, pile
 
-- **`makeSeededRng`** _(fn)_ — examples: game-of-life, indy-500, lunar-lander, minecraft, pacman, river-raid, roguelike, starfighter · tests: src/modules/game-search/alpha-beta.test.ts, src/modules/particles/particles.test.ts, src/modules/pile/pile.test.ts, src/modules/rng/rng.test.ts · other: —
+- **`makeSeededRng`** _(fn)_ — examples: game-of-life, indy-500, lunar-lander, minecraft, pacman, river-raid, roguelike, starfighter · tests: src/modules/game-search/alpha-beta.test.ts, src/modules/game-search/mcts.test.ts, src/modules/particles/particles.test.ts, src/modules/pile/pile.test.ts, src/modules/rng/rng.test.ts · other: —
 - **`pick`** _(fn)_ — examples: pacman, river-raid, roguelike, snake, solitaire · tests: src/modules/rng/rng.test.ts · other: particles
 - **`randomFloat`** _(fn)_ — examples: — · tests: src/modules/rng/rng.test.ts · other: —
 - **`RandomFn`** _(type)_ — examples: indy-500, pacman, river-raid, roguelike, starfighter · tests: — · other: game-search, particles, pile
-- **`randomInt`** _(fn)_ — examples: game-of-life, roguelike · tests: src/modules/rng/rng.test.ts · other: —
+- **`randomInt`** _(fn)_ — examples: game-of-life, roguelike · tests: src/modules/rng/rng.test.ts · other: game-search
 - **`SeededRng`** _(interface)_ — no external consumer
 - **`shuffle`** _(fn)_ — examples: roguelike · tests: src/modules/rng/rng.test.ts · other: game-search, pile
 

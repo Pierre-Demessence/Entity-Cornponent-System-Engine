@@ -6617,6 +6617,65 @@
           }
         },
         {
+          "name": "MctsOptions",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "MctsResult",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "mctsSearch",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/game-search/mcts.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "SearchGame",
           "coveredByExample": false,
           "example": {
@@ -6658,11 +6717,12 @@
         }
       ],
       "tests": [
-        "src/modules/game-search/alpha-beta.test.ts"
+        "src/modules/game-search/alpha-beta.test.ts",
+        "src/modules/game-search/mcts.test.ts"
       ],
-      "typeTotal": 3,
+      "typeTotal": 5,
       "typeUsedByExample": 0,
-      "valueTotal": 2,
+      "valueTotal": 3,
       "valueUsedByExample": 0
     },
     {
@@ -11970,6 +12030,7 @@
           "test": {
             "consumers": [
               "src/modules/game-search/alpha-beta.test.ts",
+              "src/modules/game-search/mcts.test.ts",
               "src/modules/particles/particles.test.ts",
               "src/modules/pile/pile.test.ts",
               "src/modules/rng/rng.test.ts"
@@ -12070,7 +12131,9 @@
           "kind": "fn",
           "noExternalConsumer": false,
           "other": {
-            "consumers": [],
+            "consumers": [
+              "game-search"
+            ],
             "typeOnly": false
           },
           "test": {
@@ -12128,6 +12191,7 @@
       ],
       "tests": [
         "src/modules/game-search/alpha-beta.test.ts",
+        "src/modules/game-search/mcts.test.ts",
         "src/modules/particles/particles.test.ts",
         "src/modules/pile/pile.test.ts",
         "src/modules/rng/rng.test.ts"
@@ -17301,8 +17365,8 @@
     },
     {
       "importPath": "@pierre/ecs/modules/game-search",
-      "missing": 2,
-      "total": 2
+      "missing": 3,
+      "total": 3
     },
     {
       "importPath": "@pierre/ecs/modules/input",
@@ -17381,11 +17445,11 @@
     "entriesWithExample": 55,
     "entriesWithoutExample": 8,
     "modules": 47,
-    "noExternalConsumer": 171,
-    "symbols": 640,
-    "typeSymbols": 260,
-    "valueSymbols": 380,
+    "noExternalConsumer": 173,
+    "symbols": 643,
+    "typeSymbols": 262,
+    "valueSymbols": 381,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 148
+    "valueWithoutExample": 149
   }
 }

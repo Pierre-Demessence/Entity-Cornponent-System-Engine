@@ -238,17 +238,6 @@ once a profile or consumer asks for them; 3.5 is the storage endgame.
 
 ### Gameplay & utility modules
 
-- **`modules/game-search`** — **Ready**: look-ahead search for computer
-  opponents in turn-based games — negamax with alpha-beta pruning, iterative
-  deepening under a time or node budget, an optional transposition table, and
-  Monte Carlo tree search (UCT) for games without a good evaluation (textbook
-  canon; OpenSpiel's minimax and MCTS bots, boardgame.io's `MCTSBot`). Gate:
-  build slot; BoardGames' Connect Four and Checkers opponents are the first
-  consumers.
-  - Plain data only: the consumer passes `moves(state)`, `apply(state, move)`
-    returning a new state, `evaluate(state, player)` and `currentPlayer(state)`;
-    no world. `modules/worker-pool` runs it off the main thread.
-  - Plan: [`plans/game-search.md`](plans/game-search.md).
 - **`modules/game-search` V2** — **Deferred**: quiescence search, reusing the
   transposition table or the MCTS tree across moves, the principal variation,
   chance nodes (expectimax), MCTS-solver and max^n (chess-engine and OpenSpiel

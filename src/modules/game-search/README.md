@@ -100,6 +100,55 @@ players it assumes all the others play against the root player (a cautious
 "paranoid" estimate), and a move that leaves the same player to move is scored
 from that player's side.
 
+## Monte Carlo tree search
+
+`mctsSearch(game, state, options)` needs no `evaluate`. It builds a search tree
+one position at a time: each iteration walks down the moves that did well so
+far, adds one new position, plays the game out to the end with random moves and
+credits the result to every move on the way. The move with the most visits at
+the root is the answer.
+
+```ts
+import { makeSeededRng } from '@pierre/ecs/modules/rng';
+import { mctsSearch } from '@pierre/ecs/modules/game-search';
+
+const pick = mctsSearch(nim, { pile: 10, player: 0 }, { iterations: 2000, random: makeSeededRng(7) });
+console.log(pick.move, pick.value, pick.visits); // the move, its mean result (-1..1), its visit count
+```
+
+```ts
+interface MctsResult<M> {
+  move: M | undefined; // the most visited move; undefined when the state has no legal move
+  value: number;       // its mean result for the player to move at the root, -1..1
+  visits: number;      // iterations that went through it
+  iterations: number;  // iterations run
+}
+```
+
+**When to use it.** Pick alpha-beta when you can score a position (Connect
+Four, Checkers) and MCTS when you cannot, or when the branching is wide (Go-like
+games, card games with plenty of choices). MCTS also works unchanged for any
+number of players: each move is credited to the player who made it.
+
+**Budget.** `iterations` (default 1 000 when neither is set), `timeMs` (with
+`now` for a test clock), or both; whichever ends first stops the search. At
+least one iteration always runs, so a legal move comes back. Set at least one of
+the two to a finite number: with neither limiting, the search never returns. More iterations
+play stronger and slower. `exploration` (default `Math.SQRT2`) trades trying
+rarely visited moves against deepening promising ones; `0` only deepens.
+
+**Playouts.** The default playout picks uniformly random legal moves. Pass
+`rollout(state, random)` to bias them, for example to take an immediate win;
+better playouts make each iteration worth more. A playout stops after
+`maxRolloutDepth` moves (default 1 000), so a game that can loop still ends;
+`evaluate(state, player)` then scores the cut position from `-1` to `1` for
+`player`, or it counts as a draw without one.
+
+**Ties and repeatability.** `random` (a `RandomFn`, default `Math.random`) drives
+both the order moves are tried in and the playouts, so a fixed seed with an
+`iterations` budget gives the same move on every run; a `timeMs` budget does not.
+The tree lives for one call.
+
 ## Running it in a worker
 
 A deep search blocks the main thread. Functions cannot be posted to a worker, so
@@ -120,6 +169,7 @@ state must be plain data to be posted.
 
 ## Dependencies
 
-- `modules/rng` — `RandomFn` and `shuffle`, used for the `random` option.
+- `modules/rng` — `RandomFn`, `shuffle` and `randomInt`, used for the `random`
+  option of both searches.
 - `modules/worker-pool` — only in the worker sample above; the search itself
   does not import it.
