@@ -10738,12 +10738,9 @@
         },
         {
           "name": "moveAll",
-          "coveredByExample": true,
+          "coveredByExample": false,
           "example": {
-            "consumers": [
-              "card-battler",
-              "solitaire"
-            ],
+            "consumers": [],
             "typeOnly": false
           },
           "isValue": true,
@@ -10755,7 +10752,7 @@
           },
           "test": {
             "consumers": [
-              "src/modules/pile/pile.test.ts"
+              "src/modules/pile/pile-array.test.ts"
             ],
             "typeOnly": false
           }
@@ -10780,7 +10777,28 @@
           }
         },
         {
-          "name": "moveTop",
+          "name": "moveItem",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile-array.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "movePileAll",
           "coveredByExample": true,
           "example": {
             "consumers": [
@@ -10799,6 +10817,51 @@
           "test": {
             "consumers": [
               "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "movePileTop",
+          "coveredByExample": true,
+          "example": {
+            "consumers": [
+              "card-battler",
+              "solitaire"
+            ],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "moveTop",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/pile/pile-array.test.ts"
             ],
             "typeOnly": false
           }
@@ -10984,11 +11047,12 @@
         }
       ],
       "tests": [
+        "src/modules/pile/pile-array.test.ts",
         "src/modules/pile/pile.test.ts"
       ],
       "typeTotal": 3,
       "typeUsedByExample": 0,
-      "valueTotal": 14,
+      "valueTotal": 17,
       "valueUsedByExample": 10
     },
     {
@@ -16898,6 +16962,11 @@
       "total": 17
     },
     {
+      "importPath": "@pierre/ecs/modules/pile",
+      "missing": 7,
+      "total": 17
+    },
+    {
       "importPath": "@pierre/ecs/modules/tmx",
       "missing": 5,
       "total": 6
@@ -16906,11 +16975,6 @@
       "importPath": "@pierre/ecs/modules/asset-loader",
       "missing": 4,
       "total": 8
-    },
-    {
-      "importPath": "@pierre/ecs/modules/pile",
-      "missing": 4,
-      "total": 14
     },
     {
       "importPath": "@pierre/ecs/modules/animation",
@@ -17000,10 +17064,10 @@
     "entriesWithoutExample": 7,
     "modules": 46,
     "noExternalConsumer": 167,
-    "symbols": 623,
+    "symbols": 626,
     "typeSymbols": 256,
-    "valueSymbols": 367,
+    "valueSymbols": 370,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 135
+    "valueWithoutExample": 138
   }
 }

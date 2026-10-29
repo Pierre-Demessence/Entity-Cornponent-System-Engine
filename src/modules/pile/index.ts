@@ -5,9 +5,8 @@ export {
   type InPile,
   InPileDef,
   installPiles,
-  moveAll,
-  type MoveAllOptions,
-  moveTop,
+  movePileAll,
+  movePileTop,
   type Pile,
   PileDef,
   pileItems,
@@ -17,3 +16,4 @@ export {
   removeFromPile,
   shufflePile,
 } from './pile';
+export { moveAll, type MoveAllOptions, moveItem, moveTop } from './pile-array';

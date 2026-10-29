@@ -11,8 +11,8 @@ import {
   indexInPile,
   InPileDef,
   installPiles,
-  moveAll,
-  moveTop,
+  movePileAll,
+  movePileTop,
   PileDef,
   pileItems,
   pileOf,
@@ -125,44 +125,44 @@ describe('moves keep piles and back-references in step', () => {
     expectConsistent(world);
   });
 
-  it('moveTop moves a run in order and returns it', () => {
+  it('movePileTop moves a run in order and returns it', () => {
     const { items: [a, b, c, d], world } = setup(4);
     const from = createPile(world, [a!, b!, c!]);
     const to = createPile(world, [d!]);
-    expect(moveTop(world, from, to, 2)).toEqual([b, c]);
+    expect(movePileTop(world, from, to, 2)).toEqual([b, c]);
     expect(pileItems(world, from)).toEqual([a]);
     expect(pileItems(world, to)).toEqual([d, b, c]);
     expectConsistent(world);
   });
 
-  it('moveTop defaults to one and moves only what is there', () => {
+  it('movePileTop defaults to one and moves only what is there', () => {
     const { items: [a, b], world } = setup(2);
     const from = createPile(world, [a!, b!]);
     const to = createPile(world);
-    expect(moveTop(world, from, to)).toEqual([b]);
-    expect(moveTop(world, from, to, 10)).toEqual([a]);
-    expect(moveTop(world, from, to, 3)).toEqual([]);
+    expect(movePileTop(world, from, to)).toEqual([b]);
+    expect(movePileTop(world, from, to, 10)).toEqual([a]);
+    expect(movePileTop(world, from, to, 3)).toEqual([]);
     expect(pileItems(world, to)).toEqual([b, a]);
     expectConsistent(world);
   });
 
-  it('moveAll keeps order, or reverses it', () => {
+  it('movePileAll keeps order, or reverses it', () => {
     const { items: [a, b, c], world } = setup(3);
     const waste = createPile(world, [a!, b!, c!]);
     const stock = createPile(world);
-    expect(moveAll(world, waste, stock, { reverse: true })).toEqual([c, b, a]);
+    expect(movePileAll(world, waste, stock, { reverse: true })).toEqual([c, b, a]);
     expect(pileItems(world, stock)).toEqual([c, b, a]);
     expect(pileSize(world, waste)).toBe(0);
 
-    moveAll(world, stock, waste);
+    movePileAll(world, stock, waste);
     expect(pileItems(world, waste)).toEqual([c, b, a]);
     expectConsistent(world);
   });
 
-  it('moveAll onto the same pile with reverse flips it in place', () => {
+  it('movePileAll onto the same pile with reverse flips it in place', () => {
     const { items: [a, b, c], world } = setup(3);
     const pile = createPile(world, [a!, b!, c!]);
-    moveAll(world, pile, pile, { reverse: true });
+    movePileAll(world, pile, pile, { reverse: true });
     expect(pileItems(world, pile)).toEqual([c, b, a]);
     expectConsistent(world);
   });
@@ -273,13 +273,13 @@ describe('world reset and persistence', () => {
     const hand = createPile(world);
     const save = JSON.parse(JSON.stringify(world.toJSON()));
 
-    moveTop(world, deck, hand, 2);
+    movePileTop(world, deck, hand, 2);
     world.loadJSON(save);
     expect(pileItems(world, deck)).toEqual([a, b, c]);
     expect(pileItems(world, hand)).toEqual([]);
     expectConsistent(world);
 
-    moveTop(world, deck, hand);
+    movePileTop(world, deck, hand);
     expect(pileItems(world, hand)).toEqual([c]);
     expectConsistent(world);
   });

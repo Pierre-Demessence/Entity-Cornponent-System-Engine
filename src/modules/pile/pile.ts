@@ -1,5 +1,6 @@
 import type { ComponentDef, ComponentStoreLike, EcsWorld, EntityId } from '#index';
 import type { RandomFn } from '../rng';
+import type { MoveAllOptions } from './pile-array';
 
 import { asArray, asEntityId, asObject } from '#validation';
 
@@ -157,7 +158,7 @@ export function removeFromPile(world: EcsWorld, item: EntityId): boolean {
  * draw, or a run of cards moved as one. Moves fewer when `from` holds fewer.
  * Returns the moved entities, bottom first.
  */
-export function moveTop(world: EcsWorld, from: EntityId, to: EntityId, count = 1): EntityId[] {
+export function movePileTop(world: EcsWorld, from: EntityId, to: EntityId, count = 1): EntityId[] {
   const source = requirePile(world, from);
   requirePile(world, to);
   const take = Math.max(0, Math.min(Math.trunc(count), source.items.length));
@@ -167,17 +168,11 @@ export function moveTop(world: EcsWorld, from: EntityId, to: EntityId, count = 1
   return moved;
 }
 
-/** Options for {@link moveAll}. */
-export interface MoveAllOptions {
-  /** Flip the order on the way, as when a face-up waste pile is turned back into the stock. */
-  reverse?: boolean;
-}
-
 /**
  * Move every entity of `from` onto the top of `to`, keeping their order unless
  * `reverse` is set. Returns the moved entities in the order they were added.
  */
-export function moveAll(world: EcsWorld, from: EntityId, to: EntityId, options: MoveAllOptions = {}): EntityId[] {
+export function movePileAll(world: EcsWorld, from: EntityId, to: EntityId, options: MoveAllOptions = {}): EntityId[] {
   requirePile(world, to);
   const moved = [...requirePile(world, from).items];
   if (options.reverse)

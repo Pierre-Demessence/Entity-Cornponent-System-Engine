@@ -23,7 +23,7 @@ import { WebAudioProvider } from '@pierre/ecs/modules/audio';
 import { aabbContainsPoint } from '@pierre/ecs/modules/collision';
 import { DragDrop } from '@pierre/ecs/modules/drag-drop';
 import { projectPointer } from '@pierre/ecs/modules/input';
-import { addToPile, installPiles, moveAll, moveTop, pileSize, pileTop } from '@pierre/ecs/modules/pile';
+import { addToPile, installPiles, movePileAll, movePileTop, pileSize, pileTop } from '@pierre/ecs/modules/pile';
 import { RenderableDef, RenderOrderDef } from '@pierre/ecs/modules/render-canvas2d';
 import { pick } from '@pierre/ecs/modules/rng';
 import { parseTexturePackerAtlas, TextureAtlasRegistry } from '@pierre/ecs/modules/texture-atlas';
@@ -206,7 +206,7 @@ export function start(container: HTMLElement): () => void {
       return; // snap back: next layout restores positions
     }
     const { cards, from } = drop.payload;
-    moveTop(state.world, pileEntity(state, from), pileEntity(state, drop.target), cards.length);
+    movePileTop(state.world, pileEntity(state, from), pileEntity(state, drop.target), cards.length);
     flipExposed(from, state);
     playSfx('place');
     finishMove(state);
@@ -254,12 +254,12 @@ export function start(container: HTMLElement): () => void {
 
   function dealFromStock(s: GameState, sfx: (kind: 'place' | 'slide') => void): void {
     if (pileSize(s.world, s.stock) > 0) {
-      const [id] = moveTop(s.world, s.stock, s.waste);
+      const [id] = movePileTop(s.world, s.stock, s.waste);
       cardOf(s, id!).faceUp = true;
     }
     else {
       // Turning the waste over reverses it: its top card becomes the stock's bottom.
-      for (const id of moveAll(s.world, s.waste, s.stock, { reverse: true }))
+      for (const id of movePileAll(s.world, s.waste, s.stock, { reverse: true }))
         cardOf(s, id).faceUp = false;
     }
     sfx('slide');

@@ -107,6 +107,49 @@ README: plain `TurnOrder` first (seats in a JSON state, hot-seat play), then
 
 ## Checklist
 
+### Part B — `modules/turn-based`
+
+New `src/modules/turn-based/turn-order.ts`, exported from the module barrel:
+
+```ts
+interface TurnOrder<T> { seats: T[]; active: number; direction: 1 | -1; turns: number; rounds: number }
+```
+
+`T` is any seat id (number, string, `EntityId`); the value is JSON-safe when
+`T` is. `turns` and `rounds` count completed turns and completed rounds, both
+starting at 0.
+
+- `makeTurnOrder<T>(seats: readonly T[], first = 0): TurnOrder<T>` — copies
+  `seats`; throws on an out-of-range `first` when seats exist.
+- `currentSeat(order): T | undefined` / `nextSeat(order): T | undefined` —
+  `undefined` with no seats.
+- `advanceTurn(order, skip = 0): boolean` — moves `1 + skip` seats in
+  `direction`; `turns += 1`; each pass over the wrap point (last → first going
+  forward, first → last reversed) adds 1 to `rounds`. Returns whether it
+  wrapped at least once. One seat: every advance wraps. No seats: no-op,
+  returns `false`.
+- `passTurnTo(order, seat): void` — makes `seat` active; `turns += 1`,
+  `rounds` unchanged (trick-taking leads, "winner starts"). Throws when absent.
+- `reverseTurns(order): void` — flips `direction`; the active seat stays.
+- `addSeat(order, seat, index = seats.length): void` — the active seat stays.
+- `removeSeat(order, seat): boolean` — the active seat stays; if it is the one
+  removed, the seat that came next in `direction` becomes active; counters
+  unchanged. `false` when absent.
+
+An extra turn (a Checkers multi-jump) needs no helper: the caller does not
+advance.
+
+`TurnCycler` keeps its public surface and behaviour (AC6). Its `advance()`
+builds a `TurnOrder<EntityId>` from the `controlled` tag order and the
+`activeTurn` holder, calls `advanceTurn`, and writes the tags back. Its 0- and
+1-entity results stay `true` as today. Speed / energy scheduling stays the
+backlog's untriaged `TurnCycler` row.
+
+README: plain `TurnOrder` first (seats in a JSON state, hot-seat play), then
+`TurnCycler` as the world wrapper.
+
+## Checklist
+
 ### Part A — plain pile helpers
 
 - [ ] Add `pile-array.ts` with `moveTop`, `moveAll`, `moveItem` and JSDoc;

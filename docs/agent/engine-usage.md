@@ -41,9 +41,9 @@ references it.
 
 ## Headline
 
-- 62 public entries (16 core, 46 modules) · 623 symbols (367 value, 256 type)
+- 62 public entries (16 core, 46 modules) · 626 symbols (370 value, 256 type)
 - 55 entries referenced by at least one example · 7 with none
-- 135 value symbols referenced by no example (5 of them with no external consumer at all)
+- 138 value symbols referenced by no example (5 of them with no external consumer at all)
 - 167 symbols with no external consumer
 
 ## Entries with no example reference
@@ -70,9 +70,9 @@ the shortlist for the next game in
 - `@pierre/ecs/modules/easing` — 23 of 31 value exports unreferenced by any example
 - `@pierre/ecs/modules/camera-3d` — 17 of 33 value exports unreferenced by any example
 - `@pierre/ecs/modules/collision-3d` — 11 of 17 value exports unreferenced by any example
+- `@pierre/ecs/modules/pile` — 7 of 17 value exports unreferenced by any example
 - `@pierre/ecs/modules/tmx` — 5 of 6 value exports unreferenced by any example
 - `@pierre/ecs/modules/asset-loader` — 4 of 8 value exports unreferenced by any example
-- `@pierre/ecs/modules/pile` — 4 of 14 value exports unreferenced by any example
 - `@pierre/ecs/modules/animation` — 3 of 12 value exports unreferenced by any example
 - `@pierre/ecs/modules/collision` — 3 of 12 value exports unreferenced by any example
 - `@pierre/ecs/modules/input` — 2 of 10 value exports unreferenced by any example
@@ -790,7 +790,7 @@ value 1/1 · type 1/2 · examples: pacman, roguelike · tests: 1 · other: —
 
 ### `@pierre/ecs/modules/pile`
 
-value 10/14 · type 0/3 · examples: card-battler, solitaire · tests: 1 · other: —
+value 10/17 · type 0/3 · examples: card-battler, solitaire · tests: 2 · other: —
 
 - **`addToPile`** _(fn)_ — examples: card-battler, solitaire · tests: src/modules/pile/pile.test.ts · other: —
 - **`createPile`** _(fn)_ — examples: card-battler, solitaire · tests: src/modules/pile/pile.test.ts · other: —
@@ -798,9 +798,12 @@ value 10/14 · type 0/3 · examples: card-battler, solitaire · tests: 1 · othe
 - **`InPile`** _(interface)_ — no external consumer
 - **`InPileDef`** _(const)_ — examples: — · tests: src/modules/pile/pile.test.ts · other: —
 - **`installPiles`** _(fn)_ — examples: card-battler, solitaire · tests: src/modules/pile/pile.test.ts · other: —
-- **`moveAll`** _(fn)_ — examples: card-battler, solitaire · tests: src/modules/pile/pile.test.ts · other: —
+- **`moveAll`** _(fn)_ — examples: — · tests: src/modules/pile/pile-array.test.ts · other: —
 - **`MoveAllOptions`** _(interface)_ — no external consumer
-- **`moveTop`** _(fn)_ — examples: card-battler, solitaire · tests: src/modules/pile/pile.test.ts · other: —
+- **`moveItem`** _(fn)_ — examples: — · tests: src/modules/pile/pile-array.test.ts · other: —
+- **`movePileAll`** _(fn)_ — examples: card-battler, solitaire · tests: src/modules/pile/pile.test.ts · other: —
+- **`movePileTop`** _(fn)_ — examples: card-battler, solitaire · tests: src/modules/pile/pile.test.ts · other: —
+- **`moveTop`** _(fn)_ — examples: — · tests: src/modules/pile/pile-array.test.ts · other: —
 - **`Pile`** _(interface)_ — no external consumer
 - **`PileDef`** _(const)_ — examples: — · tests: src/modules/pile/pile.test.ts · other: —
 - **`pileItems`** _(fn)_ — examples: card-battler, solitaire · tests: src/modules/pile/pile.test.ts · other: —

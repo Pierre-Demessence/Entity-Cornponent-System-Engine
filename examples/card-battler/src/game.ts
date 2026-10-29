@@ -5,7 +5,7 @@ import type { InputState, PointerState } from '@pierre/ecs/modules/input';
 import type { CardDef } from './cards';
 
 import { EcsWorld } from '@pierre/ecs';
-import { addToPile, createPile, installPiles, moveAll, moveTop, pileSize, shufflePile } from '@pierre/ecs/modules/pile';
+import { addToPile, createPile, installPiles, movePileAll, movePileTop, pileSize, shufflePile } from '@pierre/ecs/modules/pile';
 import { DomRenderableDef } from '@pierre/ecs/modules/render-dom';
 import { PositionDef } from '@pierre/ecs/modules/transform';
 
@@ -147,16 +147,16 @@ export function drawCards(state: GameState, count: number): void {
         console.warn('[card-battler] draw aborted: deck and discard are both empty');
         return;
       }
-      moveAll(state.world, discard, deck);
+      movePileAll(state.world, discard, deck);
       shufflePile(state.world, deck);
     }
-    moveTop(state.world, deck, hand);
+    movePileTop(state.world, deck, hand);
   }
 }
 
 /** Discard entire hand (end-of-turn ceremony). */
 export function discardHand(state: GameState): void {
-  moveAll(state.world, state.piles.hand, state.piles.discard);
+  movePileAll(state.world, state.piles.hand, state.piles.discard);
 }
 
 /** Move a single card from hand to discard. */

@@ -14,7 +14,7 @@ import type { Aabb } from '@pierre/ecs/modules/collision';
 
 import type { Suit } from './cards';
 
-import { createPile, moveTop, pileItems, pileSize, pileTop, shufflePile } from '@pierre/ecs/modules/pile';
+import { createPile, movePileTop, pileItems, pileSize, pileTop, shufflePile } from '@pierre/ecs/modules/pile';
 
 import { RANKS, suitColor, SUITS } from './cards';
 
@@ -155,7 +155,7 @@ export function dealNewGame(world: EcsWorld): GameState {
   const tableau = Array.from({ length: 7 }, () => createPile(world));
   for (let col = 0; col < 7; col++) {
     for (let row = 0; row <= col; row++) {
-      const [id] = moveTop(world, stock, tableau[col]!);
+      const [id] = movePileTop(world, stock, tableau[col]!);
       cards.get(id!)!.faceUp = row === col;
     }
   }
