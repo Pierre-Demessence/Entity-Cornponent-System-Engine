@@ -89,7 +89,7 @@ export const MODULE_CATEGORIES: readonly { modules: readonly string[]; title: st
   },
   { modules: ['cooldown', 'drag-drop', 'input', 'lifetime', 'tick', 'timer'], title: 'Input and timing' },
   {
-    modules: ['behavior-tree', 'fsm', 'goap', 'grid-based', 'pathfinding', 'steering'],
+    modules: ['behavior-tree', 'fsm', 'game-search', 'goap', 'grid-based', 'pathfinding', 'steering'],
     title: 'AI and decision making',
   },
   {

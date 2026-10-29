@@ -248,6 +248,12 @@ once a profile or consumer asks for them; 3.5 is the storage endgame.
   - Plain data only: the consumer passes `moves(state)`, `apply(state, move)`
     returning a new state, `evaluate(state, player)` and `currentPlayer(state)`;
     no world. `modules/worker-pool` runs it off the main thread.
+  - Plan: [`plans/game-search.md`](plans/game-search.md).
+- **`modules/game-search` V2** — **Deferred**: quiescence search, reusing the
+  transposition table or the MCTS tree across moves, the principal variation,
+  chance nodes (expectimax), MCTS-solver and max^n (chess-engine and OpenSpiel
+  canon). Gate: a consumer needing one (Checkers' horizon effect, a dice game
+  wanting look-ahead over rolls).
 - **`modules/grid-movement`** — **Deferred**: snake, frogger, rpg, roguelike and
   pacman each move on a grid in a different shape. Gate: a further consumer
   converging on one of those shapes.

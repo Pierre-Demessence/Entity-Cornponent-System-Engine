@@ -6551,6 +6551,121 @@
       "valueUsedByExample": 2
     },
     {
+      "coveredByExample": false,
+      "examples": [],
+      "importPath": "@pierre/ecs/modules/game-search",
+      "isModule": true,
+      "other": [],
+      "symbols": [
+        {
+          "name": "AlphaBetaOptions",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "AlphaBetaResult",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "alphaBetaSearch",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/game-search/alpha-beta.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "SearchGame",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "WIN_SCORE",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "const",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/game-search/alpha-beta.test.ts"
+            ],
+            "typeOnly": false
+          }
+        }
+      ],
+      "tests": [
+        "src/modules/game-search/alpha-beta.test.ts"
+      ],
+      "typeTotal": 3,
+      "typeUsedByExample": 0,
+      "valueTotal": 2,
+      "valueUsedByExample": 0
+    },
+    {
       "coveredByExample": true,
       "examples": [
         "woodcutter"
@@ -11824,6 +11939,7 @@
       "importPath": "@pierre/ecs/modules/rng",
       "isModule": true,
       "other": [
+        "game-search",
         "particles",
         "pile"
       ],
@@ -11853,6 +11969,7 @@
           },
           "test": {
             "consumers": [
+              "src/modules/game-search/alpha-beta.test.ts",
               "src/modules/particles/particles.test.ts",
               "src/modules/pile/pile.test.ts",
               "src/modules/rng/rng.test.ts"
@@ -11928,6 +12045,7 @@
           "noExternalConsumer": false,
           "other": {
             "consumers": [
+              "game-search",
               "particles",
               "pile"
             ],
@@ -11995,6 +12113,7 @@
           "noExternalConsumer": false,
           "other": {
             "consumers": [
+              "game-search",
               "pile"
             ],
             "typeOnly": false
@@ -12008,6 +12127,7 @@
         }
       ],
       "tests": [
+        "src/modules/game-search/alpha-beta.test.ts",
         "src/modules/particles/particles.test.ts",
         "src/modules/pile/pile.test.ts",
         "src/modules/rng/rng.test.ts"
@@ -17180,6 +17300,11 @@
       "total": 12
     },
     {
+      "importPath": "@pierre/ecs/modules/game-search",
+      "missing": 2,
+      "total": 2
+    },
+    {
       "importPath": "@pierre/ecs/modules/input",
       "missing": 2,
       "total": 10
@@ -17252,15 +17377,15 @@
   ],
   "headline": {
     "coreEntries": 16,
-    "entries": 62,
+    "entries": 63,
     "entriesWithExample": 55,
-    "entriesWithoutExample": 7,
-    "modules": 46,
-    "noExternalConsumer": 168,
-    "symbols": 635,
-    "typeSymbols": 257,
-    "valueSymbols": 378,
+    "entriesWithoutExample": 8,
+    "modules": 47,
+    "noExternalConsumer": 171,
+    "symbols": 640,
+    "typeSymbols": 260,
+    "valueSymbols": 380,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 146
+    "valueWithoutExample": 148
   }
 }
