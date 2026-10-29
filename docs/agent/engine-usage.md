@@ -41,10 +41,10 @@ references it.
 
 ## Headline
 
-- 62 public entries (16 core, 46 modules) · 626 symbols (370 value, 256 type)
+- 62 public entries (16 core, 46 modules) · 635 symbols (378 value, 257 type)
 - 55 entries referenced by at least one example · 7 with none
-- 138 value symbols referenced by no example (5 of them with no external consumer at all)
-- 167 symbols with no external consumer
+- 146 value symbols referenced by no example (5 of them with no external consumer at all)
+- 168 symbols with no external consumer
 
 ## Entries with no example reference
 
@@ -70,6 +70,7 @@ the shortlist for the next game in
 - `@pierre/ecs/modules/easing` — 23 of 31 value exports unreferenced by any example
 - `@pierre/ecs/modules/camera-3d` — 17 of 33 value exports unreferenced by any example
 - `@pierre/ecs/modules/collision-3d` — 11 of 17 value exports unreferenced by any example
+- `@pierre/ecs/modules/turn-based` — 8 of 9 value exports unreferenced by any example
 - `@pierre/ecs/modules/pile` — 7 of 17 value exports unreferenced by any example
 - `@pierre/ecs/modules/tmx` — 5 of 6 value exports unreferenced by any example
 - `@pierre/ecs/modules/asset-loader` — 4 of 8 value exports unreferenced by any example
@@ -1052,10 +1053,19 @@ value 3/4 · type 2/4 · examples: doom, minecraft, platformer-3d, portal, starf
 
 ### `@pierre/ecs/modules/turn-based`
 
-value 1/1 · type 0/1 · examples: roguelike · tests: 1 · other: —
+value 1/9 · type 0/2 · examples: roguelike · tests: 2 · other: —
 
+- **`addSeat`** _(fn)_ — examples: — · tests: src/modules/turn-based/turn-order.test.ts · other: —
+- **`advanceTurn`** _(fn)_ — examples: — · tests: src/modules/turn-based/turn-order.test.ts · other: —
+- **`currentSeat`** _(fn)_ — examples: — · tests: src/modules/turn-based/turn-order.test.ts · other: —
+- **`makeTurnOrder`** _(fn)_ — examples: — · tests: src/modules/turn-based/turn-order.test.ts · other: —
+- **`nextSeat`** _(fn)_ — examples: — · tests: src/modules/turn-based/turn-order.test.ts · other: —
+- **`passTurnTo`** _(fn)_ — examples: — · tests: src/modules/turn-based/turn-order.test.ts · other: —
+- **`removeSeat`** _(fn)_ — examples: — · tests: src/modules/turn-based/turn-order.test.ts · other: —
+- **`reverseTurns`** _(fn)_ — examples: — · tests: src/modules/turn-based/turn-order.test.ts · other: —
 - **`TurnCycler`** _(class)_ — examples: roguelike · tests: src/modules/turn-based/turn-cycler.test.ts · other: —
 - **`TurnCyclerTags`** _(interface)_ — no external consumer
+- **`TurnOrder`** _(interface)_ — no external consumer
 
 ### `@pierre/ecs/modules/tween`
 

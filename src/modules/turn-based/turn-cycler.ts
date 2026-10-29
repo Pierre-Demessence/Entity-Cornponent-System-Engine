@@ -2,6 +2,8 @@ import type { TagDef, TagStore } from '#component-store';
 import type { EntityId } from '#entity-id';
 import type { EcsWorld } from '#world';
 
+import { advanceTurn, currentSeat, makeTurnOrder } from './turn-order';
+
 /**
  * Tag defs the cycler reads & writes. `controlled` is the "whose turn is it"
  * population; `activeTurn` marks the current actor; `cameraTarget` is
@@ -61,16 +63,18 @@ export class TurnCycler {
     const idx = controlled.indexOf(current);
     if (idx === -1)
       return true;
-    const nextIdx = (idx + 1) % controlled.length;
+
+    const order = makeTurnOrder(controlled, idx);
+    const wrapped = advanceTurn(order);
 
     this.activeTurnStore.delete(current);
     this.cameraTargetStore?.delete(current);
 
-    const next = controlled[nextIdx]!;
+    const next = currentSeat(order)!;
     this.activeTurnStore.add(next);
     this.cameraTargetStore?.add(next);
 
-    return nextIdx === 0;
+    return wrapped;
   }
 
   /**

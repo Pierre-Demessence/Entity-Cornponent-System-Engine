@@ -15227,6 +15227,174 @@
       "other": [],
       "symbols": [
         {
+          "name": "addSeat",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/turn-based/turn-order.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "advanceTurn",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/turn-based/turn-order.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "currentSeat",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/turn-based/turn-order.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "makeTurnOrder",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/turn-based/turn-order.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "nextSeat",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/turn-based/turn-order.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "passTurnTo",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/turn-based/turn-order.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "removeSeat",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/turn-based/turn-order.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
+          "name": "reverseTurns",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": true,
+          "kind": "fn",
+          "noExternalConsumer": false,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [
+              "src/modules/turn-based/turn-order.test.ts"
+            ],
+            "typeOnly": false
+          }
+        },
+        {
           "name": "TurnCycler",
           "coveredByExample": true,
           "example": {
@@ -15267,14 +15435,34 @@
             "consumers": [],
             "typeOnly": false
           }
+        },
+        {
+          "name": "TurnOrder",
+          "coveredByExample": false,
+          "example": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "isValue": false,
+          "kind": "interface",
+          "noExternalConsumer": true,
+          "other": {
+            "consumers": [],
+            "typeOnly": false
+          },
+          "test": {
+            "consumers": [],
+            "typeOnly": false
+          }
         }
       ],
       "tests": [
-        "src/modules/turn-based/turn-cycler.test.ts"
+        "src/modules/turn-based/turn-cycler.test.ts",
+        "src/modules/turn-based/turn-order.test.ts"
       ],
-      "typeTotal": 1,
+      "typeTotal": 2,
       "typeUsedByExample": 0,
-      "valueTotal": 1,
+      "valueTotal": 9,
       "valueUsedByExample": 1
     },
     {
@@ -16962,6 +17150,11 @@
       "total": 17
     },
     {
+      "importPath": "@pierre/ecs/modules/turn-based",
+      "missing": 8,
+      "total": 9
+    },
+    {
       "importPath": "@pierre/ecs/modules/pile",
       "missing": 7,
       "total": 17
@@ -17063,11 +17256,11 @@
     "entriesWithExample": 55,
     "entriesWithoutExample": 7,
     "modules": 46,
-    "noExternalConsumer": 167,
-    "symbols": 626,
-    "typeSymbols": 256,
-    "valueSymbols": 370,
+    "noExternalConsumer": 168,
+    "symbols": 635,
+    "typeSymbols": 257,
+    "valueSymbols": 378,
     "valueWithNoConsumer": 5,
-    "valueWithoutExample": 138
+    "valueWithoutExample": 146
   }
 }
